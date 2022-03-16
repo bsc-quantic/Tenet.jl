@@ -1,5 +1,5 @@
 module Tenet
 
-greet() = print("Hello World!")
+include("Tensor.jl")
 
 end # module
