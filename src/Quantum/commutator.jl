@@ -1,19 +1,29 @@
+using WhereTraits
+
 commutator(A::Matrix, B::Matrix) = A * B - B * A
 anticommutator(A::Matrix, B::Matrix) = A * B + B * A
 
-commutator(A::AbstractGate, B::AbstractGate) = begin
-    if isempty(intersect(Set(lane(A)), Set(lane(B))))
-        return zeros(...)
-    end
-    mA = Matrix(A)
-    mB = Matrix(B)
-
-    mA * mB - mB * mA
-end
-commutator(A, B::AbstractGate) = commutator(B, A)
-
-commutator(A, B::I) = zeros(2, 2)
-commutator(A::T, B::T) where {T<:AbstractGate} = zeros(2, 2)
-
 commutes(A::Matrix{T}, B::Matrix{T}) where {T<:Number} = A * B == B * A
 commutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.approx(A * B, B * A)
+commutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.approx(A * B, B * A)
+
+anticommutes(A::Matrix{T}, B::Matrix{T}) where {T<:Number} = A * B == -B * A
+anticommutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.approx(A * B, -B * A)
+anticommutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.approx(A * B, -B * A)
+
+# if sites where they operate do not overlap, then they must commute
+@traits commutes(A::AbstractGate, B::AbstractGate) where {isempty(intersect(Set(lane(A)), Set(lane(B))))} = true
+@traits anticommutes(A::AbstractGate, B::AbstractGate) where {isempty(intersect(Set(lane(A)), Set(lane(B))))} = false
+
+# any gate commutes with itself
+_commutes(A::T, B::T) where {T<:AbstractGate} = true
+_anticommutes(A::T, B::T) where {T<:AbstractGate} = false
+
+# identity commutes with everything
+_commutes(A::I, B::T) where {T<:AbstractGate} = true
+_anticommutes(A::I, B::T) where {T<:AbstractGate} = false
+
+# rotations
+_commutes(A::X, B::Rx) = true if B.θ == π else false # TODO use Base.approx?
+_commutes(A::Y, B::Ry) = true if B.θ == π else false # TODO use Base.approx?
+_commutes(A::Z, B::Rz) = true if B.θ == π else false # TODO use Base.approx?
