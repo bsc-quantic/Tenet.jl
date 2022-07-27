@@ -4,6 +4,9 @@ authors = ["Sergio Sánchez Ramírez <sergio.sanchez.ramirez@bsc.es>"]
 version = "0.1.0"
 
 [deps]
-Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
-KaHyPar = "2a6221f6-aa48-11e9-3542-2d9e0ef01880"
+ReusePatterns = "a39b5e78-89b5-562b-97d8-70689129df0c"
 TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
+WhereTraits = "c9d4e05b-6318-49cb-9b56-e0e2b0ceadd8"
+
+[compat]
+julia = "1.6"

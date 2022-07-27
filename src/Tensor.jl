@@ -1,13 +1,16 @@
-import Base: convert
+import Base: convert, show
 using ReusePatterns
-using TensorOperations
 
 struct Tensor{T}
-    array::Array{T}
+    data::Array{T}
     labels::Vector{Char}
+    tags::Set{String}
 end
 
-@forward((Tensor, :array), AbstractArray)
+Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$array, labels=$labels, tags=$set)")
+# Base.show(io::IO, ::MIME"")
+
+@forward((Tensor, :data), AbstractArray)
 
 permutedims(t::Tensor, perm) = Tensor(permutedims(t.array, perm), t.labels[perm])
 permutedims(t::Tensor, perm::Vector{Char}) = begin

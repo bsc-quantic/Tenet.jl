@@ -1,7 +1,5 @@
-using Graphs
-
 struct ContractionTree
-    tree::Graph
+    nodes::Dict[Set(Char), NTuple{2,Set(Char)}]
 end
 
 # constructor
@@ -30,9 +28,7 @@ function flops(tree::ContractionTree) -> Integer
     error("Unimplemented")
 end
 
-function rank(tree::ContractionTree) -> Integer
-    error("Unimplemented")
-end
+order(tree::ContractionTree) = maximum(key -> length(key), keys(tree))
 
 # tree
 function leaves(tree::ContractionTree)
