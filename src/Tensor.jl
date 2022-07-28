@@ -19,6 +19,7 @@ end
 
 inner_inds(a::Tensor, b::Tensor) = a.labels ∩ b.labels
 outer_inds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.labels)
+reindex!(t::Tensor, mapping::Dict{Char,Char}) = error("not implemented yet")
 
 # tags
 droptags!(t::Tensor) = empty!(t.tags)
