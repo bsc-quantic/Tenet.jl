@@ -21,9 +21,8 @@ end
 inner_inds(a::Tensor, b::Tensor) = a.labels ∩ b.labels
 outer_inds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.labels)
 
-# contract
-# @traits contract(a::Tensor, b::Tensor) where {isempty(inner_inds(a, b))} = begin
-# end
+# tags
+droptags!(t::Tensor) = empty!(t.tags)
 
 # conversion
 convert(::Type{Array}, t::Tensor) = t.array
