@@ -7,8 +7,7 @@ struct Tensor{T}
     tags::Set{String}
 end
 
-Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$array, labels=$labels, tags=$set)")
-# Base.show(io::IO, ::MIME"")
+Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$t.data, labels=$t.labels, tags=$t.tags)")
 
 @forward((Tensor, :data), AbstractArray)
 
