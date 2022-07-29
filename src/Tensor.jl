@@ -24,8 +24,8 @@ permutedims(t::Tensor, perm::Vector{Char}) = begin
     permutedims(t, p)
 end
 
-inner_inds(a::Tensor, b::Tensor) = a.labels ∩ b.labels
-outer_inds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.labels)
+innerinds(a::Tensor, b::Tensor) = a.labels ∩ b.labels
+outerinds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.labels)
 reindex!(t::Tensor, mapping::Dict{Char,Char}) = error("not implemented yet")
 
 # tags
