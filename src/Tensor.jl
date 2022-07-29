@@ -1,5 +1,5 @@
 import Base: eltype, size, stride, strides, ndims, axes, length, keys, conj, conj!
-import Base: convert, show
+import Base: convert, show, kron
 using Lazy
 
 struct Tensor{T}
@@ -34,3 +34,6 @@ droptags!(t::Tensor) = empty!(t.tags)
 # conversion
 convert(::Type{Array}, t::Tensor) = t.array
 promote_rule(::Type{Tensor}, ::Type{Array}) = Array
+
+# kronecker product
+kron(A::Tensor, B::Tensor) = Tensor(reshape(kron(A.data, B.data), size(A)..., size(B)...), A.labels)
