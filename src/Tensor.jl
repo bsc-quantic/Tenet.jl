@@ -6,6 +6,12 @@ struct Tensor{T}
     data::Array{T}
     labels::Vector{Char}
     tags::Set{String}
+
+    # TODO do not use `rand` for `labels`
+    Tensor(data::Array{T}, labels=nothing, tags=Set{String}()) where {T} = new{T}(
+        data,
+        labels == nothing ? rand(Char, ndims(data)) : labels,
+        tags)
 end
 
 Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$(t.data), labels=$(t.labels), tags=$(t.tags))")
