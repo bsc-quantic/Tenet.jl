@@ -1,5 +1,6 @@
+import Base: eltype, size, stride, strides, ndims, axes, length, keys, conj, conj!
 import Base: convert, show
-using ReusePatterns
+using Lazy
 
 struct Tensor{T}
     data::Array{T}
@@ -9,7 +10,7 @@ end
 
 Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$t.data, labels=$t.labels, tags=$t.tags)")
 
-@forward((Tensor, :data), AbstractArray)
+@forward Tensor.data eltype, size, stride, strides, ndims, axes, length, keys, conj, conj!
 
 permutedims(t::Tensor, perm) = Tensor(permutedims(t.array, perm), t.labels[perm])
 permutedims(t::Tensor, perm::Vector{Char}) = begin
