@@ -1,18 +1,22 @@
+using WhereTraits
+using OptimizedEinsum
+
 abstract type AbstractTensorNetwork end
 
 ntensors(_::AbstractTensorNetwork) = error("No implementation found")
-nindices(_::AbstractTensorNetwork) = error("No implementation found")
+ninds(_::AbstractTensorNetwork) = error("No implementation found")
 
 struct TensorNetwork <: AbstractTensorNetwork
+    tensor_map::Dict{Int,Tensor}
+    ind_map::Dict{Symbol,Vector{Int}}
 end
 
-ntensors(tn::TensorNetwork) = error("No implementation found")
-nindices(tn::TensorNetwork) = error("No implementation found")
+inds(tn::TensorNetwork) = keys(tn.ind_map)
+tensors(tn::TensorNetwork) = values(tn.tensor_map)
+hyperinds(tn::TensorNetwork) = error("not implemented yet")
 
-abstract type TensorNetworkState <: TensorNetwork end
+ntensors(tn::TensorNetwork) = length(tn.tensor_map)
+ninds(tn::TensorNetwork) = length(tn.ind_map)
 
-nsites(tn::TensorNetworkState) = error("No mplementation found")
-
-abstract type TensorNetworkOperator <: TensorNetwork end
-
-nsites(_::TensorNetworkOperator) = error("No mplementation found")
+@traits ntensors(x::T) where {T<:AbstractTensorNetwork,hasfield(T, :tn)} = ntensors(x.tn)
+@traits ninds(x::T) where {T<:AbstractTensorNetwork,hasfield(T, :tn)} = ninds(x.tn)
