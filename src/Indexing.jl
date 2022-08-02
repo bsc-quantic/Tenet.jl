@@ -1,8 +1,9 @@
 """
-	cind"..."
+	ind"..."
+	@ind_str "..." "$delim"
 
-`Char`-based index specification.
+Index specification using string syntax.
 """
-macro cind_str(s)
-    [Symbol(i) for i in s]
+macro ind_str(s, delim = "")
+    [Symbol(i) for i in split(s, delim)]
 end
