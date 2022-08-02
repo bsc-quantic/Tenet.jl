@@ -1,7 +1,7 @@
 name = "Tenet"
 uuid = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
 authors = ["Sergio Sánchez Ramírez <sergio.sanchez.ramirez@bsc.es>"]
-version = "0.1.0"
+version = "0.0.1"
 
 [deps]
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
