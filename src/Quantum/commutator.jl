@@ -4,12 +4,12 @@ commutator(A::Matrix, B::Matrix) = A * B - B * A
 anticommutator(A::Matrix, B::Matrix) = A * B + B * A
 
 commutes(A::Matrix{T}, B::Matrix{T}) where {T<:Number} = A * B == B * A
-commutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.approx(A * B, B * A)
-commutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.approx(A * B, B * A)
+commutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.isapprox(A * B, B * A)
+commutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.isapprox(A * B, B * A)
 
 anticommutes(A::Matrix{T}, B::Matrix{T}) where {T<:Number} = A * B == -B * A
-anticommutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.approx(A * B, -B * A)
-anticommutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.approx(A * B, -B * A)
+anticommutes(A::Matrix{T}, B::Matrix{T}) where {T<:AbstractFloat} = Base.isapprox(A * B, -B * A)
+anticommutes(A::Matrix{Complex{T}}, B::Matrix{Complex{T}}) where {T<:AbstractFloat} = Base.isapprox(A * B, -B * A)
 
 # if sites where they operate do not overlap, then they must commute
 @traits commutes(A::AbstractGate, B::AbstractGate) where {isempty(intersect(Set(lane(A)), Set(lane(B))))} = true
