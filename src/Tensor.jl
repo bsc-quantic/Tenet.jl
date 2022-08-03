@@ -29,6 +29,9 @@ outerinds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.
 reindex!(t::Tensor, mapping::Dict{Char,Char}) = error("not implemented yet")
 
 # tags
+tags(t::Tensor) = t.tags
+addtag!(t::Tensor, tag::String) = push!(t.tags, tag)
+rmtag!(t::Tensor, tag::String) = pop!(t.tags, tag)
 droptags!(t::Tensor) = empty!(t.tags)
 
 # conversion
