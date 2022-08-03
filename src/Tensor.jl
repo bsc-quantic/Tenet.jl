@@ -2,16 +2,10 @@ import Base: eltype, size, stride, strides, ndims, axes, length, keys, conj, con
 import Base: convert, show, kron
 using Lazy
 
-struct Tensor{T}
-    data::Array{T}
+struct Tensor{T,N}
+    data::AbstractArray{T,N}
     labels::Vector{Char}
     tags::Set{String}
-
-    # TODO do not use `rand` for `labels`
-    Tensor(data::Array{T}, labels=nothing, tags=Set{String}()) where {T} = new{T}(
-        data,
-        labels == nothing ? rand(Char, ndims(data)) : labels,
-        tags)
 end
 
 Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$(t.data), labels=$(t.labels), tags=$(t.tags))")
