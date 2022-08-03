@@ -8,6 +8,8 @@ struct Tensor{T,N}
     tags::Set{String}
 end
 
+Tensor(data; labels=rand(Char, N), tags=Set{String}()) where {T,N} = Tensor{T,N}(data, labels, tags)
+
 Base.show(io::IO, t::Tensor) = print(io, "Tensor{$(eltype(t))}(data=$(t.data), labels=$(t.labels), tags=$(t.tags))")
 
 @forward Tensor.data eltype, size, stride, strides, ndims, axes, length, keys, conj, conj!
