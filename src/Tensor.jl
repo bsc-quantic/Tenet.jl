@@ -36,5 +36,5 @@ convert(::Type{Array}, t::Tensor) = t.array
 promote_rule(::Type{Tensor}, ::Type{Array}) = Array
 
 # kronecker product
-kron(A::Array{T,N}, B::Array{T,M}) where {T,N,M} = reshape(kron(vec(A), vec(B))size(A)..., size(B)...)
-kron(A::Tensor{T}, B::Tensor{T}) where {T} = Tensor(reshape(kron(A.data, B.data), size(A)..., size(B)...), inds(A) ∪ inds(B), tags(A) ∪ tags(B))
+kron(A::Array{T,N}, B::Array{T,M}) where {T,N,M} = reshape(kron(vec(A), vec(B)), size(A)..., size(B)...)
+kron(A::Tensor{T}, B::Tensor{T}) where {T} = Tensor(kron(A.data, B.data), inds(A) ∪ inds(B), tags(A) ∪ tags(B))
