@@ -24,6 +24,6 @@ _commutes(A::I, B::T) where {T<:AbstractGate} = true
 _anticommutes(A::I, B::T) where {T<:AbstractGate} = false
 
 # rotations
-_commutes(A::X, B::Rx) = true if B.θ == π else false # TODO use Base.approx?
-_commutes(A::Y, B::Ry) = true if B.θ == π else false # TODO use Base.approx?
-_commutes(A::Z, B::Rz) = true if B.θ == π else false # TODO use Base.approx?
+_commutes(A::X, B::Rx; atol::Real = 0.0) = isapprox(B.θ, π; atol=atol)
+_commutes(A::Y, B::Ry; atol::Real = 0.0) = isapprox(B.θ, π; atol=atol)
+_commutes(A::Z, B::Rz; atol::Real = 0.0) = isapprox(B.θ, π; atol=atol)
