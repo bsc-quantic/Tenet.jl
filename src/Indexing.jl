@@ -1,6 +1,6 @@
 """
 	ind"..."
-	@ind_str "..." "$delim"
+	@ind_str "..." [delim]
 
 Index specification using string syntax.
 """
