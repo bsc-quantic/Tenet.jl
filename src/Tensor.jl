@@ -20,8 +20,9 @@ permutedims(t::Tensor, perm::Vector{Char}) = begin
     permutedims(t, p)
 end
 
-innerinds(a::Tensor, b::Tensor) = a.labels ∩ b.labels
-outerinds(a::Tensor, b::Tensor) = setdiff(a.labels ∪ b.labels, a.labels ∩ b.labels)
+inds(x::Tensor) = x.labels
+innerinds(a::Tensor, b::Tensor) = inds(a) ∩ inds(b)
+outerinds(a::Tensor, b::Tensor) = setdiff(inds(a) ∪ inds(b), inds(a) ∩ inds(b))
 reindex!(t::Tensor, mapping::Dict{Char,Char}) = error("not implemented yet")
 
 # tags
@@ -36,4 +37,4 @@ promote_rule(::Type{Tensor}, ::Type{Array}) = Array
 
 # kronecker product
 kron(A::Array{T,N}, B::Array{T,M}) where {T,N,M} = reshape(kron(vec(A), vec(B))size(A)..., size(B)...)
-kron(A::Tensor{T}, B::Tensor{T}) where {T} = Tensor(reshape(kron(A.data, B.data), size(A)..., size(B)...), A.labels)
+kron(A::Tensor{T}, B::Tensor{T}) where {T} = Tensor(reshape(kron(A.data, B.data), size(A)..., size(B)...), inds(A) ∪ inds(B), tags(A) ∪ tags(B))
