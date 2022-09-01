@@ -6,6 +6,7 @@ version = "0.0.1"
 [deps]
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
 OptimizedEinsum = "c9cfed12-e746-47c4-860d-affc68c43467"
+Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 WhereTraits = "c9d4e05b-6318-49cb-9b56-e0e2b0ceadd8"
 
 [compat]
