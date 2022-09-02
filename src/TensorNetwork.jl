@@ -1,5 +1,6 @@
 using WhereTraits
 using OptimizedEinsum
+using NamedDims
 
 abstract type AbstractTensorNetwork end
 
@@ -7,7 +8,7 @@ ntensors(_::AbstractTensorNetwork) = error("No implementation found")
 ninds(_::AbstractTensorNetwork) = error("No implementation found")
 
 struct TensorNetwork <: AbstractTensorNetwork
-    tensor_map::Dict{Int,Tensor}
+    tensor_map::Dict{Int,NamedDimsArray}
     ind_map::Dict{Symbol,Vector{Int}}
 end
 
