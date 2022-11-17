@@ -1,6 +1,6 @@
 module Tenet
 
-include("Indexing.jl")
 include("TensorNetwork.jl")
+export TensorNetwork
 
-end # module
+end
