@@ -8,7 +8,7 @@ end
 
 Base.length(x::TensorNetwork) = length(x.tensors)
 
-Base.show(io::IO, x::TensorNetwork) = println(io, "$(length(x))-tensors $(typeof(x))")
+Base.summary(io::IO, x::TensorNetwork) = println(io, "$(length(x))-tensors TensorNetwork")
 
 inds(tn::TensorNetwork) = ∪(dimnames.(values(tn.tensors)))
 
