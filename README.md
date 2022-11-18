@@ -1,6 +1,6 @@
 # Tenet.jl
 
-A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired by [quimb](https://github.com/jcmgray/quimb). `Tenet` is thought to be executed both at local environments for fast iterations and on large supercomputers for big simulations.
+A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired by [quimb](https://github.com/jcmgray/quimb). `Tenet` can be executed both at local environments and on large supercomputers.
 
 ## Features
 
@@ -10,18 +10,8 @@ A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired b
   - [ ] Tree Tensor Networks (TTN)
   - [ ] Projected Entangled Pair States (PEPS)
   - [ ] Multiscale Entangled Renormalization Ansatz (MERA)
-- [ ] Representation of quantum circuits
-  - [ ] Load from/Dump to OpenQASM
-  - [ ] Gate decompositions
-  - [ ] ZX-calculus transformations
-- [ ] Abstract interface for contraction path solvers (like `opt_einsum`)
-  - [ ] Exhaustive
-  - [ ] Greedy
-  - [ ] Hypergraph partitioning (like `cotengra`)
 - [ ] Distributed execution
 - [ ] Advance tensor network techniques
-  - [ ] Tensor cuttings/slicing heuristics
-  - [ ] Forest ...
   - [ ] Tensor Renormalization Group (TRG)
   - [ ] Density Matrix Renormalization Group (DMRG)
 
