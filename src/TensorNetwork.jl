@@ -7,6 +7,8 @@ struct TensorNetwork
     ind_size::Dict{Symbol,Int}
 end
 
+arrays(tn::TensorNetwork) = parent.(tn.tensors)
+
 Base.length(x::TensorNetwork) = length(x.tensors)
 
 Base.summary(io::IO, x::TensorNetwork) = println(io, "$(length(x))-tensors TensorNetwork")
