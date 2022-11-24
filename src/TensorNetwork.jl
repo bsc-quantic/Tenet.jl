@@ -61,9 +61,10 @@ function Base.push!(tn::TensorNetwork, tensor::NamedDimsArray)
 end
 
 function optimize(opt, tn::TensorNetwork; output=openinds(tn))
-    inputs = dimnames.(tn.tensors)
+    inputs = collect.(dimnames.(tn.tensors))
+    output = collect(output)
     size = tn.ind_size
-    optimize(opt, tn.tensors, output, size)
+    optimize(opt, inputs, output, size)
 end
 
 optimize(tn::TensorNetwork; kwargs...) = optimize(Greedy, tn; kwargs...)
