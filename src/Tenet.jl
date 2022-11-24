@@ -1,6 +1,9 @@
 module Tenet
 
 include("TensorNetwork.jl")
-export TensorNetwork
+export TensorNetwork, tensors, arrays, inds, openinds, hyperinds
+
+include("Visualization.jl")
+export draw
 
 end
