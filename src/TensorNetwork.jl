@@ -2,6 +2,11 @@ import Base: length, show, summary
 import OptimizedEinsum: optimize, Greedy
 using NamedDims
 
+"""
+    TensorNetwork
+
+A generic Tensor Network structure.
+"""
 struct TensorNetwork
     tensors::Vector{NamedDimsArray}
     ind_size::Dict{Symbol,Int}
