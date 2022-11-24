@@ -35,6 +35,7 @@ struct TensorNetwork
 end
 
 tensors(tn::TensorNetwork) = tn.tensors
+tensors(tn::TensorNetwork, i) = tn.tensors[i]
 
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
