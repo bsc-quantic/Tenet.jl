@@ -12,18 +12,18 @@ struct TensorNetwork
     ind_size::Dict{Symbol,Int}
     ind_map::Dict{Symbol,Set{Int}}
 
-    function TensorNetwork(tensors::Vector{NamedDimsArray})
+    function TensorNetwork(tensors)
         ind_size = Dict{Symbol,Int}()
         ind_map = Dict{Symbol,Set{Int}}()
         for (i, tensor) in enumerate(tensors)
             for ind in dimnames(tensor)
-                if ind in ind_map
+                if ind in keys(ind_map)
                     if ind_size[ind] != size(tensor, ind)
                         throw(ArgumentError("size of index $ind in tensor #$i ($(size(tensor,ind))) does not match previous assigment ($(ind_size[ind]))"))
                     else
                         ind_size[ind]
                     end
-                    ind_map[ind] ∪= [i]
+                    ind_map[ind] = ind_map[ind] ∪ [i]
                 else
                     ind_map[ind] = Set([i])
                     ind_size[ind] = size(tensor, ind)
