@@ -42,7 +42,7 @@ openinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(
 hyperinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tn.tensors)) > 2, inds(tn))
 
 function Base.push!(tn::TensorNetwork, tensor::NamedDimsArray)
-    i = maximum(Iterators.flatten(collect.(values(tn.ind_size)))) + 1
+    i = maximum(Iterators.flatten(collect.(values(tn.ind_map))), init=0) + 1
 
     for ind in dimnames(tensor)
         if ind in keys(tn.ind_map)
