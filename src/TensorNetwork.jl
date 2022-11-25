@@ -33,6 +33,7 @@ arrays(tn::TensorNetwork) = parent.(tensors(tn))
 Base.length(x::TensorNetwork) = length(x.tensors)
 
 Base.summary(io::IO, x::TensorNetwork) = println(io, "$(length(x))-tensors TensorNetwork")
+Base.show(io::IO, tn::TensorNetwork) = println(io, "TensorNetwork(#tensors=$(length(tn)), #inds=$(length(keys(tn.ind_size))))")
 
 inds(tn::TensorNetwork) = keys(tn.ind_size)
 
