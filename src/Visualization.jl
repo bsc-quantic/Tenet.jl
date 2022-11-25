@@ -1,6 +1,7 @@
 using Graphs
 using GraphMakie
 using Combinatorics
+using Makie
 
 function draw(tn::TensorNetwork; kwargs...)
     graph = SimpleGraph([Edge(a, b) for ind in inds(tn) for (a, b) in combinations(collect(tn.ind_map[ind]), 2)])
@@ -12,3 +13,5 @@ function draw(tn::TensorNetwork; kwargs...)
 
     graphplot(graph; kwargs...)
 end
+
+Makie.convert_arguments(P::Type{<:GraphPlot}, tn::TensorNetwork) = Makie.convert_arguments(P, SimpleGraph([Edge(a, b) for ind in inds(tn) for (a, b) in combinations(collect(tn.ind_map[ind]), 2)]))
