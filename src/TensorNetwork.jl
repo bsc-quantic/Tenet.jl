@@ -61,6 +61,19 @@ function Base.push!(tn::TensorNetwork, tensor::NamedDimsArray)
     push!(tn.tensors, tensor)
 end
 
+function Base.deleteat!(tn::TensorNetwork, i::Integer)
+    inds = dimnames(popat!(tn.tensors, i::Integer))
+
+    for ind in inds
+        delete!(tn.ind_map[ind], i)
+        if isempty(tn.ind_map[ind])
+            delete!(tn.ind_size, ind)
+        end
+    end
+
+    return tn
+end
+
 function optimize(opt, tn::TensorNetwork; output=openinds(tn))
     inputs = collect.(dimnames.(tn.tensors))
     output = collect(output)
