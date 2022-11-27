@@ -1,6 +1,8 @@
 import Base: length, show, summary
+import OptimizedEinsum
 import OptimizedEinsum: optimize, Greedy
 using NamedDims
+import Random: rand
 
 """
     TensorNetwork
@@ -82,3 +84,9 @@ function optimize(opt, tn::TensorNetwork; output=openinds(tn))
 end
 
 optimize(tn::TensorNetwork; kwargs...) = optimize(Greedy, tn; kwargs...)
+
+function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
+    output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
+    tensors = [NamedDimsArray{tuple(input...)}(rand([size_dict[ind] for ind in input]...)) for input in inputs]
+    TensorNetwork(tensors)
+end
