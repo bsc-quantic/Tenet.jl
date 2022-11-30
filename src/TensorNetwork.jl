@@ -60,16 +60,21 @@ function Base.push!(tn::TensorNetwork, tensor::NamedDimsArray)
     push!(tn.tensors, tensor)
 end
 
-function Base.deleteat!(tn::TensorNetwork, i::Integer)
-    inds = dimnames(popat!(tn.tensors, i))
+function Base.popat!(tn::TensorNetwork, i::Integer)
+    tensor = popat!(tn.tensors, i)
 
-    for ind in inds
+    for ind in dimnames(tensor)
         delete!(tn.ind_map[ind], i)
         if isempty(tn.ind_map[ind])
-            delete!(tn.ind_size, ind)
+            delete!(tn.ind_size, size)
         end
     end
 
+    return tensor
+end
+
+function Base.deleteat!(tn::TensorNetwork, i::Integer)
+    _ = popat!(tn, i)
     return tn
 end
 
