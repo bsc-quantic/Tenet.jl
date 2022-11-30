@@ -61,7 +61,7 @@ function Base.push!(tn::TensorNetwork, tensor::NamedDimsArray)
 end
 
 function Base.deleteat!(tn::TensorNetwork, i::Integer)
-    inds = dimnames(popat!(tn.tensors, i::Integer))
+    inds = dimnames(popat!(tn.tensors, i))
 
     for ind in inds
         delete!(tn.ind_map[ind], i)
