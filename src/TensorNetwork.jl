@@ -21,7 +21,7 @@ struct TensorNetwork
     function TensorNetwork(tensors)
         ind_size = Dict{Symbol,Int}()
         ind_map = Dict{Symbol,Set{Int}}()
-        tn = new(Vector{NamedDimsArray}(), ind_size, ind_map)
+        tn = new(NamedDimsArray[], ind_size, ind_map)
 
         for tensor in tensors
             push!(tn, tensor)
