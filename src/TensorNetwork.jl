@@ -14,6 +14,10 @@ struct TensorNetwork
     ind_size::Dict{Symbol,Int}
     ind_map::Dict{Symbol,Set{Int}}
 
+    function TensorNetwork()
+        new([], Dict(), Dict())
+    end
+
     function TensorNetwork(tensors)
         ind_size = Dict{Symbol,Int}()
         ind_map = Dict{Symbol,Set{Int}}()
