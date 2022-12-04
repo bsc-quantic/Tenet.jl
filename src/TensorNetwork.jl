@@ -37,8 +37,8 @@ tensors(tn::TensorNetwork, i) = tn.tensors[i]
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 Base.length(x::TensorNetwork) = length(x.tensors)
-Base.summary(io::IO, x::TensorNetwork) = println(io, "$(length(x))-tensors TensorNetwork")
-Base.show(io::IO, tn::TensorNetwork) = println(io, "TensorNetwork(#tensors=$(length(tn)), #inds=$(length(keys(tn.ind_size))))")
+Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors TensorNetwork")
+Base.show(io::IO, tn::TensorNetwork) = print(io, "TensorNetwork(#tensors=$(length(tn)), #inds=$(length(keys(tn.ind_size))))")
 
 inds(tn::TensorNetwork) = keys(tn.ind_size)
 openinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tn.tensors)) == 1, inds(tn))
