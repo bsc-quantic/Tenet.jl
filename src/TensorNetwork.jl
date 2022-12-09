@@ -16,8 +16,7 @@ arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
 
-openinds(tn::GenericTensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tensors(tn))) == 1, inds(tn))
-hyperinds(tn::GenericTensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tensors(tn))) > 2, inds(tn))
+openinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tensors(tn))) == 1, inds(tn))
 
 function optimize(opt, tn::TensorNetwork; output = openinds(tn))
     inputs = collect.(dimnames.(tensors(tn)))

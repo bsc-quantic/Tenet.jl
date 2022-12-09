@@ -33,6 +33,8 @@ tensors(tn::GenericTensorNetwork, i) = tn.tensors[i]
 
 inds(tn::GenericTensorNetwork) = keys(tn.ind_size)
 
+hyperinds(tn::GenericTensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tensors(tn))) > 2, inds(tn))
+
 function Base.push!(tn::GenericTensorNetwork, tensor::NamedDimsArray)
     i = maximum(Iterators.flatten(collect.(values(tn.ind_map))), init = 0) + 1
 
