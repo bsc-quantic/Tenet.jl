@@ -2,8 +2,8 @@ using Quac
 using OptimizedEinsum: get_symbol
 using NamedDims
 
-function TensorNetwork(circuit::Circuit)
-    tn = TensorNetwork()
+function GenericTensorNetwork(circuit::Circuit)
+    tn = GenericTensorNetwork()
     n = lanes(circuit)
 
     wire = [get_symbol(i) for i in 1:n]
