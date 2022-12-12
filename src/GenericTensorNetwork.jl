@@ -61,6 +61,9 @@ function Base.push!(tn::GenericTensorNetwork, tensor::NamedDimsArray)
     return tn
 end
 
+# TODO maybe `append!` instead of `push!`?
+Base.push!(A::GenericTensorNetwork, B::GenericTensorNetwork) = (foreach(Fix1(push!, A), B.tensors); A)
+
 function Base.popat!(tn::GenericTensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
 
