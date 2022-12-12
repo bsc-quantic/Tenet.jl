@@ -57,6 +57,8 @@ function Base.push!(tn::GenericTensorNetwork, tensor::NamedDimsArray)
     end
 
     push!(tn.tensors, tensor)
+
+    return tn
 end
 
 function Base.popat!(tn::GenericTensorNetwork, i::Integer)
