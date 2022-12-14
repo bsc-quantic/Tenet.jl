@@ -1,0 +1,5 @@
+remove_extra_newlines = true
+always_for_in = true
+format_docstrings = true
+trailing_comma = true
+margin = 120
