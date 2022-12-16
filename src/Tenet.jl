@@ -11,4 +11,7 @@ include("Quantum.jl")
 include("Visualization.jl")
 export draw
 
+# reexports from OptimizedEinsum
+export contractpath
+
 end
