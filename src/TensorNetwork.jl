@@ -1,5 +1,5 @@
 import OptimizedEinsum
-import OptimizedEinsum: optimize, Greedy
+import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using NamedDims: dimnames
 
 abstract type TensorNetwork end
@@ -18,11 +18,10 @@ function inds end
 
 openinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ dimnames, values(tensors(tn))) == 1, inds(tn))
 
-function optimize(opt, tn::TensorNetwork; output = openinds(tn))
+function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
     inputs = collect.(dimnames.(tensors(tn)))
     output = collect(output)
     size = tn.ind_size
-    optimize(opt, inputs, output, size)
-end
 
-optimize(tn::TensorNetwork; kwargs...) = optimize(Greedy, tn; kwargs...)
+    contractpath(solver, inputs, output, size)
+end

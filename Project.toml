@@ -15,4 +15,5 @@ Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
+OptimizedEinsum = "0.1.0"
 julia = "1.6"
