@@ -1,6 +1,7 @@
 import OptimizedEinsum
 import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using NamedDims: dimnames
+using OMEinsum
 
 abstract type TensorNetwork end
 
@@ -24,4 +25,26 @@ function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn),
     size = tn.ind_size
 
     contractpath(solver, inputs, output, size)
+end
+
+function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
+    path = OptimizedEinsum.contractpath(tn; output = output, kwargs...)
+
+    # SSA-to-tensor mapping
+    mapping = Dict{Int,NamedDimsArray}(i => t for (i, t) in enumerate(tensors(tn)))
+
+    for (c, (a, b)) in zip(Iterators.countfrom(length(path.inputs) + 1), path)
+        A = pop!(mapping, a)
+        B = pop!(mapping, b)
+
+        indsA = dimnames(A)
+        indsB = dimnames(B)
+        indsC = symdiff(indsA, indsB) ∪ ∩(output, indsA, indsB)
+
+        C = EinCode((map(String, indsA), map(String, indsB)), tuple(map(String, indsC)...))(A, B)
+
+        mapping[c] = NamedDimsArray{tuple(indsC...)}(C)
+    end
+
+    only(values(mapping))
 end
