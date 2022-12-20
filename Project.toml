@@ -14,6 +14,7 @@ OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
 OptimizedEinsum = "c9cfed12-e746-47c4-860d-affc68c43467"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
 Combinatorics = "1.0"
@@ -26,3 +27,4 @@ OMEinsum = "0.7"
 OptimizedEinsum = "0.1.0"
 Quac = "0.1"
 julia = "1.6"
+Requires = "1.3"
