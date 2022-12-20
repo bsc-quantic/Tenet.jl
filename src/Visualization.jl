@@ -1,9 +1,7 @@
 using Graphs: SimpleGraph, Edge
 using GraphMakie: graphplot, GraphPlot
 using Combinatorics: combinations
-
 import Makie
-export draw
 
 Makie.plottype(::TensorNetwork) = GraphPlot
 
