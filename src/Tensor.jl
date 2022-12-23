@@ -1,6 +1,11 @@
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
     labels::NTuple{N,Symbol}
+
+    function Tensor(data::A, labels) where {T,N,A<:AbstractArray{T,N}}
+        @assert ndims(data) == length(labels)
+        new{T,N,A}(data, labels)
+    end
 end
 
 labels(t::Tensor) = t.labels
