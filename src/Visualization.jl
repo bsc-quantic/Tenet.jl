@@ -1,5 +1,5 @@
-using Graphs: SimpleGraph, Edge
-using GraphMakie: graphplot, GraphPlot
+using Graphs: SimpleGraph, Edge, nv
+using GraphMakie: graphplot!, GraphPlot
 using Combinatorics: combinations
 import Makie
 
