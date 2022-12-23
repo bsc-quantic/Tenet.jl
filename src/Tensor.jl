@@ -9,7 +9,7 @@ Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
 dim(t::Tensor, i::Number) = i
-dim(t::Tensor, i::Symbol) = findall(==(i), parent(t)) |> first
+dim(t::Tensor, i::Symbol) = findall(==(i), labels(t)) |> first
 
 # Indexing interface
 Base.IndexStyle(T::Type{<:Tensor}) = IndexStyle(parenttype(T))
