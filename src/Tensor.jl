@@ -31,8 +31,6 @@ Base.axes(t::Tensor, d) = axes(parent(t), dim(t, d))
 
 # StridedArrays interface
 Base.strides(t::Tensor) = strides(parent(t))
-
-Base.stride(t::Tensor, i) = stride(parent(t), i)
 Base.stride(t::Tensor, i::Symbol) = stride(parent(t), dim(t, i))
 
 Base.elsize(T::Type{<:Tensor}) = elsize(parenttype(T))
