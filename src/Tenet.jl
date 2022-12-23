@@ -2,6 +2,9 @@ module Tenet
 
 using Requires: @require
 
+include("Einsum.jl")
+include("Tensor.jl")
+
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, inds, openinds
 
