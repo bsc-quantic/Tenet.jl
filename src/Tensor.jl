@@ -1,3 +1,5 @@
+using Base.Broadcast: Broadcasted, ArrayStyle
+
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
     labels::NTuple{N,Symbol}
@@ -48,3 +50,13 @@ Base.stride(t::Tensor, i::Symbol) = stride(parent(t), dim(t, i))
 Base.unsafe_convert(::Type{Ptr{T}}, t::Tensor{T}) = Base.unsafe_convert(Ptr{T}, parent(t))
 
 Base.elsize(T::Type{<:Tensor}) = elsize(parenttype(T))
+
+# Broadcasting
+Base.BroadcastStyle(::Type{T}) where {T<:Tensor} = ArrayStyle{T}()
+
+function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}) where {T,N,A,ElType}
+    tensor = bc.args[1]
+    data = similar(parent(tensor), ElType)
+
+    Tensor(data, labels(tensor))
+end
