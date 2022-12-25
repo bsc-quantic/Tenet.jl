@@ -4,6 +4,7 @@ using Requires: @require
 
 include("Einsum.jl")
 include("Tensor.jl")
+export Tensor, labels
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, inds, openinds
