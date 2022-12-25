@@ -60,3 +60,5 @@ function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}
 
     Tensor(data, labels(tensor))
 end
+
+Base.selectdim(t::Tensor, d, i) = selectdim(parent(t), dim(t, d), i)
