@@ -47,7 +47,7 @@ Base.axes(t::Tensor, d) = axes(parent(t), dim(t, d))
 Base.strides(t::Tensor) = strides(parent(t))
 Base.stride(t::Tensor, i::Symbol) = stride(parent(t), dim(t, i))
 
-Base.unsafe_convert(::Type{Ptr{T}}, t::Tensor{T}) = Base.unsafe_convert(Ptr{T}, parent(t))
+Base.unsafe_convert(::Type{Ptr{T}}, t::Tensor{T}) where {T} = Base.unsafe_convert(Ptr{T}, parent(t))
 
 Base.elsize(T::Type{<:Tensor}) = elsize(parenttype(T))
 
