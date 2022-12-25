@@ -16,6 +16,13 @@ parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 dim(t::Tensor, i::Number) = i
 dim(t::Tensor, i::Symbol) = findall(==(i), labels(t)) |> first
 
+# Iteration interface
+Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))
+Base.IteratorEltype(T::Type{Tensor}) = Iterators.IteratorEltype(parenttype(T))
+
+Base.isdone(t::Tensor) = (Base.isdone ∘ parent)(t)
+Base.isdone(t::Tensor, state) = (Base.isdone ∘ parent)(t)
+
 # Indexing interface
 Base.IndexStyle(T::Type{<:Tensor}) = IndexStyle(parenttype(T))
 
