@@ -1,6 +1,5 @@
 using Quac
 using OptimizedEinsum: get_symbol
-using NamedDims
 
 function GenericTensorNetwork(circuit::Circuit)
     tn = GenericTensorNetwork()
@@ -26,7 +25,7 @@ function GenericTensorNetwork(circuit::Circuit)
             (from, to)
         end |> x -> zip(x...) |> Iterators.flatten |> collect
 
-        tensor = NamedDimsArray{tuple(inds...)}(array)
+        tensor = Tensor(array, tuple(inds...))
         push!(tn, tensor)
     end
 
