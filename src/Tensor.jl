@@ -37,6 +37,7 @@ Base.lastindex(t::Tensor) = lastindex(parent(t))
 
 # AbstractArray interface
 Base.size(t::Tensor) = size(parent(t))
+Base.size(t::Tensor, i) = size(parent(t), dim(t, i))
 
 Base.length(t::Tensor) = length(parent(t))
 
