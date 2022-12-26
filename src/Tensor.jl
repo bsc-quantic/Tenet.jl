@@ -28,9 +28,17 @@ Base.isdone(t::Tensor, state) = (Base.isdone ∘ parent)(t)
 # Indexing interface
 Base.IndexStyle(T::Type{<:Tensor}) = IndexStyle(parenttype(T))
 
-Base.getindex(t::Tensor, i) = getindex(parent(t), i)
+@propagate_inbounds Base.getindex(t::Tensor, i...) = getindex(parent(t), i...)
+@propagate_inbounds function Base.getindex(t::Tensor; inds...)
+    length(inds) == 0 && return (getindex ∘ parent)(t)
+    return getindex(t, [get(inds, i, Colon()) for i in labels(t)]...)
+end
 
-Base.setindex!(t::Tensor, v, i) = setindex!(parent(t), v, i)
+@propagate_inbounds Base.setindex!(t::Tensor, v, i...) = setindex!(parent(t), v, i...)
+@propagate_inbounds function Base.setindex!(t::Tensor, v; inds...)
+    length(inds) == 0 && return setindex!(parent(t), v)
+    return setindex!(t, v, [get(inds, i, Colon()) for i in labels(t)]...)
+end
 
 Base.firstindex(t::Tensor) = firstindex(parent(t))
 Base.lastindex(t::Tensor) = lastindex(parent(t))
