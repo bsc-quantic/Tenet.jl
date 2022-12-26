@@ -1,3 +1,4 @@
+using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
