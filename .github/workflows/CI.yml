@@ -48,6 +48,11 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+        shell: julia {0}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
