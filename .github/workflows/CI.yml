@@ -33,9 +33,10 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v1
-      - name: Register BSC-Quantic registry
+      - name: Add Julia registries
         run: |
           using Pkg
+          pkg"registry add General"
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
         shell: julia {0}
       - uses: julia-actions/julia-buildpkg@v1
