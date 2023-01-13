@@ -4,10 +4,11 @@ using Base.Broadcast: Broadcasted, ArrayStyle
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
     labels::NTuple{N,Symbol}
+    meta::Dict{Symbol,Any}
 
-    function Tensor(data::A, labels) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor(data::A, labels; meta...) where {T,N,A<:AbstractArray{T,N}}
         @assert ndims(data) == length(labels)
-        new{T,N,A}(data, labels)
+        new{T,N,A}(data, labels, Dict{Symbol,Any}(meta...))
     end
 end
 
