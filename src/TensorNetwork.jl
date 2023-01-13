@@ -5,8 +5,7 @@ using OMEinsum
 abstract type TensorNetwork end
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) =
-    print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(keys(tn.ind_size))))")
+Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
 
 Base.length(x::TensorNetwork) = length(tensors(x))
 
