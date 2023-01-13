@@ -8,7 +8,7 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
 
     function Tensor(data::A, labels; meta...) where {T,N,A<:AbstractArray{T,N}}
         @assert ndims(data) == length(labels)
-        new{T,N,A}(data, labels, Dict{Symbol,Any}(meta...))
+        new{T,N,A}(data, Tuple(labels), Dict{Symbol,Any}(meta...))
     end
 end
 
