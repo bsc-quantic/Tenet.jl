@@ -8,7 +8,11 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
 
     function Tensor(data::A, labels; meta...) where {T,N,A<:AbstractArray{T,N}}
         @assert ndims(data) == length(labels)
-        new{T,N,A}(data, Tuple(labels), Dict{Symbol,Any}(meta...))
+
+        meta = Dict{Symbol,Any}(meta...)
+        !haskey(meta, :tags) && (meta[:tags] = Set{String}())
+
+        new{T,N,A}(data, Tuple(labels), meta)
     end
 end
 
@@ -76,3 +80,9 @@ Base.selectdim(t::Tensor, d, i) = selectdim(parent(t), dim(t, d), i)
 
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t)), labels(t)[perm]; t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
+
+# Metadata
+tags(t::Tensor) = t.meta[:tags]
+tag!(t::Tensor, tag::String) = push!(tags(t), tag)
+hastag(t::Tensor, tag::String) = haskey(tags(t), tag)
+untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
