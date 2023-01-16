@@ -73,3 +73,6 @@ function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}
 end
 
 Base.selectdim(t::Tensor, d, i) = selectdim(parent(t), dim(t, d), i)
+
+Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t)), labels(t)[perm]; t.meta...)
+Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
