@@ -86,5 +86,5 @@ Base.view(t::Tensor; inds...) = view(t, [ind ∈ keys(inds) ? inds[ind] : Colon(
 # Metadata
 tags(t::Tensor) = t.meta[:tags]
 tag!(t::Tensor, tag::String) = push!(tags(t), tag)
-hastag(t::Tensor, tag::String) = haskey(tags(t), tag)
+hastag(t::Tensor, tag::String) = tag ∈ tags(t)
 untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
