@@ -81,6 +81,8 @@ Base.selectdim(t::Tensor, d, i) = selectdim(parent(t), dim(t, d), i)
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t)), labels(t)[perm]; t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
+Base.view(t::Tensor; inds...) = view(t, [ind ∈ keys(inds) ? inds[ind] : Colon() for ind in labels(t)]...)
+
 # Metadata
 tags(t::Tensor) = t.meta[:tags]
 tag!(t::Tensor, tag::String) = push!(tags(t), tag)
