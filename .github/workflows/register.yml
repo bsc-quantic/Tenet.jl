@@ -1,0 +1,18 @@
+name: Register Package
+on:
+  workflow_dispatch:
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.6'
+      - run: |
+          julia -e '
+            using Pkg
+            pkg"add LocalRegistry"
+            using LocalRegistry
+            register(; registry="https://github.com/bsc-quantic/Registry.git", ignore_reregistration=false)
+          '
