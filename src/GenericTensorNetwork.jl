@@ -27,6 +27,11 @@ end
 
 tensors(tn::GenericTensorNetwork) = tn.tensors
 tensors(tn::GenericTensorNetwork, i::Integer) = tn.tensors[i]
+tensors(tn::GenericTensorNetwork, i::Symbol)::Vector{Tensor} = links(tn.inds[i])
+tensors(tn::GenericTensorNetwork, i::Index)::Vector{Tensor} = tensors(tn, nameof(i))
+
+const Sequence{T} = Union{AbstractArray{T,1},NTuple{N,T} where {N}}
+tensors(tn::GenericTensorNetwork, inds::Sequence{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
 
 inds(tn::GenericTensorNetwork) = values(tn.inds)
 
