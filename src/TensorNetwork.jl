@@ -15,14 +15,19 @@ arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
 
-openinds(tn::TensorNetwork) = filter(ind -> count(∋(ind) ∘ labels, values(tensors(tn))) == 1, inds(tn))
+openinds(tn::TensorNetwork) = filter(isopenind, inds(tn))
+hyperinds(tn::TensorNetwork) = filter(ishyperind, inds(tn))
+
+labels(tn::TensorNetwork) = nameof.(inds(tn))
+
+Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
 
 function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
     inputs = collect.(labels.(tensors(tn)))
     output = collect(output)
-    size = tn.ind_size
+    size_dict = size(tn)
 
-    contractpath(solver, inputs, output, size)
+    contractpath(solver, inputs, output, size_dict)
 end
 
 function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)

@@ -7,55 +7,40 @@ A Tensor Network with arbitrary structure.
 """
 struct GenericTensorNetwork <: TensorNetwork
     tensors::Vector{Tensor}
-    ind_size::Dict{Symbol,Int}
-    ind_map::Dict{Symbol,Set{Int}}
+    inds::Dict{Symbol,Index}
 
     function GenericTensorNetwork()
-        new([], Dict(), Dict())
-    end
-
-    function GenericTensorNetwork(tensors)
-        ind_size = Dict{Symbol,Int}()
-        ind_map = Dict{Symbol,Set{Int}}()
-        tn = new(Tensor[], ind_size, ind_map)
-
-        for tensor in tensors
-            push!(tn, tensor)
-        end
-
-        return tn
+        new(Tensor[], Dict{Symbol,Index}())
     end
 end
 
+function GenericTensorNetwork(tensors)
+    # NOTE calling `copy` on each tensor, so tensors are unlinked
+    tensors = copy.(tensors)
+    indices = Dict{Symbol,Index}()
+    tn = GenericTensorNetwork()
+
+    foreach(Base.Fix1(push!, tn), tensors)
+
+    return tn
+end
+
 tensors(tn::GenericTensorNetwork) = tn.tensors
-tensors(tn::GenericTensorNetwork, i) = tn.tensors[i]
+tensors(tn::GenericTensorNetwork, i::Integer) = tn.tensors[i]
 
-inds(tn::GenericTensorNetwork) = keys(tn.ind_size)
-
-hyperinds(tn::GenericTensorNetwork) = filter(ind -> count(∋(ind) ∘ labels, values(tensors(tn))) > 2, inds(tn))
+inds(tn::GenericTensorNetwork) = values(tn.inds)
 
 function Base.push!(tn::GenericTensorNetwork, tensor::Tensor)
-    i = maximum(Iterators.flatten(collect.(values(tn.ind_map))), init = 0) + 1
+    push!(tensors(tn), tensor)
 
-    for ind in labels(tensor)
-        if ind in keys(tn.ind_map)
-            if tn.ind_size[ind] != size(tensor, ind)
-                throw(
-                    ArgumentError(
-                        "size of index $ind in tensor #$i ($(size(tensor,ind))) does not match previous assigment ($(tn.ind_size[ind]))",
-                    ),
-                )
-            else
-                tn.ind_size[ind]
-            end
-            tn.ind_map[ind] = tn.ind_map[ind] ∪ [i]
-        else
-            tn.ind_map[ind] = Set([i])
-            tn.ind_size[ind] = size(tensor, ind)
+    # TODO link indices
+    for i in inds(tensor)
+        if i ∉ keys(tn.inds)
+            tn.inds[i] = Index(i, size(tensor, i))
         end
-    end
 
-    push!(tn.tensors, tensor)
+        link!(tn.inds[i], tensor)
+    end
 
     return tn
 end
@@ -64,13 +49,12 @@ end
 Base.push!(A::GenericTensorNetwork, B::GenericTensorNetwork) = (foreach(Fix1(push!, A), B.tensors); A)
 
 function Base.popat!(tn::GenericTensorNetwork, i::Integer)
-    tensor = popat!(tn.tensors, i)
+    tensor = popat!(tensors(tn), i)
 
-    for ind in labels(tensor)
-        delete!(tn.ind_map[ind], i)
-        if isempty(tn.ind_map[ind])
-            delete!(tn.ind_size, size)
-        end
+    # unlink indices
+    for i in inds(tensor)
+        index = tn.inds[i]
+        unlink!(index, tensor)
     end
 
     return tensor

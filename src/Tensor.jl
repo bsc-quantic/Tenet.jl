@@ -3,26 +3,32 @@ using Base.Broadcast: Broadcasted, ArrayStyle
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    labels::NTuple{N,Symbol}
+    inds::NTuple{N,Symbol}
     meta::Dict{Symbol,Any}
 
-    function Tensor(data::A, labels; meta...) where {T,N,A<:AbstractArray{T,N}}
-        @assert ndims(data) == length(labels)
-
+    function Tensor(data::A, indices::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
         meta = Dict{Symbol,Any}(meta...)
         !haskey(meta, :tags) && (meta[:tags] = Set{String}())
 
-        new{T,N,A}(data, Tuple(labels), meta)
+        new{T,N,A}(data, indices, meta)
     end
 end
 
-labels(t::Tensor) = t.labels
+Tensor(data, inds::Vector{Symbol}; meta...) = Tensor(data, tuple(inds...); meta...)
+
+Base.copy(t::Tensor) = Tensor(parent(t), inds(t); deepcopy(t.meta)...)
+
+inds(t::Tensor) = t.inds
+labels(t::Tensor) = inds(t)
+
+checkinds(t::Tensor) = all((∋(t) ∘ links), inds(t))
 
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
 dim(t::Tensor, i::Number) = i
 dim(t::Tensor, i::Symbol) = findall(==(i), labels(t)) |> first
+dim(t::Tensor, i::Index) = dim(t, nameof(i))
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))

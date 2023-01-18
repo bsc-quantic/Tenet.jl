@@ -7,7 +7,9 @@ Makie.plottype(::TensorNetwork) = GraphPlot
 
 function Makie.plot!(P::GraphPlot{Tuple{GenericTensorNetwork}}; kwargs...)
     tn = P[1][]
-    graph = SimpleGraph([Edge(a, b) for ind in inds(tn) for (a, b) in combinations(collect(tn.ind_map[ind]), 2)])
+
+    pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
+    graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     kwargs = Dict{Symbol,Any}(kwargs)
     get!(kwargs, :node_size) do
