@@ -89,3 +89,14 @@ function rand(::Type{GenericTensorNetwork}, n::Integer, reg::Integer; kwargs...)
     tensors = [Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
     GenericTensorNetwork(tensors)
 end
+
+# TODO sequence of indices?
+# TODO what if parallel neighbour indices?
+function contract!(tn::GenericTensorNetwork, i::Symbol)
+    ts = pop!(tn, i) # map(Base.Fix1(pop!, tn), links(index))
+
+    tensor = reduce((acc, t) -> contract(acc, t, i), ts)
+
+    # NOTE index is automatically cleaned
+    push!(tn, tensor)
+end
