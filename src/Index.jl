@@ -49,7 +49,7 @@ unlink!(i::Index, t) = filter!(x -> x != t, links(i))
 
 checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 
-isopenindex(i::Index) = length(links(i)) == 1
-ishyperindex(i::Index) = length(links(i)) > 2
+isopenind(i::Index) = length(links(i)) == 1
+ishyperind(i::Index) = length(links(i)) > 2
 
 Base.:(==)(i::Index, j::Index) = (site(i) == site(j) !== nothing) || a.name == b.name

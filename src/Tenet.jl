@@ -8,10 +8,10 @@ export tags, tag!, untag!, hastag
 
 include("Einsum.jl")
 include("Tensor.jl")
-export Tensor, labels
+export Tensor, labels, dim
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, inds, openinds
+export TensorNetwork, tensors, arrays, inds, openinds, hyperinds
 
 include("GenericTensorNetwork.jl")
 export GenericTensorNetwork
