@@ -58,6 +58,9 @@ function Base.popat!(tn::GenericTensorNetwork, i::Integer)
     for i in inds(tensor)
         index = tn.inds[i]
         unlink!(index, tensor)
+
+        # remove index when no tensors plugged in
+        length(links(index)) == 0 && delete!(tn.inds, i)
     end
 
     return tensor
