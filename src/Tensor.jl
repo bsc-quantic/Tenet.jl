@@ -105,5 +105,6 @@ function contract(a::Tensor, b::Tensor, i)
 
     data = EinCode((String.(ia), String.(ib)), String.(ic))(a, b)
 
+    # TODO merge metadata?
     return Tensor(data, ic)
 end
