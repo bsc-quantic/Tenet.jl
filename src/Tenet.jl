@@ -2,6 +2,8 @@ module Tenet
 
 using Requires: @require
 
+include("Helpers.jl")
+
 include("Index.jl")
 export Index, isphysical, isvirtual, site, ishyper, links
 export tags, tag!, untag!, hastag
