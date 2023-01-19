@@ -1,5 +1,6 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
+using OMEinsum
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
@@ -94,3 +95,15 @@ tags(t::Tensor) = t.meta[:tags]
 tag!(t::Tensor, tag::String) = push!(tags(t), tag)
 hastag(t::Tensor, tag::String) = tag ∈ tags(t)
 untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
+
+# Contraction
+# TODO arg to keep i
+function contract(a::Tensor, b::Tensor, i)
+    ia = labels(a)
+    ib = labels(b)
+    ic = tuple(setdiff(ia ∪ ib, i)...)
+
+    data = EinCode((String.(ia), String.(ib)), String.(ic))(a, b)
+
+    return Tensor(data, ic)
+end
