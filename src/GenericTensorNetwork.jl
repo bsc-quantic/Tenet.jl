@@ -66,6 +66,20 @@ function Base.popat!(tn::GenericTensorNetwork, i::Integer)
     return tensor
 end
 
+function Base.pop!(tn::GenericTensorNetwork, tensor::Tensor)
+    i = findfirst(t -> t === tensor, tn.tensors)
+    popat!(tn, i)
+
+    return tensor
+end
+
+function Base.pop!(tn::GenericTensorNetwork, labels::Sequence{Symbol})
+    tensors = ∩(links.(map(Base.Fix1(getindex, tn.inds), labels))...)::Vector{Tensor}
+    foreach(Base.Fix1(pop!, tn), tensors)
+
+    return tensors
+end
+
 function Base.deleteat!(tn::GenericTensorNetwork, i::Integer)
     _ = popat!(tn, i)
     return tn
