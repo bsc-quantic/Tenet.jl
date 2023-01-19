@@ -101,7 +101,8 @@ untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
 function contract(a::Tensor, b::Tensor, i)
     ia = labels(a)
     ib = labels(b)
-    ic = tuple(setdiff(ia ∪ ib, i)...)
+
+    ic = tuple(setdiff(ia ∪ ib, i isa Sequence ? i : [i])...)
 
     data = EinCode((String.(ia), String.(ib)), String.(ic))(a, b)
 
