@@ -37,7 +37,7 @@ inds(tn::GenericTensorNetwork) = values(tn.inds)
 function Base.push!(tn::GenericTensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
-    # TODO link indices
+    # TODO merge metadata?
     for i in inds(tensor)
         if i ∉ keys(tn.inds)
             tn.inds[i] = Index(i, size(tensor, i))
