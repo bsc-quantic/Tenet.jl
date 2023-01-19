@@ -73,6 +73,8 @@ function Base.pop!(tn::GenericTensorNetwork, tensor::Tensor)
     return tensor
 end
 
+Base.pop!(tn::GenericTensorNetwork, i::Symbol) = pop!(tn, (i,))
+
 function Base.pop!(tn::GenericTensorNetwork, labels::Sequence{Symbol})::Vector{Tensor}
     tensors = ∩(links.(map(Base.Fix1(getindex, tn.inds), labels))...)
     foreach(Base.Fix1(pop!, tn), tensors)
