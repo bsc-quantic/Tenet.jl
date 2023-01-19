@@ -80,10 +80,7 @@ function Base.pop!(tn::GenericTensorNetwork, labels::Sequence{Symbol})
     return tensors
 end
 
-function Base.deleteat!(tn::GenericTensorNetwork, i::Integer)
-    _ = popat!(tn, i)
-    return tn
-end
+Base.delete!(tn::GenericTensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 function rand(::Type{GenericTensorNetwork}, n::Integer, reg::Integer; kwargs...)
     output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
