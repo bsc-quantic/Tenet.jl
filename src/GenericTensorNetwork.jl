@@ -20,7 +20,9 @@ function GenericTensorNetwork(tensors)
     indices = Dict{Symbol,Index}()
     tn = GenericTensorNetwork()
 
-    foreach(Base.Fix1(push!, tn), tensors)
+    for tensor in tensors
+        push!(tn, tensor)
+    end
 
     return tn
 end
