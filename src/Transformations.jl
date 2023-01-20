@@ -4,7 +4,12 @@ abstract type Transformation end
 
 function transform! end
 
-function transform!(tn::TensorNetwork, transformations::Sequence{Transformation}) end
+function transform!(tn::TensorNetwork, transformations::Sequence{Transformation})
+    for transformation in transformations
+        transform!(tn, transformation)
+    end
+    return tn
+end
 
 function transform(tn::TensorNetwork, transformations::Sequence{Transformation})
     tn = copy(tn)
