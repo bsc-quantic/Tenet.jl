@@ -19,6 +19,9 @@ export contract, contract!
 include("GenericTensorNetwork.jl")
 export GenericTensorNetwork
 
+include("Transformations.jl")
+export transform, transform!
+
 include("Quantum.jl")
 
 function __init__()
