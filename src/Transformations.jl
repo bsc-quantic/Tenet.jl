@@ -45,3 +45,5 @@ function transform!(tn::TensorNetwork, ::Type{HyperindConverter})
         push!(tn, tensor)
     end
 end
+
+# TODO column reduction, diagonal reduction, rank simplification, split simplification
