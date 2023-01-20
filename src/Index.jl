@@ -41,14 +41,15 @@ hastag(i::Index, tag::String) = tag ∈ tags(i)
 untag!(i::Index, tag::String) = delete!(tags(i), tag)
 
 # TODO test these!
-links(i::Index) = i.links
+# NOTE return copy so on info is not lost while modification (e.g. HyperindsConverter transformation)
+links(i::Index) = i.links |> copy
 function link!(i::Index, t)
     size(i) != size(t, i) && throw(
         DimensionMismatch("size of index $i ($(size(i))) is not equal to size of index $i at tensor ($(size(t,i)))"),
     )
-    push!(links(i), t)
+    push!(i.links, t)
 end
-unlink!(i::Index, t) = filter!(x -> x != t, links(i))
+unlink!(i::Index, t) = filter!(x -> x != t, i.links)
 
 checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 
