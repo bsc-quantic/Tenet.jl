@@ -21,6 +21,7 @@ hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
 labels(tn::TensorNetwork) = nameof.(inds(tn))
 
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
+Base.size(tn::TensorNetwork, i::Symbol) = size(tn)[i]
 
 function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
     inputs = collect.(labels.(tensors(tn)))

@@ -34,6 +34,8 @@ tensors(tn::GenericTensorNetwork, inds::Sequence{Union{Symbol,Index}}) = ∩([te
 
 inds(tn::GenericTensorNetwork) = values(tn.inds)
 
+Base.size(tn::GenericTensorNetwork, i::Symbol) = size(tn.inds[i])
+
 function Base.push!(tn::GenericTensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
