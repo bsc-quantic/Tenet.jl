@@ -29,7 +29,6 @@ parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
 dim(t::Tensor, i::Number) = i
 dim(t::Tensor, i::Symbol) = findall(==(i), labels(t)) |> first
-dim(t::Tensor, i::Index) = dim(t, nameof(i))
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))

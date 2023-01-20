@@ -1,13 +1,13 @@
 struct Index
     name::Symbol
     size::Int
-    links::Vector{Any}
+    links::Vector{Tensor}
     meta::Dict{Symbol,Any}
 
     function Index(name, size; meta...)
         size < 1 && throw(BoundsError("size must be >=1 ($size < 1)"))
 
-        links = Any[]
+        links = Tensor[]
 
         meta = Dict{Symbol,Any}(meta)
         !haskey(meta, :site) && (meta[:site] = nothing)
@@ -27,6 +27,9 @@ function checksize(i::Index)
 end
 
 Base.show(io::IO, i::Index) = show(io, i.name)
+
+# NOTE extends `dim` on `Tensor` after `Index` definition
+dim(t::Tensor, i::Index) = dim(t, nameof(i))
 
 site(i::Index) = i.meta[:site]
 isphysical(i::Index) = !isnothing(site(i))
