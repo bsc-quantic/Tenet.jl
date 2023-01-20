@@ -1,6 +1,7 @@
 # Tenet.jl
 
 [![CI](https://github.com/bsc-quantic/Tenet.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/bsc-quantic/Tenet.jl/actions/workflows/CI.yml)
+[![Registry](https://badgen.net/badge/registry/bsc-quantic/purple)](https://github.com/bsc-quantic/Registry)
 
 A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired by [quimb](https://github.com/jcmgray/quimb). `Tenet` can be executed both at local environments and on large supercomputers.
 
