@@ -5,7 +5,7 @@ import Makie
 
 Makie.plottype(::TensorNetwork) = GraphPlot
 
-function Makie.plot!(P::GraphPlot{Tuple{GenericTensorNetwork}}; kwargs...)
+function Makie.plot!(P::GraphPlot{Tuple{TensorNetwork}}; kwargs...)
     tn = P[1][]
 
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))

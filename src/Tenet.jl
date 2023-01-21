@@ -16,9 +16,6 @@ include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, inds, openinds, hyperinds
 export contract, contract!
 
-include("GenericTensorNetwork.jl")
-export GenericTensorNetwork
-
 include("Transformations.jl")
 export transform, transform!
 

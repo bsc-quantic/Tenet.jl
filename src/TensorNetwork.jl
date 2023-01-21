@@ -1,27 +1,112 @@
+import Random: rand
 import OptimizedEinsum
 import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using OMEinsum
 
-abstract type TensorNetwork end
+"""
+    TensorNetwork
+
+A Tensor Network with arbitrary structure.
+"""
+struct TensorNetwork
+    tensors::Vector{Tensor}
+    inds::Dict{Symbol,Index}
+
+    function TensorNetwork()
+        new(Tensor[], Dict{Symbol,Index}())
+    end
+end
+
+function TensorNetwork(tensors)
+    # NOTE calling `copy` on each tensor, so tensors are unlinked
+    tensors = copy.(tensors)
+    indices = Dict{Symbol,Index}()
+    tn = TensorNetwork()
+
+    for tensor in tensors
+        push!(tn, tensor)
+    end
+
+    return tn
+end
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
-
 Base.length(x::TensorNetwork) = length(tensors(x))
 
 function tensors end
-
+tensors(tn::TensorNetwork) = tn.tensors
+tensors(tn::TensorNetwork, i::Integer) = tn.tensors[i]
+tensors(tn::TensorNetwork, i::Symbol)::Vector{Tensor} = links(tn.inds[i])
+tensors(tn::TensorNetwork, i::Index)::Vector{Tensor} = tensors(tn, nameof(i))
+tensors(tn::TensorNetwork, inds::Sequence{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
+inds(tn::TensorNetwork) = values(tn.inds)
+labels(tn::TensorNetwork) = nameof.(inds(tn))
 
 openinds(tn::TensorNetwork) = Iterators.filter(isopenind, inds(tn)) |> collect
 hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
 
-labels(tn::TensorNetwork) = nameof.(inds(tn))
-
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
-Base.size(tn::TensorNetwork, i::Symbol) = size(tn)[i]
+Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])
+
+function Base.push!(tn::TensorNetwork, tensor::Tensor)
+    push!(tensors(tn), tensor)
+
+    # TODO merge metadata?
+    for i in inds(tensor)
+        if i ∉ keys(tn.inds)
+            tn.inds[i] = Index(i, size(tensor, i))
+        end
+
+        link!(tn.inds[i], tensor)
+    end
+
+    return tn
+end
+
+Base.append!(A::TensorNetwork, B::TensorNetwork) = (foreach(Fix1(push!, A), B.tensors); A)
+
+function Base.popat!(tn::TensorNetwork, i::Integer)
+    tensor = popat!(tensors(tn), i)
+
+    # unlink indices
+    for i in inds(tensor)
+        index = tn.inds[i]
+        unlink!(index, tensor)
+
+        # remove index when no tensors plugged in
+        length(links(index)) == 0 && delete!(tn.inds, i)
+    end
+
+    return tensor
+end
+
+function Base.pop!(tn::TensorNetwork, tensor::Tensor)
+    i = findfirst(t -> t === tensor, tn.tensors)
+    popat!(tn, i)
+
+    return tensor
+end
+
+Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
+
+function Base.pop!(tn::TensorNetwork, labels::Sequence{Symbol})::Vector{Tensor}
+    tensors = ∩(links.(map(Base.Fix1(getindex, tn.inds), labels))...)
+    foreach(Base.Fix1(pop!, tn), tensors)
+
+    return tensors
+end
+
+Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
+
+function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
+    output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
+    tensors = [Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
+    TensorNetwork(tensors)
+end
 
 function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
     inputs = collect.(labels.(tensors(tn)))
@@ -29,6 +114,17 @@ function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn),
     size_dict = size(tn)
 
     contractpath(solver, inputs, output, size_dict)
+end
+
+# TODO sequence of indices?
+# TODO what if parallel neighbour indices?
+function contract!(tn::TensorNetwork, i::Symbol)
+    ts = pop!(tn, i) # map(Base.Fix1(pop!, tn), links(index))
+
+    tensor = reduce((acc, t) -> contract(acc, t, i), ts)
+
+    # NOTE index is automatically cleaned
+    push!(tn, tensor)
 end
 
 function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
