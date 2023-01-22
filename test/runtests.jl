@@ -6,4 +6,5 @@ import Tenet
     include("Einsum_test.jl")
     include("Tensor_test.jl")
     include("Index_test.jl")
+    include("TensorNetwork_test.jl")
 end
