@@ -96,8 +96,6 @@ end
 function Base.pop!(tn::TensorNetwork, tensor::Tensor)
     i = findfirst(t -> t === tensor, tn.tensors)
     popat!(tn, i)
-
-    return tensor
 end
 
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
