@@ -5,7 +5,7 @@ struct Index
     meta::Dict{Symbol,Any}
 
     function Index(name, size; meta...)
-        size < 1 && throw(BoundsError("size must be >=1 ($size < 1)"))
+        size < 1 && throw(DomainError(size, "size must be >1"))
 
         links = Tensor[]
 
