@@ -11,17 +11,19 @@ A Tensor Network with arbitrary structure.
 struct TensorNetwork
     tensors::Vector{Tensor}
     inds::Dict{Symbol,Index}
+    meta::Dict{Symbol,Any}
 
-    function TensorNetwork()
-        new(Tensor[], Dict{Symbol,Index}())
+    function TensorNetwork(; meta...)
+        meta = Dict{Symbol,Any}(meta)
+
+        new(Tensor[], Dict{Symbol,Index}(), meta)
     end
 end
 
-function TensorNetwork(tensors)
+function TensorNetwork(tensors; meta...)
     # NOTE calling `copy` on each tensor, so tensors are unlinked
     tensors = copy.(tensors)
-    indices = Dict{Symbol,Index}()
-    tn = TensorNetwork()
+    tn = TensorNetwork(; meta...)
 
     for tensor in tensors
         push!(tn, tensor)
