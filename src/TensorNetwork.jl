@@ -3,27 +3,31 @@ import OptimizedEinsum
 import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using OMEinsum
 
+abstract type Ansatz end
+abstract type Arbitrary <: Ansatz end
+
 """
     TensorNetwork
 
 A Tensor Network with arbitrary structure.
 """
-struct TensorNetwork
+struct TensorNetwork{A<:Ansatz}
     tensors::Vector{Tensor}
     inds::Dict{Symbol,Index}
     meta::Dict{Symbol,Any}
 
-    function TensorNetwork(; meta...)
+    function TensorNetwork{A}(; meta...) where {A<:Ansatz}
         meta = Dict{Symbol,Any}(meta)
 
-        new(Tensor[], Dict{Symbol,Index}(), meta)
+        new{A}(Tensor[], Dict{Symbol,Index}(), meta)
     end
 end
 
-function TensorNetwork(tensors; meta...)
+TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
+function TensorNetwork{A}(tensors; meta...) where {A}
     # NOTE calling `copy` on each tensor, so tensors are unlinked
     tensors = copy.(tensors)
-    tn = TensorNetwork(; meta...)
+    tn = TensorNetwork{A}(; meta...)
 
     for tensor in tensors
         push!(tn, tensor)
@@ -35,6 +39,9 @@ end
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
 Base.length(x::TensorNetwork) = length(tensors(x))
+
+ansatz(::Type{TensorNetwork{A}}) where {A} = A
+ansatz(::TensorNetwork{A}) where {A} = A
 
 function tensors end
 tensors(tn::TensorNetwork) = tn.tensors
