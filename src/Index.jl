@@ -56,4 +56,4 @@ checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 isopenind(i::Index) = length(links(i)) == 1
 ishyperind(i::Index) = length(links(i)) > 2
 
-Base.:(==)(i::Index, j::Index) = (site(i) == site(j) !== nothing) || a.name == b.name
+Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(size) == nameof(j)))
