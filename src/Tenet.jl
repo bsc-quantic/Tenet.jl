@@ -15,6 +15,7 @@ export tags, tag!, untag!, hastag
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, inds, openinds, hyperinds
 export contract, contract!
+export Ansatz, ansatz, Arbitrary
 
 include("Transformations.jl")
 export transform, transform!
