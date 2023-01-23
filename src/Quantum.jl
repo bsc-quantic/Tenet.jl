@@ -1,4 +1,4 @@
-using Quac
+using Quac: Circuit, lanes, arraytype, Swap
 using OptimizedEinsum: get_symbol
 using LinearAlgebra: Adjoint
 
