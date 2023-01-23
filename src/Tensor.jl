@@ -23,6 +23,8 @@ labels(t::Tensor) = t.inds
 
 checkinds(t::Tensor) = all((∋(t) ∘ links), labels(t))
 
+reindex(t::Tensor, mapping::Pair{Symbol,Symbol}...) = Tensor(parent(t), replace(labels(t), mapping...); copy(t.meta)...)
+
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
