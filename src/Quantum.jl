@@ -8,6 +8,22 @@ Tensor Networks that have a notion of site and direction (input/output).
 """
 abstract type Quantum <: Ansatz end
 
+"""
+    State
+
+Tensor Networks that only have outputs. Usually, they reflect the _state_ of physical systems.
+
+Its adjoints only have inputs.
+"""
+abstract type State <: Quantum end
+
+"""
+    Operator
+
+Tensor Networks that have both inputs and outputs. Generally, they represent evolutionary processes of physical systems.
+"""
+abstract type Operator <: Quantum end
+
 function TensorNetwork(circuit::Circuit)
     tn = TensorNetwork()
     n = lanes(circuit)
