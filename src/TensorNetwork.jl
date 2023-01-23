@@ -104,7 +104,7 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     return tn
 end
 
-Base.append!(tn::TensorNetwork, t::Sequence{Tensor}) = (foreach(Base.Fix1(push!, A), t); tn)
+Base.append!(tn::TensorNetwork, t::Sequence{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 Base.append!(A::TensorNetwork, B::TensorNetwork) = append!(A, tensors(B))
 
 function Base.popat!(tn::TensorNetwork, i::Integer)
