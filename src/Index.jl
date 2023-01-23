@@ -22,6 +22,8 @@ Base.copy(i::Index) = Index(nameof(i), size(i); i.meta...)
 Base.nameof(i::Index) = i.name
 Base.size(i::Index) = i.size
 
+Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(size) == nameof(j)))
+
 function checksize(i::Index)
     checklinks(i) && all(t -> size(t, findfirst(j -> i === j, indices(t))) == i.size, i.links)
 end
@@ -55,5 +57,3 @@ checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 
 isopenind(i::Index) = length(links(i)) == 1
 ishyperind(i::Index) = length(links(i)) > 2
-
-Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(size) == nameof(j)))
