@@ -104,7 +104,7 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tensors(tn), i)
 
     # unlink indices
-    for i in labels(tensor)
+    for i in unique(labels(tensor))
         index = tn.inds[i]
         unlink!(index, tensor)
 
@@ -124,7 +124,9 @@ Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
 function Base.pop!(tn::TensorNetwork, i::Sequence{Symbol})::Vector{Tensor}
     tensors = select(tn, i)
-    foreach(Base.Fix1(pop!, tn), tensors)
+    for tensor in tensors
+        _ = pop!(tn, tensor)
+    end
 
     return tensors
 end
