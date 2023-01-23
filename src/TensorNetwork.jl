@@ -86,9 +86,13 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
     # TODO merge metadata?
-    for i in labels(tensor)
+    for (i, s) in zip(labels(tensor), size(tensor))
         if i ∉ keys(tn.inds)
-            tn.inds[i] = Index(i, size(tensor, i))
+            tn.inds[i] = Index(i, s)
+        end
+
+        if s != size(tn.inds[i])
+            throw(DimensionMismatch("size($i)=$s but should be $(size(tn.inds[i]))"))
         end
 
         link!(tn.inds[i], tensor)
