@@ -23,6 +23,7 @@ Base.nameof(i::Index) = i.name
 Base.size(i::Index) = i.size
 
 Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(i) == nameof(j)))
+Base.hash(i::Index, h::UInt) = 27 + hash((i.name, i.size), h)
 
 function checksize(i::Index)
     checklinks(i) && all(t -> size(t, findfirst(j -> i === j, indices(t))) == i.size, i.links)
