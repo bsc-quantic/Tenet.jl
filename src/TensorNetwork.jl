@@ -81,6 +81,14 @@ virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collec
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])
 
+"""
+    select(tn, i)
+
+Return tensors whose labels match with the list of indices `i`.
+"""
+select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), labels)...)
+select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
+
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
@@ -120,8 +128,8 @@ end
 
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, labels::Sequence{Symbol})::Vector{Tensor}
-    tensors = ∩(links.(map(Base.Fix1(getindex, tn.inds), labels))...)
+function Base.pop!(tn::TensorNetwork, i::Sequence{Symbol})::Vector{Tensor}
+    tensors = select(tn, i)
     foreach(Base.Fix1(pop!, tn), tensors)
 
     return tensors
