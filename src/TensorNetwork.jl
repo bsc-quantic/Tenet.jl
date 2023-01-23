@@ -3,13 +3,31 @@ import OptimizedEinsum
 import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using OMEinsum
 
+"""
+    Ansatz
+
+Type representing the predefined form of the Tensor Network.
+"""
 abstract type Ansatz end
+
+"""
+    Arbitrary
+
+Tensor Networks without a predefined form.
+"""
 abstract type Arbitrary <: Ansatz end
+
+"""
+    Quantum
+
+Tensor Networks that have a notion of site and direction (input/output).
+"""
+abstract type Quantum <: Ansatz end
 
 """
     TensorNetwork
 
-A Tensor Network with arbitrary structure.
+Graph of interconnected tensors.
 """
 struct TensorNetwork{A<:Ansatz}
     tensors::Vector{Tensor}
