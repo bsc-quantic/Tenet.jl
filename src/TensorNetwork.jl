@@ -86,7 +86,7 @@ Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])
 
 Return tensors whose labels match with the list of indices `i`.
 """
-select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), labels)...)
+select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
 select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
 
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
