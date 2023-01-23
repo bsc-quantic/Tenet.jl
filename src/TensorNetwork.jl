@@ -111,7 +111,7 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tensors(tn), i)
 
     # unlink indices
-    for i in inds(tensor)
+    for i in labels(tensor)
         index = tn.inds[i]
         unlink!(index, tensor)
 
