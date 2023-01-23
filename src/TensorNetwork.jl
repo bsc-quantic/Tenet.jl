@@ -18,13 +18,6 @@ Tensor Networks without a predefined form.
 abstract type Arbitrary <: Ansatz end
 
 """
-    Quantum
-
-Tensor Networks that have a notion of site and direction (input/output).
-"""
-abstract type Quantum <: Ansatz end
-
-"""
     TensorNetwork
 
 Graph of interconnected tensors.

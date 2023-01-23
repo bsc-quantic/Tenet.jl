@@ -1,6 +1,13 @@
 using Quac
 using OptimizedEinsum: get_symbol
 
+"""
+    Quantum
+
+Tensor Networks that have a notion of site and direction (input/output).
+"""
+abstract type Quantum <: Ansatz end
+
 function TensorNetwork(circuit::Circuit)
     tn = TensorNetwork()
     n = lanes(circuit)
