@@ -38,6 +38,9 @@ outsites(tn::TensorNetwork) = Set(site.(outsiteinds(tn)))
 outsites(tn::Adjoint{TensorNetwork}) = insites(parent(tn))
 outsiteinds(tn) = filter(i -> i.meta[:plug] == :output, openinds(tn))
 
+physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
+virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collect
+
 function TensorNetwork(circuit::Circuit)
     tn = TensorNetwork{Quantum}()
     n = lanes(circuit)
@@ -82,6 +85,3 @@ function TensorNetwork(circuit::Circuit)
 
     return tn
 end
-
-physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
-virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collect
