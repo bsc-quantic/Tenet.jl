@@ -85,7 +85,7 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
     # TODO merge metadata?
-    for i in inds(tensor)
+    for i in labels(tensor)
         if i ∉ keys(tn.inds)
             tn.inds[i] = Index(i, size(tensor, i))
         end

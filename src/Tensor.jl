@@ -17,12 +17,11 @@ end
 
 Tensor(data, inds::Vector{Symbol}; meta...) = Tensor(data, tuple(inds...); meta...)
 
-Base.copy(t::Tensor) = Tensor(parent(t), inds(t); deepcopy(t.meta)...)
+Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
-inds(t::Tensor) = t.inds
-labels(t::Tensor) = inds(t)
+labels(t::Tensor) = t.inds
 
-checkinds(t::Tensor) = all((∋(t) ∘ links), inds(t))
+checkinds(t::Tensor) = all((∋(t) ∘ links), labels(t))
 
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
