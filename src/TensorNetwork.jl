@@ -68,8 +68,6 @@ labels(tn::TensorNetwork) = nameof.(inds(tn))
 
 openinds(tn::TensorNetwork) = Iterators.filter(isopenind, inds(tn)) |> collect
 hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
-physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
-virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collect
 
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])

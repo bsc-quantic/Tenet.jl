@@ -38,3 +38,6 @@ function TensorNetwork(circuit::Circuit)
 
     return tn
 end
+
+physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
+virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collect
