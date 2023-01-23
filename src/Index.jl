@@ -22,7 +22,7 @@ Base.copy(i::Index) = Index(nameof(i), size(i); i.meta...)
 Base.nameof(i::Index) = i.name
 Base.size(i::Index) = i.size
 
-Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(size) == nameof(j)))
+Base.:(==)(i::Index, j::Index) = size(i) == size(j) && ((site(i) == site(j) !== nothing) || (nameof(i) == nameof(j)))
 
 function checksize(i::Index)
     checklinks(i) && all(t -> size(t, findfirst(j -> i === j, indices(t))) == i.size, i.links)
