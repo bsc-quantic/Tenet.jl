@@ -74,6 +74,7 @@ inds(tn::TensorNetwork) = values(tn.inds)
 labels(tn::TensorNetwork) = nameof.(inds(tn))
 
 openinds(tn::TensorNetwork) = Iterators.filter(isopenind, inds(tn)) |> collect
+innerinds(tn::TensorNetwork) = Iterators.filter(!isopenind, inds(tn)) |> collect
 hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
 
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
