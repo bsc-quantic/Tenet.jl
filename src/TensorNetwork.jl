@@ -51,8 +51,8 @@ Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeo
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
 Base.length(x::TensorNetwork) = length(tensors(x))
 
-function Base.copy(tn::TensorNetwork)
-    newtn = TensorNetwork(; copy(tn.meta)...)
+function Base.copy(tn::TensorNetwork{A}) where {A<:Ansatz}
+    newtn = TensorNetwork{A}(; copy(tn.meta)...)
     append!(newtn.tensors, copy.(tn.tensors))
     merge!(newtn.inds, Dict(name => copy(i) for (name, i) in tn.inds))
     return newtn
