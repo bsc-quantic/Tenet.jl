@@ -158,7 +158,7 @@ function reindex!(tn::TensorNetwork, mapping::Pair{Symbol,Symbol}...)
     end
 
     # reindex tensors
-    tensors = [reindex(tensor, mapping...) for tensor in tensors]
+    tensors = Tensor[reindex(tensor, mapping...) for tensor in tensors]
     append!(tn, tensors)
 end
 
