@@ -18,6 +18,18 @@
         @test parent(reindex(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
     end
 
+    @testset "dim" begin
+        using Tenet: dim
+
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test dim(tensor, 1) == 1
+        for (i, label) in enumerate(labels(tensor))
+            @test dim(tensor, label) == i
+        end
+
+        @test_throws BoundsError dim(tensor, :_)
+    end
+
     @testset "Broadcasting" begin
         data = rand(2, 2, 2)
         @test begin
