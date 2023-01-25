@@ -59,8 +59,9 @@ checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 isopenind(i::Index) = length(links(i)) == 1
 ishyperind(i::Index) = length(links(i)) > 2
 
+# NOTE do not link! old indices
+# TODO rename to `replace`?
 function reindex(i::Index, name::Symbol)
     j = Index(name, size(i); copy(i.meta)...)
-    foreach(Base.Fix1(link!, j), links(i))
     return j
 end
