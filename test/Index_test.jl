@@ -50,11 +50,13 @@
         end
     end
 
-    @testset "dim" for (i, name) in enumerate((:i, :j))
-        tensor = Tensor(zeros(2, 2), (:i, :j))
-        index = Index(name, 2)
+    @testset "dim" begin
+        for (i, name) in enumerate((:i, :j))
+            tensor = Tensor(zeros(2, 2), (:i, :j))
+            index = Index(name, 2)
 
-        @test Tenet.dim(tensor, index) == i
+            @test Tenet.dim(tensor, index) == i
+        end
     end
 
     let index = Index(:_, 2, site = 0, tags = Set{String}(["TAG_A", "TAB_B"]))
