@@ -10,6 +10,7 @@
 
         link!(index, tensor)
         @test tensor ∈ links(index)
+        @test tensor ∉ links(copy(index))
 
         @test Tenet.isopenind(index)
 
