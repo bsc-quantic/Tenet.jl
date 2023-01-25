@@ -4,41 +4,53 @@
     @test_throws DomainError Index(:_, 0)
     @test_throws DomainError Index(:_, -1)
 
-    let tensor = Tensor(zeros(2, 2), (:i, :j)), index = Index(:i, 2)
-        @test nameof(index) == :i
-        @test size(index) == 2
+    @testset "links" begin
+        let tensor = Tensor(zeros(2, 2), (:i, :j)), index = Index(:i, 2)
+            @test nameof(index) == :i
+            @test size(index) == 2
 
-        link!(index, tensor)
-        @test tensor ∈ links(index)
-        @test tensor ∉ links(copy(index))
+            link!(index, tensor)
+            @test tensor ∈ links(index)
+            @test tensor ∉ links(copy(index))
 
-        @test Tenet.isopenind(index)
+            @test Tenet.isopenind(index)
 
-        unlink!(index, tensor)
-        @test tensor ∉ links(index)
+            unlink!(index, tensor)
+            @test tensor ∉ links(index)
+        end
+
+        @test begin
+            index = Index(:i, 2)
+            for _ in 1:3
+                tensor = Tensor(zeros(2, 2), (:i, :j))
+                link!(index, tensor)
+            end
+
+            Tenet.ishyperind(index)
+        end
+
+        @test_skip begin
+            tensor = Tensor(zeros(2, 2), (:i, :j))
+            index = Index(:i, 2)
+            link!(index, tensor)
+
+            checklinks(index)
+            checksize(index)
+        end
+
+        @test_throws DimensionMismatch begin
+            tensor = Tensor(zeros(2, 2), (:i, :j))
+            index = Index(:i, 3)
+            link!(index, tensor)
+        end
+        @test_throws BoundsError begin
+            tensor = Tensor(zeros(2, 2), (:i, :j))
+            index = Index(:_, 2)
+            link!(index, tensor)
+        end
     end
 
-    @test_skip begin
-        tensor = Tensor(zeros(2, 2), (:i, :j))
-        index = Index(:i, 2)
-        link!(index, tensor)
-
-        checklinks(index)
-        checksize(index)
-    end
-
-    @test_throws DimensionMismatch begin
-        tensor = Tensor(zeros(2, 2), (:i, :j))
-        index = Index(:i, 3)
-        link!(index, tensor)
-    end
-    @test_throws BoundsError begin
-        tensor = Tensor(zeros(2, 2), (:i, :j))
-        index = Index(:_, 2)
-        link!(index, tensor)
-    end
-
-    for (i, name) in enumerate((:i, :j))
+    @testset "dim" for (i, name) in enumerate((:i, :j))
         tensor = Tensor(zeros(2, 2), (:i, :j))
         index = Index(name, 2)
 
@@ -49,6 +61,10 @@
         @test Tenet.site(index) == 0
         @test Tenet.isphysical(index)
         @test !Tenet.isvirtual(index)
+    end
+
+    @testset "tags" begin
+        index = Index(:_, 2, site = 0, tags = Set{String}(["TAG_A", "TAB_B"]))
 
         @test issetequal(tags(index), ["TAG_A", "TAB_B"])
 
@@ -59,15 +75,5 @@
         @test !hastag(index, "TAG_C")
 
         @test untag!(index, "TAG_UNEXISTANT") == tags(index)
-    end
-
-    @test begin
-        index = Index(:i, 2)
-        for _ in 1:3
-            tensor = Tensor(zeros(2, 2), (:i, :j))
-            link!(index, tensor)
-        end
-
-        Tenet.ishyperind(index)
     end
 end
