@@ -46,4 +46,15 @@
         @test tn isa TensorNetwork{Arbitrary}
         @test length(tn) == 10
     end
+
+    @testset "copy" begin
+        tn = rand(TensorNetwork, 10, 3)
+        tn_copy = copy(tn)
+
+        @test tensors(tn_copy) !== tensors(tn)
+        @test all(tensors(tn_copy) .=== tensors(tn))
+        @test inds(tn_copy) !== inds(tn)
+        @test all(inds(tn_copy) .== inds(tn))
+        # TODO test index metadata is copied
+    end
 end
