@@ -78,4 +78,17 @@
 
         @test untag!(index, "TAG_UNEXISTANT") == tags(index)
     end
+
+    @testset "reindex" begin
+        index = Index(:i, 2, site = 0, tags = Set{String}(["TEST"]))
+        tensor = Tensor(zeros(2, 2), (:i, :j))
+        link!(index, tensor)
+
+        new_index = reindex(index, :k)
+        @test nameof(new_index) == :k
+        @test size(new_index) == 2
+        @test hastag(new_index, "TEST")
+        @test Tenet.site(new_index) == 0
+        @test isempty(new_index.links)
+    end
 end
