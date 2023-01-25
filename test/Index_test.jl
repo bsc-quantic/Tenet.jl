@@ -1,5 +1,5 @@
 @testset "Index" begin
-    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, checklinks, checksize
+    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, hastag, checklinks, checksize
 
     @test_throws DomainError Index(:_, 0)
     @test_throws DomainError Index(:_, -1)
@@ -53,10 +53,10 @@
         @test issetequal(tags(index), ["TAG_A", "TAB_B"])
 
         tag!(index, "TAG_C")
-        @test "TAG_C" ∈ tags(index)
+        @test hastag(index, "TAG_C")
 
         untag!(index, "TAG_C")
-        @test "TAG_C" ∉ tags(index)
+        @test !hastag(index, "TAG_C")
 
         @test untag!(index, "TAG_UNEXISTANT") == tags(index)
     end
