@@ -1,5 +1,5 @@
 @testset "Index" begin
-    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, hastag, checklinks, checksize
+    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, hastag, checklinks, checksize, reindex
 
     @test_throws DomainError Index(:_, 0)
     @test_throws DomainError Index(:_, -1)
