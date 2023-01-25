@@ -66,9 +66,9 @@
     end
 
     @testset "tags" begin
-        index = Index(:_, 2, site = 0, tags = Set{String}(["TAG_A", "TAB_B"]))
+        index = Index(:_, 2, site = 0, tags = Set{String}(["TAG_A", "TAG_B"]))
 
-        @test issetequal(tags(index), ["TAG_A", "TAB_B"])
+        @test issetequal(tags(index), ["TAG_A", "TAG_B"])
 
         tag!(index, "TAG_C")
         @test hastag(index, "TAG_C")
