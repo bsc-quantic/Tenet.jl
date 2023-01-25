@@ -62,4 +62,22 @@
 
         @test untag!(tensor, "TAG_UNEXISTANT") == tags(tensor)
     end
+
+    @testset "selectdim" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+
+        @test selectdim(tensor, :i, 1) == selectdim(data, 1, 1)
+        @test selectdim(tensor, :j, 2) == selectdim(data, 2, 2)
+    end
+
+    @testset "view" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+
+        @test view(tensor, 2, :, :) == view(data, 2, :, :)
+        @test view(tensor, :i => 1) == view(data, 1, :, :)
+        @test view(tensor, :j => 2) == view(data, :, 2, :)
+        @test view(tensor, :i => 2, :k => 1) == view(data, 2, :, 1)
+    end
 end
