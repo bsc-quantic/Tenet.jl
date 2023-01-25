@@ -57,4 +57,55 @@
         @test all(inds(tn_copy) .== inds(tn))
         # TODO test index metadata is copied
     end
+
+    @testset "inds" begin
+        using Tenet: openinds, innerinds, hyperinds
+
+        tn = TensorNetwork([
+            Tensor(zeros(2, 2), (:i, :j)),
+            Tensor(zeros(2, 2), (:i, :k)),
+            Tensor(zeros(2, 2, 2), (:i, :l, :m)),
+            Tensor(zeros(2, 2), (:l, :m)),
+        ])
+
+        @test issetequal(labels(tn), (:i, :j, :k, :l, :m))
+        @test issetequal(inds(tn), [Index(i, 2) for i in (:i, :j, :k, :l, :m)])
+        @test issetequal(openinds(tn) .|> nameof, (:j, :k))
+        @test issetequal(innerinds(tn) .|> nameof, (:i, :l, :m))
+        @test issetequal(hyperinds(tn) .|> nameof, (:i,))
+    end
+
+    @testset "size" begin
+        tn = TensorNetwork([
+            Tensor(zeros(2, 3), (:i, :j)),
+            Tensor(zeros(2, 4), (:i, :k)),
+            Tensor(zeros(2, 5, 6), (:i, :l, :m)),
+            Tensor(zeros(5, 6), (:l, :m)),
+        ])
+
+        @test size(tn) == Dict((:i => 2, :j => 3, :k => 4, :l => 5, :m => 6))
+        @test all([size(tn, :i) == 2, size(tn, :j) == 3, size(tn, :k) == 4, size(tn, :l) == 5, size(tn, :m) == 6])
+    end
+
+    @testset "select" begin
+        using Tenet: select
+
+        t_ij = Tensor(zeros(2, 2), (:i, :j))
+        t_ik = Tensor(zeros(2, 2), (:i, :k))
+        t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
+        t_lm = Tensor(zeros(2, 2), (:l, :m))
+        tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
+
+        @test issetequal(select(tn, :i), (t_ij, t_ik, t_ilm))
+        @test issetequal(select(tn, :j), (t_ij,))
+        @test issetequal(select(tn, :k), (t_ik,))
+        @test issetequal(select(tn, :l), (t_ilm, t_lm))
+        @test issetequal(select(tn, :m), (t_ilm, t_lm))
+        @test issetequal(select(tn, (:i, :j)), (t_ij,))
+        @test issetequal(select(tn, (:i, :k)), (t_ik,))
+        @test issetequal(select(tn, (:i, :l)), (t_ilm,))
+        @test issetequal(select(tn, (:l, :m)), (t_ilm, t_lm))
+        @test_throws KeyError select(tn, :_)
+        @test isempty(select(tn, (:j, :l)))
+    end
 end
