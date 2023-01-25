@@ -1,20 +1,20 @@
 using Tenet: Tensor
 
-@testset "Tensor" verbose = true begin
-    A = rand(2, 2, 2)
+@testset "Tensor" begin
     @testset "Broadcasting" begin
+        data = rand(2, 2, 2)
         @test begin
-            t = Tensor(A, (:a, :b, :c))
-            t = t .+ one(eltype(t))
+            tensor = Tensor(data, (:a, :b, :c))
+            tensor = tensor .+ one(eltype(tensor))
 
-            parent(t) == A .+ one(eltype(t))
+            parent(tensor) == data .+ one(eltype(tensor))
         end
 
         @test begin
-            t = Tensor(A, (:a, :b, :c))
-            t = sin.(t)
+            tensor = Tensor(data, (:a, :b, :c))
+            tensor = sin.(tensor)
 
-            parent(t) == sin.(A)
+            parent(tensor) == sin.(data)
         end
     end
 end
