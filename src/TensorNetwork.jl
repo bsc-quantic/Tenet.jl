@@ -53,7 +53,7 @@ Base.length(x::TensorNetwork) = length(tensors(x))
 
 function Base.copy(tn::TensorNetwork{A}) where {A<:Ansatz}
     newtn = TensorNetwork{A}(; copy(tn.meta)...)
-    append!(newtn, copy.(tn.tensors))
+    append!(newtn, copy(tn.tensors))
     for i in labels(newtn)
         merge!(newtn.inds[i].meta, copy(tn.inds[i].meta))
     end
