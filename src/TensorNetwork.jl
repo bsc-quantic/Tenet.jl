@@ -144,22 +144,20 @@ end
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 function reindex!(tn::TensorNetwork, mapping::Pair{Symbol,Symbol}...)
-    # reindex inds
-    # NOTE temporarily, there will be inds with no links (during this scope only)
+    tensors = unique(Iterators.flatten([select(tn, i) for i in first.(mapping)]) |> collect)
+
+    # reindex indices
     # NOTE what if :a => :d, :d => ...? temporal location as a fix
-    tmp = filter(x -> ((i, _) = x; i ∈ first.(mapping)), tn.inds)
-
-    # removes tensors and cleans links to indices
-    tensors = Iterators.flatten([pop!(tn, i) for i in first.(mapping)]) |> collect
-
-    # reindex indices (preserves `Index` metadata)
+    tmp = Dict(name => copy(i) for (name, i) in tn.inds if name ∈ first.(mapping))
     for (old, new) in mapping
-        tn.inds[new] = reindex(tmp[old], new)
+        push!(tn.inds, new => reindex(tmp[old], new))
     end
 
     # reindex tensors
-    tensors = Tensor[reindex(tensor, mapping...) for tensor in tensors]
-    append!(tn, tensors)
+    for tensor in tensors
+        push!(tn, reindex(tensor, mapping...))
+        delete!(tn, tensor)
+    end
 end
 
 function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)

@@ -17,7 +17,7 @@ struct Index
     end
 end
 
-Base.copy(i::Index) = Index(nameof(i), size(i); i.meta...)
+Base.copy(i::Index) = Index(nameof(i), size(i); deepcopy(i.meta)...)
 
 Base.nameof(i::Index) = i.name
 Base.size(i::Index) = i.size
@@ -52,7 +52,7 @@ function link!(i::Index, t)
     )
     push!(i.links, t)
 end
-unlink!(i::Index, t) = filter!(x -> x != t, i.links)
+unlink!(i::Index, t) = filter!(x -> x !== t, i.links)
 
 checklinks(i::Index) = all((∋(i) ∘ inds), links(i))
 
