@@ -1,6 +1,12 @@
-using Tenet: Tensor
-
 @testset "Tensor" begin
+    using Tenet: Tensor, labels
+
+    @testset "Constructor" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test labels(tensor) == (:i, :j, :k)
+        @test labels(Tensor(zeros(2, 2, 2), [:i, :j, :k])) == (:i, :j, :k)
+    end
+
     @testset "Broadcasting" begin
         data = rand(2, 2, 2)
         @test begin
