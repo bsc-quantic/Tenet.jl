@@ -14,9 +14,9 @@
 
         @test tensor ∈ [tensor]
         @test copy(tensor) ∈ [tensor]
+        @test tensor ∈ [copy(tensor)]
         @test zeros(size(tensor)...) ∉ [tensor]
 
-        @test tensor ∈ [copy(tensor)]
         @test tensor ∈ Set([tensor])
         @test zeros(size(tensor)...) ∉ Set([tensor])
     end
