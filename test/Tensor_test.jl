@@ -7,6 +7,16 @@
         @test labels(Tensor(zeros(2, 2, 2), [:i, :j, :k])) == (:i, :j, :k)
     end
 
+    @testset "copy" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test tensor !== copy(tensor)
+        @test parent(tensor) === parent(copy(tensor))
+        @test labels(tensor) == labels(copy(tensor))
+        @test labels(tensor) === labels(copy(tensor))
+        @test tensor.meta == copy(tensor).meta
+        @test tensor.meta !== copy(tensor).meta
+    end
+
     @testset "isequal" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test tensor == copy(tensor)
