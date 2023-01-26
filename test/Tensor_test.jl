@@ -119,4 +119,28 @@
         permutedims!(newtensor, tensor, perm)
         @test parent(newtensor) == parent(permutedims(tensor, perm))
     end
+
+    @testset "indexing" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+
+        @test axes(tensor) == axes(data)
+        @test first(tensor) == first(data)
+        @test last(tensor) == last(data)
+        @test tensor[1, :, 2] == data[1, :, 2]
+        @test tensor[i = 1, k = 2] == data[1, :, 2]
+
+        tensor[1] = 0
+        @test tensor[1] == data[1]
+
+        for i in [0, -1, length(tensor) + 1]
+            @test_throws BoundsError tensor[i]
+        end
+    end
+
+    @testset "iteration" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+        @test all(x -> ==(x...), zip(tensor, data))
+    end
 end
