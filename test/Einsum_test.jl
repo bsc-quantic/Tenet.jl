@@ -1,8 +1,8 @@
 using Tenet: parse, OuterProduct, InnerProduct, Trace, Permutation
 import Permutations: Permutation as Permutator
 
-@testset "Einsum" verbose = true begin
-    @testset "Parsing" verbose = true begin
+@testset "Einsum" begin
+    @testset "Parsing" begin
         @testset "InnerProduct" begin
             @test parse(InnerProduct, [:m, :n], [:m, :k], [:k, :n]) == [:k]
             @test parse(InnerProduct, [:n, :m], [:m, :k], [:k, :n]) == [:k]
