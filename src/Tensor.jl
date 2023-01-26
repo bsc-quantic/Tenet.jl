@@ -19,6 +19,13 @@ Tensor(data, inds::Vector{Symbol}; meta...) = Tensor(data, tuple(inds...); meta.
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
+Base.:(==)(a::AbstractArray, b::Tensor) = isequal(b, a)
+Base.:(==)(a::Tensor, b::AbstractArray) = isequal(a, b)
+Base.:(==)(a::Tensor, b::Tensor) = isequal(a, b)
+Base.isequal(a::AbstractArray, b::Tensor) = false
+Base.isequal(a::Tensor, b::AbstractArray) = false
+Base.isequal(a::Tensor, b::Tensor) = allequal(labels.((a, b))) && allequal(parent.((a, b)))
+
 labels(t::Tensor) = t.inds
 
 checkinds(t::Tensor) = all((∋(t) ∘ links), labels(t))

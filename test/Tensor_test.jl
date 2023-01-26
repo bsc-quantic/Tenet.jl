@@ -7,6 +7,20 @@
         @test labels(Tensor(zeros(2, 2, 2), [:i, :j, :k])) == (:i, :j, :k)
     end
 
+    @testset "isequal" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test tensor == copy(tensor)
+        @test tensor != zeros(size(tensor)...)
+
+        @test tensor ∈ [tensor]
+        @test copy(tensor) ∈ [tensor]
+        @test zeros(size(tensor)...) ∉ [tensor]
+
+        @test tensor ∈ [copy(tensor)]
+        @test tensor ∈ Set([tensor])
+        @test zeros(size(tensor)...) ∉ Set([tensor])
+    end
+
     @testset "reindex" begin
         using Tenet: reindex
 
