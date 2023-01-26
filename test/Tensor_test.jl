@@ -21,6 +21,7 @@
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test tensor == copy(tensor)
         @test tensor != zeros(size(tensor)...)
+        @test zeros(size(tensor)...) != tensor
 
         @test tensor ∈ [tensor]
         @test copy(tensor) ∈ [tensor]
