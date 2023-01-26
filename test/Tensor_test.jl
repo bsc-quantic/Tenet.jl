@@ -104,4 +104,18 @@
         @test view(tensor, :j => 2) == view(data, :, 2, :)
         @test view(tensor, :i => 2, :k => 1) == view(data, 2, :, 1)
     end
+
+    @testset "permutedims" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+        perm = (3, 1, 2)
+
+        @test permutedims(tensor, perm) |> labels == (:k, :i, :j)
+        @test permutedims(tensor, perm) |> parent == permutedims(data, perm)
+        @test permutedims(tensor, perm).meta !== tensor.meta
+
+        newtensor = Tensor(similar(data), (:a, :b, :c))
+        permutedims!(newtensor, tensor, perm)
+        @test parent(newtensor) == parent(permutedims(tensor, perm))
+    end
 end
