@@ -197,6 +197,7 @@
 
         @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
         @test issetequal(openinds(tn) .|> nameof, (:v, :w))
+        @test issetequal(innerinds(tn) .|> nameof, (:u, :x, :y))
         @test issetequal(hyperinds(tn) .|> nameof, (:u,))
 
         @test only(select(tn, (:u, :v))) == reindex(t_ij, mapping...)
