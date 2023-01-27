@@ -92,8 +92,10 @@
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
 
-        @test selectdim(tensor, :i, 1) == selectdim(data, 1, 1)
-        @test selectdim(tensor, :j, 2) == selectdim(data, 2, 2)
+        @test parent(selectdim(tensor, :i, 1)) == selectdim(data, 1, 1)
+        @test parent(selectdim(tensor, :j, 2)) == selectdim(data, 2, 2)
+        @test issetequal(labels(selectdim(tensor, :i, 1)), (:j, :k))
+        @test issetequal(labels(selectdim(tensor, :i, 1:1)), (:i, :j, :k))
     end
 
     @testset "view" begin
