@@ -85,3 +85,32 @@ function TensorNetwork(circuit::Circuit)
 
     return tn
 end
+
+function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
+    outsites(A) != insites(B) && throw(DimensionMismatch("insites(B) must be equal to outsites(A) to connect them"))
+
+    A = copy(A)
+    B = copy(B)
+
+    # rename connector indices
+    newinds = Dict([s => Symbol(uuid4()) for s in outsites(A)])
+
+    reindex!(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
+    reindex!(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
+
+    # remove plug metadata on connector indices
+    for i in values(newinds)
+        delete!(A.inds[i].meta, :plug)
+        delete!(B.inds[i].meta, :plug)
+    end
+
+    # rename inner indices of B to avoid hyperindices
+    reindex!(B, [nameof(i) => Symbol(uuid4()) for i in innerinds(B)]...)
+
+    # merge tensors and indices
+    append!(A, B)
+
+    return A
+end
+
+Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
