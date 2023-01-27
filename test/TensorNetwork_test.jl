@@ -1,27 +1,23 @@
 @testset "TensorNetwork" begin
     using Tenet: TensorNetwork, ansatz, Arbitrary, tensors, inds, labels, openinds, hyperinds, Index
 
-    # TODO refactor these tests
-    let tn = TensorNetwork()
-        @test ansatz(tn) == ansatz(typeof(tn)) == Tenet.Arbitrary
-        @test isempty(tensors(tn))
-        @test isempty(inds(tn))
-        @test isempty(size(tn))
+    @testset "Constructors" begin
+        @testset "empty" begin
+            tn = TensorNetwork()
+            @test ansatz(tn) == ansatz(typeof(tn)) == Tenet.Arbitrary
+            @test isempty(tensors(tn))
+            @test isempty(inds(tn))
+            @test isempty(size(tn))
+        end
 
-        tensor = Tensor(zeros(2, 3), (:i, :j))
-        push!(tn, tensor)
-        @test length(tn) == 1
-        @test issetequal(labels(tn), [:i, :j])
-        @test issetequal(inds(tn), [Index(:i, 2), Index(:j, 3)])
-        @test size(tn) == Dict(:i => 2, :j => 3)
-        @test issetequal(openinds(tn), [Index(:i, 2), Index(:j, 3)])
-        @test isempty(hyperinds(tn))
-
-        pop!(tn, tensor)
-        @test length(tn) == 0
-        @test isempty(tensors(tn))
-        @test isempty(inds(tn))
-        @test isempty(size(tn))
+        @testset "list" begin
+            tn = TensorNetwork([Tensor(zeros(2, 3), (:i, :j))])
+            @test length(tn) == 1
+            @test issetequal(labels(tn), [:i, :j])
+            @test issetequal(inds(tn), [Index(:i, 2), Index(:j, 3)])
+            @test size(tn) == Dict(:i => 2, :j => 3)
+            @test issetequal(openinds(tn), [Index(:i, 2), Index(:j, 3)])
+        end
     end
 
     @test_throws DimensionMismatch begin
@@ -30,7 +26,8 @@
         push!(tn, tensor)
     end
 
-    let tn = TensorNetwork()
+    @testset "hyperinds" begin
+        tn = TensorNetwork()
         tensor = Tensor(zeros(2, 2, 2), (:i, :i, :i))
         push!(tn, tensor)
 
@@ -42,7 +39,8 @@
         @test isempty(inds(tn))
     end
 
-    let tn = rand(TensorNetwork, 10, 3)
+    @testset "rand" begin
+        tn = rand(TensorNetwork, 10, 3)
         @test tn isa TensorNetwork{Arbitrary}
         @test length(tn) == 10
     end
