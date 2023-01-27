@@ -96,6 +96,13 @@ Returns a view of the Tensor Network `tn` of slice `i` on `index`.
 function Base.selectdim(tn::TensorNetwork, label::Symbol, i)
     tn = copy(tn)
 
+    # UNSAFE REGION BEGIN
+    if !isa(i, Integer)
+        index = tn.inds[label]
+        tn.inds[label] = Index(nameof(index), length(i); index.meta...)
+    end
+    # UNSAFE REGION END
+
     for tensor in links(tn.inds[label])
         push!(tn, selectdim(tensor, label, i))
         delete!(tn, tensor)
