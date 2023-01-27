@@ -20,10 +20,82 @@
         end
     end
 
+    @testset "push!" begin
+        tn = TensorNetwork()
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+
+        push!(tn, tensor)
+        @test length(tn) == 1
+        @test issetequal(labels(tn), [:i, :j, :k])
+        @test issetequal(inds(tn), [Index(:i, 2), Index(:j, 2), Index(:k, 2)])
+        @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
+        @test issetequal(openinds(tn), [Index(:i, 2), Index(:j, 2), Index(:k, 2)])
+        @test isempty(hyperinds(tn))
+    end
+
     @test_throws DimensionMismatch begin
         tn = TensorNetwork()
         tensor = Tensor(zeros(2, 3), (:i, :i))
         push!(tn, tensor)
+    end
+
+    @testset "append!" begin
+        tensor = Tensor(zeros(2, 3), (:i, :j))
+        A = TensorNetwork()
+        B = TensorNetwork()
+
+        append!(B, [tensor])
+        @test only(tensors(B)) === tensor
+
+        append!(A, B)
+        @test only(tensors(A)) === tensor
+    end
+
+    @testset "pop!" begin
+        @testset "by reference" begin
+            tensor = Tensor(zeros(2, 3), (:i, :j))
+            tn = TensorNetwork([tensor])
+
+            @test pop!(tn, tensor) === tensor
+            @test length(tn) == 0
+            @test isempty(tensors(tn))
+            @test isempty(inds(tn))
+            @test isempty(size(tn))
+        end
+
+        @testset "by symbol" begin
+            tensor = Tensor(zeros(2, 3), (:i, :j))
+            tn = TensorNetwork([tensor])
+
+            @test only(pop!(tn, :i)) === tensor
+            @test length(tn) == 0
+            @test isempty(tensors(tn))
+            @test isempty(inds(tn))
+            @test isempty(size(tn))
+        end
+
+        @testset "by symbols" begin
+            tensor = Tensor(zeros(2, 3), (:i, :j))
+            tn = TensorNetwork([tensor])
+
+            @test only(pop!(tn, (:i, :j))) === tensor
+            @test length(tn) == 0
+            @test isempty(tensors(tn))
+            @test isempty(inds(tn))
+            @test isempty(size(tn))
+        end
+    end
+
+    # TODO by simbols
+    @testset "delete!" begin
+        tensor = Tensor(zeros(2, 3), (:i, :j))
+        tn = TensorNetwork([tensor])
+
+        @test delete!(tn, tensor) === tn
+        @test length(tn) == 0
+        @test isempty(tensors(tn))
+        @test isempty(inds(tn))
+        @test isempty(size(tn))
     end
 
     @testset "hyperinds" begin
