@@ -36,8 +36,6 @@ end
 
 TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
 function TensorNetwork{A}(tensors; meta...) where {A}
-    # NOTE calling `copy` on each tensor, so tensors are unlinked
-    tensors = copy.(tensors)
     tn = TensorNetwork{A}(; meta...)
 
     for tensor in tensors
