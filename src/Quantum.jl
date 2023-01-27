@@ -1,6 +1,7 @@
 using Quac: Circuit, lanes, arraytype, Swap
 using OptimizedEinsum: get_symbol
 using LinearAlgebra: Adjoint
+using UUIDs: uuid4
 
 """
     Quantum
