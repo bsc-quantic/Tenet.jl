@@ -88,6 +88,22 @@ Return tensors whose labels match with the list of indices `i`.
 select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
 select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
 
+"""
+    selectdim(tn, index, i)
+
+Returns a view of the Tensor Network `tn` of slice `i` on `index`.
+"""
+function Base.selectdim(tn::TensorNetwork, label::Symbol, i)
+    tn = copy(tn)
+
+    for tensor in links(tn.inds[label])
+        push!(tn, selectdim(tensor, label, i))
+        delete!(tn, tensor)
+    end
+
+    return tn
+end
+
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
