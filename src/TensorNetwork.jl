@@ -93,9 +93,9 @@ select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
 
 Returns a view of the Tensor Network `tn` of slice `i` on `index`.
 """
-function Base.selectdim(tn::TensorNetwork, label::Symbol, i)
-    tn = copy(tn)
+Base.selectdim(tn::TensorNetwork, label::Symbol, i) = selectdim!(copy(tn), label, i)
 
+function selectdim!(tn::TensorNetwork, label::Symbol, i)
     # UNSAFE REGION BEGIN
     if !isa(i, Integer)
         index = tn.inds[label]
