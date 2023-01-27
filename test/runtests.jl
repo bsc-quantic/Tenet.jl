@@ -10,5 +10,5 @@ import Tenet
 end
 
 @testset "Integration tests" verbose = true begin
-    include("Quantum_test.jl")
+    include("Integration/Quac_test.jl")
 end
