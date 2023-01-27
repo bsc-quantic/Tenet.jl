@@ -1,5 +1,5 @@
 @testset "Quac" begin
-    using Tenet: TensorNetwork, ansatz, Quantum, insites, outsites, isphysical
+    using Tenet: TensorNetwork, ansatz, Quantum, sites, insites, outsites, isphysical
     using Quac
     n = 2
     qft = Quac.Algorithms.QFT(n)
