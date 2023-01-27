@@ -111,6 +111,16 @@ function selectdim!(tn::TensorNetwork, label::Symbol, i)
     return tn
 end
 
+function Base.view(tn::TensorNetwork, inds::Pair{Symbol,<:Any}...)
+    tn = copy(tn)
+
+    for (label, i) in inds
+        selectdim!(tn, label, i)
+    end
+
+    return tn
+end
+
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 

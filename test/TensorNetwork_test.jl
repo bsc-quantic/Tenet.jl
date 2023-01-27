@@ -192,6 +192,17 @@
         @test size(selectdim(tn, label, 1:1), label) == 1
     end
 
+    @testset "view" begin
+        tn = rand(TensorNetwork, 10, 3)
+        targets = labels(tn)[1:3]
+
+        slice = @view tn[[label => 1 for label in targets]...]
+        @test isdisjoint(targets, labels(slice))
+
+        slice = @view tn[[label => 1:1 for label in targets]...]
+        @test targets ⊆ labels(slice)
+    end
+
     @testset "reindex!" begin
         using Tenet: reindex, reindex!, openinds, hyperinds, select
 
