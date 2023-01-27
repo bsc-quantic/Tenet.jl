@@ -183,6 +183,15 @@
         @test isempty(select(tn, (:j, :l)))
     end
 
+    @testset "selectdim" begin
+        tn = rand(TensorNetwork, 10, 3)
+        label = first(labels(tn))
+
+        @test label ∉ labels(selectdim(tn, label, 1))
+        @test label ∈ labels(selectdim(tn, label, 1:1))
+        @test size(selectdim(tn, label, 1:1), label) == 1
+    end
+
     @testset "reindex!" begin
         using Tenet: reindex, reindex!, openinds, hyperinds, select
 
