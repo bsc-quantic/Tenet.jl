@@ -11,7 +11,11 @@
         end
 
         @testset "list" begin
-            tn = TensorNetwork([Tensor(zeros(2, 3), (:i, :j))])
+            tensor = Tensor(zeros(2, 3), (:i, :j))
+            tn = TensorNetwork([tensor])
+
+            @test only(tensors(tn)) === tensor
+
             @test length(tn) == 1
             @test issetequal(labels(tn), [:i, :j])
             @test issetequal(inds(tn), [Index(:i, 2), Index(:j, 3)])
