@@ -108,7 +108,16 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
 end
 
 Base.append!(tn::TensorNetwork, t::Sequence{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
-Base.append!(A::TensorNetwork, B::TensorNetwork) = append!(A, tensors(B))
+function Base.append!(A::TensorNetwork, B::TensorNetwork)
+    append!(A, tensors(B))
+
+    # merge index metadata
+    for i in labels(B)
+        merge!(A.inds[i].meta, copy(B.inds[i].meta))
+    end
+
+    return A
+end
 
 function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tensors(tn), i)
