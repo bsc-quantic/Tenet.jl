@@ -102,10 +102,21 @@ Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((labels(t),), perm); t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
-Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...) = view(
-    t,
-    [(i = findfirst(x -> x == ind, first.(inds)); !isnothing(i) ? inds[i].second : Colon()) for ind in labels(t)]...,
-)
+Base.view(t::Tensor, inds...) =
+    Tensor(view(parent(t), inds...), [label for (label, ind) in zip(labels(t), inds) if !(ind isa Integer)]; t.meta...)
+
+function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
+    indices = map(labels(t)) do ind
+        i = findfirst(x -> x == ind, first.(inds))
+        !isnothing(i) ? inds[i].second : Colon()
+    end
+
+    let data = view(parent(t), indices...),
+        labels = [label for (index, label) in zip(indices, labels(t)) if !(index isa Integer)]
+
+        Tensor(data, labels; t.meta...)
+    end
+end
 
 # Metadata
 tags(t::Tensor) = t.meta[:tags]

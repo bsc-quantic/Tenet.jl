@@ -102,10 +102,14 @@
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
 
-        @test view(tensor, 2, :, :) == view(data, 2, :, :)
-        @test view(tensor, :i => 1) == view(data, 1, :, :)
-        @test view(tensor, :j => 2) == view(data, :, 2, :)
-        @test view(tensor, :i => 2, :k => 1) == view(data, 2, :, 1)
+        @test parent(view(tensor, 2, :, :)) == view(data, 2, :, :)
+        @test parent(view(tensor, :i => 1)) == view(data, 1, :, :)
+        @test parent(view(tensor, :j => 2)) == view(data, :, 2, :)
+        @test parent(view(tensor, :i => 2, :k => 1)) == view(data, 2, :, 1)
+        @test :i ∉ labels(view(tensor, :i => 1))
+
+        @test parent(view(tensor, :i => 1:1)) == view(data, 1:1, :, :)
+        @test :i ∈ labels(view(tensor, :i => 1:1))
     end
 
     @testset "permutedims" begin
