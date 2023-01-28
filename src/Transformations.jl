@@ -41,7 +41,7 @@ function transform!(tn::TensorNetwork, ::Type{HyperindConverter})
         # insert COPY tensor
         N = length(indices)
         data = DeltaArray{N}(ones(size(index)))
-        tensor = Tensor(data, indices; index.meta...)
+        tensor = Tensor(data, indices; dual = nameof(index), index.meta...)
         push!(tn, tensor)
     end
 end
