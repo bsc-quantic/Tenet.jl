@@ -8,6 +8,7 @@ import Tenet
     include("Index_test.jl")
     include("TensorNetwork_test.jl")
     include("Quantum_test.jl")
+    include("Transformations_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin
