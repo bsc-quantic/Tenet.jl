@@ -4,18 +4,18 @@ using OMEinsum
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    inds::NTuple{N,Symbol}
+    labels::NTuple{N,Symbol}
     meta::Dict{Symbol,Any}
 
-    function Tensor(data::A, indices::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
         meta = Dict{Symbol,Any}(meta...)
         !haskey(meta, :tags) && (meta[:tags] = Set{String}())
 
-        new{T,N,A}(data, indices, meta)
+        new{T,N,A}(data, labels, meta)
     end
 end
 
-Tensor(data, inds::Vector{Symbol}; meta...) = Tensor(data, tuple(inds...); meta...)
+Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); meta...)
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
@@ -26,7 +26,7 @@ Base.isequal(a::AbstractArray, b::Tensor) = false
 Base.isequal(a::Tensor, b::AbstractArray) = false
 Base.isequal(a::Tensor, b::Tensor) = allequal(labels.((a, b))) && allequal(parent.((a, b)))
 
-labels(t::Tensor) = t.inds
+labels(t::Tensor) = t.labels
 
 reindex(t::Tensor, mapping::Pair{Symbol,Symbol}...) = Tensor(parent(t), replace(labels(t), mapping...); copy(t.meta)...)
 
@@ -47,15 +47,15 @@ Base.isdone(t::Tensor, state) = (Base.isdone ∘ parent)(t)
 Base.IndexStyle(T::Type{<:Tensor}) = IndexStyle(parenttype(T))
 
 @propagate_inbounds Base.getindex(t::Tensor, i...) = getindex(parent(t), i...)
-@propagate_inbounds function Base.getindex(t::Tensor; inds...)
-    length(inds) == 0 && return (getindex ∘ parent)(t)
-    return getindex(t, [get(inds, i, Colon()) for i in labels(t)]...)
+@propagate_inbounds function Base.getindex(t::Tensor; i...)
+    length(i) == 0 && return (getindex ∘ parent)(t)
+    return getindex(t, [get(i, label, Colon()) for label in labels(t)]...)
 end
 
 @propagate_inbounds Base.setindex!(t::Tensor, v, i...) = setindex!(parent(t), v, i...)
-@propagate_inbounds function Base.setindex!(t::Tensor, v; inds...)
-    length(inds) == 0 && return setindex!(parent(t), v)
-    return setindex!(t, v, [get(inds, i, Colon()) for i in labels(t)]...)
+@propagate_inbounds function Base.setindex!(t::Tensor, v; i...)
+    length(i) == 0 && return setindex!(parent(t), v)
+    return setindex!(t, v, [get(i, label, Colon()) for label in labels(t)]...)
 end
 
 Base.firstindex(t::Tensor) = firstindex(parent(t))
@@ -100,8 +100,8 @@ Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((labels(t),), perm); t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
-Base.view(t::Tensor, inds...) =
-    Tensor(view(parent(t), inds...), [label for (label, ind) in zip(labels(t), inds) if !(ind isa Integer)]; t.meta...)
+Base.view(t::Tensor, i...) =
+    Tensor(view(parent(t), i...), [label for (label, j) in zip(labels(t), i) if !(j isa Integer)]; t.meta...)
 
 function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
     indices = map(labels(t)) do ind
