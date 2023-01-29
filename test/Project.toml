@@ -1,4 +1,5 @@
 [deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DeltaArrays = "10b0fc19-5ccc-4427-889b-d75dd6306188"
 Permutations = "2ae35dd2-176d-5d53-8349-f30d82d94d4f"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"

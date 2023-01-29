@@ -14,3 +14,9 @@ end
 @testset "Integration tests" verbose = true begin
     include("Integration/Quac_test.jl")
 end
+
+@testset "Aqua" verbose = true begin
+    using Aqua
+    Aqua.test_ambiguities(Tenet)
+    Aqua.test_all(Tenet, ambiguities = false, stale_deps = false)
+end
