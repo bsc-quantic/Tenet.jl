@@ -4,12 +4,12 @@ using Requires: @require
 
 include("Helpers.jl")
 
-include("Einsum.jl")
+# include("Einsum.jl")
 include("Tensor.jl")
 export Tensor, labels, dim
 
 include("Index.jl")
-export Index, isphysical, isvirtual, site, ishyper, links
+export Index, isphysical, isvirtual, site, ishyperind, links
 export tags, tag!, untag!, hastag
 
 include("TensorNetwork.jl")

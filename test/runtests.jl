@@ -3,7 +3,7 @@ import Tenet
 
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
-    include("Einsum_test.jl")
+    # include("Einsum_test.jl")
     include("Tensor_test.jl")
     include("Index_test.jl")
     include("TensorNetwork_test.jl")
@@ -17,6 +17,6 @@ end
 
 @testset "Aqua" verbose = true begin
     using Aqua
-    Aqua.test_ambiguities(Tenet)
+    @testset "Method ambiguity (manual)" Aqua.test_ambiguities(Tenet)
     Aqua.test_all(Tenet, ambiguities = false, stale_deps = false)
 end
