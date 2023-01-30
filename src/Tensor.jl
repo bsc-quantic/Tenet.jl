@@ -19,8 +19,8 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
-Base.:(==)(a::AbstractArray, b::Tensor) = isequal(b, a)
-Base.:(==)(a::Tensor, b::AbstractArray) = isequal(a, b)
+Base.:(==)(a::A, b::T) where {A<:AbstractArray,T<:Tensor} = isequal(b, a)
+Base.:(==)(a::T, b::A) where {A<:AbstractArray,T<:Tensor} = isequal(a, b)
 Base.:(==)(a::Tensor, b::Tensor) = isequal(a, b)
 Base.isequal(a::AbstractArray, b::Tensor) = false
 Base.isequal(a::Tensor, b::AbstractArray) = false
