@@ -209,8 +209,8 @@ function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
 end
 
 function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
-    inputs = collect.(labels.(tensors(tn)))
-    output = collect(output)
+    inputs = labels.(tensors(tn))
+    output = output
     size_dict = size(tn)
 
     contractpath(solver, inputs, output, size_dict)
