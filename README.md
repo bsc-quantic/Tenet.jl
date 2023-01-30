@@ -9,13 +9,16 @@ A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired b
 
 ## Features
 
-- [x] Representation of generic tensor networks
-- [ ] Implementation of Tensor Network States/Operators
-  - [ ] Matrix Product States (MPS)
+- [x] Contraction of generic tensor networks
+- [x] Tensor Network slicing
+- [ ] Ansatz Tensor Network (States/Operators)
+  - [x] Matrix Product States (MPS)
+  - [ ] Matrix Product Operators (MPO)
   - [ ] Tree Tensor Networks (TTN)
   - [ ] Projected Entangled Pair States (PEPS)
   - [ ] Multiscale Entangled Renormalization Ansatz (MERA)
-- [ ] Distributed execution
+- [ ] Automatic Differentiation
 - [ ] Advance tensor network techniques
   - [ ] Tensor Renormalization Group (TRG)
   - [ ] Density Matrix Renormalization Group (DMRG)
+- [ ] Distributed contraction
