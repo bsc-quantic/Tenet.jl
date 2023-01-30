@@ -22,6 +22,16 @@ Base.convert(::Type{Tensor{T,N,A}}, t::Tensor) where {T,N,A<:AbstractArray{T,N}}
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
+function Base.similar(t::Tensor, eltype = eltype(t), dims = size(t), labels = labels(t); meta...)
+    data = similar(parent(t))
+
+    # TODO copy metadata?
+    metadata = copy(t.meta)
+    merge!(metadata, meta)
+
+    Tensor(data, labels)
+end
+
 Base.:(==)(a::A, b::T) where {A<:AbstractArray,T<:Tensor} = isequal(b, a)
 Base.:(==)(a::T, b::A) where {A<:AbstractArray,T<:Tensor} = isequal(a, b)
 Base.:(==)(a::Tensor, b::Tensor) = isequal(a, b)
