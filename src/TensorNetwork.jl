@@ -71,6 +71,7 @@ arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
 inds(tn::TensorNetwork) = values(tn.inds)
+inds(tn::TensorNetwork, label) = tn.inds[label]
 labels(tn::TensorNetwork) = nameof.(inds(tn))
 
 openinds(tn::TensorNetwork) = Iterators.filter(isopenind, inds(tn)) |> collect

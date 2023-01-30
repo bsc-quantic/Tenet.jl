@@ -10,6 +10,10 @@ Tensor Networks that have a notion of site and direction (input/output).
 """
 abstract type Quantum <: Ansatz end
 
+abstract type Bounds end
+abstract type Closed <: Bounds end
+abstract type Open <: Bounds end
+
 """
     State
 
@@ -17,14 +21,16 @@ Tensor Networks that only have outputs. Usually, they reflect the _state_ of phy
 
 Its adjoints only have inputs.
 """
-abstract type State <: Quantum end
+abstract type State{B} <: Quantum where {B<:Bounds} end
+bounds(::Type{<:State{B}}) where {B} = B
 
 """
     Operator
 
 Tensor Networks that have both inputs and outputs. Generally, they represent evolutionary processes of physical systems.
 """
-abstract type Operator <: Quantum end
+abstract type Operator{B} <: Quantum where {B<:Bounds} end
+bounds(::Type{<:Operator{B}}) where {B} = B
 
 sites(tn::TensorNetwork) = insites(tn) ∪ outsites(tn)
 
