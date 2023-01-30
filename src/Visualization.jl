@@ -11,9 +11,12 @@ function Makie.plot!(P::GraphPlot{Tuple{TensorNetwork{A}}}; kwargs...) where {A<
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
+    scene = Makie.parent_scene(P)
+    default_attrs = default_theme(scene, GraphPlot)
+
     kwargs = Dict{Symbol,Any}(kwargs)
-    get!(kwargs, :node_size) do
-        [max(10, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
+    if P.attributes.node_size[] == default_attrs.node_size[]
+        kwargs[:node_size] = [max(10, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
     end
 
     graphplot!(P, graph; kwargs...)
