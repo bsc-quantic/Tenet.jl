@@ -17,9 +17,6 @@ end
 
 Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); meta...)
 
-Base.convert(::Type{Tensor{T,N,A}}, t::Tensor) where {T,N,A<:AbstractArray{T,N}} =
-    Tensor(convert(A, parent(t)), labels(t); t.meta...)
-
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
 function Base.similar(t::Tensor, eltype = eltype(t), dims = size(t), labels = labels(t); meta...)
