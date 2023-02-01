@@ -22,7 +22,7 @@ Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 function Base.similar(t::Tensor, eltype = eltype(t), dims = size(t), labels = labels(t); meta...)
     data = similar(parent(t))
 
-    # TODO copy metadata?
+    # copy metadata
     metadata = copy(t.meta)
     merge!(metadata, meta)
 
