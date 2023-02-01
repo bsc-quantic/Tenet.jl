@@ -1,6 +1,7 @@
 using OptimizedEinsum: ContractionPath
 using UUIDs: uuid4
 using IterTools: partition
+using Random
 
 abstract type MatrixProductState{B} <: State{B} end
 
@@ -118,3 +119,52 @@ end
 
 # Base.pop!(::TensorNetwork{MatrixProductState}, args...; kwargs...) =
 #     throw(MethodError("pop! is forbidden for MatrixProductState"))
+
+struct MPSSampler{B<:Bounds,T} <: Random.Sampler{TensorNetwork{MatrixProductState{B}}}
+    n::Int
+    p::Int
+    χ::Int
+end
+
+Base.eltype(::MPSSampler{B}) where {B<:Bounds} = TensorNetwork{MatrixProductState{B}}
+
+function Base.rand(
+    ::Type{MatrixProductState{B}},
+    n::Integer,
+    p::Integer,
+    χ::Integer;
+    eltype::Type = Float32,
+) where {B<:Bounds}
+    rand(MPSSampler{B,eltype}(n, p, χ))
+end
+
+Base.rand(::Type{MatrixProductState}, args...; kwargs...) = rand(MatrixProductState{Open}, args...; kwargs...)
+
+# TODO stable renormalization
+function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {T}
+    n, χ, p = getfield.((sampler,), (:n, :χ, :p))
+
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(2:n-1) do i
+        let i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, p^(i - 1))
+            χr = min(χ, p^i)
+        end
+
+        # swap bond dims
+        i > n ÷ 2 && ((χl, χr) = (χr, χl))
+
+        rand(rng, T, χl, χr, p)
+    end
+
+    # insert boundary tensors
+    insert!(arrays, 1, rand(rng, T, min(χ, p), p))
+    insert!(arrays, n, rand(rng, T, min(χ, p), p))
+
+    MatrixProductState{Open}(arrays; χ = χ)
+end
+
+# TODO stable renormalization
+function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where {T}
+    n, χ, p = getfield.((sampler,), (:n, :χ, :p))
+    MatrixProductState{Closed}([rand(rng, T, χ, χ, p) for _ in 1:n]; χ = χ)
+end
