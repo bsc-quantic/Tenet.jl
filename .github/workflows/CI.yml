@@ -4,7 +4,15 @@ on:
     branches:
       - master
     tags: ['*']
+    paths:
+      - '**.toml'
+      - '**.jl'
+      - 'docs/*'
   pull_request:
+    paths:
+      - '**.toml'
+      - '**.jl'
+      - 'docs/*'
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
