@@ -133,7 +133,7 @@ function Base.rand(
     n::Integer,
     p::Integer,
     χ::Integer;
-    eltype::Type = Float32,
+    eltype::Type = Float64,
 ) where {B<:Bounds}
     rand(MPSSampler{B,eltype}(n, p, χ))
 end
