@@ -12,7 +12,7 @@ function Makie.plot!(P::GraphPlot{Tuple{TensorNetwork{A}}}; kwargs...) where {A<
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     scene = Makie.parent_scene(P)
-    default_attrs = default_theme(scene, GraphPlot)
+    default_attrs = Makie.default_theme(scene, GraphPlot)
 
     kwargs = Dict{Symbol,Any}(kwargs)
     if P.attributes.node_size[] == default_attrs.node_size[]
