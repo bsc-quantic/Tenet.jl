@@ -211,7 +211,7 @@ end
 
 function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
     inputs = collect.(labels.(tensors(tn)))
-    output = collect(output)
+    output = collect(nameof.(output))
     size_dict = size(tn)
 
     contractpath(solver, inputs, output, size_dict)
