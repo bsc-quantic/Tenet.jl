@@ -22,6 +22,7 @@ Tensor Networks that only have outputs. Usually, they reflect the _state_ of phy
 Its adjoints only have inputs.
 """
 abstract type State{B} <: Quantum where {B<:Bounds} end
+bounds(::T) where {T <: State} = bounds(T)
 bounds(::Type{<:State{B}}) where {B} = B
 
 """
@@ -30,6 +31,7 @@ bounds(::Type{<:State{B}}) where {B} = B
 Tensor Networks that have both inputs and outputs. Generally, they represent evolutionary processes of physical systems.
 """
 abstract type Operator{B} <: Quantum where {B<:Bounds} end
+bounds(::T) where {T <: Operator} = bounds(T)
 bounds(::Type{<:Operator{B}}) where {B} = B
 
 sites(tn::TensorNetwork) = insites(tn) ∪ outsites(tn)
