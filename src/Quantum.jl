@@ -35,6 +35,8 @@ bounds(::T) where {T <: Operator} = bounds(T)
 bounds(::Type{<:Operator{B}}) where {B} = B
 
 sites(tn::TensorNetwork) = insites(tn) ∪ outsites(tn)
+sites(tn::TensorNetwork{<:State}) = outsites(tn)
+sites(tn::TensorNetwork{Adjoint{<:State}}) = insites(tn)
 
 # TODO maybe don't filter by openinds?
 insites(tn::TensorNetwork) = Set(site.(insiteinds(tn)))
