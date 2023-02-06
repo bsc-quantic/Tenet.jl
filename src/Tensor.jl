@@ -19,15 +19,15 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
-function Base.similar(t::Tensor, eltype = eltype(t), dims = size(t), labels = labels(t); meta...)
-    data = similar(parent(t))
+# function Base.similar(t::Tensor, eltype = eltype(t), dims = size(t), labels = labels(t); meta...)
+#     data = similar(parent(t))
 
-    # copy metadata
-    metadata = copy(t.meta)
-    merge!(metadata, meta)
+#     # copy metadata
+#     metadata = copy(t.meta)
+#     merge!(metadata, meta)
 
-    Tensor(data, labels)
-end
+#     Tensor(data, labels)
+# end
 
 Base.:(==)(a::A, b::T) where {A<:AbstractArray,T<:Tensor} = isequal(b, a)
 Base.:(==)(a::T, b::A) where {A<:AbstractArray,T<:Tensor} = isequal(a, b)
