@@ -1,11 +1,5 @@
 # Tensor
 
-```@meta
-DocTestSetup = quote
-    using Tenet
-end
-```
-
 A tensor $T$ of order[^1] $n$ is a multilinear[^2] application between $n$ vector spaces over a field $\mathcal{F}$.
 
 [^1]: The _order_ of a tensor may also be known as _rank_ or _dimensionality_ in other fields, althought these can be missleading, since it has nothing to do with the _rank_ of linear algebra nor with the _dimensionality_ of a vector space. We prefer to use _order_.
@@ -26,7 +20,7 @@ T_{ijk}
 You can create a `Tensor` by passing an array and a list of `Symbol`s that name indices.
 
 ```@example tensor
-using Tenet
+using Tenet # hide
 T = Tensor(rand(5,3,2), (:i,:j,:k))
 ```
 
