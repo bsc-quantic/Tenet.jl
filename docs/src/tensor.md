@@ -6,13 +6,13 @@ DocTestSetup = quote
 end
 ```
 
-A tensor $T$ of order[^1] $n$ is a multilinear[^2] application between $n$ vector spaces.
+A tensor $T$ of order[^1] $n$ is a multilinear[^2] application between $n$ vector spaces over a field $\mathcal{F}$.
 
 [^1]: The _order_ of a tensor may also be known as _rank_ or _dimensionality_ in other fields, althought these can be missleading, since it has nothing to do with the _rank_ of linear algebra nor with the _dimensionality_ of a vector space. We prefer to use _order_.
 [^2]: Meaning that the relationships between the output and the inputs, and the inputs between them, are linear.
 
 ```math
-T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \qquad\qquad \mathbf{v}^{(i)} \in V^{(i)}, \forall i
+T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \in \mathcal{F} \qquad\qquad \mathbf{v}^{(i)} \in V^{(i)}, \forall i
 ```
 
 It is a higher-dimensional generalization of linear algebra, where scalar number can be viewed as _order-0 tensors_, vectors as _order-1 tensors_, matrices as _order-2 tensors_, ...
