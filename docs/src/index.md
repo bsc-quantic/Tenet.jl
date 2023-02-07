@@ -35,4 +35,8 @@ Tenet provides some popular Tensor Network Ansatzes. Currently implemented are:
 ## Contents
 
 ```@contents
+Pages = [
+    "tensor.md",
+    "alternatives.md",
+]
 ```
