@@ -1,0 +1,38 @@
+name: Documenter
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  Documenter:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Build package
+        uses: julia-actions/julia-buildpkg@latest
+      - name: Generate documentation
+        run: julia docs/make.jl
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v1.0.5
+        with:
+          path: "docs/build"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
