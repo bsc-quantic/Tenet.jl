@@ -14,6 +14,7 @@ makedocs(
     sitename="Tenet.jl",
     pages=Any[
         "Home"=>"index.md",
+        "Tensor"=>"tensor.md",
         "Alternatives"=>"alternatives.md",
     ],
 )
