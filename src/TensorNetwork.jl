@@ -186,6 +186,8 @@ end
 
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
+Base.replace(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...) = replace!(copy(tn), old_new...)
+
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
     tensors = unique(Iterators.flatten([select(tn, i) for i in first.(old_new)]) |> collect)
 
