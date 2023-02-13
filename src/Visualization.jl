@@ -4,8 +4,6 @@ using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
 import Makie
 
-const MAX_NODE_SIZE = 20.
-
 function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A<:Ansatz}
     f = Makie.Figure()
 
