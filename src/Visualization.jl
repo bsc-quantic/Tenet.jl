@@ -31,7 +31,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; kwargs...) whe
         # hide decorations if it is not a 3D plot
         Makie.hidedecorations!(ax)
         Makie.hidespines!(ax)
-        ax.aspect = DataAspect()
+        ax.aspect = Makie.DataAspect()
     end
 
     p = graphplot!(f[1,1], graph; kwargs...)
