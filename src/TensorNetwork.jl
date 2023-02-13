@@ -201,6 +201,8 @@ function reindex!(tn::TensorNetwork, mapping::Pair{Symbol,Symbol}...)
         push!(tn, reindex(tensor, mapping...))
         delete!(tn, tensor)
     end
+
+    return tn
 end
 
 function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
