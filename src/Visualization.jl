@@ -24,11 +24,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; kwargs...) whe
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
-    log_size = [log2(size(tensors(tn, i)) |> prod) for i in 1:nv(graph)]
-
-    min_size, max_size = extrema(log_size)
-
-    kwargs[:node_size] = (log_size/max_size) * MAX_NODE_SIZE
+    kwargs[:node_size] = [max(10, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1,1])
