@@ -81,6 +81,8 @@ hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
 Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])
 
+Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
+
 """
     select(tn, i)
 
