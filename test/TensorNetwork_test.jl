@@ -203,8 +203,8 @@
         @test targets ⊆ labels(slice)
     end
 
-    @testset "reindex!" begin
-        using Tenet: reindex, reindex!, openinds, hyperinds, select
+    @testset "Base.replace!" begin
+        using Tenet: openinds, hyperinds, select
 
         t_ij = Tensor(zeros(2, 2), (:i, :j); tags = Set{String}(["TEST"]))
         t_ik = Tensor(zeros(2, 2), (:i, :k))
@@ -213,16 +213,16 @@
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
-        reindex!(tn, mapping...)
+        replace!(tn, mapping...)
 
         @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
         @test issetequal(openinds(tn) .|> nameof, (:v, :w))
         @test issetequal(innerinds(tn) .|> nameof, (:u, :x, :y))
         @test issetequal(hyperinds(tn) .|> nameof, (:u,))
 
-        @test only(select(tn, (:u, :v))) == reindex(t_ij, mapping...)
-        @test only(select(tn, (:u, :w))) == reindex(t_ik, mapping...)
-        @test only(select(tn, (:u, :x, :y))) == reindex(t_ilm, mapping...)
+        @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
+        @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
+        @test only(select(tn, (:u, :x, :y))) == replace(t_ilm, mapping...)
 
         @test hastag(only(select(tn, (:u, :v))), "TEST")
     end

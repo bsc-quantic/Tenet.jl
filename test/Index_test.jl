@@ -1,5 +1,5 @@
 @testset "Index" begin
-    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, hastag, checklinks, checksize, reindex
+    using Tenet: Index, links, link!, unlink!, tags, tag!, untag!, hastag, checklinks, checksize
 
     @test_throws DomainError Index(:_, 0)
     @test_throws DomainError Index(:_, -1)
@@ -79,12 +79,12 @@
         @test untag!(index, "TAG_UNEXISTANT") == tags(index)
     end
 
-    @testset "reindex" begin
+    @testset "Base.replace" begin
         index = Index(:i, 2, site = 0, tags = Set{String}(["TEST"]))
         tensor = Tensor(zeros(2, 2), (:i, :j))
         link!(index, tensor)
 
-        new_index = reindex(index, :k)
+        new_index = replace(index, :k)
         @test nameof(new_index) == :k
         @test size(new_index) == 2
         @test hastag(new_index, "TEST")

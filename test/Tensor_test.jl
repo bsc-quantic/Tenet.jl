@@ -32,15 +32,13 @@
         @test zeros(size(tensor)...) ∉ Set([tensor])
     end
 
-    @testset "reindex" begin
-        using Tenet: reindex
-
+    @testset "Base.replace" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-        @test labels(reindex(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
-        @test parent(reindex(tensor, :i => :u, :j => :v, :k => :w)) === parent(tensor)
+        @test labels(replace(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
+        @test parent(replace(tensor, :i => :u, :j => :v, :k => :w)) === parent(tensor)
 
-        @test labels(reindex(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
-        @test parent(reindex(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
+        @test labels(replace(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
+        @test parent(replace(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
     end
 
     @testset "dim" begin

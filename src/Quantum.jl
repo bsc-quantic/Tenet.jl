@@ -106,8 +106,8 @@ function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
     # rename connector indices
     newinds = Dict([s => Symbol(uuid4()) for s in outsites(A)])
 
-    reindex!(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
-    reindex!(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
+    replace!(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
+    replace!(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
 
     # remove plug metadata on connector indices
     for i in values(newinds)
@@ -116,7 +116,7 @@ function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
     end
 
     # rename inner indices of B to avoid hyperindices
-    reindex!(B, [nameof(i) => Symbol(uuid4()) for i in innerinds(B)]...)
+    replace!(B, [nameof(i) => Symbol(uuid4()) for i in innerinds(B)]...)
 
     # merge tensors and indices
     append!(A, B)

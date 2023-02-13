@@ -13,7 +13,7 @@ export Index, isphysical, isvirtual, site, ishyperind, links
 export tags, tag!, untag!, hastag
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, inds, openinds, hyperinds, select, reindex!
+export TensorNetwork, tensors, arrays, inds, openinds, hyperinds, select
 export contract, contract!
 export Ansatz, ansatz, Arbitrary
 

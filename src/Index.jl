@@ -61,7 +61,7 @@ ishyperind(i::Index) = length(links(i)) > 2
 
 # NOTE do not link! old indices
 # TODO rename to `replace`?
-function reindex(i::Index, name::Symbol)
+function Base.replace(i::Index, name::Symbol)
     j = Index(name, size(i); copy(i.meta)...)
     return j
 end

@@ -38,7 +38,8 @@ Base.isequal(a::Tensor, b::Tensor) = allequal(labels.((a, b))) && allequal(paren
 
 labels(t::Tensor) = t.labels
 
-reindex(t::Tensor, mapping::Pair{Symbol,Symbol}...) = Tensor(parent(t), replace(labels(t), mapping...); copy(t.meta)...)
+Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...) =
+    Tensor(parent(t), replace(labels(t), old_new...); copy(t.meta)...)
 
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A

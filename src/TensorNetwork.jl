@@ -186,19 +186,19 @@ end
 
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
-function reindex!(tn::TensorNetwork, mapping::Pair{Symbol,Symbol}...)
-    tensors = unique(Iterators.flatten([select(tn, i) for i in first.(mapping)]) |> collect)
+function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
+    tensors = unique(Iterators.flatten([select(tn, i) for i in first.(old_new)]) |> collect)
 
     # reindex indices
     # NOTE what if :a => :d, :d => ...? temporal location as a fix
-    tmp = Dict(name => copy(i) for (name, i) in tn.inds if name ∈ first.(mapping))
-    for (old, new) in mapping
-        push!(tn.inds, new => reindex(tmp[old], new))
+    tmp = Dict(name => copy(i) for (name, i) in tn.inds if name ∈ first.(old_new))
+    for (old, new) in old_new
+        push!(tn.inds, new => replace(tmp[old], new))
     end
 
     # reindex tensors
     for tensor in tensors
-        push!(tn, reindex(tensor, mapping...))
+        push!(tn, replace(tensor, old_new...))
         delete!(tn, tensor)
     end
 
