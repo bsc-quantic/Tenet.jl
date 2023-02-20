@@ -147,3 +147,8 @@ function contract(a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
     # TODO merge metadata?
     return Tensor(data, ic)
 end
+
+contract(a::Number, b) = a * b
+contract(a, b::Number) = a * b
+contract(a::Number, b::Number) = a * b
+
