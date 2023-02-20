@@ -19,7 +19,7 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
-function Base.similar(t::Tensor, eltype::Type{T} = eltype(t), dims = size(t), labels = labels(t); meta...)
+function Base.similar(t::Tensor, eltype::Type = eltype(t), dims = size(t), labels = labels(t); meta...)
     data = similar(parent(t))
 
     # copy metadata
