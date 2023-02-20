@@ -127,3 +127,5 @@ function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
 end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
+
+Base.adjoint(tn::TensorNetwork{<:Quantum}) = Adjoint(tn)
