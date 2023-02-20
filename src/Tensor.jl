@@ -135,7 +135,7 @@ untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
 
 # Contraction
 # TODO arg to keep i
-function contract(a::Tensor, b::Tensor, i)
+function contract(a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
     ia = labels(a)
     ib = labels(b)
 
