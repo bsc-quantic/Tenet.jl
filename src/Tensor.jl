@@ -20,8 +20,8 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
 # TODO pass new labels and meta
-function Base.similar(t::Tensor, ::Type{T}, dims::Tuple{Int64,Vararg{Int64,N}}; meta...) where {T,N}
-    data = similar(parent(t), T)
+function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; meta...) where {T}
+    data = similar(parent(t), T, dims)
 
     # copy metadata
     metadata = copy(t.meta)
