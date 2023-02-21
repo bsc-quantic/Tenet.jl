@@ -163,7 +163,13 @@ contract(a, b::Number, _) = contract(a, b)
 contract(a::Number, b::Number) = a * b
 contract(a::Number, b::Number, _) = contract(a, b)
 
-function ChainRulesCore.frule((_, ȧ, ḃ, _), ::typeof(contract), a::Tensor, b::Tensor, i)
+function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(contract), a, b)
+    c = contract(a, b)
+    ċ = @thunk(contract(ȧ, b)) + @thunk(contract(a, ḃ))
+    return c, ċ
+end
+
+function ChainRulesCore.frule((_, ȧ, ḃ, _), ::typeof(contract), a, b, i)
     c = contract(a, b, i)
     ċ = @thunk(contract(ȧ, b, i)) + @thunk(contract(a, ḃ, i))
     return c, ċ
