@@ -171,14 +171,13 @@ end
 
 function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
     c = contract(a, b, i)
-    project_c = ProjectTo(c)
 
     function contract_pullback(c̄)
-        Δc = Tensor(c̄, labels(c); c.meta...)
+        c̄ = Tensor(c̄, labels(c); c.meta...)
 
         f̄ = NoTangent()
-        ā = @thunk(contract(Δc, b, i))
-        b̄ = @thunk(contract(a, Δc, i))
+        ā = @thunk(contract(c̄, b, i))
+        b̄ = @thunk(contract(a, c̄, i))
         ī = NoTangent()
 
         return f̄, ā, b̄, ī
