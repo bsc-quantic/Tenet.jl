@@ -94,7 +94,9 @@ Base.elsize(T::Type{<:Tensor}) = elsize(parenttype(T))
 Base.BroadcastStyle(::Type{T}) where {T<:Tensor} = ArrayStyle{T}()
 
 function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}) where {T,N,A,ElType}
-    tensor = bc.args[1]
+    # NOTE already checked if dimension mismatch
+    # TODO throw on label mismatch?
+    tensor = first(arg for arg in bc.args if arg isa Tensor{T,N,A})
     data = similar(parent(tensor), ElType)
 
     Tensor(data, labels(tensor))
