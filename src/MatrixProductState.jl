@@ -141,7 +141,9 @@ function Base.rand(
     rand(MPSSampler{B,eltype}(n, p, χ))
 end
 
-Base.rand(::Type{MatrixProductState}, args...; kwargs...) = rand(MatrixProductState{Open}, args...; kwargs...)
+# NOTE `Vararg{Integer,3}` for dissambiguation
+Base.rand(::Type{MatrixProductState}, args::Vararg{Integer,3}; kwargs...) =
+    rand(MatrixProductState{Open}, args...; kwargs...)
 
 # TODO stable renormalization
 function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {T}
