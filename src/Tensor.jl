@@ -21,7 +21,6 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
 # TODO pass new labels and meta
-Base.similar(t::Tensor, ::Type{T}; kwargs...) where {T} = similar(t, T, size(t)...; kwargs...)
 function Base.similar(t::Tensor{_,N}, ::Type{T}; kwargs...) where {_,T,N}
     if N == 0
         return Tensor(similar(parent(t), T), (); kwargs...)
