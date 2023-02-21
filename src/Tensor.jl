@@ -20,14 +20,22 @@ Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); m
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
 # TODO pass new labels and meta
-function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; meta...) where {T}
+Base.similar(t::Tensor, ::Type{T}; kwargs...) where {T} = similar(t, T, size(t)...; kwargs...)
+function Base.similar(t::Tensor{_,N}, ::Type{T}; kwargs...) where {_,T,N}
+    if N == 0
+        return Tensor(similar(parent(t), T), (); kwargs...)
+    else
+        similar(t, T, size(t)...; kwargs...)
+    end
+end
+function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; labels = labels(t), meta...) where {T}
     data = similar(parent(t), T, dims)
 
     # copy metadata
     metadata = copy(t.meta)
     merge!(metadata, meta)
 
-    Tensor(data, labels(t); meta...)
+    Tensor(data, labels; meta...)
 end
 
 Base.:(==)(a::A, b::T) where {A<:AbstractArray,T<:Tensor} = isequal(b, a)
@@ -97,9 +105,7 @@ function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}
     # NOTE already checked if dimension mismatch
     # TODO throw on label mismatch?
     tensor = first(arg for arg in bc.args if arg isa Tensor{T,N,A})
-    data = similar(parent(tensor), ElType)
-
-    Tensor(data, labels(tensor))
+    similar(tensor, ElType)
 end
 
 Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), labels(t); t.meta...)
