@@ -1,6 +1,7 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
 using OMEinsum
+using ChainRulesCore
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
@@ -157,6 +158,32 @@ function contract(a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
 end
 
 contract(a::Number, b) = a * b
+contract(a::Number, b, _) = contract(a, b)
 contract(a, b::Number) = a * b
+contract(a, b::Number, _) = contract(a, b)
 contract(a::Number, b::Number) = a * b
+contract(a::Number, b::Number, _) = contract(a, b)
 
+function ChainRulesCore.frule((_, ȧ, ḃ, _), ::typeof(contract), a::Tensor, b::Tensor, i)
+    c = contract(a, b, i)
+    ċ = @thunk(contract(ȧ, b, i)) + @thunk(contract(a, ḃ, i))
+    return c, ċ
+end
+
+function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
+    c = contract(a, b, i)
+    project_c = ProjectTo(c)
+
+    function contract_pullback(c̄)
+        Δc = Tensor(c̄, labels(c); c.meta...)
+
+        f̄ = NoTangent()
+        ā = @thunk(contract(Δc, b, i))
+        b̄ = @thunk(contract(a, Δc, i))
+        ī = NoTangent()
+
+        return f̄, ā, b̄, ī
+    end
+
+    return c, contract_pullback
+end
