@@ -23,7 +23,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     kwargs[:node_size] = [max(10, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
-    elabels = [join(tn.tensors[edge.src].labels ∩ tn.tensors[edge.dst].labels) for edge in edges(graph)]
+    elabels = [join(labels(tensors(tn)[edge.src]) ∩ labels(tensors(tn)[edge.dst]), delim=',') for edge in edges(graph)]
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1,1])
