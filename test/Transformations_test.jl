@@ -1,5 +1,21 @@
 @testset "Transformations" begin
-    using Tenet: transform!
+    using Tenet: transform, transform!, Transformation
+
+    @testset "transform" begin
+        struct MockTransformation <: Transformation end
+        Tenet.transform!(::TensorNetwork, ::MockTransformation) = nothing
+
+        tn = rand(TensorNetwork, 10, 3)
+        @test isnothing(transform!(tn, MockTransformation()))
+        @test isnothing(transform!(tn, MockTransformation))
+        @test transform!(tn, [MockTransformation]) === tn
+        @test transform!(tn, [MockTransformation()]) === tn
+
+        @test transform(tn, MockTransformation) isa TensorNetwork
+        @test transform(tn, MockTransformation()) isa TensorNetwork
+        @test transform(tn, [MockTransformation]) isa TensorNetwork
+        @test transform(tn, [MockTransformation()]) isa TensorNetwork
+    end
 
     @testset "HyperindConverter" begin
         using Tenet: HyperindConverter
