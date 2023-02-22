@@ -38,8 +38,8 @@ function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; labels = labels(t), 
     Tensor(data, labels; meta...)
 end
 
-Base.:(==)(a::A, b::T) where {A<:AbstractArray,T<:Tensor} = isequal(b, a)
-Base.:(==)(a::T, b::A) where {A<:AbstractArray,T<:Tensor} = isequal(a, b)
+Base.:(==)(a::AbstractArray, b::Tensor) = isequal(b, a)
+Base.:(==)(a::Tensor, b::AbstractArray) = isequal(a, b)
 Base.:(==)(a::Tensor, b::Tensor) = isequal(a, b)
 Base.isequal(a::AbstractArray, b::Tensor) = false
 Base.isequal(a::Tensor, b::AbstractArray) = false
