@@ -4,14 +4,14 @@ abstract type Transformation end
 
 function transform! end
 
-function transform!(tn::TensorNetwork, transformations::Sequence{A}) where {A<:Transformation}
+function transform!(tn::TensorNetwork, transformations::Sequence{Transformation})
     for transformation in transformations
-        transform!(tn, typeof(transformation))
+        transform!(tn, transformation)
     end
     return tn
 end
 
-function transform(tn::TensorNetwork, transformations::Sequence{A}) where {A<:Transformation}
+function transform(tn::TensorNetwork, transformations::Sequence{Transformation})
     tn = copy(tn)
     transform!(tn, transformations)
     return tn
