@@ -175,11 +175,31 @@ function ChainRulesCore.frule((_, ȧ, ḃ, _)::NTuple{4,Any}, ::typeof(contract
     return c, ċ
 end
 
-function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
+# TODO should be a `ProjectTo` functor?
+__prepare_contract_pullback(c̄, _) = c̄
+__prepare_contract_pullback(c̄::AbstractArray, c) = Tensor(c̄, labels(c); c.meta...)
+
+function ChainRulesCore.rrule(::typeof(contract), a, b)
+    c = contract(a, b)
+
+    function contract_pullback(c̄)
+        c̄ = __prepare_contract_pullback(c̄, c)
+
+        f̄ = NoTangent()
+        ā = @thunk(contract(c̄, b))
+        b̄ = @thunk(contract(a, c̄))
+
+        return f̄, ā, b̄
+    end
+
+    return c, contract_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor, i)
     c = contract(a, b, i)
 
     function contract_pullback(c̄)
-        c̄ = Tensor(c̄, labels(c); c.meta...)
+        c̄ = __prepare_contract_pullback(c̄, c)
 
         f̄ = NoTangent()
         ā = @thunk(contract(c̄, b, i))
