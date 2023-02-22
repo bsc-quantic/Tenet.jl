@@ -2,18 +2,16 @@ using DeltaArrays
 
 abstract type Transformation end
 
+transform(tn::TensorNetwork, transformations) = (tn = copy(tn); transform!(tn, transformations); return tn)
+
 function transform! end
 
-function transform!(tn::TensorNetwork, transformations::Sequence{Transformation})
+transform!(tn::TensorNetwork, transformation::Type{<:Transformation}) = transform!(tn, transformation())
+
+function transform!(tn::TensorNetwork, transformations::Sequence)
     for transformation in transformations
         transform!(tn, transformation)
     end
-    return tn
-end
-
-function transform(tn::TensorNetwork, transformations::Sequence{Transformation})
-    tn = copy(tn)
-    transform!(tn, transformations)
     return tn
 end
 
@@ -22,7 +20,7 @@ struct HyperindConverter <: Transformation end
 """
     Converts hyperindices to COPY tensors.
 """
-function transform!(tn::TensorNetwork, ::Type{HyperindConverter})
+function transform!(tn::TensorNetwork, ::HyperindConverter)
     for index in hyperinds(tn)
         # unlink index
         tensors = [pop!(tn, tensor) for tensor in links(index)]
