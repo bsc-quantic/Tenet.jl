@@ -17,7 +17,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     scene = Makie.Scene()
     default_attrs = Makie.default_theme(scene, GraphPlot)
 
-    transform!(tn, HyperindConverter)
+    tn = transform(tn, HyperindConverter)
 
     kwargs = Dict{Symbol,Any}(kwargs)
 
@@ -32,6 +32,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     if labels
         elabels = Vector{String}([])
+        elabels_color = Vector{Symbol}([])
         edge_color = Vector{Symbol}([])
 
         for edge in edges(graph)
@@ -39,9 +40,11 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
             if isempty(copies) # there are no copy tensors in the nodes of this edge
                 push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
+                push!(elabels_color, :black)
                 push!(edge_color, :black)
             else
                 push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
+                push!(elabels_color, :grey)
                 push!(edge_color, :grey)
             end
         end
@@ -61,7 +64,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     p = graphplot!(f[1,1], graph;
         elabels = labels ? elabels : nothing,
-        elabels_color = [:black for i in 1:ne(graph)],
+        elabels_color = labels ? elabels_color : [:black for i in 1:ne(graph)],
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
         kwargs...)
