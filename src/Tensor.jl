@@ -8,7 +8,7 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     labels::NTuple{N,Symbol}
     meta::Dict{Symbol,Any}
 
-    function Tensor(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor{T,N,A}(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
         meta = Dict{Symbol,Any}(meta...)
         !haskey(meta, :tags) && (meta[:tags] = Set{String}())
 
@@ -17,6 +17,10 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
 end
 
 Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); meta...)
+Tensor(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}} =
+    Tensor{T,N,A}(data, labels; meta...)
+Tensor{T,N,A}(data::A, labels::NTuple{N,Symbol}, meta) where {T,N,A<:AbstractArray{T,N}} =
+    Tensor{T,N,A}(data, labels; meta...)
 
 Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
 
