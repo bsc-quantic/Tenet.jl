@@ -1,6 +1,6 @@
 using Quac: Circuit, lanes, arraytype, Swap
 using OptimizedEinsum: get_symbol
-using LinearAlgebra: Adjoint
+# using LinearAlgebra: Adjoint
 using UUIDs: uuid4
 
 """
@@ -35,19 +35,20 @@ bounds(::T) where {T<:Operator} = bounds(T)
 bounds(::Type{<:Operator{B}}) where {B} = B
 
 sites(tn::TensorNetwork) = insites(tn) ∪ outsites(tn)
-sites(tn::TensorNetwork{<:State}) = outsites(tn)
-sites(tn::Adjoint{TensorNetwork{<:State}}) = insites(tn)
+# sites(tn::TensorNetwork{<:State}) = outsites(tn)
+# sites(tn::Adjoint{TensorNetwork{<:State}}) = insites(tn)
+siteinds(tn::TensorNetwork) = insiteinds(tn) ∪ outsiteinds(tn)
 
 # TODO maybe don't filter by openinds?
 insites(tn::TensorNetwork) = site.(insiteinds(tn))
-insites(::TensorNetwork{<:State}) = throw(MethodError(insites, TensorNetwork{<:State}))
-insites(tn::Adjoint{TensorNetwork}) = outsites(parent(tn))
+# insites(::TensorNetwork{<:State}) = throw(MethodError(insites, TensorNetwork{<:State}))
+# insites(tn::Adjoint{TensorNetwork}) = outsites(parent(tn))
 insiteinds(tn) = sort!(filter(i -> i.meta[:plug] == :input, openinds(tn)), by = site)
 insiteind(tn, s) = only(filter(i -> site(i) == s, insiteinds(tn)))
 
 # TODO maybe don't filter by openinds?
 outsites(tn::TensorNetwork) = site.(outsiteinds(tn))
-outsites(tn::Adjoint{TensorNetwork}) = insites(parent(tn))
+# outsites(tn::Adjoint{TensorNetwork}) = insites(parent(tn))
 outsiteinds(tn) = sort!(filter(i -> i.meta[:plug] == :output, openinds(tn)), by = site)
 outsiteind(tn, s) = only(filter(i -> site(i) == s, outsiteinds(tn)))
 
@@ -128,4 +129,20 @@ end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 
-Base.adjoint(tn::TensorNetwork{<:Quantum}) = Adjoint(tn)
+function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
+    tn = copy(tn)
+
+    # TODO refactor internals
+    for i in siteinds(tn)
+        plug = i.meta[:plug]
+        i.meta[:plug] = if plug == :input
+            :output
+        elseif plug == :output
+            :input
+        else
+            # TODO throw error?
+        end
+    end
+
+    return tn
+end
