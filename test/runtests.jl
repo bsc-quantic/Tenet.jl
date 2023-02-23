@@ -16,6 +16,7 @@ end
 
 @testset "Integration tests" verbose = true begin
     include("Integration/Quac_test.jl")
+    include("Integration/ChainRules_test.jl")
 end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")
