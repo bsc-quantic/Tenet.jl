@@ -17,13 +17,37 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     scene = Makie.Scene()
     default_attrs = Makie.default_theme(scene, GraphPlot)
 
+    transform!(tn, HyperindConverter)
+
     kwargs = Dict{Symbol,Any}(kwargs)
 
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
-    kwargs[:node_size] = [max(10, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
-    elabels = [join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ',') for edge in edges(graph)]
+    copytensors = findall(Base.Fix2((x,y) -> haskey(x.meta, y), :dual), tensors(tn))
+
+    kwargs[:node_size] = [max(15, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
+    kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
+    kwargs[:node_color] = [i ∈ copytensors ? :grey : :black for i in 1:length(tensors(tn))]
+
+    if labels
+        elabels = Vector{String}([])
+        edge_color = Vector{Symbol}([])
+
+        for edge in edges(graph)
+            copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
+
+            if isempty(copies) # there are no copy tensors in the nodes of this edge
+                push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
+                push!(edge_color, :black)
+            else
+                push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
+                push!(edge_color, :grey)
+            end
+        end
+
+        kwargs[:edge_color] = edge_color
+    end
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1,1])
