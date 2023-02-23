@@ -1,7 +1,6 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
 using OMEinsum
-using ChainRulesCore
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
@@ -166,66 +165,3 @@ contract(a, b::Number) = a * b
 contract(a, b::Number, _) = contract(a, b)
 contract(a::Number, b::Number) = a * b
 contract(a::Number, b::Number, _) = contract(a, b)
-
-function ChainRulesCore.frule((_, ȧ, ḃ)::NTuple{3,Any}, ::typeof(contract), a, b)
-    c = contract(a, b)
-    ċ = @thunk(contract(ȧ, b)) + @thunk(contract(a, ḃ))
-    return c, ċ
-end
-
-function ChainRulesCore.frule((_, ȧ, ḃ, _)::NTuple{4,Any}, ::typeof(contract), a, b, i)
-    c = contract(a, b, i)
-    ċ = @thunk(contract(ȧ, b, i)) + @thunk(contract(a, ḃ, i))
-    return c, ċ
-end
-
-ChainRulesCore.ProjectTo(t::T) where {T<:Tensor} =
-    ProjectTo{T}(; data = ProjectTo(parent(t)), labels = labels(t), meta = t.meta)
-
-(project::ProjectTo{<:Number})(dx::Tensor{_,0}) where {_} = project(only(dx))
-(project::ProjectTo{<:Tensor})(dx::Tensor) = Tensor(project.data(dx.data), project.labels; project.meta...)
-
-# TODO is this the correct way?
-(project::ProjectTo{<:Tensor})(dx::Thunk) = project(unthunk(dx))
-
-function ChainRulesCore.rrule(f::Type{<:Tensor}, data, labels; meta...)
-    t = f(data, labels; meta...)
-    Tensor_pullback(t̄) = (NoTangent(), unthunk(t̄).data, NoTangent())
-
-    return t, Tensor_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A,B}
-    c = contract(a, b)
-    project_a = ProjectTo(a)
-    project_b = ProjectTo(b)
-    project_c = ProjectTo(c)
-
-    function contract_pullback(c̄)::Tuple{NoTangent,A,B}
-        f̄ = NoTangent()
-        ā = project_a(contract(project_c(c̄), b)) # TODO @thunk
-        b̄ = project_b(contract(a, project_c(c̄))) # TODO @thunk
-
-        return f̄, ā, b̄
-    end
-
-    return c, contract_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B, i) where {A<:Tensor,B<:Tensor}
-    c = contract(a, b, i)
-    project_a = ProjectTo(a)
-    project_b = ProjectTo(b)
-    project_c = ProjectTo(c)
-
-    function contract_pullback(c̄)::Tuple{NoTangent,A,B,NoTangent}
-        f̄ = NoTangent()
-        ā = project_a(contract(project_c(c̄), b, i)) # TODO @thunk
-        b̄ = project_b(contract(a, project_c(c̄), i)) # TODO @thunk
-        ī = NoTangent()
-
-        return f̄, ā, b̄, ī
-    end
-
-    return c, contract_pullback
-end
