@@ -105,17 +105,17 @@ function MatrixProductState{Closed}(arrays; χ = nothing, order = (:l, :r, :p), 
 end
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more
-function contractpath(a::TensorNetwork{<:MatrixProductState}, b::TensorNetwork{<:MatrixProductState})
-    !issetequal(sites(a), sites(b)) && throw(ArgumentError("both tensor networks are expected to have same sites"))
+# function contractpath(a::TensorNetwork{<:MatrixProductState}, b::TensorNetwork{<:MatrixProductState})
+#     !issetequal(sites(a), sites(b)) && throw(ArgumentError("both tensor networks are expected to have same sites"))
 
-    b = replace(b, [nameof(outsiteind(b, s)) => nameof(outsiteind(a, s)) for s in sites(a)]...)
-    path = nameof.(flatten([physicalinds(a), flatten(zip(virtualinds(a), virtualinds(b)))]) |> collect)
-    inputs = flatten([tensors(a), tensors(b)]) .|> labels
-    output = Symbol[]
-    size_dict = merge(size(a), size(b))
+#     b = replace(b, [nameof(outsiteind(b, s)) => nameof(outsiteind(a, s)) for s in sites(a)]...)
+#     path = nameof.(flatten([physicalinds(a), flatten(zip(virtualinds(a), virtualinds(b)))]) |> collect)
+#     inputs = flatten([tensors(a), tensors(b)]) .|> labels
+#     output = Symbol[]
+#     size_dict = merge(size(a), size(b))
 
-    ContractionPath(path, inputs, output, size_dict)
-end
+#     ContractionPath(path, inputs, output, size_dict)
+# end
 
 # Base.push!(::TensorNetwork{MatrixProductState}, args...; kwargs...) =
 #     throw(MethodError("push! is forbidden for MatrixProductState"))
