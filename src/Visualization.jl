@@ -24,7 +24,8 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
-    copytensors = findall(Base.Fix2((x,y) -> haskey(x.meta, y), :dual), tensors(tn))
+    # TODO recognise them by using `DeltaArray` or `Diagonal` representations
+    copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
     kwargs[:node_size] = [max(15, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
