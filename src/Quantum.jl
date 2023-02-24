@@ -144,5 +144,9 @@ function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
         end
     end
 
+    for tensor in tensors(tn)
+        tensor .= conj(tensor)
+    end
+
     return tn
 end
