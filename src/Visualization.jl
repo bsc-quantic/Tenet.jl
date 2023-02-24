@@ -28,12 +28,11 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     kwargs[:node_size] = [max(15, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
-    kwargs[:node_color] = [i ∈ copytensors ? :grey : :black for i in 1:length(tensors(tn))]
+    kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:length(tensors(tn))]
 
     if labels
         elabels = Vector{String}([])
         elabels_color = Vector{Symbol}([])
-        edge_color = Vector{Symbol}([])
 
         for edge in edges(graph)
             copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
@@ -41,15 +40,11 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
             if isempty(copies) # there are no copy tensors in the nodes of this edge
                 push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
                 push!(elabels_color, :black)
-                push!(edge_color, :black)
             else
                 push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
                 push!(elabels_color, :grey)
-                push!(edge_color, :grey)
             end
         end
-
-        kwargs[:edge_color] = edge_color
     end
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
@@ -64,9 +59,9 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     p = graphplot!(f[1,1], graph;
         elabels = labels ? elabels : nothing,
-        elabels_color = labels ? elabels_color : [:black for i in 1:ne(graph)],
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
+        node_attr=(colormap = :viridis, strokewidth = 2., strokecolor = :black),
         kwargs...)
 
     return p, ax
