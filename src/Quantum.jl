@@ -151,6 +151,10 @@ function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     return tn
 end
 
+function contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...)
+    contract(hcat(a, b); kwargs...)
+end
+
 # TODO look for more stable ways
 function LinearAlgebra.norm(ψ::TensorNetwork{<:State}, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
