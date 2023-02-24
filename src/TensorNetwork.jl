@@ -237,7 +237,7 @@ function contract!(tn::TensorNetwork, i::Symbol)
 end
 
 function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
-    path = OptimizedEinsum.contractpath(tn; output = output, kwargs...)
+    path = contractpath(tn; output = output, kwargs...)
 
     # SSA-to-tensor mapping
     mapping = Dict{Int,Tensor}(i => t for (i, t) in enumerate(tensors(tn)))
