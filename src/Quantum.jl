@@ -179,3 +179,5 @@ function LinearAlgebra.normalize!(
         tensor ./= norm
     end
 end
+
+fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
