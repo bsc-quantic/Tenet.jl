@@ -36,4 +36,7 @@ end
 # reexports from OptimizedEinsum
 export contractpath
 
+# reexports from LinearAlgebra
+export norm, normalize!
+
 end

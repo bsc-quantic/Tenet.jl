@@ -1,6 +1,6 @@
 using Quac: Circuit, lanes, arraytype, Swap
 using OptimizedEinsum: get_symbol
-# using LinearAlgebra: Adjoint
+using LinearAlgebra
 using UUIDs: uuid4
 
 """
@@ -149,4 +149,33 @@ function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     end
 
     return tn
+end
+
+# TODO look for more stable ways
+function LinearAlgebra.norm(ψ::TensorNetwork{<:State}, p::Real = 2; kwargs...)
+    p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
+
+    return contract(hcat(ψ, ψ'); kwargs...) |> only |> sqrt
+end
+
+function LinearAlgebra.normalize!(
+    ψ::TensorNetwork{<:State},
+    p::Real = 2;
+    insert::Union{Nothing,Int} = nothing,
+    kwargs...,
+)
+    norm = norm(ψ; kwargs...)
+
+    if isnothing(insert)
+        # method 1: divide all tensors by (√v)^(1/n)
+        n = length(ψ)
+        norm ^= 1 / n
+        for tensor in tensors(ψ)
+            tensor ./= norm
+        end
+    else
+        # method 2: divide only one tensor
+        tensor = tensors(ψ, insert)
+        tensor ./= norm
+    end
 end

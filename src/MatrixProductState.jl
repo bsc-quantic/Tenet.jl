@@ -165,11 +165,17 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {
     insert!(arrays, 1, rand(rng, T, min(χ, p), p))
     insert!(arrays, n, rand(rng, T, min(χ, p), p))
 
-    MatrixProductState{Open}(arrays; χ = χ)
+    ψ = MatrixProductState{Open}(arrays; χ = χ)
+    normalize!(ψ)
+
+    return ψ
 end
 
 # TODO stable renormalization
 function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where {T}
     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
-    MatrixProductState{Closed}([rand(rng, T, χ, χ, p) for _ in 1:n]; χ = χ)
+    ψ = MatrixProductState{Closed}([rand(rng, T, χ, χ, p) for _ in 1:n]; χ = χ)
+    normalize!(ψ)
+
+    return ψ
 end
