@@ -8,6 +8,18 @@ It aims for,
 - **Flexibility** _It can be extended to your own needs._
 - **Performance** _It goes fast._
 
+!!! info "Registry"
+    `Tenet` and other supporting libraries are located in our own Julia registry.
+    In order to download `Tenet`, add our registry to your Julia installation by using the [Pkg mode](https://docs.julialang.org/en/v1/stdlib/REPL/#Pkg-mode) in a REPL session,
+    ```
+    registry add https://github.com/bsc-quantic/Registry
+    ```
+    or using the `Pkg` package directly,
+    ```julia
+    using Pkg
+    pkg"registry add https://github.com/bsc-quantic/Registry"
+    ```
+
 ## Features
 
 ### Arbitrary Tensor Network Contraction

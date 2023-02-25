@@ -85,6 +85,11 @@ Base.firstindex(t::Tensor) = firstindex(parent(t))
 Base.lastindex(t::Tensor) = lastindex(parent(t))
 
 # AbstractArray interface
+"""
+    Base.size(::Tensor[, i])
+
+Return the size of the underlying array or the dimension `i` (specified by `Symbol` or `Integer`).
+"""
 Base.size(t::Tensor) = size(parent(t))
 Base.size(t::Tensor, i) = size(parent(t), dim(t, i))
 
@@ -140,9 +145,32 @@ function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
 end
 
 # Metadata
+"""
+    tags(tensor)
+
+Return a set of `String`s associated to `tensor`.
+"""
 tags(t::Tensor) = t.meta[:tags]
+
+"""
+    tag!(tensor, tag)
+
+Mark `tensor` with `tag`.
+"""
 tag!(t::Tensor, tag::String) = push!(tags(t), tag)
+
+"""
+    hastag(tensor, tag)
+
+Return `true` if `tensor` contains tag `tag`.
+"""
 hastag(t::Tensor, tag::String) = tag ∈ tags(t)
+
+"""
+    untag!(tensor, tag)
+
+Removes tag `tag` from `tensor` if present.
+"""
 untag!(t::Tensor, tag::String) = delete!(tags(t), tag)
 
 # Contraction
