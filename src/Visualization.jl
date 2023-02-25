@@ -28,7 +28,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
-    kwargs[:node_size] = [max(15, log2(size(tensors(tn,i)) |> prod)) for i in 1:nv(graph)]
+    kwargs[:node_size] = [max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
     kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:length(tensors(tn))]
 
@@ -50,21 +50,24 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     end
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
-        ax = Makie.LScene(f[1,1])
+        ax = Makie.LScene(f[1, 1])
     else
-        ax = Makie.Axis(f[1,1])
+        ax = Makie.Axis(f[1, 1])
         # hide decorations if it is not a 3D plot
         Makie.hidedecorations!(ax)
         Makie.hidespines!(ax)
         ax.aspect = Makie.DataAspect()
     end
 
-    p = graphplot!(f[1,1], graph;
+    p = graphplot!(
+        f[1, 1],
+        graph;
         elabels = labels ? elabels : nothing,
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
-        node_attr=(colormap = :viridis, strokewidth = 2., strokecolor = :black),
-        kwargs...)
+        node_attr = (colormap = :viridis, strokewidth = 2.0, strokecolor = :black),
+        kwargs...,
+    )
 
     return p, ax
 end
