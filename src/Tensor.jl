@@ -193,3 +193,6 @@ contract(a, b::Number) = a * b
 contract(a, b::Number, _) = contract(a, b)
 contract(a::Number, b::Number) = a * b
 contract(a::Number, b::Number, _) = contract(a, b)
+
+contract(a::AbstractArray{T,0}, b) where {T} = contract(only(a), b)
+contract(a, b::AbstractArray{T,0}) where {T} = contract(a, only(b))
