@@ -103,14 +103,11 @@ end
 function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
     outsites(A) != insites(B) && throw(DimensionMismatch("insites(B) must be equal to outsites(A) to connect them"))
 
-    A = copy(A)
-    B = copy(B)
-
     # rename connector indices
     newinds = Dict([s => Symbol(uuid4()) for s in outsites(A)])
 
-    replace!(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
-    replace!(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
+    A = replace(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
+    B = replace(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
 
     # remove plug metadata on connector indices
     for i in values(newinds)
