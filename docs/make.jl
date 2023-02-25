@@ -19,6 +19,7 @@ makedocs(
             "Tensor" => "tensor.md",
             "Tensor Networks" => "tensor-network.md",
             "Ansatz Tensor Networks" => "ansatz.md",
+            "Transformations" => "transformations.md",
         ],
         "Examples"=>[
             "Google's Quantum Advantage experiment" => "examples/google-rqc.md",

@@ -1,12 +1,10 @@
 # Tenet.jl
 
-A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers.
+A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers. `Tenet` is,
 
-It aims for,
-
-- **Expressibility** _It should be simple to use._
-- **Flexibility** _It can be extended to your own needs._
-- **Performance** _It goes fast._
+- **Expressible** _It is simple to use._
+- **Flexible** _It can be extended to your own needs._
+- **Performant** _It goes fast._
 
 !!! info "Registry"
     `Tenet` and other supporting libraries are located in our own Julia registry.
@@ -56,6 +54,9 @@ Tenet provides some popular Tensor Network Ansatzes. Currently implemented are:
 ```@contents
 Pages = [
     "tensor.md",
+    "tensor-network.md",
+    "ansatz.md",
+    "transformations.md",
     "alternatives.md",
 ]
 ```
