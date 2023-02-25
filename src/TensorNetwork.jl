@@ -257,3 +257,6 @@ function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
 
     only(values(mapping))
 end
+
+contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
+contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
