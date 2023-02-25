@@ -41,7 +41,7 @@ length(T)
 
 `Tensor`s may contain some metadata.
 
-!!! warning "🚧 Work in progress 👷"
+!!! warning "🚧 Work in progress 🚧"
     Currently there are only methods for accessing and modifying [Tags](@ref).
 
 ### Tags
