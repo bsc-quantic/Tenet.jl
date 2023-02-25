@@ -168,7 +168,7 @@ function LinearAlgebra.normalize!(
     insert::Union{Nothing,Int} = nothing,
     kwargs...,
 )
-    norm = norm(ψ; kwargs...)
+    norm = LinearAlgebra.norm(ψ; kwargs...)
 
     if isnothing(insert)
         # method 1: divide all tensors by (√v)^(1/n)
