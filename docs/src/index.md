@@ -30,12 +30,19 @@ Tenet can represent `TensorNetwork`s of `Arbitrary` form. Thanks to [`OptimizedE
 
 Thanks to [`Makie`](https://github.com/MakieOrg/Makie.jl), TNs can be visualized in 2D and 3D on different backends (OpenGL, WebGL and Cairo).
 
-```@example
-using Tenet # hide
-using WGLMakie
+```@setup plot
+# using WGLMakie
+# using JSServe
+# Page(exportable=true, offline=true)
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+```
+
+```@example plot
+using Tenet
 
 tn = rand(TensorNetwork, 10, 3)
-plot(tn)
+plot(tn, labels=true)
 ```
 
 ### (Quantum) Tensor Network Ansatzes
