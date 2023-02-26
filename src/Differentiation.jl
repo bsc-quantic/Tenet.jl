@@ -29,7 +29,7 @@ function ChainRulesCore.rrule(f::Type{<:Tensor}, data, labels; meta...)
     return t, Tensor_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A,B}
+function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A<:Tensor,B<:Tensor}
     c = contract(a, b)
     project_a = ProjectTo(a)
     project_b = ProjectTo(b)
