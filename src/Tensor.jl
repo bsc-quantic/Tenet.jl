@@ -129,6 +129,11 @@ Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((labels(t),), perm); t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
+function Base.permutedims(t::Tensor{T,N}, perm::NTuple{N,Symbol}) where {T,N}
+    perm = map(i -> findfirst(==(i), labels(t)), perm)
+    permutedims(t, perm)
+end
+
 Base.view(t::Tensor, i...) =
     Tensor(view(parent(t), i...), [label for (label, j) in zip(labels(t), i) if !(j isa Integer)]; t.meta...)
 
