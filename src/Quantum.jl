@@ -43,13 +43,13 @@ siteinds(tn::TensorNetwork) = insiteinds(tn) ∪ outsiteinds(tn)
 insites(tn::TensorNetwork) = site.(insiteinds(tn))
 # insites(::TensorNetwork{<:State}) = throw(MethodError(insites, TensorNetwork{<:State}))
 # insites(tn::Adjoint{TensorNetwork}) = outsites(parent(tn))
-insiteinds(tn) = sort!(filter(i -> i.meta[:plug] == :input, openinds(tn)), by = site)
+insiteinds(tn) = sort!(filter(i -> get(i.meta, :plug, nothing) == :input, openinds(tn)), by = site)
 insiteind(tn, s) = only(filter(i -> site(i) == s, insiteinds(tn)))
 
 # TODO maybe don't filter by openinds?
 outsites(tn::TensorNetwork) = site.(outsiteinds(tn))
 # outsites(tn::Adjoint{TensorNetwork}) = insites(parent(tn))
-outsiteinds(tn) = sort!(filter(i -> i.meta[:plug] == :output, openinds(tn)), by = site)
+outsiteinds(tn) = sort!(filter(i -> get(i.meta, :plug, nothing) == :output, openinds(tn)), by = site)
 outsiteind(tn, s) = only(filter(i -> site(i) == s, outsiteinds(tn)))
 
 physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
