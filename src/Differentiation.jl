@@ -13,8 +13,9 @@ function ChainRulesCore.frule((_, ȧ, ḃ, _)::NTuple{4,Any}, ::typeof(contract
     return c, ċ
 end
 
-ChainRulesCore.ProjectTo(t::T) where {T<:Tensor} =
+function ChainRulesCore.ProjectTo(t::T) where {T<:Tensor}
     ProjectTo{T}(; data = ProjectTo(parent(t)), labels = labels(t), meta = t.meta)
+end
 
 (project::ProjectTo{Tensor{T,N,A}})(dx::A) where {T,N,A<:AbstractArray{T,N}} =
     Tensor{T,N,A}(project.data(dx), project.labels; project.meta...)
