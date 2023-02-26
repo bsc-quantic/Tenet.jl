@@ -212,6 +212,7 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
 end
 
 function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
+    # TODO `output` is not used
     output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
     tensors = [Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
     TensorNetwork(tensors)
