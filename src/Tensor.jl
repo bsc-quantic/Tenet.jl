@@ -31,6 +31,7 @@ function Base.similar(t::Tensor{_,N}, ::Type{T}; kwargs...) where {_,T,N}
         similar(t, T, size(t)...; kwargs...)
     end
 end
+# TODO fix this
 function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; labels = labels(t), meta...) where {T}
     data = similar(parent(t), T, dims)
 
