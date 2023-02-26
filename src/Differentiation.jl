@@ -163,7 +163,6 @@ function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs..
             ∂tn = delete!(copy(tn), tensor)
             contract(contract(∂tn), c̄)
         end)
-        @info "$(size.(tensors(t̄n)))"
 
         return (f̄, t̄n)
     end
