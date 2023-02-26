@@ -35,7 +35,7 @@ function ChainRulesCore.rrule(::typeof(only), t::Tensor{T,0}) where {T}
     data = only(t)
 
     # TODO use `ProjectTo(t)`
-    only_pullback(d̄) = Tensor(fill(d̄), labels(t); t.meta...)
+    only_pullback(d̄) = (NoTangent(), Tensor(fill(d̄), labels(t); t.meta...))
     return data, only_pullback
 end
 
