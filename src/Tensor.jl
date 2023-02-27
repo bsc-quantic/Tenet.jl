@@ -1,5 +1,6 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
+using LinearAlgebra
 using OMEinsum
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
