@@ -124,6 +124,16 @@ function Base.view(tn::TensorNetwork, inds::Pair{Symbol,<:Any}...)
     return tn
 end
 
+function Base.intersect(a::TensorNetwork, b::TensorNetwork{A}) where {A<:Ansatz}
+    # TODO add index metadata?
+    # TODO :plug?
+    c = TensorNetwork{A}(filter(tensors(a)) do tensor
+        !isdisjoint(labels(tensor), labels(b))
+    end; a.meta...)
+
+    return c
+end
+
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     push!(tensors(tn), tensor)
 
