@@ -1,5 +1,8 @@
 using ChainRulesCore
 
+## Index
+@non_differentiable Index(args...)
+
 ## Tensor
 function ChainRulesCore.frule((_, ȧ, ḃ)::NTuple{3,Any}, ::typeof(contract), a, b)
     c = contract(a, b)
