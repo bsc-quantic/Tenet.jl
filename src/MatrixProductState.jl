@@ -145,30 +145,37 @@ end
 Base.rand(::Type{MatrixProductState}, args::Vararg{Integer,3}; kwargs...) =
     rand(MatrixProductState{Open}, args...; kwargs...)
 
-# TODO stable renormalization
 function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {T}
     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
 
-    arrays::Vector{AbstractArray{T,N} where {N}} = map(2:n-1) do i
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         let i = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(χ, p^(i - 1))
             χr = min(χ, p^i)
         end
 
-        # swap bond dims
+        # swap bond dims after mid
         i > n ÷ 2 && ((χl, χr) = (χr, χl))
 
-        rand(rng, T, χl, χr, p)
+        # orthogonalize by solving linear systems
+        A = rand(rng, T, χl, χr * p)
+        for i in 1:χl-1
+            M = A[1:i, 1:i]
+            B = [-dot(A[j, i+1:end], A[i+1, i+1:end]) for j in 1:i]
+            X = M \ B
+            A[i+1, 1:i] = X
+        end
+
+        # normalize rows
+        foreach(row -> normalize!(row), eachrow(A))
+
+        reshape(A, χl, χr, p)
     end
 
-    # insert boundary tensors
-    insert!(arrays, 1, rand(rng, T, min(χ, p), p))
-    insert!(arrays, n, rand(rng, T, min(χ, p), p))
+    arrays[1] = reshape(arrays[1], p, p)
+    arrays[n] = reshape(arrays[n], p, p)
 
-    ψ = MatrixProductState{Open}(arrays; χ = χ)
-    normalize!(ψ)
-
-    return ψ
+    MatrixProductState{Open}(arrays; χ = χ)
 end
 
 # TODO stable renormalization
