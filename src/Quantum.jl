@@ -183,5 +183,6 @@ end
 
 fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
 
+tensors(tn::TensorNetwork{<:Quantum}) = map(Base.Fix1(tensors, tn), sites(tn))
 tensors(tn::TensorNetwork{<:Quantum}, i::Integer) =
     only(tensors(tn, first(Iterators.filter(p -> site(p[2]) == i, tn.inds))[2]))
