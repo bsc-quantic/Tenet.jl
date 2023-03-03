@@ -194,15 +194,10 @@ function contract(a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
     return Tensor(data, ic)
 end
 
-contract(a::Number, b) = a * b
-contract(a::Number, b, _) = contract(a, b)
-contract(a, b::Number) = a * b
-contract(a, b::Number, _) = contract(a, b)
-contract(a::Number, b::Number) = a * b
-contract(a::Number, b::Number, _) = contract(a, b)
-
+contract(a, b) = a * b
 contract(a::AbstractArray{T,0}, b) where {T} = contract(only(a), b)
 contract(a, b::AbstractArray{T,0}) where {T} = contract(a, only(b))
+contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = contract(only(a), only(b))
 
 function LinearAlgebra.svd(t::Tensor, left_inds; kwargs...)
     if any(∉(labels(t)), left_inds)
