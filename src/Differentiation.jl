@@ -43,7 +43,11 @@ function ChainRulesCore.rrule(::typeof(only), t::Tensor{T,0}) where {T}
     return data, only_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A<:Tensor,B<:Tensor}
+ChainRulesCore.rrule(::typeof(contract), a::AbstractArray{T,0}, b) where {T} = rrule(contract, only(a), b)
+ChainRulesCore.rrule(::typeof(contract), a, b::AbstractArray{T,0}) where {T} = rrule(contract, a, only(b))
+ChainRulesCore.rrule(::typeof(contract), a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) =
+    rrule(contract, only(a), only(b))
+function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A,B}
     c = contract(a, b)
     project_a = ProjectTo(a)
     project_b = ProjectTo(b)
