@@ -22,13 +22,28 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     kwargs = Dict{Symbol,Any}(kwargs)
 
+    oinds = openinds(tn)
+    while !isempty(oinds)
+        for ind in oinds
+            tensor = links(ind)[1]
+            tensor_oinds = filter(id -> id.name ∈ tensor.labels, oinds)
+            data = rand(Tuple(id.size for id in tensor_oinds)...)
+            indices = (id -> id.name).(tensor_oinds)
+            tensor = Tensor(data, indices; out = true)
+            push!(tn, tensor)
+
+            filter!(id -> id ∉ tensor_oinds, oinds)
+        end
+    end
+
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
+    outtensors = findall(t -> haskey(t.meta, :out), tensors(tn))
 
-    kwargs[:node_size] = [max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
+    kwargs[:node_size] = [i ∈ outtensors ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
     kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:length(tensors(tn))]
 
