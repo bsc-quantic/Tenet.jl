@@ -156,7 +156,7 @@ end
 function LinearAlgebra.norm(ψ::TensorNetwork{<:State}, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
 
-    return contract(hcat(ψ, ψ'); kwargs...) |> only |> sqrt
+    return contract(hcat(ψ, ψ'); kwargs...) |> only |> sqrt |> abs
 end
 
 function LinearAlgebra.normalize!(
