@@ -149,13 +149,13 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {
     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
-        let i = (n + 1 - abs(2i - n - 1)) ÷ 2
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(χ, p^(i - 1))
             χr = min(χ, p^i)
-        end
 
-        # swap bond dims after mid
-        i > n ÷ 2 && ((χl, χr) = (χr, χl))
+            # swap bond dims after mid
+            after_mid ? (χr, χl) : (χl, χr)
+        end
 
         # orthogonalize by solving linear systems
         A = rand(rng, T, χl, χr * p)
