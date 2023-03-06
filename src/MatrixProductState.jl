@@ -145,6 +145,7 @@ end
 Base.rand(::Type{MatrixProductState}, args::Vararg{Integer,3}; kwargs...) =
     rand(MatrixProductState{Open}, args...; kwargs...)
 
+# TODO let choose the orthogonality center
 function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {T}
     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
 
@@ -157,23 +158,21 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {
             after_mid ? (χr, χl) : (χl, χr)
         end
 
-        # orthogonalize by solving linear systems
-        A = rand(rng, T, χl, χr * p)
-        for i in 1:χl-1
-            M = A[1:i, 1:i]
-            B = [-dot(A[j, i+1:end], A[i+1, i+1:end]) for j in 1:i]
-            X = M \ B
-            A[i+1, 1:i] = X
-        end
+        # fix for first site
+        i == 1 && ((χl, χr) = (χr, 1))
 
-        # normalize rows
-        foreach(row -> normalize!(row), eachrow(A))
+        # orthogonalize by Gram-Schmidt algorithm
+        A = gramschmidt!(rand(rng, T, χl, χr * p))
 
         reshape(A, χl, χr, p)
     end
 
+    # reshape boundary sites
     arrays[1] = reshape(arrays[1], p, p)
     arrays[n] = reshape(arrays[n], p, p)
+
+    # normalize state
+    arrays[1] ./= sqrt(p)
 
     MatrixProductState{Open}(arrays; χ = χ)
 end

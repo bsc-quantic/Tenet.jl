@@ -3,6 +3,7 @@ module Tenet
 using Requires: @require
 
 include("Helpers.jl")
+include("Numerics.jl")
 
 # include("Einsum.jl")
 include("Tensor.jl")
