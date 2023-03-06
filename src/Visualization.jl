@@ -1,5 +1,5 @@
 using Graphs: SimpleGraph, Edge, edges, ne, nv
-using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot
+using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot, add_edge!, add_vertex!
 using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
 import Makie
@@ -22,30 +22,30 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
     kwargs = Dict{Symbol,Any}(kwargs)
 
-    oinds = openinds(tn)
-    while !isempty(oinds)
-        for ind in oinds
-            tensor = links(ind)[1]
-            tensor_oinds = filter(id -> id.name ∈ tensor.labels, oinds)
-            data = rand(Tuple(id.size for id in tensor_oinds)...)
-            indices = (id -> id.name).(tensor_oinds)
-            tensor = Tensor(data, indices; out = true)
-            push!(tn, tensor)
-
-            filter!(id -> id ∉ tensor_oinds, oinds)
-        end
-    end
-
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
-    outtensors = findall(t -> haskey(t.meta, :out), tensors(tn))
 
-    kwargs[:node_size] = [i ∈ outtensors ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
-    kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
-    kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:length(tensors(tn))]
+    oinds = openinds(tn)
+    ghostnodes = []
+    while !isempty(oinds)
+        for ind in oinds
+            tensor = links(ind)[1]
+            tensor_oinds = filter(id -> id.name ∈ tensor.labels, oinds)
+
+            add_vertex!(graph)
+            add_edge!(graph, pos[tensor], nv(graph))
+
+            push!(ghostnodes, nv(graph))
+            filter!(id -> id ∉ tensor_oinds, oinds)
+        end
+    end
+
+    kwargs[:node_size] = [i ∈ ghostnodes ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
+    kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:nv(graph)]
+    kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:nv(graph)]
 
     if labels
         elabels = Vector{String}([])
@@ -53,16 +53,26 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
 
         for edge in edges(graph)
             copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
+            notghosts = filter((x -> x ∉ ghostnodes), [edge.src, edge.dst])
 
-            if isempty(copies) # there are no copy tensors in the nodes of this edge
-                push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
-                push!(elabels_color, :black)
+            if length(notghosts) == 2 # there are no ghost nodes in this edge
+                if isempty(copies) # there are no copy tensors in the nodes of this edge
+                    push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
+                    push!(elabels_color, :black)
+                else
+                    push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
+                    push!(elabels_color, :grey)
+                end
             else
-                push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
-                push!(elabels_color, :grey)
+                tensor_oinds = filter(id -> id.name ∈ tensors(tn)[notghosts[1]].labels, openinds(tn))
+                indices = (id -> id.name).(tensor_oinds)
+
+                push!(elabels, join(indices, ","))
+                push!(elabels_color, :black)
             end
         end
     end
+
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1, 1])
