@@ -127,7 +127,7 @@ end
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
-    tn = copy(tn)
+    tn = deepcopy(tn)
 
     # TODO refactor internals
     for i in siteinds(tn)
