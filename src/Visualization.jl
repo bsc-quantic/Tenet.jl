@@ -1,4 +1,4 @@
-using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!
+using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!, src, dst
 using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot
 using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
@@ -28,9 +28,9 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
-    opentensors = findall(t -> any(s -> s ∈ (o -> nameof(o)).(openinds(tn)), t.labels), tensors(tn))
+    opentensors = findall(t-> !isempty(labels(t) ∩ openinds(tn)), tensors(tn))
 
-    opencounter = Dict(tensor => 1 for tensor in opentensors)
+    opencounter = IdDict(tensor => 1 for tensor in opentensors)
     ghostnodes = map(openinds(tn)) do ind
         add_vertex!(graph)
         node = nv(graph) # TODO is this the best way to get the id of the newly created node?
@@ -51,17 +51,18 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
             copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
             notghosts = filter((x -> x ∉ ghostnodes), [edge.src, edge.dst])
 
+            # TODO refactor this code
             if length(notghosts) == 2 # there are no ghost nodes in this edge
                 if isempty(copies) # there are no copy tensors in the nodes of this edge
-                    push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
+                    push!(elabels, join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','))
                     push!(elabels_color, :black)
                 else
                     push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
                     push!(elabels_color, :grey)
                 end
             else
-                tensor_oinds = filter(id -> nameof(id) ∈ tensors(tn)[only(notghosts)].labels, openinds(tn))
-                indices = (id -> nameof(id)).(tensor_oinds)
+                tensor_oinds = filter(id -> nameof(id) ∈ labels(tensors(tn)[only(notghosts)]), openinds(tn))
+                indices = nameof.(tensor_oinds)
 
                 push!(elabels, string(indices[opencounter[only(notghosts)]]))
                 push!(elabels_color, :black)
