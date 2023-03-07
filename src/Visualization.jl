@@ -48,8 +48,8 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
         elabels_color = Vector{Symbol}([])
 
         for edge in edges(graph)
-            copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
-            notghosts = filter((x -> x ∉ ghostnodes), [edge.src, edge.dst])
+            copies = filter(x -> x ∈ copytensors, [edge.src, edge.dst])
+            notghosts = filter(x -> x ∉ ghostnodes, [edge.src, edge.dst])
 
             # TODO refactor this code
             if length(notghosts) == 2 # there are no ghost nodes in this edge
