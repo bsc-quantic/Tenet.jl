@@ -1,4 +1,4 @@
-using Graphs: SimpleGraph, Edge, edges, ne, nv
+using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!, src, dst
 using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot
 using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
@@ -28,23 +28,45 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
-    kwargs[:node_size] = [max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
-    kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:length(tensors(tn))]
-    kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:length(tensors(tn))]
+    opentensors = findall(t-> !isempty(Tenet.labels(t) ∩ nameof.(openinds(tn))), tensors(tn))
+
+    opencounter = IdDict(tensor => 1 for tensor in opentensors)
+    ghostnodes = map(openinds(tn)) do ind
+        add_vertex!(graph)
+        node = nv(graph) # TODO is this the best way to get the id of the newly created node?
+        tensor = only(links(ind))
+        add_edge!(graph, node, pos[tensor])
+        return node
+    end
+
+    kwargs[:node_size] = [i ∈ ghostnodes ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
+    kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:nv(graph)]
+    kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:nv(graph)]
 
     if labels
         elabels = Vector{String}([])
         elabels_color = Vector{Symbol}([])
 
         for edge in edges(graph)
-            copies = filter((x -> x ∈ copytensors), [edge.src, edge.dst])
+            copies = filter(x -> x ∈ copytensors, [edge.src, edge.dst])
+            notghosts = filter(x -> x ∉ ghostnodes, [edge.src, edge.dst])
 
-            if isempty(copies) # there are no copy tensors in the nodes of this edge
-                push!(elabels, join(Tenet.labels(tensors(tn)[edge.src]) ∩ Tenet.labels(tensors(tn)[edge.dst]), ','))
-                push!(elabels_color, :black)
+            # TODO refactor this code
+            if length(notghosts) == 2 # there are no ghost nodes in this edge
+                if isempty(copies) # there are no copy tensors in the nodes of this edge
+                    push!(elabels, join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','))
+                    push!(elabels_color, :black)
+                else
+                    push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
+                    push!(elabels_color, :grey)
+                end
             else
-                push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
-                push!(elabels_color, :grey)
+                tensor_oinds = filter(id -> nameof(id) ∈ Tenet.labels(tensors(tn)[only(notghosts)]), openinds(tn))
+                indices = nameof.(tensor_oinds)
+
+                push!(elabels, string(indices[opencounter[only(notghosts)]]))
+                push!(elabels_color, :black)
+                opencounter[only(notghosts)] += 1
             end
         end
     end
