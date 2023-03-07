@@ -28,19 +28,14 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
-    oinds = openinds(tn)
-    ghostnodes = []
-    while !isempty(oinds)
-        for ind in oinds
-            tensor = links(ind)[1]
-            tensor_oinds = filter(id -> id.name ∈ tensor.labels, oinds)
+    ghostnodes = map(openinds(tn)) do ind
+        add_vertex!(graph)
 
-            add_vertex!(graph)
-            add_edge!(graph, pos[tensor], nv(graph))
+        node = nv(graph) # TODO is this the best way to get the id of the newly created node?
+        tensor = only(links(ind))
+        add_edge!(graph, node, pos[tensor])
 
-            push!(ghostnodes, nv(graph))
-            filter!(id -> id ∉ tensor_oinds, oinds)
-        end
+        return node
     end
 
     kwargs[:node_size] = [i ∈ ghostnodes ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
@@ -72,7 +67,6 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
             end
         end
     end
-
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1, 1])
