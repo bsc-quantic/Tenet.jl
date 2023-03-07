@@ -28,13 +28,14 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
+    opentensors = findall(t -> any(s -> s ∈ (o -> nameof(o)).(openinds(tn)), t.labels), tensors(tn))
+
+    opencounter = Dict(tensor => 1 for tensor in opentensors)
     ghostnodes = map(openinds(tn)) do ind
         add_vertex!(graph)
-
         node = nv(graph) # TODO is this the best way to get the id of the newly created node?
         tensor = only(links(ind))
         add_edge!(graph, node, pos[tensor])
-
         return node
     end
 
@@ -62,8 +63,9 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
                 tensor_oinds = filter(id -> nameof(id) ∈ tensors(tn)[only(notghosts)].labels, openinds(tn))
                 indices = (id -> nameof(id)).(tensor_oinds)
 
-                push!(elabels, join(indices, ","))
+                push!(elabels, string(indices[opencounter[only(notghosts)]]))
                 push!(elabels_color, :black)
+                opencounter[only(notghosts)] += 1
             end
         end
     end
