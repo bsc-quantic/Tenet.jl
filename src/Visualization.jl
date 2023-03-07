@@ -59,8 +59,8 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
                     push!(elabels_color, :grey)
                 end
             else
-                tensor_oinds = filter(id -> id.name ∈ tensors(tn)[notghosts[1]].labels, openinds(tn))
-                indices = (id -> id.name).(tensor_oinds)
+                tensor_oinds = filter(id -> nameof(id) ∈ tensors(tn)[only(notghosts)].labels, openinds(tn))
+                indices = (id -> nameof(id)).(tensor_oinds)
 
                 push!(elabels, join(indices, ","))
                 push!(elabels_color, :black)
