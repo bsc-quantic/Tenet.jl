@@ -1,5 +1,5 @@
-using Graphs: SimpleGraph, Edge, edges, ne, nv
-using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot, add_edge!, add_vertex!
+using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!
+using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot
 using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
 import Makie
