@@ -28,7 +28,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     # TODO recognise them by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
 
-    opentensors = findall(t-> !isempty(labels(t) ∩ openinds(tn)), tensors(tn))
+    opentensors = findall(t-> !isempty(Tenet.labels(t) ∩ (i -> nameof(i)).(openinds(tn))), tensors(tn))
 
     opencounter = IdDict(tensor => 1 for tensor in opentensors)
     ghostnodes = map(openinds(tn)) do ind
@@ -61,7 +61,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
                     push!(elabels_color, :grey)
                 end
             else
-                tensor_oinds = filter(id -> nameof(id) ∈ labels(tensors(tn)[only(notghosts)]), openinds(tn))
+                tensor_oinds = filter(id -> nameof(id) ∈ Tenet.labels(tensors(tn)[only(notghosts)]), openinds(tn))
                 indices = nameof.(tensor_oinds)
 
                 push!(elabels, string(indices[opencounter[only(notghosts)]]))
