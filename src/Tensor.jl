@@ -199,7 +199,7 @@ contract(a::AbstractArray{T,0}, b) where {T} = contract(only(a), b)
 contract(a, b::AbstractArray{T,0}) where {T} = contract(a, only(b))
 contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = contract(only(a), only(b))
 
-function LinearAlgebra.svd(t::Tensor, left_inds; kwargs...)
+function LinearAlgebra.svd(t::Tensor; left_inds = (), kwargs...)
     if any(∉(labels(t)), left_inds)
         # TODO better error exception and checks
         throw(ErrorException("all left-indices must be in $(labels(t))"))
