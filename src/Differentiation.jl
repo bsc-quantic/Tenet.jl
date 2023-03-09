@@ -92,7 +92,7 @@ end
 # function ChainRulesCore.frule((_, ṫn), ::typeof(TensorNetwork{A}), tensors; meta...) where {A<:Ansatz}
 # end
 
-function ChainRulesCore.frule((_, ṫn), ::typeof(contract), tn::TensorNetwork; kwargs...)
+function ChainRulesCore.frule((_, ṫn)::NTuple{2,Any}, ::typeof(contract), tn::TensorNetwork; kwargs...)
     c = contract(tn; kwargs...)
     ċ = contract(ṫn; kwargs...)
 
