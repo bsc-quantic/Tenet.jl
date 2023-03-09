@@ -23,7 +23,7 @@ end
 (project::ProjectTo{Tensor{T,N,A}})(dx::A) where {T,N,A<:AbstractArray{T,N}} =
     Tensor{T,N,A}(project.data(dx), project.labels; project.meta...)
 (project::ProjectTo{<:Number})(dx::Tensor{_,0}) where {_} = project(only(dx))
-(project::ProjectTo{<:Tensor})(dx::Tensor) = Tensor(project.data(dx.data), project.labels; project.meta...)
+(project::ProjectTo{<:Tensor})(dx::T) where {T<:Tensor} = Tensor(project.data(dx.data), project.labels; project.meta...)
 
 # TODO is this the correct way?
 (project::ProjectTo{<:Tensor})(dx::Thunk) = project(unthunk(dx))
