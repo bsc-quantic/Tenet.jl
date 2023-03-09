@@ -1,4 +1,4 @@
-@testset "MatrixProductState" begin
+@testset "MatrixProductOperator" begin
     using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductOperator
 
     @testset "Types" begin
