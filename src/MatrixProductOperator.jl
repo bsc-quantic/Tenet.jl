@@ -82,7 +82,7 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :p
         throw(DimensionMismatch("virtual bond-dims mismatch"))
     end
 
-    tn = TensorNetwork{MatrixProductState{Closed}}(; χ = χ, order = order, meta...)
+    tn = TensorNetwork{MatrixProductOperator{Closed}}(; χ = χ, order = order, meta...)
 
     n = length(arrays)
     vinds = Dict(x => Symbol(uuid4()) for x in ringpeek(1:n))
