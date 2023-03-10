@@ -1,4 +1,4 @@
-using OptimizedEinsum: ContractionPath
+#using OptimizedEinsum: ContractionPath
 using UUIDs: uuid4
 using IterTools: partition
 using Random
@@ -9,8 +9,8 @@ function MatrixProductOperator(arrays; bounds::Type{<:Bounds} = Open, kwargs...)
     MatrixProductOperator{bounds}(arrays; kwargs...)
 end
 
-function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :p), meta...)
-    !issetequal(order, (:l, :r, :p)) && throw(ArgumentError("`order` must be a permutation of the :l, :r and :p"))
+function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
+    !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(dim => i for (i, dim) in enumerate(order))
 
     # check format
@@ -26,21 +26,38 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :p),
     vinds = Dict(x => Symbol(uuid4()) for x in partition(1:n, 2, 1))
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
-    permutator = [order[i] for i in (:l, :r, :p)]
+    permutator = [order[i] for i in (:l, :r, :i, :o)]
 
     # add boundary tensors
     # first
-    labels = if order[:r] < order[:p]
+    labels = if (order[:r] < order[:i] < order[:o])
         (vinds[(1, 2)], iinds[1], oinds[1])
-    else
+    elseif (order[:r] < order[:o] < order[:i])
+        (vinds[(1, 2)], oinds[1], iinds[1])
+    elseif order[:i] < order[:r] < order[:o]
+        (iinds[1], vinds[(1, 2)], oinds[1])
+    elseif order[:o] < order[:r] < order[:i]
+        (oinds[1], vinds[(1, 2)], iinds[1])
+    elseif order[:i] < order[:o] < order[:r]
         (iinds[1], oinds[1], vinds[(1, 2)])
+    else
+        (oinds[1], iinds[1], vinds[(1, 2)])
     end
     push!(tn, Tensor(first(arrays), labels))
+
     # last
-    labels = if order[:l] < order[:p]
+    labels = if (order[:l] < order[:i] < order[:o])
         (vinds[(n - 1, n)], iinds[n], oinds[n])
-    else
+    elseif (order[:l] < order[:o] < order[:i])
+        (vinds[(n - 1, n)], oinds[n], iinds[n])
+    elseif order[:i] < order[:l] < order[:o]
+        (iinds[n], vinds[(n - 1, n)], oinds[n])
+    elseif order[:o] < order[:l] < order[:i]
+        (oinds[n], vinds[(n - 1, n)], iinds[n])
+    elseif order[:i] < order[:o] < order[:l]
         (iinds[n], oinds[n], vinds[(n - 1, n)])
+    else
+        (oinds[n], iinds[n], vinds[(n - 1, n)])
     end
     push!(tn, Tensor(last(arrays), labels))
 
@@ -69,11 +86,12 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :p),
         index.meta[:plug] = :output
     end
 
+    println("$tn.tensors")
     return tn
 end
 
-function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :p), meta...)
-    !issetequal(order, (:l, :r, :p)) && throw(ArgumentError("`order` must be a permutation of the :l, :r and :p"))
+function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
+    !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(side => i for (i, side) in enumerate(order))
 
     # check format
@@ -88,7 +106,7 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :p
     vinds = Dict(x => Symbol(uuid4()) for x in ringpeek(1:n))
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
-    permutator = [order[i] for i in (:l, :r, :p)]
+    permutator = [order[i] for i in (:l, :r, :i, :o)]
 
     # add tensors
     for (i, data) in enumerate(arrays)
@@ -129,7 +147,7 @@ end
 Base.eltype(::MPOSampler{B}) where {B<:Bounds} = TensorNetwork{MatrixProductOperator{B}}
 
 function Base.rand(
-    ::Type{MatrixProductOperator{B}},
+    ::Type{MatrixProductState{B}},
     n::Integer,
     ip::Integer,
     op::Integer,
