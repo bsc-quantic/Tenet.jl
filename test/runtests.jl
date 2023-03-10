@@ -12,6 +12,7 @@ import Tenet
 
     # Ansatz Tensor Networks
     include("MatrixProductState_test.jl")
+    include("MatrixProductOperator_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin
