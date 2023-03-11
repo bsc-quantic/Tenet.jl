@@ -152,7 +152,7 @@ function Base.rand(
     ip::Integer,
     op::Integer,
     χ::Integer;
-    eltype::Type = Float32,
+    eltype::Type = Float64,
 ) where {B<:Bounds}
     rand(MPOSampler{B,eltype}(n, ip, op, χ))
 end
