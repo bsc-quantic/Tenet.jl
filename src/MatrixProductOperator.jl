@@ -147,7 +147,7 @@ end
 Base.eltype(::MPOSampler{B}) where {B<:Bounds} = TensorNetwork{MatrixProductOperator{B}}
 
 function Base.rand(
-    ::Type{MatrixProductState{B}},
+    ::Type{MatrixProductOperator{B}},
     n::Integer,
     ip::Integer,
     op::Integer,
