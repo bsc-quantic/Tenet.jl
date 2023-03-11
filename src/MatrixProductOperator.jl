@@ -74,7 +74,6 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
         index.meta[:plug] = :output
     end
 
-    println("$tn.tensors")
     return tn
 end
 
