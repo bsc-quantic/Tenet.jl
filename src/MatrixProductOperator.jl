@@ -34,19 +34,7 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     push!(tn, Tensor(first(arrays), labels))
 
     # last
-    labels = if (order[:l] < order[:i] < order[:o])
-        (vinds[(n - 1, n)], iinds[n], oinds[n])
-    elseif (order[:l] < order[:o] < order[:i])
-        (vinds[(n - 1, n)], oinds[n], iinds[n])
-    elseif order[:i] < order[:l] < order[:o]
-        (iinds[n], vinds[(n - 1, n)], oinds[n])
-    elseif order[:o] < order[:l] < order[:i]
-        (oinds[n], vinds[(n - 1, n)], iinds[n])
-    elseif order[:i] < order[:o] < order[:l]
-        (iinds[n], oinds[n], vinds[(n - 1, n)])
-    else
-        (oinds[n], iinds[n], vinds[(n - 1, n)])
-    end
+    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], [order[:l], order[:i], order[:o]])
     push!(tn, Tensor(last(arrays), labels))
 
     # add other tensors
