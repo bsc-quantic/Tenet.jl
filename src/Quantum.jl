@@ -100,7 +100,7 @@ function TensorNetwork(circuit::Circuit)
     return tn
 end
 
-function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
+function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
     outsites(A) != insites(B) && throw(DimensionMismatch("insites(B) must be equal to outsites(A) to connect them"))
 
     # rename connector indices
@@ -119,9 +119,11 @@ function Base.hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum})
     replace!(B, [nameof(i) => Symbol(uuid4()) for i in innerinds(B)]...)
 
     # merge tensors and indices
-    append!(A, B)
+    tn = TensorNetwork{Tuple{QA,QB}}(; merge(A.meta, B.meta)...)
+    append!(tn, A)
+    append!(tn, B)
 
-    return A
+    return tn
 end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
