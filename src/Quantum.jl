@@ -6,7 +6,7 @@ using UUIDs: uuid4
 """
     Quantum
 
-Tensor Networks that have a notion of site and direction (input/output).
+Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (input/output).
 """
 abstract type Quantum <: Ansatz end
 
@@ -15,20 +15,20 @@ abstract type Closed <: Bounds end
 abstract type Open <: Bounds end
 
 """
-    State
+    State{Bounds}
 
-Tensor Networks that only have outputs. Usually, they reflect the _state_ of physical systems.
+[`Quantum`](@ref) Tensor Network that only has outputs. Usually, it reflects the _state_ of a physical system.
 
-Its adjoints only have inputs.
+Its adjoint only has inputs.
 """
 abstract type State{B} <: Quantum where {B<:Bounds} end
 bounds(::T) where {T<:State} = bounds(T)
 bounds(::Type{<:State{B}}) where {B} = B
 
 """
-    Operator
+    Operator{Bounds}
 
-Tensor Networks that have both inputs and outputs. Generally, they represent evolutionary processes of physical systems.
+[`Quantum`](@ref) Tensor Network that has both inputs and outputs. Generally, it represents evolutionary processes of physical systems.
 """
 abstract type Operator{B} <: Quantum where {B<:Bounds} end
 bounds(::T) where {T<:Operator} = bounds(T)
