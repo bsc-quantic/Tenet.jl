@@ -90,7 +90,6 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i
 
         labels = [lind, rind, iinds[i], oinds[i]]
         permute!(labels, permutator)
-        
         tensor = Tensor(data, labels)
         push!(tn, tensor)
     end
