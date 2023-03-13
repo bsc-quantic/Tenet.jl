@@ -22,12 +22,12 @@ abstract type Arbitrary <: Ansatz end
 
 Graph of interconnected tensors.
 """
-struct TensorNetwork{A<:Ansatz}
+struct TensorNetwork{A}
     tensors::Vector{Tensor}
     inds::Dict{Symbol,Index}
     meta::Dict{Symbol,Any}
 
-    function TensorNetwork{A}(; meta...) where {A<:Ansatz}
+    function TensorNetwork{A}(; meta...) where {A}
         meta = Dict{Symbol,Any}(meta)
 
         new{A}(Tensor[], Dict{Symbol,Index}(), meta)
@@ -49,7 +49,7 @@ Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeo
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
 Base.length(x::TensorNetwork) = length(tensors(x))
 
-function Base.copy(tn::TensorNetwork{A}) where {A<:Ansatz}
+function Base.copy(tn::TensorNetwork{A}) where {A}
     newtn = TensorNetwork{A}(; copy(tn.meta)...)
     append!(newtn, copy(tn.tensors))
     for i in labels(newtn)
@@ -124,7 +124,7 @@ function Base.view(tn::TensorNetwork, inds::Pair{Symbol,<:Any}...)
     return tn
 end
 
-function Base.intersect(a::TensorNetwork, b::TensorNetwork{A}) where {A<:Ansatz}
+function Base.intersect(a::TensorNetwork, b::TensorNetwork{A}) where {A}
     # TODO add index metadata?
     # TODO :plug?
     c = TensorNetwork{A}(filter(tensors(a)) do tensor

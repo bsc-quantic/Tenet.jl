@@ -89,7 +89,7 @@ function (project::ProjectTo{<:TensorNetwork})(dx::T) where {T<:TensorNetwork}
     T(map((proj, tensor) -> proj(tensor), project.tensors, tensors(dx)); project.meta...)
 end
 
-# function ChainRulesCore.frule((_, ṫn), ::typeof(TensorNetwork{A}), tensors; meta...) where {A<:Ansatz}
+# function ChainRulesCore.frule((_, ṫn), ::typeof(TensorNetwork{A}), tensors; meta...) where {A}
 # end
 
 function ChainRulesCore.frule((_, ṫn)::NTuple{2,Any}, ::typeof(contract), tn::TensorNetwork; kwargs...)
@@ -154,7 +154,7 @@ function ChainRulesCore.rrule(::typeof(Base.hcat), a::TensorNetwork, b::TensorNe
     return c, hcat_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs...) where {A<:Ansatz}
+function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs...) where {A}
     c = contract(tn; kwargs...)
     project_tn = ProjectTo(tn)
 

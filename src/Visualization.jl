@@ -4,7 +4,7 @@ using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
 import Makie
 
-function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A<:Ansatz}
+function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A}
     f = Makie.Figure()
 
     p, ax = Makie.plot!(f[1, 1], tn; kwargs...)
@@ -14,7 +14,7 @@ function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A<:Ansatz}
     return f
 end
 
-function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A<:Ansatz}
+function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
     # scene = Makie.Scene()
     # default_attrs = Makie.default_theme(scene, GraphPlot)
 
