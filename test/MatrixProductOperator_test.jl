@@ -17,13 +17,13 @@
         @testset "`Open` boundary" begin
             # product operator
             @test begin
-                arrays = [rand(1, 1, 3), rand(1, 1, 3, 3), rand(1, 1, 3)]
+                arrays = [rand(3, 1, 1), rand(3, 3, 1, 1), rand(3, 1, 1)]
                 MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
             end
 
             @test begin
                 arrays = [rand(1, 3, 1), rand(3, 1, 3, 1), rand(3, 1, 1)]
-                MatrixProductOperator{Open}(arrays, order=(:l, :i, :r, :o)) isa TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProductOperator{Open}(arrays, order = (:l, :i, :r, :o)) isa TensorNetwork{MatrixProductOperator{Open}}
             end
         end
 
@@ -34,10 +34,9 @@
                 MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
             
-            # fails but need to check why
             @test_throws DimensionMismatch begin
-                arrays = [rand(2, 1, 1, 2), rand(2, 1, 1, 2), rand(2, 1, 1, 2)]
-                MatrixProductOperator{Closed}(arrays, order=(:l, :i, :o, :r)) isa TensorNetwork{MatrixProductOperator{Closed}}
+                arrays = [rand(3, 1, 1, 3), rand(3, 1, 1, 3), rand(3, 1, 1, 3) ]
+                MatrixProductOperator{Closed}(arrays, order = (:l, :i, :o, :r)) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
         end
     end
