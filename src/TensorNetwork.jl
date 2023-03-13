@@ -45,6 +45,9 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
+# TODO checks? index metadata?
+TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{B}(tensors(tn); tn.meta...)
+
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
 Base.length(x::TensorNetwork) = length(tensors(x))
