@@ -34,7 +34,7 @@
                 MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
             
-            @test_throws DimensionMismatch begin
+            @test begin
                 arrays = [rand(3, 1, 1, 3), rand(3, 1, 1, 3), rand(3, 1, 1, 3) ]
                 MatrixProductOperator{Closed}(arrays, order = (:l, :i, :o, :r)) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
