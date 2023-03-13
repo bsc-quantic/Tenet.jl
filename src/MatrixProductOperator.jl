@@ -33,7 +33,7 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     push!(tn, Tensor(first(arrays), labels))
 
     # last
-    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], get_permutator([order[:l], order[:i], order[:o]]))
+    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
     push!(tn, Tensor(last(arrays), labels))
 
     # add other tensors
