@@ -29,7 +29,7 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     permutator = [order[i] for i in (:l, :r, :i, :o)]
     # add boundary tensors
     # first
-    labels = permute!([vinds[(1,2)], iinds[1], oinds[1]],  get_permutator([order[:r], order[:i], order[:o]]))
+    labels = permute!([vinds[(1,2)], iinds[1], oinds[1]],  normalizeperm!([order[:r], order[:i], order[:o]]))
     push!(tn, Tensor(first(arrays), labels))
 
     # last
