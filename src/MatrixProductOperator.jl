@@ -3,7 +3,7 @@ using UUIDs: uuid4
 using IterTools: partition
 using Random
 
-abstract type MatrixProductOperator{B} <: State{B} end
+abstract type MatrixProductOperator{B} <: Operator{B} end
 
 function MatrixProductOperator(arrays; bounds::Type{<:Bounds} = Open, kwargs...)
     MatrixProductOperator{bounds}(arrays; kwargs...)

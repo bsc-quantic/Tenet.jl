@@ -1,10 +1,10 @@
 @testset "MatrixProductOperator" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductOperator
+    using Tenet: TensorNetwork, Operator, Closed, Open, bounds, MatrixProductOperator
 
     @testset "Types" begin
-        @test MatrixProductOperator <: State
-        @test all(T -> MatrixProductOperator{T} <: State, [Open, Closed])
-        @test all(T -> MatrixProductOperator{T} <: State{T}, [Open, Closed])
+        @test MatrixProductOperator <: Operator
+        @test all(T -> MatrixProductOperator{T} <: Operator, [Open, Closed])
+        @test all(T -> MatrixProductOperator{T} <: Operator{T}, [Open, Closed])
         @test all(B -> bounds(MatrixProductOperator{B}) == B, [Open, Closed])
     end
 
