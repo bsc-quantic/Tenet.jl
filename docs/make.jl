@@ -18,7 +18,7 @@ makedocs(
         "Manual"=>[
             "Tensor" => "tensor.md",
             "Tensor Networks" => "tensor-network.md",
-            "Ansatz Tensor Networks" => "ansatz.md",
+            "Quantum Tensor Networks" => "quantum.md",
             "Transformations" => "transformations.md",
         ],
         "Examples"=>[

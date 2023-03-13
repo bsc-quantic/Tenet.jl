@@ -18,3 +18,15 @@ selectdim
 ```
 
 ## Visualization
+
+## Ansatzes
+
+```@docs
+Ansatz
+```
+
+### Arbitrary
+
+```@docs
+Arbitrary
+```
