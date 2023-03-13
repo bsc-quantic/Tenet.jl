@@ -65,7 +65,6 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
 end
 
 function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
-    println("MPO")
     !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(side => i for (i, side) in enumerate(order))
 
@@ -113,8 +112,8 @@ end
 
 struct MPOSampler{B<:Bounds,T} <: Random.Sampler{TensorNetwork{MatrixProductOperator{B}}}
     n::Int
-    ip::Int
-    op::Int
+    i::Int
+    o::Int
     χ::Int
 end
 
@@ -134,31 +133,36 @@ end
 Base.rand(::Type{MatrixProductOperator}, args...; kwargs...) = rand(MatrixProductOperator{Open}, args...; kwargs...)
 
 # TODO let choose the orthogonality center
-# function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Open,T}) where {T}
-#     n, χ, ip, op = getfield.((sampler,), (:n, :χ, :ip, :op))
+function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Open,T}) where {T}
+    n, χ, ip, op = getfield.((sampler,), (:n, :χ, :i, :o))
 
-#     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
-#         χl, χr = let after_mid = i < n ÷ 2, i = (n - 1 - abs(2i - n)) ÷ 2
-#             χl = min(χ, ip^(i - 1) * op^(i + 1))
-#             χr = min(χ, ip^i * op^())
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, ip^(i - 1) * op^(i - 1))
+            χr = min(χ, ip^i * op^i)
 
-#             # swap bond dims after mid
-#             after_mid ? (χr, χl) : (χl, χr)
-#         end
+            # swap bond dims after mid
+            after_mid ? (χr, χl) : (χl, χr)
+        end
 
-#         # fix for first site
-#         i == 1 && ((χl, χr) = (χr, 1))
+        if i == 1
+            shape = (χr, ip, op)
+        elseif i == n
+            shape = (χl, ip, op)
+        else
+            shape = (χl, χr, ip, op)
+        end
 
-#         # orthogonalize by Gram-Schmidt algorithm
-#         A = gramschmidt!(rand(rng, T, χl, χr * p))
+        # orthogonalize by Gram-Schmidt algorithm
+        A = gramschmidt!(rand(rng, T, shape[1], prod(shape[2:end])))
+        reshape(A, shape)
+    end
 
-#         reshape(A, χl, χr, p)
-#     end
+    # normalize
+    arrays[1] ./= sqrt(ip) # TODO: maybe here we need ip * op ?
 
-
-    
-#     MatrixProductOperator{Open}(arrays; χ = χ)
-# end
+    MatrixProductOperator{Open}(arrays; χ = χ)
+end
 
 # TODO stable renormalization
 function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Closed,T}) where {T}
