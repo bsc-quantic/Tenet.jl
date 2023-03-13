@@ -40,4 +40,10 @@
             end
         end
     end
+
+    @testset "Initialization" begin
+        @test begin
+            rand(MatrixProductOperator{Open}, 6, 2, 2, 4) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+    end
 end
