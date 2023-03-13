@@ -27,20 +27,20 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     permutator = [order[i] for i in (:l, :r, :i, :o)]
-
+    
     # add boundary tensors
     # first
-    labels = permute!([vinds[(1,2)], iinds[1], oinds[1]], [order[:r], order[:i], order[:o]])
+    labels = permute!([vinds[(1,2)], iinds[1], oinds[1]],  get_permutator([order[:r], order[:i], order[:o]]))
     push!(tn, Tensor(first(arrays), labels))
 
     # last
-    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], [order[:l], order[:i], order[:o]])
+    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], get_permutator([order[:l], order[:i], order[:o]]))
     push!(tn, Tensor(last(arrays), labels))
 
     # add other tensors
     for (i, data) in zip(2:n-1, arrays[2:end-1])
-        lind = vinds[(mod1(i - 1, n), i)]
-        rind = vinds[(i, mod1(i + 1, n))]
+        lind = vinds[(i - 1, i)]
+        rind = vinds[(i, i + 1)]
 
         labels = [lind, rind, iinds[i], oinds[i]]
         permute!(labels, permutator)
@@ -66,6 +66,7 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
 end
 
 function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
+    println("MPO")
     !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(side => i for (i, side) in enumerate(order))
 
@@ -90,7 +91,7 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i
 
         labels = [lind, rind, iinds[i], oinds[i]]
         permute!(labels, permutator)
-
+        
         tensor = Tensor(data, labels)
         push!(tn, tensor)
     end
@@ -124,12 +125,12 @@ Base.eltype(::MPOSampler{B}) where {B<:Bounds} = TensorNetwork{MatrixProductOper
 function Base.rand(
     ::Type{MatrixProductOperator{B}},
     n::Integer,
-    ip::Integer,
-    op::Integer,
+    i::Integer,
+    o::Integer,
     χ::Integer;
     eltype::Type = Float64,
 ) where {B<:Bounds}
-    rand(MPOSampler{B,eltype}(n, ip, op, χ))
+    rand(MPOSampler{B,eltype}(n, i, o, χ))
 end
 
 Base.rand(::Type{MatrixProductOperator}, args...; kwargs...) = rand(MatrixProductOperator{Open}, args...; kwargs...)
@@ -163,6 +164,6 @@ Base.rand(::Type{MatrixProductOperator}, args...; kwargs...) = rand(MatrixProduc
 
 # TODO stable renormalization
 function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Closed,T}) where {T}
-    n, χ, ip, op = getfield.((sampler,), (:n, :χ, :ip, :op))
-    MatrixProductOperator{Closed}([rand(rng, T, n, χ, ip, op) for _ in 1:n]; χ = χ)
+    n, χ, i, o = getfield.((sampler,), (:n, :χ, :i, :o))
+    MatrixProductOperator{Closed}([rand(rng, T, n, χ, i, o) for _ in 1:n]; χ = χ)
 end
