@@ -51,8 +51,6 @@ jobs:
           pkg"registry add General"
         shell: julia {0}
       - uses: julia-actions/julia-buildpkg@v1
-        with:
-          precompile: yes
       - uses: julia-actions/julia-runtest@v1
         env:
           ENABLE_AQUA_TESTS: 1
