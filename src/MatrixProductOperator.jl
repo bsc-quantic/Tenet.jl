@@ -27,7 +27,6 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     permutator = [order[i] for i in (:l, :r, :i, :o)]
-    
     # add boundary tensors
     # first
     labels = permute!([vinds[(1,2)], iinds[1], oinds[1]],  get_permutator([order[:r], order[:i], order[:o]]))
