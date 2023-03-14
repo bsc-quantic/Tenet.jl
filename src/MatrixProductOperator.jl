@@ -42,7 +42,7 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
         rind = vinds[(i, i + 1)]
 
         labels = [lind, rind, iinds[i], oinds[i]]
-        permute!(labels, permutator)
+        invpermute!(labels, permutator)
 
         tensor = Tensor(data, labels)
         push!(tn, tensor)
