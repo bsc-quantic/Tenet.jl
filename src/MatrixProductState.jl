@@ -49,7 +49,7 @@ function MatrixProductState{Open}(arrays; χ = nothing, order = (:l, :r, :p), me
         rind = vinds[(i, mod1(i + 1, n))]
 
         labels = [lind, rind, pinds[i]]
-        permute!(labels, permutator)
+        invpermute!(labels, permutator)
 
         tensor = Tensor(data, labels)
         push!(tn, tensor)
@@ -88,7 +88,7 @@ function MatrixProductState{Closed}(arrays; χ = nothing, order = (:l, :r, :p), 
         rind = vinds[(i, mod1(i + 1, n))]
 
         labels = [lind, rind, pinds[i]]
-        permute!(labels, permutator)
+        invpermute!(labels, permutator)
 
         tensor = Tensor(data, labels)
         push!(tn, tensor)
