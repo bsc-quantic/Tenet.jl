@@ -35,6 +35,12 @@
                 MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
             end
 
+            # custom order
+            @test begin
+                arrays = [rand(3, 1), rand(3, 1, 3), rand(1, 3)]
+                MatrixProductState{Open}(arrays, order = (:r, :p, :l)) isa TensorNetwork{MatrixProductState{Open}}
+            end
+
             # alternative constructor
             @test begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
@@ -59,6 +65,12 @@
             @test begin
                 arrays = [rand(3, 4, 2), rand(4, 8, 2), rand(8, 3, 2)]
                 MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+            end
+
+            # custom order
+            @test begin
+                arrays = [rand(3, 1, 3), rand(3, 1, 3), rand(3, 1, 3)]
+                MatrixProductState{Closed}(arrays, order = (:r, :p, :l)) isa TensorNetwork{MatrixProductState{Closed}}
             end
 
             # alternative constructor
