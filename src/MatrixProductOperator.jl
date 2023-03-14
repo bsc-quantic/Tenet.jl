@@ -88,7 +88,7 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i
         rind = vinds[(i, mod1(i + 1, n))]
 
         labels = [lind, rind, iinds[i], oinds[i]]
-        permute!(labels, permutator)
+        invpermute!(labels, permutator)
         tensor = Tensor(data, labels)
         push!(tn, tensor)
     end
