@@ -29,11 +29,11 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     permutator = [order[i] for i in (:l, :r, :i, :o)]
     # add boundary tensors
     # first
-    labels = permute!([vinds[(1,2)], iinds[1], oinds[1]],  normalizeperm!([order[:r], order[:i], order[:o]]))
+    labels = invpermute!([vinds[(1,2)], iinds[1], oinds[1]],  normalizeperm!([order[:r], order[:i], order[:o]]))
     push!(tn, Tensor(first(arrays), labels))
 
     # last
-    labels = permute!([vinds[(n-1,n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
+    labels = invpermute!([vinds[(n-1,n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
     push!(tn, Tensor(last(arrays), labels))
 
     # add other tensors
