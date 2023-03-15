@@ -45,5 +45,42 @@
         @test begin
             rand(MatrixProductOperator{Open}, 6, 2, 2, 4) isa TensorNetwork{MatrixProductOperator{Open}}
         end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 8, 2, 3, 4) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 1, 2, 2, 1) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 1, 3, 3, 1) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 1, 1, 1, 1) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 2, 2, 2, 1) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 2, 2, 2, 2) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 4, 4, 4, 16) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 4, 2, 2, 8) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
+        @test begin
+            rand(MatrixProductOperator{Open}, 4, 2, 3, 8) isa TensorNetwork{MatrixProductOperator{Open}}
+        end
+
     end
 end
