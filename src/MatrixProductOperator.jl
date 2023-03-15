@@ -159,7 +159,8 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Open,T}) where {
     end
 
     # normalize
-    arrays[1] ./= sqrt(ip) # TODO: maybe here we need ip * op ?
+    ζ = min(χ, ip * op)
+    arrays[1] ./= sqrt(ζ)
 
     MatrixProductOperator{Open}(arrays; χ = χ)
 end
