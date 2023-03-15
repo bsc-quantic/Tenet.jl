@@ -146,12 +146,12 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Open,T}) where {
             after_mid ? (χr, χl) : (χl, χr)
         end
 
-        if i == 1
-            shape = (χr, ip, op)
+        shape = if i == 1
+            (χr, ip, op)
         elseif i == n
-            shape = (χl, ip, op)
+            (χl, ip, op)
         else
-            shape = (χl, χr, ip, op)
+            (χl, χr, ip, op)
         end
 
         # orthogonalize by Gram-Schmidt algorithm
