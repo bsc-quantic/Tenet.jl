@@ -131,7 +131,8 @@ function Base.rand(
     rand(MPOSampler{B,eltype}(n, i, o, χ))
 end
 
-Base.rand(::Type{MatrixProductOperator}, args...; kwargs...) = rand(MatrixProductOperator{Open}, args...; kwargs...)
+Base.rand(::Type{MatrixProductOperator}, args::Vararg{Integer,3}; kwargs...) =
+    rand(MatrixProductOperator{Open}, args...; kwargs...)
 
 # TODO let choose the orthogonality center
 function Base.rand(rng::Random.AbstractRNG, sampler::MPOSampler{Open,T}) where {T}
