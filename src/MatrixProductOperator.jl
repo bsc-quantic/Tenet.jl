@@ -10,7 +10,8 @@ function MatrixProductOperator(arrays; bounds::Type{<:Bounds} = Open, kwargs...)
 end
 
 function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
-    !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
+    !issetequal(order, (:l, :r, :i, :o)) &&
+        throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(dim => i for (i, dim) in enumerate(order))
 
     # check format
@@ -29,11 +30,11 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     permutator = [order[i] for i in (:l, :r, :i, :o)]
     # add boundary tensors
     # first
-    labels = invpermute!([vinds[(1,2)], iinds[1], oinds[1]],  normalizeperm!([order[:r], order[:i], order[:o]]))
+    labels = invpermute!([vinds[(1, 2)], iinds[1], oinds[1]], normalizeperm!([order[:r], order[:i], order[:o]]))
     push!(tn, Tensor(first(arrays), labels))
 
     # last
-    labels = invpermute!([vinds[(n-1,n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
+    labels = invpermute!([vinds[(n - 1, n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
     push!(tn, Tensor(last(arrays), labels))
 
     # add other tensors
@@ -65,7 +66,8 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
 end
 
 function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i, :o), meta...)
-    !issetequal(order, (:l, :r, :i, :o)) && throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
+    !issetequal(order, (:l, :r, :i, :o)) &&
+        throw(ArgumentError("`order` must be a permutation of the :l, :r, :i and :o"))
     order = Dict(side => i for (i, side) in enumerate(order))
 
     # check format
@@ -108,7 +110,6 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i
 
     return tn
 end
- 
 
 struct MPOSampler{B<:Bounds,T} <: Random.Sampler{TensorNetwork{MatrixProductOperator{B}}}
     n::Int
