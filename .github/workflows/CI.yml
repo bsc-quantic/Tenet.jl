@@ -1,6 +1,20 @@
 name: CI
 on:
-  push
+  push:
+    branches:
+      - master
+    tags: ['*']
+    paths:
+      - '**.toml'
+      - '**.jl'
+      - 'docs/*'
+      - '.github/workflows/CI.yml'
+  pull_request:
+    paths:
+      - '**.toml'
+      - '**.jl'
+      - 'docs/*'
+      - '.github/workflows/CI.yml'
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
