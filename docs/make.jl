@@ -18,7 +18,10 @@ makedocs(
         "Manual"=>[
             "Tensor" => "tensor.md",
             "Tensor Networks" => "tensor-network.md",
-            "Quantum Tensor Networks" => "quantum.md",
+            "Quantum Tensor Networks" => [
+                "Introduction" => "quantum/index.md",
+                "Matrix Product States (MPS) / Operators (MPO)" => "quantum/mps.md",
+            ],
             "Transformations" => "transformations.md",
         ],
         "Examples"=>[
