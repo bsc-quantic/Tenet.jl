@@ -34,3 +34,11 @@ function Base.iterate(it::RingPeek{Itr}, state) where {Itr}
 
     ((x, peeked), newstate)
 end
+
+function normalizeperm!(permutator)
+    permutator .= permutator .- minimum(permutator) .+ 1
+    k = only(setdiff(1:4, permutator))
+    permutator[permutator .> k] .-= 1
+    
+    permutator
+end

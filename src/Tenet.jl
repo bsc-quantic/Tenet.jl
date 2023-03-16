@@ -29,6 +29,9 @@ export fidelity
 include("MatrixProductState.jl")
 export MatrixProductState
 
+include("MatrixProductOperator.jl")
+export MatrixProductOperator
+
 include("Differentiation.jl")
 
 function __init__()
