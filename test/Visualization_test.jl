@@ -1,5 +1,5 @@
 @testset "Visualization" begin
-    using GLMakie
+    using CairoMakie
     @testset "plot" begin
         @test plot([0], [0]) isa Any
     end
