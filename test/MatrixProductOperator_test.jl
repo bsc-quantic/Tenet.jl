@@ -9,78 +9,105 @@
     end
 
     @testset "Constructor" begin
+        @test_skip begin
+            arrays = [rand(2, 2)]
+            MatrixProductOperator(arrays)
+        end
+
         @test begin
-            arrays = [rand(3, 1, 1), rand(3, 1, 1)]
+            arrays = [rand(2, 1, 1), rand(2, 1, 1)]
             MatrixProductOperator(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
         end
 
         @testset "`Open` boundary" begin
             # product operator
             @test begin
-                arrays = [rand(3, 1, 1), rand(3, 3, 1, 1), rand(3, 1, 1)]
+                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
                 MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
             end
 
+            # alternative constructor
             @test begin
-                arrays = [rand(1, 3, 1), rand(3, 1, 3, 1), rand(3, 1, 1)]
-                MatrixProductOperator{Open}(arrays, order = (:l, :i, :r, :o)) isa TensorNetwork{MatrixProductOperator{Open}}
+                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
+                MatrixProductOperator(arrays; bounds = Open) isa TensorNetwork{MatrixProductOperator{Open}}
+            end
+
+            # entangling operator
+            @test begin
+                i = 3
+                o = 5
+                arrays = [rand(2, i, o), rand(2, 4, i, o), rand(4, i, o)]
+                MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
+            end
+
+            # entangling operator - change order
+            @test begin
+                i = 3
+                o = 5
+                arrays = [rand(i, 2, o), rand(2, i, 4, o), rand(4, i, o)]
+                MatrixProductOperator{Open}(arrays, order = (:l, :i, :r, :o)) isa
+                TensorNetwork{MatrixProductOperator{Open}}
+            end
+
+            # fail on Open with Closed format
+            @test_throws DimensionMismatch begin
+                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+                MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
             end
         end
 
         @testset "`Closed` boundary" begin
-            # product state
+            # product operator
             @test begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
                 MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
-            
+
+            # alternative constructor
             @test begin
-                arrays = [rand(3, 1, 1, 3), rand(3, 1, 1, 3), rand(3, 1, 1, 3) ]
-                MatrixProductOperator{Closed}(arrays, order = (:l, :i, :o, :r)) isa TensorNetwork{MatrixProductOperator{Closed}}
+                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+                MatrixProductOperator(arrays; bounds = Closed) isa TensorNetwork{MatrixProductOperator{Closed}}
+            end
+
+            # entangling operator
+            @test begin
+                i = 3
+                o = 5
+                arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
+                MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
+            end
+
+            # entangling operator - change order
+            @test begin
+                i = 3
+                o = 5
+                arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
+                MatrixProductOperator{Closed}(arrays, order = (:l, :i, :r, :o)) isa
+                TensorNetwork{MatrixProductOperator{Closed}}
+            end
+
+            # fail on Closed with Open format
+            @test_throws DimensionMismatch begin
+                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
+                MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
             end
         end
     end
 
     @testset "Initialization" begin
-        @test begin
-            rand(MatrixProductOperator{Open}, 6, 2, 2, 4) isa TensorNetwork{MatrixProductOperator{Open}}
+        for params in [
+            (2, 2, 2, 1),
+            (2, 2, 2, 2),
+            (4, 4, 4, 16),
+            (4, 2, 2, 8),
+            (4, 2, 3, 8),
+            (6, 2, 2, 4),
+            (8, 2, 3, 4),
+            # (1, 2, 2, 1),
+            # (1, 3, 3, 1),
+            # (1, 1, 1, 1),
+        ]
+            @test rand(MatrixProductOperator{Open}, params...) isa TensorNetwork{MatrixProductOperator{Open}}
         end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 8, 2, 3, 4) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test_skip begin
-            rand(MatrixProductOperator{Open}, 1, 2, 2, 1) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test_skip begin
-            rand(MatrixProductOperator{Open}, 1, 3, 3, 1) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test_skip begin
-            rand(MatrixProductOperator{Open}, 1, 1, 1, 1) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 2, 2, 2, 1) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 2, 2, 2, 2) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 4, 4, 4, 16) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 4, 2, 2, 8) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
-        @test begin
-            rand(MatrixProductOperator{Open}, 4, 2, 3, 8) isa TensorNetwork{MatrixProductOperator{Open}}
-        end
-
     end
 end
