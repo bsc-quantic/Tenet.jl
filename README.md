@@ -13,7 +13,7 @@ A Proof-of-Concept Julia library for **Ten**sor **Net**works, heavily inspired b
 - [x] Tensor Network slicing
 - [ ] Ansatz Tensor Network (States/Operators)
   - [x] Matrix Product States (MPS)
-  - [ ] Matrix Product Operators (MPO)
+  - [x] Matrix Product Operators (MPO)
   - [ ] Tree Tensor Networks (TTN)
   - [ ] Projected Entangled Pair States (PEPS)
   - [ ] Multiscale Entangled Renormalization Ansatz (MERA)
