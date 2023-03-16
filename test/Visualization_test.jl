@@ -1,6 +1,32 @@
 @testset "Visualization" begin
     using CairoMakie
-    @testset "plot" begin
-        @test plot([0], [0]) isa Any
+    using Tenet
+    using NetworkLayout: Spring
+
+    @testset "`plot``" begin
+        tn = TensorNetwork([
+            Tensor(rand([2, 2, 2, 2]...), tuple([:x, :y, :z, :t]...)),
+            Tensor(rand([2, 2]...), tuple([:x, :y]...)),
+            Tensor(rand([2]...), tuple([:x]...))
+            ])
+
+        @test plot(tn) isa Any
+        @test plot(tn; labels=true) isa Any
+        @test plot(tn; layout=Spring(dim=3)) isa Any
+
+        @test begin
+            f = Figure()
+            plot!(f[1,1], tn) isa Any
+        end
+
+        @test begin
+            f = Figure()
+            plot!(f[1,1], tn) isa Any
+        end
+
+        @test begin
+            f = Figure()
+            plot!(f[1,1], tn) isa Any
+        end
     end
 end
