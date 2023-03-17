@@ -5,9 +5,9 @@
 
     @testset "plot`" begin
         tn = TensorNetwork([
-            Tensor(rand(2, 2, 2, 2), [:x, :y, :z, :t]),
-            Tensor(rand(2, 2), [:x, :y]),
-            Tensor(rand(2),[:x])
+            Tensor(rand(2, 2, 2, 2), (:x, :y, :z, :t)),
+            Tensor(rand(2, 2), (:x, :y)),
+            Tensor(rand(2),(:x,))
             ])
 
         @test plot(tn) isa Any
