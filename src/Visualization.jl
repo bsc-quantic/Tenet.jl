@@ -14,9 +14,6 @@ function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A}
 end
 
 function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
-    # scene = Makie.Scene()
-    # default_attrs = Makie.default_theme(scene, GraphPlot)
-
     tn = transform(tn, HyperindConverter)
 
     kwargs = Dict{Symbol,Any}(kwargs)
