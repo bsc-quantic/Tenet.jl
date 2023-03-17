@@ -41,6 +41,9 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v1
+        with:
+           cache-name: CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+           cache-compiled: true
       - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
       - name: Add Julia registries
         run: |
@@ -48,12 +51,6 @@ jobs:
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
           pkg"registry add General"
         shell: julia {0}
-      - name: Install Julia dependencies
-        shell: julia --project=monorepo {0}
-        run: |
-          using Pkg;
-          # dev mono repo versions
-          pkg"dev . "
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
