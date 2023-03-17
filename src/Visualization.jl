@@ -8,7 +8,6 @@ function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A}
     f = Makie.Figure()
 
     p, ax = Makie.plot!(f[1, 1], tn; kwargs...)
-    display(f)
 
     return f, ax, p
 end
