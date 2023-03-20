@@ -4,7 +4,7 @@ using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
 import Makie: Axis, AxisPlot, FigureAxisPlot
 
-function edge_labels(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, opencounter) where {A}
+function __plot_edge_labels(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, opencounter) where {A}
     elabels = Vector{String}([])
 
     for edge in edges(graph)
@@ -33,7 +33,7 @@ function edge_labels(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, openc
     return elabels
 end
 
-function tn_meta(tn::TensorNetwork{A}) where {A}
+function __plot_group_tensors(tn::TensorNetwork{A}) where {A}
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
@@ -54,7 +54,7 @@ function tn_meta(tn::TensorNetwork{A}) where {A}
     return graph, copytensors, ghostnodes, opencounter
 end
 
-function graph_kwargs(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, kwargs) where {A}
+function __plot_graph_kwargs(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, kwargs) where {A}
     kwargs[:node_size] = [i ∈ ghostnodes ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:nv(graph)]
     kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:nv(graph)]
@@ -64,13 +64,13 @@ end
 
 function Makie.plot(tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
     tn = transform(tn, HyperindConverter)
-    graph, copytensors, ghostnodes, opencounter = tn_meta(tn)
+    graph, copytensors, ghostnodes, opencounter = __plot_group_tensors(tn)
 
-    kwargs = graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
+    kwargs = __plot_graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
 
     f, ax, p = graphplot(
         graph;
-        elabels = labels ? edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
+        elabels = labels ? __plot_edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
         node_attr = (colormap = :viridis, strokewidth = 2.0, strokecolor = :black),
@@ -88,9 +88,9 @@ end
 
 function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
     tn = transform(tn, HyperindConverter)
-    graph, copytensors, ghostnodes, opencounter = tn_meta(tn)
+    graph, copytensors, ghostnodes, opencounter = __plot_group_tensors(tn)
 
-    kwargs = graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
+    kwargs = __plot_graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1, 1])
@@ -105,7 +105,7 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     p = graphplot!(
         f[1, 1],
         graph;
-        elabels = labels ? edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
+        elabels = labels ? __plot_edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
         node_attr = (colormap = :viridis, strokewidth = 2.0, strokecolor = :black),
