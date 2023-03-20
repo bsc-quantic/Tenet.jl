@@ -9,6 +9,7 @@ import Tenet
     include("TensorNetwork_test.jl")
     include("Quantum_test.jl")
     include("Transformations_test.jl")
+    include("Visualization_test.jl")
 
     # Ansatz Tensor Networks
     include("MatrixProductState_test.jl")
