@@ -1,23 +1,39 @@
 using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!, src, dst
-using GraphMakie: graphplot!, GraphPlot, to_colormap, get_node_plot
+using GraphMakie: graphplot, graphplot!, to_colormap, get_node_plot
 using Combinatorics: combinations
 using GraphMakie.NetworkLayout: IterativeLayout
-import Makie
+import Makie: Axis, AxisPlot, FigureAxisPlot
 
-function Makie.plot(tn::TensorNetwork{A}; kwargs...) where {A}
-    f = Makie.Figure()
+function edge_labels(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, opencounter) where {A}
+    elabels = Vector{String}([])
 
-    p, ax = Makie.plot!(f[1, 1], tn; kwargs...)
-    display(f)
+    for edge in edges(graph)
+        copies = filter(x -> x ∈ copytensors, [edge.src, edge.dst])
+        notghosts = filter(x -> x ∉ ghostnodes, [edge.src, edge.dst])
 
-    return f, ax, p
+        # TODO refactor this code
+        if length(notghosts) == 2 # there are no ghost nodes in this edge
+            if isempty(copies) # there are no copy tensors in the nodes of this edge
+                push!(
+                    elabels,
+                    join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','),
+                )
+            else
+                push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
+            end
+        else
+            tensor_oinds = filter(id -> nameof(id) ∈ Tenet.labels(tensors(tn)[only(notghosts)]), openinds(tn))
+            indices = nameof.(tensor_oinds)
+
+            push!(elabels, string(indices[opencounter[only(notghosts)]]))
+            opencounter[only(notghosts)] += 1
+        end
+    end
+
+    return elabels
 end
 
-function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
-    tn = transform(tn, HyperindConverter)
-
-    kwargs = Dict{Symbol,Any}(kwargs)
-
+function tn_meta(tn::TensorNetwork{A}) where {A}
     pos = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(pos[a], pos[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
@@ -35,40 +51,46 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
         return node
     end
 
+    return graph, copytensors, ghostnodes, opencounter
+end
+
+function graph_kwargs(tn::TensorNetwork{A}, graph, copytensors, ghostnodes, kwargs) where {A}
     kwargs[:node_size] = [i ∈ ghostnodes ? 0 : max(15, log2(size(tensors(tn, i)) |> prod)) for i in 1:nv(graph)]
     kwargs[:node_marker] = [i ∈ copytensors ? :diamond : :circle for i in 1:nv(graph)]
     kwargs[:node_color] = [i ∈ copytensors ? :black : :white for i in 1:nv(graph)]
 
-    if labels
-        elabels = Vector{String}([])
-        elabels_color = Vector{Symbol}([])
+    return kwargs
+end
 
-        for edge in edges(graph)
-            copies = filter(x -> x ∈ copytensors, [edge.src, edge.dst])
-            notghosts = filter(x -> x ∉ ghostnodes, [edge.src, edge.dst])
+function Makie.plot(tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
+    tn = transform(tn, HyperindConverter)
+    graph, copytensors, ghostnodes, opencounter = tn_meta(tn)
 
-            # TODO refactor this code
-            if length(notghosts) == 2 # there are no ghost nodes in this edge
-                if isempty(copies) # there are no copy tensors in the nodes of this edge
-                    push!(
-                        elabels,
-                        join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','),
-                    )
-                    push!(elabels_color, :black)
-                else
-                    push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
-                    push!(elabels_color, :grey)
-                end
-            else
-                tensor_oinds = filter(id -> nameof(id) ∈ Tenet.labels(tensors(tn)[only(notghosts)]), openinds(tn))
-                indices = nameof.(tensor_oinds)
+    kwargs = graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
 
-                push!(elabels, string(indices[opencounter[only(notghosts)]]))
-                push!(elabels_color, :black)
-                opencounter[only(notghosts)] += 1
-            end
-        end
+    f, ax, p = graphplot(
+        graph;
+        elabels = labels ? edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
+        # TODO configurable `elabels_textsize`
+        elabels_textsize = [17 for i in 1:ne(graph)],
+        node_attr = (colormap = :viridis, strokewidth = 2.0, strokecolor = :black),
+        kwargs...,
+    )
+
+    if ax isa Axis # hide decorations if it is not a 3D plot
+        Makie.hidedecorations!(ax)
+        Makie.hidespines!(ax)
+        ax.aspect = Makie.DataAspect()
     end
+
+    return FigureAxisPlot(f, ax, p)
+end
+
+function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false, kwargs...) where {A}
+    tn = transform(tn, HyperindConverter)
+    graph, copytensors, ghostnodes, opencounter = tn_meta(tn)
+
+    kwargs = graph_kwargs(tn, graph, copytensors, ghostnodes, Dict{Symbol,Any}(kwargs))
 
     if haskey(kwargs, :layout) && kwargs[:layout] isa IterativeLayout{3}
         ax = Makie.LScene(f[1, 1])
@@ -83,12 +105,12 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     p = graphplot!(
         f[1, 1],
         graph;
-        elabels = labels ? elabels : nothing,
+        elabels = labels ? edge_labels(tn, graph, copytensors, ghostnodes, opencounter) : nothing,
         # TODO configurable `elabels_textsize`
         elabels_textsize = [17 for i in 1:ne(graph)],
         node_attr = (colormap = :viridis, strokewidth = 2.0, strokecolor = :black),
         kwargs...,
     )
 
-    return p, ax
+    return AxisPlot(ax, p)
 end
