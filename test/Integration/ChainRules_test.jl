@@ -39,8 +39,8 @@
             a = Tensor(rand(2, 2), (:i, :j))
             b = Tensor(rand(2, 2), (:i, :j))
 
-            # test_frule(contract, a, b)
-            # test_rrule(contract, a, b) # TODO fix error with FiniteDifferences
+            test_frule(only ∘ contract, a, b)
+            test_rrule(only ∘ contract, a, b) # TODO fix error with FiniteDifferences
         end
 
         @testset "ik,kj->ij" begin
@@ -51,12 +51,15 @@
             test_rrule(contract, a, b)
         end
 
-        # TODO complete tests
         @testset "TensorNetwork" begin
-            tn = rand(TensorNetwork, 10, 3)
+            tn = rand(TensorNetwork, 2, 3)
 
-            # test_frule(contract, tn)
-            # test_rrule(contract, tn)
+            @test frule((nothing, tn), only ∘ contract, tn) isa Tuple{eltype(tn),eltype(tn)}
+            @test rrule(only ∘ contract, tn) isa Tuple{eltype(tn),Function}
+
+            # TODO FiniteDifferences crashes
+            # test_frule(only ∘ contract, tn)
+            # test_rrule(only ∘ contract, tn)
         end
     end
 

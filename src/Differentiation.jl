@@ -21,6 +21,7 @@ end
     Tensor{T,N,A}(project.data(dx), project.labels; project.meta...)
 (project::ProjectTo{<:Number})(dx::Tensor{_,0}) where {_} = project(only(dx))
 (project::ProjectTo{<:Tensor})(dx::T) where {T<:Tensor} = Tensor(project.data(dx.data), project.labels; project.meta...)
+(project::ProjectTo{<:Tensor{T,0}})(dx::T) where {T} = Tensor(project.data(fill(dx)), project.labels; project.meta...)
 
 # TODO is this the correct way?
 (project::ProjectTo{<:Tensor})(dx::Thunk) = project(unthunk(dx))
@@ -173,4 +174,15 @@ function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs..
     end
 
     return c, contract_pullback
+end
+
+## used in tests
+function ChainRulesCore.frule((_, Δargs...), ::typeof(only ∘ contract), args::Vararg{<:Any,N}) where {N}
+    c, ċ = frule((nothing, Δargs...), contract, args...)
+    return only(c), reduce((acc, _) -> only(acc), 1:N; init = ċ)
+end
+
+function ChainRulesCore.rrule(::typeof(only ∘ contract), args...)
+    c, pb = rrule(contract, args...)
+    return only(c), pb
 end
