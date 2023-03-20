@@ -18,24 +18,40 @@
     end
 
     @testset "contract" begin
-        @testset "[number product]" begin
-            test_rrule(contract, 5.0, 2.0)
-            test_frule(contract, 5.0, 2.0)
+        @testset "[number-number product]" begin
+            @testset "float" begin
+                test_rrule(contract, 5.0, 2.0)
+                test_frule(contract, 5.0, 2.0)
+            end
 
-            # test_rrule(contract, 5, 2)
-            # test_frule(contract, 5, 2)
+            # TODO fix it
+            # @testset "complex" begin
+            #     test_rrule(contract, 5.0 + 1.0im, 2.0 - 2.0im)
+            #     test_frule(contract, 5.0 + 1.0im, 2.0 - 2.0im)
+            # end
+
+            # @testset "int" begin
+            #     test_rrule(contract, 5, 2)
+            #     test_frule(contract, 5, 2)
+            # end
         end
 
         @testset "[number-tensor product]" begin
             b = Tensor(rand(2, 2), (:i, :j))
+            z = 1.0 + 1im
 
             test_frule(contract, 5.0, b)
             test_rrule(contract, 5.0, b)
-            # test_rrule(contract, 5.0 + 1im, b)
-            # test_rrule(contract, 5, b)
+
+            # TODO fix it
+            # test_frule(contract, z, b)
+            # test_frule(contract, b, z)
+            # test_rrule(contract, z, b)
+            # test_rrule(contract, b, z)
         end
 
-        @testset "ij,ij->" begin
+        # NOTE einsum: ij,ij->
+        @testset "[inner product]" begin
             a = Tensor(rand(2, 2), (:i, :j))
             b = Tensor(rand(2, 2), (:i, :j))
 
@@ -43,7 +59,8 @@
             test_rrule(only ∘ contract, a, b) # TODO fix error with FiniteDifferences
         end
 
-        @testset "ik,kj->ij" begin
+        # NOTE einsum: ik,kj->ij
+        @testset "[matrix multiplication]" begin
             a = Tensor(rand(2, 2), (:i, :k))
             b = Tensor(rand(2, 2), (:k, :j))
 
