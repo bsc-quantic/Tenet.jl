@@ -1,10 +1,8 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 DeltaArrays = "10b0fc19-5ccc-4427-889b-d75dd6306188"
-NetworkLayout = "46757867-2c16-5918-afeb-47bfcb05e46a"
 Permutations = "2ae35dd2-176d-5d53-8349-f30d82d94d4f"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
