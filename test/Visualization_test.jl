@@ -21,12 +21,12 @@
 
         @test begin
             f = Figure()
-            plot!(f[1,1], tn) isa Any
+            plot!(f[1,1], tn; labels=true) isa Any
         end
 
         @test begin
             f = Figure()
-            plot!(f[1,1], tn) isa Any
+            plot!(f[1,1], tn; layout=Spring(dim=3)) isa Any
         end
     end
 end
