@@ -1,0 +1,13 @@
+name: Register Package
+on:
+  workflow_dispatch:
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: bsc-quantic/julia-register
+        with:
+          registry_name: Quantic
+          registry_url: github.com/bsc-quantic/Registry
+          push: false
