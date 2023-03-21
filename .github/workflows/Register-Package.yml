@@ -8,8 +8,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: bsc-quantic/julia-register@0af6723941bae5a6b5da6b4b6f1203bb5de1c43b
         with:
-          registry_name: Quantic
-          registry_url: https://github.com/bsc-quantic/Registry
+          registry: https://github.com/bsc-quantic/Registry
           push: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
