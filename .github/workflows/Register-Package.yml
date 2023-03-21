@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: bsc-quantic/julia-register
+      - uses: bsc-quantic/julia-register@06bc784a44f31f87dc7b5ed87633a4229f94f894
         with:
           registry_name: Quantic
           registry_url: github.com/bsc-quantic/Registry
