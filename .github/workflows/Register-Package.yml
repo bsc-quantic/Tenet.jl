@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: bsc-quantic/julia-register@d41392f93514beb5f84914ac6c02d566761e450a
+      - uses: bsc-quantic/julia-register@7d97cd9a57edc83c7aa04674f697d0e7b74bf491
         with:
           registry_name: Quantic
-          registry_url: github.com/bsc-quantic/Registry
+          registry_url: https://github.com/bsc-quantic/Registry
           push: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
