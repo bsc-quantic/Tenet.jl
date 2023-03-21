@@ -11,3 +11,5 @@ jobs:
           registry_name: Quantic
           registry_url: github.com/bsc-quantic/Registry
           push: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
