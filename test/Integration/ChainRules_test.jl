@@ -28,20 +28,18 @@
                 test_rrule(contract, 5.0 + 1.0im, 2.0 - 2.0im)
                 test_frule(contract, 5.0 + 1.0im, 2.0 - 2.0im)
             end
-
         #     @testset "int" begin
         #         test_rrule(contract, 5, 2)
         #         test_frule(contract, 5, 2)
         #     end
         end
 
-        # TODO fix it
-        # @testset "[number-tensor product]" begin
-        #     b = Tensor(rand(2, 2), (:i, :j))
-        #     z = 1.0 + 1im
+        @testset "[number-tensor product]" begin
+            b = Tensor(rand(2, 2), (:i, :j))
+            z = 1.0 + 1im
 
-        #     test_frule(contract, 5.0, b)
-        #     test_rrule(contract, 5.0, b)
+            test_frule(contract, 5.0, b)
+            test_rrule(contract, 5.0, b)
 
         #     test_frule(contract, z, b)
         #     test_frule(contract, b, z)

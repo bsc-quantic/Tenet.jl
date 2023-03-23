@@ -53,9 +53,9 @@ function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A,B}
     project_c = ProjectTo(c)
 
     function contract_pullback(c̄)::Tuple{NoTangent,A,B} # TODO @thunk type inference
-        ȧ = contract(project_c(c̄), b')
-        ḃ = contract(a', project_c(c̄))
-        return NoTangent(), project_a(ȧ), project_b(ḃ)
+        ā = project_a(contract(project_c(c̄), b')) # TODO @thunk
+        b̄ = project_b(contract(a', project_c(c̄))) # TODO @thunk
+        return NoTangent(), ā, b̄
     end
     return c, contract_pullback
 end
@@ -66,9 +66,9 @@ function ChainRulesCore.rrule(::typeof(contract), a::A, b::B, i) where {A<:Tenso
     project_b = ProjectTo(b)
 
     function contract_pullback(c̄)::Tuple{NoTangent,A,B,NoTangent} # TODO @thunk type inference
-        ȧ = contract(c̄, b', i)
-        ḃ = contract(a', c̄, i)
-        return NoTangent(), project_a(ȧ), project_b(ḃ), NoTangent()
+        ā = project_a(contract(c̄, b', i)) # TODO @thunk
+        b̄ = project_b(contract(a', c̄, i)) # TODO @thunk
+        return NoTangent(), ā, b̄, NoTangent()
     end
     return c, contract_pullback
 end
