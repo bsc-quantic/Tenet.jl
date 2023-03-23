@@ -45,7 +45,7 @@
         #     test_frule(contract, b, z)
         #     test_rrule(contract, z, b)
         #     test_rrule(contract, b, z)
-        # end
+        end
 
         # NOTE einsum: ij,ij->
         @testset "[inner product]" begin
@@ -58,19 +58,21 @@
 
         # NOTE einsum: ik,kj->ij
         @testset "[matrix multiplication]" begin
-            a = Tensor(rand(2, 2), (:i, :k))
-            b = Tensor(rand(2, 2), (:k, :j))
+            @testset "[real numbers]" begin
+                a = Tensor(rand(2, 2), (:i, :k))
+                b = Tensor(rand(2, 2), (:k, :j))
 
-            test_frule(contract, a, b)
-            test_rrule(contract, a, b)
-        end
+                test_frule(contract, a, b)
+                test_rrule(contract, a, b)
+            end
 
-        @testset "[matrix multiplication, complex numbers]" begin
-            a = Tensor(rand(Complex{Float64}, 2, 2), (:i, :k))
-            b = Tensor(rand(Complex{Float64}, 2, 2), (:k, :j))
+            @testset "[complex numbers]" begin
+                a = Tensor(rand(Complex{Float64}, 2, 2), (:i, :k))
+                b = Tensor(rand(Complex{Float64}, 2, 2), (:k, :j))
 
-            test_frule(contract, a, b)
-            test_rrule(contract, a, b)
+                test_frule(contract, a, b)
+                test_rrule(contract, a, b)
+            end
         end
 
         @testset "TensorNetwork" begin
