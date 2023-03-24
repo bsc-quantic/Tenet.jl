@@ -41,10 +41,10 @@
             test_frule(contract, 5.0, b)
             test_rrule(contract, 5.0, b)
 
-        #     test_frule(contract, z, b)
-        #     test_frule(contract, b, z)
-        #     test_rrule(contract, z, b)
-        #     test_rrule(contract, b, z)
+            test_frule(contract, z, b)
+            test_frule(contract, b, z)
+            test_rrule(contract, z, b)
+            test_rrule(contract, b, z)
         end
 
         # NOTE einsum: ij,ij->
@@ -53,7 +53,7 @@
             b = Tensor(rand(2, 2), (:i, :j))
 
             test_frule(only ∘ contract, a, b)
-            # test_rrule(only ∘ contract, a, b) # TODO fix error with FiniteDifferences
+            test_rrule(only ∘ contract, a, b)
         end
 
         # NOTE einsum: ik,kj->ij
