@@ -124,6 +124,24 @@
         @test parent(newtensor) == parent(permutedims(tensor, perm))
     end
 
+    @testset "adjoint" begin
+        using Tenet: adjoint
+
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+
+        @test adjoint(tensor) |> labels == (:i, :j, :k)
+        @test adjoint(tensor) |> parent == conj(data)
+        @test adjoint(tensor).meta == tensor.meta
+
+        data = rand(Complex{Float64}, 2, 2)
+        complextensor = Tensor(data, (:i, :j))
+
+        @test adjoint(complextensor) |> labels == (:j, :i)
+        @test adjoint(complextensor) |> parent == adjoint(data)
+        @test adjoint(complextensor).meta == complextensor.meta
+    end
+
     @testset "indexing" begin
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
