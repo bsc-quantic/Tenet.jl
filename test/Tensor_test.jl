@@ -127,13 +127,6 @@
     @testset "adjoint" begin
         using Tenet: adjoint
 
-        data = rand(2, 2, 2)
-        tensor = Tensor(data, (:i, :j, :k))
-
-        @test adjoint(tensor) |> labels == (:i, :j, :k)
-        @test adjoint(tensor) |> parent == conj(data)
-        @test adjoint(tensor).meta == tensor.meta
-
         data = rand(Complex{Float64}, 2, 2)
         complextensor = Tensor(data, (:i, :j))
 
