@@ -50,6 +50,14 @@
             # test_rrule(contract, b, z)
         end
 
+        @testset "[adjoint]" begin
+            a = Tensor(rand(2, 2), (:i, :j))
+            b = adjoint(a)
+
+            test_frule(contract, a, b)
+            test_rrule(contract, a, b)
+        end
+
         # NOTE einsum: ij,ij->
         @testset "[inner product]" begin
             a = Tensor(rand(2, 2), (:i, :j))
@@ -67,6 +75,7 @@
             test_frule(contract, a, b)
             test_rrule(contract, a, b)
         end
+
 
         @testset "TensorNetwork" begin
             tn = rand(TensorNetwork, 2, 3)
