@@ -76,7 +76,6 @@
             test_rrule(contract, a, b)
         end
 
-
         @testset "TensorNetwork" begin
             tn = rand(TensorNetwork, 2, 3)
 
