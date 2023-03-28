@@ -67,6 +67,14 @@
             test_rrule(only ∘ contract, a, b) # TODO fix error with FiniteDifferences
         end
 
+        @testset "[outer product]" begin
+            a = Tensor(rand(2), (:i,))
+            b = Tensor(rand(2), (:j,))
+
+            test_frule(contract, a, b)
+            test_rrule(contract, a, b)
+        end
+
         # NOTE einsum: ik,kj->ij
         @testset "[matrix multiplication]" begin
             a = Tensor(rand(2, 2), (:i, :k))
