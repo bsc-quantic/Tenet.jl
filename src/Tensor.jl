@@ -151,6 +151,17 @@ function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
     end
 end
 
+Base.adjoint(t::Tensor) = Tensor(conj(parent(t)), labels(t); t.meta...)
+
+"""
+    *(::Tensor, ::Tensor)
+
+Alias for [`contract`](@ref).
+"""
+Base.:*(a::Tensor, b::Tensor) = contract(a, b)
+Base.:*(a::Tensor, b::AbstractArray) = throw(MethodError(*, (a, b)))
+Base.:*(a::AbstractArray, b::Tensor) = throw(MethodError(*, (a, b)))
+
 # Metadata
 """
     tags(tensor)
@@ -188,7 +199,7 @@ function contract(a::Tensor, b::Tensor, i = ∩(labels(a), labels(b)))
 
     ic = tuple(setdiff(ia ∪ ib, i isa Sequence ? i : [i])...)
 
-    data = EinCode((String.(ia), String.(ib)), String.(ic))(a, b)
+    data = EinCode((String.(ia), String.(ib)), String.(ic))(parent(a), parent(b))
 
     # TODO merge metadata?
     return Tensor(data, ic)
