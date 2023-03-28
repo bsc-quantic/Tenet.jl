@@ -127,7 +127,7 @@
     @testset "adjoint" begin
         @testset "Vector" begin
             data = rand(Complex{Float64}, 2)
-            tensor = Tensor(data, (:i,))
+            tensor = Tensor(data, (:i,); test = "TEST")
 
             @test adjoint(tensor) |> labels == labels(tensor)
             @test adjoint(tensor) |> parent == conj(data)
@@ -136,7 +136,7 @@
 
         @testset "Matrix" begin
             data = rand(Complex{Float64}, 2, 2)
-            tensor = Tensor(data, (:i, :j))
+            tensor = Tensor(data, (:i, :j); test = "TEST")
 
             @test adjoint(tensor) |> labels == labels(tensor)
             @test adjoint(tensor) |> parent == conj(data)

@@ -151,8 +151,8 @@ function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
     end
 end
 
-Base.adjoint(t::Tensor{T,1,A}) where {T,A<:AbstractVector{T}} = Tensor(conj(parent(t.data)), labels(t))
-Base.adjoint(t::Tensor{T,2,A}) where {T,A<:AbstractMatrix{T}} = Tensor(conj(parent(t.data)), labels(t))
+Base.adjoint(t::Tensor{T,1,A}) where {T,A<:AbstractVector{T}} = Tensor(conj(parent(t.data)), labels(t); t.meta...)
+Base.adjoint(t::Tensor{T,2,A}) where {T,A<:AbstractMatrix{T}} = Tensor(conj(parent(t.data)), labels(t); t.meta...)
 
 # Metadata
 """
