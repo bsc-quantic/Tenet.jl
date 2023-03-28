@@ -130,17 +130,23 @@
             tensor = Tensor(data, (:i,); test = "TEST")
 
             @test adjoint(tensor) |> labels == labels(tensor)
-            @test adjoint(tensor) |> parent == conj(data)
+            @test adjoint(tensor) |> ndims == 1
             @test adjoint(tensor).meta == tensor.meta
+
+            @test only(tensor' * tensor) == data' * data
         end
 
         @testset "Matrix" begin
+            using LinearAlgebra: tr
+
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j); test = "TEST")
 
             @test adjoint(tensor) |> labels == labels(tensor)
-            @test adjoint(tensor) |> parent == conj(data)
+            @test adjoint(tensor) |> ndims == 2
             @test adjoint(tensor).meta == tensor.meta
+
+            @test only(tensor' * tensor) == tr(data' * data)
         end
     end
 
