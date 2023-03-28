@@ -125,21 +125,23 @@
     end
 
     @testset "adjoint" begin
-        using Tenet: adjoint
+        @testset "Vector" begin
+            data = rand(Complex{Float64}, 2)
+            tensor = Tensor(data, (:i,))
 
-        data = rand(Complex{Float64}, 2)
-        vector = Tensor(data, (:i, ))
+            @test adjoint(tensor) |> labels == labels(tensor)
+            @test adjoint(tensor) |> parent == conj(data)
+            @test adjoint(tensor).meta == tensor.meta
+        end
 
-        @test adjoint(vector) |> labels == (:i, )
-        @test adjoint(vector) |> parent == conj(data)
-        @test adjoint(vector).meta == vector.meta
+        @testset "Matrix" begin
+            data = rand(Complex{Float64}, 2, 2)
+            tensor = Tensor(data, (:i, :j))
 
-        data = rand(Complex{Float64}, 2, 2)
-        matrix = Tensor(data, (:i, :j))
-
-        @test adjoint(matrix) |> labels == (:i, :j)
-        @test adjoint(matrix) |> parent == conj(data)
-        @test adjoint(matrix).meta == matrix.meta
+            @test adjoint(tensor) |> labels == labels(tensor)
+            @test adjoint(tensor) |> parent == conj(data)
+            @test adjoint(tensor).meta == tensor.meta
+        end
     end
 
     @testset "indexing" begin
