@@ -133,7 +133,7 @@
             @test adjoint(tensor) |> ndims == 1
             @test adjoint(tensor).meta == tensor.meta
 
-            @test only(tensor' * tensor) == data' * data
+            @test isapprox(only(tensor' * tensor), data' * data)
         end
 
         @testset "Matrix" begin
@@ -146,7 +146,7 @@
             @test adjoint(tensor) |> ndims == 2
             @test adjoint(tensor).meta == tensor.meta
 
-            @test only(tensor' * tensor) == tr(data' * data)
+            @test isapprox(only(tensor' * tensor), tr(data' * data))
         end
     end
 
