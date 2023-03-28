@@ -137,8 +137,8 @@
         data = rand(Complex{Float64}, 2, 2)
         matrix = Tensor(data, (:i, :j))
 
-        @test adjoint(matrix) |> labels == (:j, :i)
-        @test adjoint(matrix) |> parent == adjoint(data)
+        @test adjoint(matrix) |> labels == (:i, :j)
+        @test adjoint(matrix) |> parent == conj(data)
         @test adjoint(matrix).meta == matrix.meta
     end
 

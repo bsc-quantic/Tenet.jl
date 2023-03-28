@@ -54,8 +54,8 @@
             a = Tensor(rand(2, 2), (:i, :j))
             b = adjoint(a)
 
-            test_frule(contract, a, b)
-            test_rrule(contract, a, b)
+            test_frule(only ∘ contract, a, b)
+            test_rrule(only ∘ contract, a, b)
         end
 
         # NOTE einsum: ij,ij->
