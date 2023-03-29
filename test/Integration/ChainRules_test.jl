@@ -16,12 +16,12 @@
         @testset "TensorNetwork" begin
             tn = rand(TensorNetwork, 2, 3)
 
-            @test frule((nothing, tn), only ∘ contract, tn) isa Tuple{eltype(tn),eltype(tn)}
-            @test rrule(only ∘ contract, tn) isa Tuple{eltype(tn),Function}
+            @test frule((nothing, tn), contract, tn) isa Tuple{Tensor{eltype(tn),0},Tensor{eltype(tn),0}}
+            @test rrule(contract, tn) isa Tuple{Tensor{eltype(tn),0},Function}
 
             # TODO FiniteDifferences crashes
-            # test_frule(only ∘ contract, tn)
-            # test_rrule(only ∘ contract, tn)
+            # test_frule(contract, tn)
+            # test_rrule(contract, tn)
         end
     end
 
