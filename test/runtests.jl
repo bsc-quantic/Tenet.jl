@@ -1,5 +1,5 @@
 using Test
-import Tenet
+using Tenet
 
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
