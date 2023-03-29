@@ -5,7 +5,7 @@ using Requires: @require
 include("Helpers.jl")
 include("Numerics.jl")
 
-using Tensors
+import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 export Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
 include("Index.jl")
