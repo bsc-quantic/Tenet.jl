@@ -1,81 +1,5 @@
 using ChainRulesCore
 
-## Tensor
-function ChainRulesCore.frule((_, ȧ, ḃ)::NTuple{3,Any}, ::typeof(contract), a, b)
-    c = contract(a, b)
-    ċ = @thunk(contract(ȧ, b)) + @thunk(contract(a, ḃ))
-    return c, ċ
-end
-
-function ChainRulesCore.frule((_, ȧ, ḃ, _)::NTuple{4,Any}, ::typeof(contract), a, b, i)
-    c = contract(a, b, i)
-    ċ = @thunk(contract(ȧ, b, i)) + @thunk(contract(a, ḃ, i))
-    return c, ċ
-end
-
-function ChainRulesCore.ProjectTo(t::T) where {T<:Tensor}
-    ProjectTo{T}(; data = ProjectTo(parent(t)), labels = labels(t), meta = t.meta)
-end
-
-(project::ProjectTo{Tensor{T,N,A}})(dx::A) where {T,N,A<:AbstractArray{T,N}} =
-    Tensor{T,N,A}(project.data(dx), project.labels; project.meta...)
-(project::ProjectTo{<:Number})(dx::Tensor{_,0}) where {_} = project(only(dx))
-(project::ProjectTo{<:Tensor})(dx::T) where {T<:Tensor} = Tensor(project.data(dx.data), project.labels; project.meta...)
-(project::ProjectTo{<:Tensor{T,0}})(dx::T) where {T} = Tensor(project.data(fill(dx)), project.labels; project.meta...)
-
-# TODO is this the correct way?
-(project::ProjectTo{<:Tensor})(dx::Thunk) = project(unthunk(dx))
-
-function ChainRulesCore.rrule(f::Type{<:Tensor}, data, labels; meta...)
-    t = f(data, labels; meta...)
-    Tensor_pullback(t̄) = (NoTangent(), unthunk(t̄).data, NoTangent())
-
-    return t, Tensor_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(only), t::Tensor{T,0}) where {T}
-    data = only(t)
-
-    # TODO use `ProjectTo(t)`
-    only_pullback(d̄) = (NoTangent(), Tensor(fill(d̄), labels(t); t.meta...))
-    return data, only_pullback
-end
-
-ChainRulesCore.rrule(::typeof(contract), a::AbstractArray{T,0}, b) where {T} = rrule(contract, only(a), b)
-ChainRulesCore.rrule(::typeof(contract), a, b::AbstractArray{T,0}) where {T} = rrule(contract, a, only(b))
-ChainRulesCore.rrule(::typeof(contract), a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) =
-    rrule(contract, only(a), only(b))
-
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B) where {A,B}
-    c = contract(a, b)
-    project_a = ProjectTo(a)
-    project_b = ProjectTo(b)
-    project_c = ProjectTo(c)
-
-    function contract_pullback(c̄)::Tuple{NoTangent,A,B} # TODO @thunk type inference
-        ā = project_a(contract(project_c(c̄), conj(b))) # TODO @thunk
-        b̄ = project_b(contract(conj(a), project_c(c̄))) # TODO @thunk
-
-        return NoTangent(), ā, b̄
-    end
-    return c, contract_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(contract), a::A, b::B, i) where {A<:Tensor,B<:Tensor}
-    c = contract(a, b, i)
-    project_a = ProjectTo(a)
-    project_b = ProjectTo(b)
-    project_c = ProjectTo(c)
-
-    function contract_pullback(c̄)::Tuple{NoTangent,A,B,NoTangent} # TODO @thunk type inference
-        ā = project_a(contract(project_c(c̄), conj(b), i)) # TODO @thunk
-        b̄ = project_b(contract(conj(a), project_c(c̄), i)) # TODO @thunk
-        return NoTangent(), ā, b̄, NoTangent()
-    end
-    return c, contract_pullback
-end
-
-## TensorNetwork
 function ChainRulesCore.ProjectTo(tn::T) where {T<:TensorNetwork}
     ProjectTo{T}(; tensors = map(ProjectTo, tensors(tn)), meta = tn.meta) #= inds = inds(tn), =#
 end
@@ -169,15 +93,4 @@ function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs..
     end
 
     return c, contract_pullback
-end
-
-## used in tests
-function ChainRulesCore.frule((_, Δargs...), ::typeof(only ∘ contract), args::Vararg{<:Any,N}) where {N}
-    c, ċ = frule((nothing, Δargs...), contract, args...)
-    return only(c), reduce((acc, _) -> only(acc), 1:N; init = ċ)
-end
-
-function ChainRulesCore.rrule(::typeof(only ∘ contract), args...)
-    c, pb = rrule(contract, args...)
-    return only(c), pb
 end

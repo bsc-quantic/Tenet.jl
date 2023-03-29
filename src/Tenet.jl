@@ -5,8 +5,8 @@ using Requires: @require
 include("Helpers.jl")
 include("Numerics.jl")
 
-include("Tensor.jl")
-export Tensor, labels, dim
+import Tensors: Tensor, contract, labels, dim
+export Tensor, contract, labels
 
 include("Index.jl")
 export Index, isphysical, isvirtual, site, ishyperind, links
