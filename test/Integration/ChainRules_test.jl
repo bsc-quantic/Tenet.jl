@@ -3,7 +3,6 @@
     using Random
 
     using ChainRulesTestUtils
-    ChainRulesTestUtils.ChainRulesCore.debug_mode() = true
 
     using ChainRulesCore
     function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, x::TensorNetwork)
