@@ -188,7 +188,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
 end
 
 # TODO modify ψ in place
-function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0)
+function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange} = 1; chi::Int = 0)
 
     # Define the local helper function canonicalize_two_sites within canonize
     function canonicalize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0)
