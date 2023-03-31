@@ -215,27 +215,65 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         B = tensors_array[i+1]
 
         C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
-        C_perm = permutedims(C, (1, 3, 2, 4)) # C_perm -> left, physical, right, physical
+        C_perm = permutedims(C, (1, 3, 2, 4))
         C_matrix = reshape(C_perm, size(C, 1) * size(C, 3), size(C, 2) * size(C, 4)) # C_matrix -> left * physical, right * physical
         U, S, V = svd(C_matrix)
 
         # Truncate if desired bond dimension is provided
         if chi > 0 && chi < length(S)
-            U = U[:, 1:chi]
-            S = S[1:chi]
-            V = V[:, 1:chi]
+            U = U[:, 1:chi] # U -> left * physical, chi
+            S = S[1:chi] # S -> chi
+            V = V[:, 1:chi] # V -> right * physical, chi
         end
 
         # Reshape U and V and update tensors
         if i < left_edge # Move orthogonality center to the right
             A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(V * diagm(S), size(U, 2), size(B, 2), size(B, 3))
+            B_new = reshape(permutedims(V * diagm(S),(2,1)), size(U, 2), size(B, 2), size(B, 3))
 
         elseif i > right_edge # Move orthogonality center to the left
             A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(V, size(U, 2), size(B, 2), size(B, 3))
+            B_new = reshape(permutedims(V, (2,1)), size(U, 2), size(B, 2), size(B, 3))
+
+        else # No need to update tensors
+            A_new = A
+            B_new = B
+        end
+
+        # Update tensors in the array
+            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
+            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
+        end
+
+    # Second sweep from right to left to ensure canonical form
+    for i in N-1:-1:1
+        A = tensors_array[i]
+        B = tensors_array[i+1]
+
+        C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
+        C_perm = permutedims(C, (1, 3, 2, 4))
+        C_matrix = reshape(C_perm, size(C, 1) * size(C, 3), size(C, 2) * size(C, 4)) # C_matrix -> left * physical, right * physical
+        U, S, V = svd(C_matrix)
+
+        # Truncate if desired bond dimension is provided
+        if chi > 0 && chi < length(S)
+            U = U[:, 1:chi] # U -> left * physical, chi
+            S = S[1:chi] # S -> chi
+            V = V[:, 1:chi] # V -> right * physical, chi
+        end
+
+        # Reshape U and V and update tensors
+        if i < left_edge # Move orthogonality center to the right
+            A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
+            A_new = permutedims(A_new, (1, 3, 2))
+            B_new = reshape(permutedims(V * diagm(S),(2,1)), size(U, 2), size(B, 2), size(B, 3))
+
+        elseif i > right_edge # Move orthogonality center to the left
+            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
+            A_new = permutedims(A_new, (1, 3, 2))
+            B_new = reshape(permutedims(V, (2,1)), size(U, 2), size(B, 2), size(B, 3))
 
         else # No need to update tensors
             A_new = A
@@ -248,7 +286,6 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
                 Tensor(reshape(A_new, size(A, 2), size(A, 3)), (labels(A)[2], labels(A)[3]); meta = A.meta)
             tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
         elseif i == N - 1
-            # println("size of A_new: $(size(A_new)), B_new: $(size(B_new))")
             tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
             tensors_array[i+1] = Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
         else
