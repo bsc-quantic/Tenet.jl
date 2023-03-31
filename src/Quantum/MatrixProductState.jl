@@ -188,9 +188,9 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
 end
 
 # TODO modify ψ in place
-function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0)
+function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0)
 
-    # Define the local helper function canonicalize_two_sites within canonicalize
+    # Define the local helper function canonicalize_two_sites within canonize
     function canonicalize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0)
         left_edge, right_edge = extrema(center)
 
@@ -210,12 +210,12 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         if i < left_edge # Move orthogonality center to the right
             A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V * diagm(S),(2,1)), size(U, 2), size(B, 2), size(B, 3))
+            B_new = reshape(permutedims(V * diagm(S), (2, 1)), size(U, 2), size(B, 2), size(B, 3))
 
         elseif i > right_edge # Move orthogonality center to the left
             A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V, (2,1)), size(U, 2), size(B, 2), size(B, 3))
+            B_new = reshape(permutedims(V, (2, 1)), size(U, 2), size(B, 2), size(B, 3))
 
         else # No need to update tensors
             A_new = A
@@ -249,9 +249,9 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         A_new, B_new = canonicalize_two_sites(A, B, i, center; chi = chi)
 
         # Update tensors in the array
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        end
+        tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
+        tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
+    end
 
     # Second sweep from right to left to ensure canonical form
     for i in N-1:-1:1
@@ -267,7 +267,8 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
             tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
         elseif i == N - 1
             tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
+            tensors_array[i+1] =
+                Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
         else
             tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
             tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)

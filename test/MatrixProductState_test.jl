@@ -1,5 +1,5 @@
 @testset "MatrixProductState" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonicalize
+    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonize
 
     @testset "Types" begin
         @test MatrixProductState <: State
@@ -93,10 +93,10 @@
 
         ψ = rand(MatrixProductState{Open}, 16, 2, 8)
 
-        @testset "canonicalize" begin
+        @testset "canonize" begin
             @testset begin
-                ϕ = canonicalize(ψ, 8)
-                @test canonicalize(ψ, 8) isa TensorNetwork{MatrixProductState{Open}}
+                ϕ = canonize(ψ, 8)
+                @test canonize(ψ, 8) isa TensorNetwork{MatrixProductState{Open}}
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
@@ -104,7 +104,7 @@
             end
 
             @testset "limit chi" begin
-                ϕ = canonicalize(ψ, 8; chi = 4)
+                ϕ = canonize(ψ, 8; chi = 4)
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
