@@ -100,7 +100,7 @@
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
-                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 2), size(B, 2)))
+                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 1), size(B, 1)))
             end
 
             @testset "limit chi" begin
@@ -108,7 +108,8 @@
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
-                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 2), size(B, 2)))
+                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 1), size(B, 1)))
+                @test any([any((i != 8 && i != 9 ? size(tensors(ϕ, i)) : (0)) .> 4) for i in 1:length(ϕ)]) == false
             end
         end
     end
