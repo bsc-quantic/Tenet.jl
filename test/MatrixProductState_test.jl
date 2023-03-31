@@ -1,5 +1,5 @@
 @testset "MatrixProductState" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState
+    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonicalize
 
     @testset "Types" begin
         @test MatrixProductState <: State
@@ -83,6 +83,32 @@
             @test_throws DimensionMismatch begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
                 MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+            end
+        end
+    end
+
+    @testset "Functions" begin
+        using OMEinsum
+        using LinearAlgebra: I
+
+        ψ = rand(MatrixProductState{Open}, 16, 2, 8)
+
+        @testset "canonicalize" begin
+            @testset begin
+                ϕ = canonicalize(ψ, 8)
+                @test canonicalize(ψ, 8) isa TensorNetwork{MatrixProductState{Open}}
+
+                A, B = tensors(ϕ, 6), tensors(ϕ, 12)
+                @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
+                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 2), size(B, 2)))
+            end
+
+            @testset "limit chi" begin
+                ϕ = canonicalize(ψ, 8; chi = 4)
+
+                A, B = tensors(ϕ, 6), tensors(ϕ, 12)
+                @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
+                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 2), size(B, 2)))
             end
         end
     end
