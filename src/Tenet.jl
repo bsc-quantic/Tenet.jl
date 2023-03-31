@@ -25,7 +25,7 @@ export Quantum, bounds, Open, Closed, State, Operator
 export physicalinds, virtualinds, sites, insites, insiteind, insiteinds, outsites, outsiteind, outsiteinds
 export fidelity
 
-export MatrixProductState
+export MatrixProductState, canonicalize
 export MatrixProductOperator
 
 include("Differentiation.jl")

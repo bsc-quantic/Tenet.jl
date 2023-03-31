@@ -3,6 +3,7 @@ using UUIDs: uuid4
 using Base.Iterators: flatten
 using IterTools: partition
 using Random
+using OMEinsum
 
 abstract type MatrixProductState{B} <: State{B} end
 
@@ -185,3 +186,81 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
 
     return ψ
 end
+
+# TODO modify ψ in place
+function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0)
+    left_edge, right_edge = extrema(center)
+
+    N = length(ψ)
+
+    # Copy tensors to arrays
+    tensors_array = [tensors(ψ, i) for i in 1:N]
+
+    # Transform the first tensor to be three-dimensional
+    tensors_array[1] = Tensor(
+        reshape(tensors_array[1], (1, size(tensors_array[1])...)),
+        (:empty, labels(tensors_array[1])[1], labels(tensors_array[1])[2]);
+        meta = tensors_array[1].meta,
+    )
+
+    # Transform the last tensor to av s (., 1, ...)e three-dimensional
+    tensors_array[end] = Tensor(
+        reshape(tensors_array[end], (size(tensors_array[end], 1), 1, size(tensors_array[end], 2))),
+        (labels(tensors_array[end])[1], :empty, labels(tensors_array[end])[2]);
+        meta = tensors_array[end].meta,
+    )
+
+    for i in 1:N-1
+        A = tensors_array[i]
+        B = tensors_array[i+1]
+
+        C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
+        C_perm = permutedims(C, (1, 3, 2, 4)) # C_perm -> left, physical, right, physical
+        C_matrix = reshape(C_perm, size(C, 1) * size(C, 3), size(C, 2) * size(C, 4)) # C_matrix -> left * physical, right * physical
+        U, S, V = svd(C_matrix)
+
+        # Truncate if desired bond dimension is provided
+        if chi > 0 && chi < length(S)
+            U = U[:, 1:chi]
+            S = S[1:chi]
+            V = V[:, 1:chi]
+        end
+
+        # Reshape U and V and update tensors
+        if i < left_edge # Move orthogonality center to the right
+            A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
+            A_new = permutedims(A_new, (1, 3, 2))
+            B_new = reshape(V * diagm(S), size(U, 2), size(B, 2), size(B, 3))
+
+        elseif i > right_edge # Move orthogonality center to the left
+            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
+            A_new = permutedims(A_new, (1, 3, 2))
+            B_new = reshape(V, size(U, 2), size(B, 2), size(B, 3))
+
+        else # No need to update tensors
+            A_new = A
+            B_new = B
+        end
+
+        # Update tensors in the array
+        if i == 1
+            tensors_array[i] =
+                Tensor(reshape(A_new, size(A, 2), size(A, 3)), (labels(A)[2], labels(A)[3]); meta = A.meta)
+            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
+        elseif i == N - 1
+            # println("size of A_new: $(size(A_new)), B_new: $(size(B_new))")
+            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
+            tensors_array[i+1] = Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
+        else
+            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
+            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
+        end
+    end
+
+    # Create a new MPS object with the updated tensors
+    ψ = MatrixProductState(tensors_array)
+
+    return ψ
+end
+
+# TODO function iscanonical
