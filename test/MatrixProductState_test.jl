@@ -88,7 +88,7 @@
     end
 
     @testset "Functions" begin
-        using OMEinsum
+        using OMEinsum: @ein_str
         using LinearAlgebra: I
 
         ψ = rand(MatrixProductState{Open}, 16, 2, 8)
