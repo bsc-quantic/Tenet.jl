@@ -1,5 +1,5 @@
 @testset "MatrixProductState" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonicalize
+    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonicalize, conj
 
     @testset "Types" begin
         @test MatrixProductState <: State
@@ -88,27 +88,38 @@
     end
 
     @testset "Functions" begin
-        using OMEinsum: @ein_str
         using LinearAlgebra: I
+
+        function is_left_orthogonal(A::Tensor{T}) where {T}
+            A_conj = conj(A)
+            contracted = contract(A, replace(conj(A), labels(A)[2] => :new_ind_name), (labels(A)[1], labels(A)[3]))
+            return isapprox(contracted, Matrix{Float64}(I, size(A, 2), size(A, 2)), atol=1e-12)
+        end
+
+        function is_right_orthogonal(A::Tensor{T}) where {T}
+            A_conj = conj(A)
+            contracted = contract(A, replace(conj(A), labels(A)[1] => :new_ind_name),(labels(A)[2], labels(A)[3]))
+            return isapprox(contracted, Matrix{Float64}(I, size(A, 1), size(A, 1)), atol=1e-12)
+        end
 
         ψ = rand(MatrixProductState{Open}, 16, 2, 8)
 
-        @testset "canonicalize" begin
+        @testset "chi not limitted" begin
             @testset begin
                 ϕ = canonicalize(ψ, 8)
                 @test canonicalize(ψ, 8) isa TensorNetwork{MatrixProductState{Open}}
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
-                @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
-                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 1), size(B, 1)))
+                @test is_left_orthogonal(A)
+                @test is_right_orthogonal(B)
             end
 
             @testset "limit chi" begin
                 ϕ = canonicalize(ψ, 8; chi = 4)
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
-                @test isapprox(ein"ijk,ilk->jl"(A, conj(A)), Matrix{Float64}(I, size(A, 2), size(A, 2)))
-                @test isapprox(ein"ijk,ljk->il"(B, conj(B)), Matrix{Float64}(I, size(B, 1), size(B, 1)))
+                @test is_left_orthogonal(A)
+                @test is_right_orthogonal(B)
                 @test any([any((i != 8 && i != 9 ? size(tensors(ϕ, i)) : (0)) .> 4) for i in 1:length(ϕ)]) == false
             end
         end
