@@ -212,18 +212,41 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
-        replace!(tn, mapping...)
+        @testset "replace labels" begin
+            mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
+            replace!(tn, mapping...)
 
-        @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
-        @test issetequal(openinds(tn) .|> nameof, (:v, :w))
-        @test issetequal(innerinds(tn) .|> nameof, (:u, :x, :y))
-        @test issetequal(hyperinds(tn) .|> nameof, (:u,))
+            @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
+            @test issetequal(openinds(tn) .|> nameof, (:v, :w))
+            @test issetequal(innerinds(tn) .|> nameof, (:u, :x, :y))
+            @test issetequal(hyperinds(tn) .|> nameof, (:u,))
 
-        @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
-        @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
-        @test only(select(tn, (:u, :x, :y))) == replace(t_ilm, mapping...)
+            @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
+            @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
+            @test only(select(tn, (:u, :x, :y))) == replace(t_ilm, mapping...)
 
-        @test hastag(only(select(tn, (:u, :v))), "TEST")
+            @test hastag(only(select(tn, (:u, :v))), "TEST")
+        end
+
+        @testset "replace tensors" begin
+            old_tensor = tensors(tn, 2)
+
+            @test_throws ArgumentError begin
+                new_tensor = Tensor(rand(2, 2), (:a, :b))
+                replace!(tn, old_tensor, new_tensor)
+            end
+
+            new_tensor = Tensor(rand(2, 2), (:u, :w))
+
+            replace!(tn, old_tensor, new_tensor)
+            @test new_tensor === tensors(tn, 2)
+
+            # Check if connections are maintained
+            for label in labels(new_tensor)
+                index = tn.inds[label]
+                @test new_tensor in index.links
+                @test !(old_tensor in index.links)
+            end
+        end
     end
 end
