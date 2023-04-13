@@ -35,10 +35,12 @@
                 MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
             end
 
-            # custom order
-            @test begin
+            @testset "custom order" begin
                 arrays = [rand(3, 1), rand(3, 1, 3), rand(1, 3)]
-                MatrixProductState{Open}(arrays, order = (:r, :p, :l)) isa TensorNetwork{MatrixProductState{Open}}
+                ψ = MatrixProductState{Open}(arrays, order = (:r, :p, :l))
+
+                @test ψ isa TensorNetwork{MatrixProductState{Open}}
+                @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
             end
 
             # alternative constructor
@@ -56,6 +58,8 @@
             @testset "`Tensor.meta[:alias]`" begin
                 arrays = [rand(2, 2), rand(2, 2, 2), rand(2, 2)]
                 ψ = MatrixProductState{Open}(arrays, order = (:l, :p, :r))
+
+                @test ψ.meta[:order] == Dict(:l => 1, :p => 2, :r => 3)
 
                 @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :p])
                 @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :p])
@@ -79,10 +83,12 @@
                 MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
             end
 
-            # custom order
-            @test begin
+            @testset "custom order" begin
                 arrays = [rand(3, 1, 3), rand(3, 1, 3), rand(3, 1, 3)]
-                MatrixProductState{Closed}(arrays, order = (:r, :p, :l)) isa TensorNetwork{MatrixProductState{Closed}}
+                ψ = MatrixProductState{Closed}(arrays, order = (:r, :p, :l))
+
+                @test ψ isa TensorNetwork{MatrixProductState{Closed}}
+                @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
             end
 
             # alternative constructor
@@ -95,6 +101,21 @@
             @test_throws DimensionMismatch begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
                 MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+            end
+
+            @testset "`Tensor.meta[:alias]`" begin
+                arrays = [rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2)]
+                ψ = MatrixProductState{Closed}(arrays, order = (:r, :p, :l))
+
+                @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
+
+                @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:l, :r, :p])
+                @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :p])
+                @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :r, :p])
+
+                @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
+                @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
+                @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
             end
         end
     end
