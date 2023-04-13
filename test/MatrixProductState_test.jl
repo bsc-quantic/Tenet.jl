@@ -52,6 +52,18 @@
                 arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
                 MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
             end
+
+            @testset "`Tensor.meta[:alias]`" begin
+                arrays = [rand(2, 2), rand(2, 2, 2), rand(2, 2)]
+                ψ = MatrixProductState{Open}(arrays, order = (:l, :p, :r))
+
+                @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :p])
+                @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :p])
+                @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :p])
+
+                @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
+                @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
+            end
         end
 
         @testset "`Closed` boundary" begin
