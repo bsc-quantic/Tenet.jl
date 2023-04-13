@@ -54,6 +54,20 @@
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
                 MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
             end
+
+            @testset "`Tensor.meta[:alias]`" begin
+                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
+                ψ = MatrixProductOperator{Open}(arrays, order = (:l, :r, :i, :o))
+
+                @test ψ.meta[:order] == Dict(:l => 1, :r => 2, :i => 3, :o => 4)
+
+                @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :i, :o])
+                @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :i, :o])
+                @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :i, :o])
+
+                @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
+                @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
+            end
         end
 
         @testset "`Closed` boundary" begin
@@ -90,6 +104,21 @@
             @test_throws DimensionMismatch begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
                 MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
+            end
+
+            @testset "`Tensor.meta[:alias]`" begin
+                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+                ψ = MatrixProductOperator{Closed}(arrays, order = (:l, :r, :i, :o))
+
+                @test ψ.meta[:order] == Dict(:l => 1, :r => 2, :i => 3, :o => 4)
+
+                @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:l, :r, :i, :o])
+                @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :i, :o])
+                @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :r, :i, :o])
+
+                @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
+                @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
+                @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
             end
         end
     end
