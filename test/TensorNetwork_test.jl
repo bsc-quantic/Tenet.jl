@@ -249,7 +249,7 @@
             end
 
             # New tensor network with two tensors with the same labels
-            A = Tensor(rand(2, 2), (:u, :v))
+            A = Tensor(rand(2, 2), (:u, :w))
             B = Tensor(rand(2, 2), (:u, :w))
             tn_2 = TensorNetwork([A, B])
 
@@ -258,6 +258,11 @@
             replace!(tn_2, B, new_tensor)
             @test A === tensors(tn_2, 1)
             @test new_tensor === tensors(tn_2, 2)
+
+            tn_2 = TensorNetwork([A, B])
+            replace!(tn_2, A, new_tensor)
+            @test new_tensor === tensors(tn_2, 1)
+            @test B === tensors(tn_2, 2)
         end
     end
 end
