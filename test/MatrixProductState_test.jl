@@ -1,5 +1,5 @@
 @testset "MatrixProductState" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonicalize, conj
+    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState, canonize, conj
 
     @testset "Types" begin
         @test MatrixProductState <: State
@@ -91,13 +91,11 @@
         using LinearAlgebra: I
 
         function is_left_orthogonal(A::Tensor{T}) where {T}
-            A_conj = conj(A)
             contracted = contract(A, replace(conj(A), labels(A)[2] => :new_ind_name), (labels(A)[1], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 2), size(A, 2)), atol=1e-12)
         end
 
         function is_right_orthogonal(A::Tensor{T}) where {T}
-            A_conj = conj(A)
             contracted = contract(A, replace(conj(A), labels(A)[1] => :new_ind_name),(labels(A)[2], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 1), size(A, 1)), atol=1e-12)
         end
@@ -106,8 +104,8 @@
 
         @testset "chi not limitted" begin
             @testset begin
-                ϕ = canonicalize(ψ, 8)
-                @test canonicalize(ψ, 8) isa TensorNetwork{MatrixProductState{Open}}
+                ϕ = canonize(ψ, 8)
+                @test ϕ isa TensorNetwork{MatrixProductState{Open}}
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test is_left_orthogonal(A)
@@ -115,12 +113,21 @@
             end
 
             @testset "limit chi" begin
-                ϕ = canonicalize(ψ, 8; chi = 4)
+                ϕ = canonize(ψ, 8; chi = 4)
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
                 @test is_left_orthogonal(A)
                 @test is_right_orthogonal(B)
                 @test any([any((i != 8 && i != 9 ? size(tensors(ϕ, i)) : (0)) .> 4) for i in 1:length(ϕ)]) == false
+            end
+
+            @testset "return singular values" begin
+                ϕ, σ = canonize(ψ, 8; return_singular_values = true)
+
+                A, B = tensors(ϕ, 6), tensors(ϕ, 12)
+                @test is_left_orthogonal(A)
+                @test is_right_orthogonal(B)
+                @test length(σ) == 15
             end
         end
     end
