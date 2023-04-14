@@ -188,10 +188,10 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
 end
 
 # TODO modify ψ in place
-function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0)
+function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
 
     # Define the local helper function canonicalize_two_sites within canonicalize
-    function canonicalize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0)
+    function canonicalize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
         left_edge, right_edge = extrema(center)
 
         C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
@@ -206,6 +206,9 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
             V = V[:, 1:chi] # V -> right * physical, chi
         end
 
+        # Normalize singular values
+        S = S ./ sum(S)
+
         # Reshape U and V and update tensors
         if i < left_edge # Move orthogonality center to the right
             A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
@@ -213,7 +216,7 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
             B_new = reshape(permutedims(V * diagm(S),(2,1)), size(U, 2), size(B, 2), size(B, 3))
 
         elseif i > right_edge # Move orthogonality center to the left
-            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
+            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), siz\e(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
             B_new = reshape(permutedims(V, (2,1)), size(U, 2), size(B, 2), size(B, 3))
 
@@ -222,11 +225,12 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
             B_new = B
         end
 
-        return A_new, B_new
+        return return_singular_values ? (A_new, B_new, S) : (A_new, B_new)
     end
 
     N = length(ψ)
     tensors_array = [tensors(ψ, i) for i in 1:N] # Copy tensors to arrays
+    return_singular_values ? singular_values = Vector{Vector{Float64}}(undef, N-1) : nothing
 
     # Transform the first and last tensors to be three-dimensional
     tensors_array[1] = Tensor(
@@ -246,7 +250,9 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         A = tensors_array[i]
         B = tensors_array[i+1]
 
-        A_new, B_new = canonicalize_two_sites(A, B, i, center; chi = chi)
+        A_new, B_new, S = return_singular_values ?
+            canonicalize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
+            (canonicalize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
 
         # Update tensors in the array
             tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
@@ -258,7 +264,11 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         A = tensors_array[i]
         B = tensors_array[i+1]
 
-        A_new, B_new = canonicalize_two_sites(A, B, i, center; chi = chi)
+        A_new, B_new, S = return_singular_values ?
+            canonicalize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
+            (canonicalize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
+
+        return_singular_values && (singular_values[i] = S)
 
         # Update tensors in the array, reshape boundary tensors
         if i == 1
@@ -274,10 +284,11 @@ function canonicalize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union
         end
     end
 
+
     # Create a new MPS object with the updated tensors
     ψ = MatrixProductState(tensors_array)
 
-    return ψ
+    return_singular_values ? (ψ, singular_values) : ψ
 end
 
 # TODO function iscanonical
