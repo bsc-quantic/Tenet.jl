@@ -247,6 +247,17 @@
                 @test new_tensor in index.links
                 @test !(old_tensor in index.links)
             end
+
+            # New tensor network with two tensors with the same labels
+            A = Tensor(rand(2, 2), (:u, :v))
+            B = Tensor(rand(2, 2), (:u, :w))
+            tn_2 = TensorNetwork([A, B])
+
+            new_tensor = Tensor(rand(2, 2), (:u, :w))
+
+            replace!(tn_2, B, new_tensor)
+            @test A === tensors(tn_2, 1)
+            @test new_tensor === tensors(tn_2, 2)
         end
     end
 end
