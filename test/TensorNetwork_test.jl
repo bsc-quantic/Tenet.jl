@@ -262,7 +262,7 @@
             tn = TensorNetwork([A, B])
             replace!(tn, A => new_tensor)
             @test new_tensor === tensors(tn, 1)
-            @test B === tensors(tn_2, 2)
+            @test B === tensors(tn, 2)
         end
     end
 end
