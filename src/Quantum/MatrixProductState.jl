@@ -3,6 +3,7 @@ using UUIDs: uuid4
 using Base.Iterators: flatten
 using IterTools: partition
 using Random
+using LinearAlgebra
 using OMEinsum
 
 abstract type MatrixProductState{B} <: State{B} end
@@ -187,98 +188,45 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
     return ψ
 end
 
+canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Integer = 1; kwargs...) =
+    canonize(ψ, center:center; kwargs...)
+
 # TODO modify ψ in place
-function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange} = 1; chi::Int = 0)
+function canonize!(
+    ψ::TensorNetwork{MatrixProductState{Open}},
+    center;
+    chi::Union{Nothing,Int} = nothing,
+    threshold::Union{Nothing,Float64} = nothing,
+)
+    # TODO left canonization
+    for i in 1:minimum(center)-1
+        tensor = tensors(ψ, i)
+        factorization = svd(tensor; full = false, left_inds = (...))
 
-    # Define the local helper function canonicalize_two_sites within canonize
-    function canonicalize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0)
-        left_edge, right_edge = extrema(center)
-
-        C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
-        C_perm = permutedims(C, (1, 3, 2, 4))
-        C_matrix = reshape(C_perm, size(C, 1) * size(C, 3), size(C, 2) * size(C, 4)) # C_matrix -> left * physical, right * physical
-        U, S, V = svd(C_matrix)
-
-        # Truncate if desired bond dimension is provided
-        if chi > 0 && chi < length(S)
-            U = U[:, 1:chi] # U -> left * physical, chi
-            S = S[1:chi] # S -> chi
-            V = V[:, 1:chi] # V -> right * physical, chi
+        # TODO truncate singular values
+        if !isnothing(chi)
+            ...
         end
 
-        # Reshape U and V and update tensors
-        if i < left_edge # Move orthogonality center to the right
-            A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
-            A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V * diagm(S), (2, 1)), size(U, 2), size(B, 2), size(B, 3))
+        # TODO replace tensor with U
 
-        elseif i > right_edge # Move orthogonality center to the left
-            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
-            A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V, (2, 1)), size(U, 2), size(B, 2), size(B, 3))
+        # TODO contract Vt with tensor at site i+1
+    end
 
-        else # No need to update tensors
-            A_new = A
-            B_new = B
+    # right canonization
+    for i in length(ψ):-1:maximum(center)+1
+        tensor = tensors(ψ, i)
+        factorization = svd(tensor; full = false, left_inds = (...))
+
+        # TODO truncate singular values
+        if !isnothing(chi)
+            ...
         end
 
-        return A_new, B_new
+        # TODO replace tensor with U
+
+        # TODO contract Vt with tensor at site i+1
     end
-
-    N = length(ψ)
-    tensors_array = [tensors(ψ, i) for i in 1:N] # Copy tensors to arrays
-
-    # Transform the first and last tensors to be three-dimensional
-    tensors_array[1] = Tensor(
-        reshape(tensors_array[1], (1, size(tensors_array[1])...)),
-        (:empty, labels(tensors_array[1])[1], labels(tensors_array[1])[2]);
-        meta = tensors_array[1].meta,
-    )
-
-    tensors_array[end] = Tensor(
-        reshape(tensors_array[end], (size(tensors_array[end], 1), 1, size(tensors_array[end], 2))),
-        (labels(tensors_array[end])[1], :empty, labels(tensors_array[end])[2]);
-        meta = tensors_array[end].meta,
-    )
-
-    # First sweep from left to right
-    for i in 1:N-1
-        A = tensors_array[i]
-        B = tensors_array[i+1]
-
-        A_new, B_new = canonicalize_two_sites(A, B, i, center; chi = chi)
-
-        # Update tensors in the array
-        tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-        tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-    end
-
-    # Second sweep from right to left to ensure canonical form
-    for i in N-1:-1:1
-        A = tensors_array[i]
-        B = tensors_array[i+1]
-
-        A_new, B_new = canonicalize_two_sites(A, B, i, center; chi = chi)
-
-        # Update tensors in the array, reshape boundary tensors
-        if i == 1
-            tensors_array[i] =
-                Tensor(reshape(A_new, size(A, 2), size(A, 3)), (labels(A)[2], labels(A)[3]); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        elseif i == N - 1
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] =
-                Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
-        else
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        end
-    end
-
-    # Create a new MPS object with the updated tensors
-    ψ = MatrixProductState(tensors_array)
-
-    return ψ
 end
 
 # TODO function iscanonical
