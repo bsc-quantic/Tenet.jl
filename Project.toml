@@ -21,9 +21,11 @@ Tensors = "a57d67a0-4683-47ff-be60-6114e830558b"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [weakdeps]
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 
 [extensions]
+MakieExt = "Makie"
 QuacExt = "Quac"
 
 [compat]

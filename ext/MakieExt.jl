@@ -1,3 +1,5 @@
+module MakieExt
+
 using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!, src, dst
 using GraphMakie: graphplot, graphplot!, to_colormap, get_node_plot
 using Combinatorics: combinations
@@ -14,10 +16,7 @@ function __plot_edge_labels(tn::TensorNetwork{A}, graph, copytensors, ghostnodes
         # TODO refactor this code
         if length(notghosts) == 2 # there are no ghost nodes in this edge
             if isempty(copies) # there are no copy tensors in the nodes of this edge
-                push!(
-                    elabels,
-                    join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','),
-                )
+                push!(elabels, join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ','))
             else
                 push!(elabels, string(tensors(tn)[copies[]].meta[:dual]))
             end
@@ -113,4 +112,6 @@ function Makie.plot!(f::Makie.GridPosition, tn::TensorNetwork{A}; labels = false
     )
 
     return AxisPlot(ax, p)
+end
+
 end
