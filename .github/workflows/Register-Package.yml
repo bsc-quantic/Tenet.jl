@@ -7,8 +7,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
-      - uses: bsc-quantic/julia-register@v0.2
+      - uses: bsc-quantic/julia-register@v0.3
         with:
-          registry: https://github.com/bsc-quantic/Registry
+          registry: bsc-quantic/Registry
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
