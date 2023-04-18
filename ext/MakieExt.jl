@@ -1,5 +1,11 @@
 module MakieExt
 
+if isdefined(Base, :get_extension)
+    using Tenet
+else
+    using ..Tenet
+end
+
 using Graphs: SimpleGraph, Edge, edges, ne, nv, add_edge!, add_vertex!, src, dst
 using GraphMakie: graphplot, graphplot!, to_colormap, get_node_plot
 using Combinatorics: combinations

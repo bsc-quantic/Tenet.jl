@@ -1,7 +1,12 @@
 module QuacExt
 
+if isdefined(Base, :get_extension)
+    using Tenet
+else
+    using ..Tenet
+end
+
 using Quac: Circuit, lanes, arraytype, Swap
-using Tenet: TensorNetwork, Quantum, Tensor
 
 function TensorNetwork(circuit::Circuit)
     tn = TensorNetwork{Quantum}()
