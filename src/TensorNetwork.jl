@@ -45,26 +45,25 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, mapping::Pair{<:Tensor, <:Tensor})
-    old_labels = labels(mapping[2])
-    new_labels = labels(mapping[1])
+function Base.replace!(tn::TensorNetwork, pair::Pair{Tensor, Tensor})
+    old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
-    if !issetequal(new_labels, old_labels)
+    if !issetequal(labels(new_tensor), labels(old_tensor))
         throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
     end
 
     # update index links
     # TODO remove this part when `Index` is removed
-    for old_label in old_labels
+    for old_label in labels(old_tensor)
         index_obj = tn.inds[old_label]
-        link_index = findfirst(x -> x === mapping[2], index_obj.links)
-        index_obj.links[link_index] = mapping[1]
+        link_index = findfirst(x -> x === old_tensor, index_obj.links)
+        index_obj.links[link_index] = new_tensor
     end
 
     # replace existing `Tensor` with new `Tensor`
-    index = findfirst(x -> x === mapping[2], tn.tensors)
-    tn.tensors[index] = mapping[1]
+    index = findfirst(x -> x === old_tensor, tn.tensors)
+    tn.tensors[index] = new_tensor
 
     return tn
 end

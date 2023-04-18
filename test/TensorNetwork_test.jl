@@ -233,12 +233,12 @@
 
             @test_throws ArgumentError begin
                 new_tensor = Tensor(rand(2, 2), (:a, :b))
-                replace!(tn, new_tensor => old_tensor)
+                replace!(tn, old_tensor => new_tensor)
             end
 
             new_tensor = Tensor(rand(2, 2), (:u, :w))
 
-            replace!(tn, new_tensor => old_tensor)
+            replace!(tn, old_tensor => new_tensor)
             @test new_tensor === tensors(tn, 2)
 
             # Check if connections are maintained
@@ -251,17 +251,17 @@
             # New tensor network with two tensors with the same labels
             A = Tensor(rand(2, 2), (:u, :w))
             B = Tensor(rand(2, 2), (:u, :w))
-            tn_2 = TensorNetwork([A, B])
+            tn = TensorNetwork([A, B])
 
             new_tensor = Tensor(rand(2, 2), (:u, :w))
 
-            replace!(tn_2, new_tensor => B)
-            @test A === tensors(tn_2, 1)
-            @test new_tensor === tensors(tn_2, 2)
+            replace!(tn, B => new_tensor)
+            @test A === tensors(tn, 1)
+            @test new_tensor === tensors(tn, 2)
 
-            tn_2 = TensorNetwork([A, B])
-            replace!(tn_2, new_tensor => A)
-            @test new_tensor === tensors(tn_2, 1)
+            tn = TensorNetwork([A, B])
+            replace!(tn, A => new_tensor)
+            @test new_tensor === tensors(tn, 1)
             @test B === tensors(tn_2, 2)
         end
     end
