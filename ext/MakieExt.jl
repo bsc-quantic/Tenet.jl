@@ -48,7 +48,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
         add_vertex!(graph)
         node = nv(graph) # TODO is this the best way to get the id of the newly created node?
         tensor = only(links(ind))
-        add_edge!(graph, node, pos[tensor])
+        add_edge!(graph, node, handles[tensor])
         return node
     end
 
