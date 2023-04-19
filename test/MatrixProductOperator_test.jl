@@ -55,7 +55,7 @@
                 MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
             end
 
-            @testset "`Tensor.meta[:alias]`" begin
+            @testset "alias" begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
                 ψ = MatrixProductOperator{Open}(arrays, order = (:l, :r, :i, :o))
 
