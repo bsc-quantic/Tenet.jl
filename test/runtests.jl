@@ -14,9 +14,9 @@ using Tenet
 end
 
 @testset "Integration tests" verbose = true begin
-    include("Integration/Quac_test.jl")
-    include("Integration/ChainRules_test.jl")
-    include("Integration/Makie_test.jl")
+    include("integration/Quac_test.jl")
+    include("integration/ChainRules_test.jl")
+    include("integration/Makie_test.jl")
 end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")
