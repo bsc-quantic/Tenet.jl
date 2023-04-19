@@ -28,8 +28,6 @@ export fidelity
 export MatrixProductState
 export MatrixProductOperator
 
-include("Differentiation.jl")
-
 if !isdefined(Base, :get_extension)
     using Requires
 end
