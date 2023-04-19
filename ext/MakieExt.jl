@@ -36,7 +36,7 @@ function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...
 end
 
 function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
-    tn = transform(tn, HyperindConverter)
+    tn = transform(tn, Tenet.HyperindConverter)
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
