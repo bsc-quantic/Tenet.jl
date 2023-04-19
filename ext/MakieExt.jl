@@ -61,7 +61,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
             if i ∈ ghostnodes
                 0
             else
-                max(15, log2(size(tensors(tn, i)) |> prod))
+                max(15, log2(length(tensors(tn)[i])))
             end
         end
     end
