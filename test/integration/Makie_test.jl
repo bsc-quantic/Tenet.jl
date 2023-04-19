@@ -10,14 +10,14 @@
 
     @testset "plot!" begin
         f = Figure()
-        @testset "(default)" plot!(f[1, 1], path)
-        @testset "with labels" plot!(f[1, 1], path; labels = true)
-        @testset "3D" plot!(f[1, 1], path; layout = Spring(dim = 3))
+        @testset "(default)" plot!(f[1, 1], tn)
+        @testset "with labels" plot!(f[1, 1], tn; labels = true)
+        @testset "3D" plot!(f[1, 1], tn; layout = Spring(dim = 3))
     end
 
     @testset "plot" begin
-        @testset "(default)" plot(path)
-        @testset "with labels" plot(path; labels = true)
-        @testset "3D" plot(path; layout = Spring(dim = 3))
+        @testset "(default)" plot(tn)
+        @testset "with labels" plot(tn; labels = true)
+        @testset "3D" plot(tn; layout = Spring(dim = 3))
     end
 end
