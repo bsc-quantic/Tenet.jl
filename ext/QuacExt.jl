@@ -7,8 +7,9 @@ else
 end
 
 using Quac: Circuit, lanes, arraytype, Swap
+using OptimizedEinsum: get_symbol
 
-function TensorNetwork(circuit::Circuit)
+function Tenet.TensorNetwork(circuit::Circuit)
     tn = TensorNetwork{Quantum}()
     n = lanes(circuit)
 
