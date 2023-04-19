@@ -1,33 +1,23 @@
 @testset "Visualization" begin
     using CairoMakie
-    using Tenet
     using NetworkLayout: Spring
-    using Makie: FigureAxisPlot, AxisPlot
 
-    @testset "plot`" begin
-        tn = TensorNetwork([
-            Tensor(rand(2, 2, 2, 2), (:x, :y, :z, :t)),
-            Tensor(rand(2, 2), (:x, :y)),
-            Tensor(rand(2), (:x,)),
-        ])
+    tn = TensorNetwork([
+        Tensor(rand(2, 2, 2, 2), (:x, :y, :z, :t)),
+        Tensor(rand(2, 2), (:x, :y)),
+        Tensor(rand(2), (:x,)),
+    ])
 
-        @test plot(tn) isa FigureAxisPlot
-        @test plot(tn; labels = true) isa FigureAxisPlot
-        @test plot(tn; layout = Spring(dim = 3)) isa FigureAxisPlot
+    @testset "plot!" begin
+        f = Figure()
+        @testset "(default)" plot!(f[1, 1], path)
+        @testset "with labels" plot!(f[1, 1], path; labels = true)
+        @testset "3D" plot!(f[1, 1], path; layout = Spring(dim = 3))
+    end
 
-        @test begin
-            f = Figure()
-            plot!(f[1, 1], tn) isa AxisPlot
-        end
-
-        @test begin
-            f = Figure()
-            plot!(f[1, 1], tn; labels = true) isa AxisPlot
-        end
-
-        @test begin
-            f = Figure()
-            plot!(f[1, 1], tn; layout = Spring(dim = 3)) isa AxisPlot
-        end
+    @testset "plot" begin
+        @testset "(default)" plot(path)
+        @testset "with labels" plot(path; labels = true)
+        @testset "3D" plot(path; layout = Spring(dim = 3))
     end
 end
