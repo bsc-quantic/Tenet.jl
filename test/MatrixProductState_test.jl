@@ -55,7 +55,7 @@
                 MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
             end
 
-            @testset "`Tensor.meta[:alias]`" begin
+            @testset "alias" begin
                 arrays = [rand(2, 2), rand(2, 2, 2), rand(2, 2)]
                 ψ = MatrixProductState{Open}(arrays, order = (:l, :p, :r))
 
@@ -103,7 +103,7 @@
                 MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
             end
 
-            @testset "`Tensor.meta[:alias]`" begin
+            @testset "alias" begin
                 arrays = [rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2)]
                 ψ = MatrixProductState{Closed}(arrays, order = (:r, :p, :l))
 
