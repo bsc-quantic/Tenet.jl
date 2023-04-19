@@ -72,12 +72,13 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
-        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openinds(tn)), tensors(tn))
+        openlabels = nameof.(openinds(tn))
+        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openlabels), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
         map(edges(graph)) do edge
             # case: open edge
-            if any(∋(ghostnodes), [src(edge), dst(edge)])
+            if any(∈(ghostnodes), [src(edge), dst(edge)])
                 notghost = src(edge) ∈ ghostnodes ? dst(edge) : src(edge)
                 inds = nameof.(openinds(tn)) ∩ Tenet.labels(tensors(tn)[notghost])
                 opencounter[notghost] += 1
@@ -85,7 +86,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
             end
 
             # case: hyperedge
-            if any(∋(copytensors), [src(edge), dst(edge)])
+            if any(∈(copytensors), [src(edge), dst(edge)])
                 i = src(edge) ∈ copytensors ? src(edge) : dst(edge)
                 return tensors(tn)[i].meta[:dual] |> string
             end
