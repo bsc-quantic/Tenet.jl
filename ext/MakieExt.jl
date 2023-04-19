@@ -38,9 +38,12 @@ end
 function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
     tn = transform(tn, Tenet.HyperindConverter)
 
+    # TODO how to mark multiedges? (i.e. parallel edges)
+    handles = IdDict(obj => i for (i, obj) in enumerate(tensors(tn)))
+    graph = SimpleGraph([Edge(handles[a], handles[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
+
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
-
     ghostnodes = map(openinds(tn)) do ind
         add_vertex!(graph)
         node = nv(graph) # TODO is this the best way to get the id of the newly created node?
@@ -48,10 +51,6 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
         add_edge!(graph, node, pos[tensor])
         return node
     end
-
-    # TODO how to mark multiedges? (i.e. parallel edges)
-    handles = IdDict(obj => i for (i, obj) in enumerate(tensors(tn)))
-    graph = SimpleGraph([Edge(handles[a], handles[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
 
     # configure graphics
     # TODO refactor hardcoded values into constants
