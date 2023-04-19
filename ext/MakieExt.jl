@@ -97,9 +97,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
     get!(() -> repeat([17], ne(graph)), kwargs, :elabels_textsize)
 
     # plot graph
-    p = graphplot!(ax, graph; kwargs...)
-
-    return AxisPlot(ax, p)
+    graphplot!(ax, graph; kwargs...)
 end
 
 end
