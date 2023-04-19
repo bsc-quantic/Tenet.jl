@@ -14,7 +14,7 @@ using NetworkLayout: dim
 
 function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
-    ax, p = plot!(f[1, 1], path; kwargs...)
+    ax, p = plot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
 end
 
