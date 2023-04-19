@@ -102,3 +102,5 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     return AxisPlot(ax, p)
 end
+
+end
