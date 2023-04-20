@@ -45,25 +45,33 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor, <:Tensor})
-    old_tensor, new_tensor = pair
+Base.replace(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...) = replace!(deepcopy(tn), old_new...)
 
-    # check if old and new tensors are compatible
-    if !issetequal(labels(new_tensor), labels(old_tensor))
-        throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+function Base.replace!(tn::TensorNetwork, pairs::Pair{<:Tensor, <:Tensor}...)
+    # Check if new tensors are already present in the network
+    new_tensors = [new_tensor for (_, new_tensor) in pairs]
+    if !isdisjoint(new_tensors, tn.tensors)
+        throw(ArgumentError("New tensors must not be already present in the network"))
     end
 
-    # update index links
-    # TODO remove this part when `Index` is removed
-    for old_label in labels(old_tensor)
-        index_obj = tn.inds[old_label]
-        link_index = findfirst(x -> x === old_tensor, index_obj.links)
-        index_obj.links[link_index] = new_tensor
-    end
+    for (old_tensor, new_tensor) in pairs
+        # check if old and new tensors are compatible
+        if !issetequal(labels(new_tensor), labels(old_tensor))
+            throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+        end
 
-    # replace existing `Tensor` with new `Tensor`
-    index = findfirst(x -> x === old_tensor, tn.tensors)
-    tn.tensors[index] = new_tensor
+        # update index links
+        # TODO remove this part when `Index` is removed
+        for old_label in labels(old_tensor)
+            index_obj = tn.inds[old_label]
+            link_index = findfirst(x -> x === old_tensor, index_obj.links)
+            index_obj.links[link_index] = new_tensor
+        end
+
+        # replace existing `Tensor` with new `Tensor`
+        index = findfirst(x -> x === old_tensor, tn.tensors)
+        tn.tensors[index] = new_tensor
+    end
 
     return tn
 end
@@ -227,7 +235,7 @@ Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 Base.replace(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...) = replace!(copy(tn), old_new...)
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
-    !isdisjoint(values(old_new), labels(tn)) && throw(ArgumentError("target symbols must not be already present"))
+    !isdisjoint(last.(old_new), labels(tn)) && throw(ArgumentError("target symbols must not be already present"))
 
     tensors = unique(Iterators.flatten([select(tn, i) for i in first.(old_new)]) |> collect)
 
