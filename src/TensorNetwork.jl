@@ -1,6 +1,5 @@
 using Random
-import OptimizedEinsum
-import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
+using EinExprs
 using OMEinsum
 
 """

@@ -40,10 +40,9 @@ end
     end
 end
 
-# reexports from OptimizedEinsum
-export contractpath
-
 # reexports from LinearAlgebra
 export norm, normalize!
+
+# TODO reexports from EinExprs
 
 end
