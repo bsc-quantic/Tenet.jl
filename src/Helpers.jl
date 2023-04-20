@@ -36,7 +36,7 @@ end
 function normalizeperm!(permutator)
     permutator .= permutator .- minimum(permutator) .+ 1
     k = only(setdiff(1:4, permutator))
-    permutator[permutator .> k] .-= 1
-    
+    permutator[permutator.>k] .-= 1
+
     permutator
 end
