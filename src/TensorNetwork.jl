@@ -1,4 +1,4 @@
-import Random: rand
+using Random
 import OptimizedEinsum
 import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
 using OMEinsum
@@ -247,9 +247,50 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
     return tn
 end
 
-function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
-    # TODO `output` is not used
-    output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
+"""
+    rand(TensorNetwork, n, regularity[, out = 0, dim = 2:9, seed = nothing, globalind = false])
+
+Generate a random contraction and shapes.
+
+# Arguments
+
+  - `n`: Number of array arguments.
+  - `regularity`: 'Regularity' of the contraction graph. This essentially determines how many indices each tensor shares with others on average.
+  - `out=0`: Number of output indices (i.e. the number of non-contracted indices).
+  - `dim=2:9`: Range of dimension sizes.
+  - `seed=nothing`: If not `nothing`, seed random generator with this value.
+  - `globalind=false`: Add a global, 'broadcast', dimension to every tensor.
+"""
+function Random.rand(::Type{TensorNetwork}, n, regularity; out = 0, dim = 2:9, seed = nothing, globalind = false)
+    !isnothing(seed) && Random.seed!(seed)
+
+    inds = letter.(randperm(n * regularity ÷ 2 + out))
+    size_dict = Dict(ind => rand(dim) for ind in inds)
+
+    outer_inds = take(inds, n_out) |> collect
+    inner_inds = drop(inds, n_out) |> collect
+
+    candidate_inds = [outer_inds, flatten(repeated(inner_inds, 2))] |> flatten |> collect |> shuffle
+
+    inputs = map(x -> [x], take(candidate_inds, n))
+
+    for ind in drop(candidate_inds, n)
+        i = rand(1:n)
+        while ind in inputs[i]
+            i = rand(1:n)
+        end
+
+        push!(inputs[i], ind)
+    end
+
+    if globalind
+        ninds = length(size_dict)
+        ind = letter(ninds + 1)
+        size_dict[ind] = rand(dim)
+        push!(outer_inds, ind)
+        push!.(inputs, (ind,))
+    end
+
     tensors = [Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
     TensorNetwork(tensors)
 end
