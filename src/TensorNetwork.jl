@@ -275,8 +275,8 @@ function Random.rand(
     inds = letter.(randperm(n * regularity ÷ 2 + out))
     size_dict = Dict(ind => rand(dim) for ind in inds)
 
-    outer_inds = Iterators.take(inds, n_out) |> collect
-    inner_inds = drop(inds, n_out) |> collect
+    outer_inds = Iterators.take(inds, out) |> collect
+    inner_inds = drop(inds, out) |> collect
 
     candidate_inds = [outer_inds, flatten(repeated(inner_inds, 2))] |> flatten |> collect |> shuffle
 
