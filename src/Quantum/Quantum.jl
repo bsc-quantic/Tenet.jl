@@ -1,4 +1,3 @@
-using OptimizedEinsum: get_symbol
 using LinearAlgebra
 using UUIDs: uuid4
 

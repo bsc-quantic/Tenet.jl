@@ -7,13 +7,12 @@ else
 end
 
 using Quac: Circuit, lanes, arraytype, Swap
-using OptimizedEinsum: get_symbol
 
 function Tenet.TensorNetwork(circuit::Circuit)
     tn = TensorNetwork{Quantum}()
     n = lanes(circuit)
 
-    wire = [[get_symbol(i)] for i in 1:n]
+    wire = [[Tenet.letter(i)] for i in 1:n]
     i = n + 1
 
     for gate in circuit
@@ -27,7 +26,7 @@ function Tenet.TensorNetwork(circuit::Circuit)
         end
 
         inds = map(lanes(gate)) do l
-            from, to = last(wire[l]), get_symbol(i)
+            from, to = last(wire[l]), Tenet.letter(i)
             i += 1
             push!(wire[l], to)
             (from, to)
