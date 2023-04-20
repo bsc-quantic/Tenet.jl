@@ -303,13 +303,8 @@ function Random.rand(
     TensorNetwork(tensors)
 end
 
-function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
-    inputs = collect.(labels.(tensors(tn)))
-    output = collect(nameof.(output))
-    size_dict = size(tn)
-
-    contractpath(solver, inputs, output, size_dict)
-end
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openinds(tn), kwargs...) =
+    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
@@ -322,8 +317,8 @@ function contract!(tn::TensorNetwork, i::Symbol)
     push!(tn, tensor)
 end
 
-function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
-    path = contractpath(tn; output = output, kwargs...)
+function contract(tn::TensorNetwork; outputs = openinds(tn), kwargs...)
+    path = einexpr(tn; outputs = outputs, kwargs...)
 
     # SSA-to-tensor mapping
     mapping = Dict{Int,Tensor}(i => t for (i, t) in enumerate(tensors(tn)))
@@ -334,7 +329,7 @@ function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
 
         indsA = labels(A)
         indsB = labels(B)
-        indsC = symdiff(indsA, indsB) ∪ ∩(output, indsA, indsB)
+        indsC = symdiff(indsA, indsB) ∪ ∩(outputs, indsA, indsB)
 
         C = EinCode((map(String, indsA), map(String, indsB)), tuple(map(String, indsC)...))(A, B)
 
