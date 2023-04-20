@@ -22,7 +22,7 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 
 ### Arbitrary Tensor Network Contraction
 
-Tenet can represent `TensorNetwork`s of `Arbitrary` form. Thanks to [`OptimizedEinsum`](https://github.com/bsc-quantic/OptimizedEinsum.jl), it can find contraction paths (using the `contractpath` function) which can then be computed by [`OMEinsum`](https://github.com/under-Peter/OMEinsum.jl) (using the `contract` function).
+Tenet can represent `TensorNetwork`s of `Arbitrary` form. Thanks to [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl), it can find quasi-optimal contraction paths which can then be computed by [`OMEinsum`](https://github.com/under-Peter/OMEinsum.jl).
 
 ### Visualization
 
