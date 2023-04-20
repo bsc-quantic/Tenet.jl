@@ -276,13 +276,14 @@ function Random.rand(
     size_dict = Dict(ind => rand(dim) for ind in inds)
 
     outer_inds = Iterators.take(inds, out) |> collect
-    inner_inds = drop(inds, out) |> collect
+    inner_inds = Iterators.drop(inds, out) |> collect
 
-    candidate_inds = [outer_inds, flatten(repeated(inner_inds, 2))] |> flatten |> collect |> shuffle
+    candidate_inds =
+        [outer_inds, Iterators.flatten(Iterators.repeated(inner_inds, 2))] |> Iterators.flatten |> collect |> shuffle
 
     inputs = map(x -> [x], Iterators.take(candidate_inds, n))
 
-    for ind in drop(candidate_inds, n)
+    for ind in Iterators.drop(candidate_inds, n)
         i = rand(1:n)
         while ind in inputs[i]
             i = rand(1:n)
