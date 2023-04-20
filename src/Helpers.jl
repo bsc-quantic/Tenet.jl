@@ -50,16 +50,17 @@ Return `i`-th printable Unicode letter.
 
 ```jldoctest
 julia> letter(1)
-'A': ASCII/Unicode U+0041 (category Lu: Letter, uppercase)
+:A
 
 julia> letter(27)
-'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
+:b
 
 julia> letter(249)
-'ƃ': Unicode U+0183 (category Ll: Letter, lowercase)
+:ƃ
 
 julia> letter(20204)
-'櫛': Unicode U+6ADB (category Lo: Letter, other)
+:櫛
 ```
 """
-letter(i) = Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first
+letter(i) =
+    Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first |> Symbol
