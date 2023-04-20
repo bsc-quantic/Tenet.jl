@@ -6,4 +6,9 @@
         @test length(it) == 3
         @test collect(it) == [(0, 1), (1, 2), (2, 0)]
     end
+
+    @testset "letter" begin
+        using Tenet: letter
+        @test all(isletter, Iterators.map(letter, 1:136104))
+    end
 end

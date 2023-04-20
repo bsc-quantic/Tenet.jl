@@ -40,3 +40,26 @@ function normalizeperm!(permutator)
 
     permutator
 end
+
+"""
+    letter(i)
+
+Return `i`-th printable Unicode letter.
+
+# Examples
+
+```jldoctest
+julia> letter(1)
+'A': ASCII/Unicode U+0041 (category Lu: Letter, uppercase)
+
+julia> letter(27)
+'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
+
+julia> letter(249)
+'ƃ': Unicode U+0183 (category Ll: Letter, lowercase)
+
+julia> letter(20204)
+'櫛': Unicode U+6ADB (category Lo: Letter, other)
+```
+"""
+letter(i) = Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first
