@@ -45,7 +45,7 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor, <:Tensor})
+function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
