@@ -45,7 +45,7 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-Base.replace(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...) = replace!(deepcopy(tn), old_new...)
+Base.replace(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...) = replace!(copy(tn), old_new...)
 
 function Base.replace!(tn::TensorNetwork, pairs::Pair{<:Tensor, <:Tensor}...)
     # Check if new tensors are already present in the network
