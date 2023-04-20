@@ -261,7 +261,15 @@ Generate a random contraction and shapes.
   - `seed=nothing`: If not `nothing`, seed random generator with this value.
   - `globalind=false`: Add a global, 'broadcast', dimension to every tensor.
 """
-function Random.rand(::Type{TensorNetwork}, n, regularity; out = 0, dim = 2:9, seed = nothing, globalind = false)
+function Random.rand(
+    ::Type{TensorNetwork},
+    n::Integer,
+    regularity::Integer;
+    out = 0,
+    dim = 2:9,
+    seed = nothing,
+    globalind = false,
+)
     !isnothing(seed) && Random.seed!(seed)
 
     inds = letter.(randperm(n * regularity ÷ 2 + out))
