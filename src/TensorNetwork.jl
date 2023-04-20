@@ -92,7 +92,7 @@ tensors(tn::TensorNetwork) = tn.tensors
 tensors(tn::TensorNetwork, i::Integer) = tn.tensors[i]
 tensors(tn::TensorNetwork, i::Symbol)::Vector{Tensor} = links(tn.inds[i])
 tensors(tn::TensorNetwork, i::Index)::Vector{Tensor} = tensors(tn, nameof(i))
-tensors(tn::TensorNetwork, inds::Sequence{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
+tensors(tn::TensorNetwork, inds::Base.AbstractVecOrTuple{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
@@ -114,7 +114,7 @@ Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Return tensors whose labels match with the list of indices `i`.
 """
-select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
+select(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
 select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
 
 """
@@ -179,7 +179,7 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     return tn
 end
 
-Base.append!(tn::TensorNetwork, t::Sequence{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
+Base.append!(tn::TensorNetwork, t::Base.AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 function Base.append!(A::TensorNetwork, B::TensorNetwork)
     append!(A, tensors(B))
 
@@ -213,7 +213,7 @@ end
 
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, i::Sequence{Symbol})::Vector{Tensor}
+function Base.pop!(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensors = select(tn, i)
     for tensor in tensors
         _ = pop!(tn, tensor)
