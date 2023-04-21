@@ -41,6 +41,8 @@ function normalizeperm!(permutator)
     permutator
 end
 
+const NUM_UNICODE_LETTERS = VERSION >= v"1.9" ? 136104 : 131756
+
 """
     letter(i)
 
