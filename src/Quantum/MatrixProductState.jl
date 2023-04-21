@@ -26,33 +26,30 @@ function MatrixProductState{Open}(arrays; χ = nothing, order = (:l, :r, :p), me
     n = length(arrays)
     vinds = Dict(x => Symbol(uuid4()) for x in partition(1:n, 2, 1))
     pinds = Dict(i => Symbol(uuid4()) for i in 1:n)
-    permutator = [order[i] for i in (:l, :r, :p)]
-
-    # add boundary tensors
-    labels = if order[:r] < order[:p]
-        (vinds[(1, 2)], pinds[1])
-    else
-        (pinds[1], vinds[(1, 2)])
-    end
-    push!(tn, Tensor(first(arrays), labels))
-
-    labels = if order[:l] < order[:p]
-        (vinds[(n - 1, n)], pinds[n])
-    else
-        (pinds[n], vinds[(n - 1, n)])
-    end
-    push!(tn, Tensor(last(arrays), labels))
 
     # add tensors
-    for (i, data) in zip(2:n-1, arrays[2:end-1])
-        lind = vinds[(mod1(i - 1, n), i)]
-        rind = vinds[(i, mod1(i + 1, n))]
+    for (i, data) in enumerate(arrays)
+        # Handle boundary cases and inner tensors separately
+        if i == 1
+            labels = [vinds[(1, 2)], pinds[1]]
+            original_order = [:r, :p]
+        elseif i == n
+            labels = [vinds[(n - 1, n)], pinds[n]]
+            original_order = [:l, :p]
+        else
+            lind = vinds[(mod1(i - 1, n), i)]
+            rind = vinds[(i, mod1(i + 1, n))]
+            labels = [lind, rind, pinds[i]]
+            original_order = [:l, :r, :p]
+        end
 
-        labels = [lind, rind, pinds[i]]
+        # Filter the order dictionary based on the original_order and sort it following order
+        filtered_order = [p[1] for p in sort(filter(p -> p.first ∈ original_order, collect(order)), by = x -> x[2])]
+        permutator = (ind -> Dict(p => i for (i, p) in enumerate(filtered_order))[ind]).(original_order)
+
         invpermute!(labels, permutator)
-
-        tensor = Tensor(data, labels)
-        push!(tn, tensor)
+        alias = Dict([x => y for (x, y) in zip(invpermute!(original_order, permutator), labels)])
+        push!(tn, Tensor(data, labels; alias = alias))
     end
 
     # mark physical indices
@@ -89,8 +86,9 @@ function MatrixProductState{Closed}(arrays; χ = nothing, order = (:l, :r, :p), 
 
         labels = [lind, rind, pinds[i]]
         invpermute!(labels, permutator)
+        alias = Dict([x => y for (x, y) in zip(invpermute!([:l, :r, :p], permutator), labels)])
 
-        tensor = Tensor(data, labels)
+        tensor = Tensor(data, labels; alias = alias)
         push!(tn, tensor)
     end
 
