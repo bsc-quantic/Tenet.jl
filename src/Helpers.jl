@@ -55,7 +55,7 @@ julia> letter(1)
 :A
 
 julia> letter(27)
-:b
+:a
 
 julia> letter(249)
 :ƃ
