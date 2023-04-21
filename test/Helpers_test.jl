@@ -9,6 +9,6 @@
 
     @testset "letter" begin
         using Tenet: letter
-        @test all(isletter, Iterators.map(letter, 1:136104))
+        @test all(isletter ∘ only ∘ String, Iterators.map(letter, 1:136104))
     end
 end
