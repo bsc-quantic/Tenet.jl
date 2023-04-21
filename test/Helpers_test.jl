@@ -9,6 +9,7 @@
 
     @testset "letter" begin
         using Tenet: letter
-        @test all(isletter ∘ only ∘ String, Iterators.map(letter, 1:136104))
+        # NOTE probabilitic testing due to time taken by `letter`. refactor when `letter` is optimized.
+        @test all(isletter ∘ only ∘ String, Iterators.map(letter, rand(1:136104, 1000)))
     end
 end
