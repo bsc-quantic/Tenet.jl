@@ -50,7 +50,7 @@ Return `i`-th printable Unicode letter.
 
 # Examples
 
-```jldoctest
+```jldoctest; setup = :(letter = Tenet.letter)
 julia> letter(1)
 :A
 
