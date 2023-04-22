@@ -317,27 +317,7 @@ function contract!(tn::TensorNetwork, i::Symbol)
     push!(tn, tensor)
 end
 
-function contract(tn::TensorNetwork; outputs = openinds(tn), kwargs...)
-    path = einexpr(tn; outputs = outputs, kwargs...)
-
-    # SSA-to-tensor mapping
-    mapping = Dict{Int,Tensor}(i => t for (i, t) in enumerate(tensors(tn)))
-
-    for (c, (a, b)) in zip(Iterators.countfrom(length(path.inputs) + 1), path)
-        A = pop!(mapping, a)
-        B = pop!(mapping, b)
-
-        indsA = labels(A)
-        indsB = labels(B)
-        indsC = symdiff(indsA, indsB) ∪ ∩(outputs, indsA, indsB)
-
-        C = EinCode((map(String, indsA), map(String, indsB)), tuple(map(String, indsC)...))(A, B)
-
-        mapping[c] = Tensor(C, tuple(indsC...))
-    end
-
-    only(values(mapping))
-end
+contract(tn::TensorNetwork; outputs = openinds(tn), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
