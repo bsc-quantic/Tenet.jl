@@ -213,7 +213,7 @@ function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Int
         elseif i > right_edge # Move orthogonality center to the left
             A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
             A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V, (2,1)), size(U, 2), size(B, 2), size(B, 3))
+            B_new = reshape(permutedims(V, (2, 1)), size(U, 2), size(B, 2), size(B, 3))
 
         else # No need to update tensors
             A_new = A
@@ -263,7 +263,8 @@ function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Int
             canonize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
             (canonize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
 
-        return_singular_values && (singular_values[i] = S ./ sum(S))
+        # Normalize singular values with ./ sqrt(sum(S .^ 2))
+        return_singular_values && (singular_values[i] = S ./ sum(S .^ 2))
 
         # Update tensors in the array, reshape boundary tensors
         if i == 1
