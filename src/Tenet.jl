@@ -6,11 +6,9 @@ include("Helpers.jl")
 include("Numerics.jl")
 
 import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
-export Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
 include("Index.jl")
 export Index, isphysical, isvirtual, site, ishyperind, links
-export tags, tag!, untag!, hastag
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, inds, openinds, hyperinds, select
@@ -42,6 +40,9 @@ end
 
 # reexports from LinearAlgebra
 export norm, normalize!
+
+# reexports from Tensors
+export Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
 # TODO reexports from EinExprs
 
