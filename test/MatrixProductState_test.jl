@@ -128,12 +128,12 @@
         using LinearAlgebra: I
 
         function is_left_orthogonal(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), labels(A)[2] => :new_ind_name), (labels(A)[1], labels(A)[3]))
+            contracted = contract(A, replace(conj(A), labels(A)[2] => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 2), size(A, 2)), atol=1e-12)
         end
 
         function is_right_orthogonal(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), labels(A)[1] => :new_ind_name),(labels(A)[2], labels(A)[3]))
+            contracted = contract(A, replace(conj(A), labels(A)[1] => :new_ind_name), dims = (labels(A)[2], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 1), size(A, 1)), atol=1e-12)
         end
 
