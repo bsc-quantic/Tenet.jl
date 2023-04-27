@@ -50,6 +50,7 @@ function MatrixProductState{Open}(arrays; χ = nothing, order = (:l, :r, :p), me
 
         invpermute!(labels, permutator)
         alias = Dict([x => y for (x, y) in zip(invpermute!(original_order, permutator), labels)])
+
         push!(tn, Tensor(data, labels; alias = alias))
     end
 
@@ -153,8 +154,8 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {
             χl = min(χ, p^(i - 1))
             χr = min(χ, p^i)
 
-            # swap bond dims after mid
-            after_mid ? (χr, χl) : (χl, χr)
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
         # fix for first site

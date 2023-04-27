@@ -55,6 +55,26 @@
                 MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
             end
 
+            @testset "rand" begin
+                function max_size(t)
+                    labels = (get(t.meta[:alias], :l, :none), get(t.meta[:alias], :r, :none))
+                    return maximum(size(t, label) for label in labels if label != :none)
+                end
+
+                # Test with χ > maximum possible χ for the given parameters
+                ψ = rand(MatrixProductState{Open}, 7, 2, 32)
+
+                @test ψ isa TensorNetwork{MatrixProductState{Open}}
+                @test length(ψ) == 7
+                @test maximum(max_size(t) for t in ψ.tensors) <= 32
+
+                # Test with χ < maximum possible χ for the given parameters
+                ψ = rand(MatrixProductState{Open}, 7, 2, 4)
+                @test ψ isa TensorNetwork{MatrixProductState{Open}}
+                @test length(ψ) == 7
+                @test maximum(max_size(t) for t in ψ.tensors) <= 4
+            end
+
             @testset "Metadata" begin
                 @testset "alias" begin
                     arrays = [rand(2, 2), rand(2, 2, 2), rand(2, 2)]
