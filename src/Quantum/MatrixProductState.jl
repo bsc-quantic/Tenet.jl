@@ -49,7 +49,6 @@ function MatrixProductState{Open}(arrays; χ = nothing, order = (:l, :r, :p), me
         invpermute!(labels, permutator)
         alias = Dict([x => y for (x, y) in zip(invpermute!(original_order, permutator), labels)])
 
-        println("site $i, size $(size(data)), labels $labels, alias $alias")
         push!(tn, Tensor(data, labels; alias = alias))
     end
 
