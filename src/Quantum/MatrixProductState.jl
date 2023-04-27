@@ -153,7 +153,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {
             χr = min(χ, p^i)
 
             # swap bond dims after mid and handle midpoint for odd-length MPS
-            (n % 2 == 1 && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
         # fix for first site
