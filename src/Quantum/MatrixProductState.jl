@@ -185,104 +185,92 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
     return ψ
 end
 
-# TODO modify ψ in place
+function truncatedims(t::Tensor, dim::Union{Integer, Symbol}, end_ind::Integer)
+    if dim isa Symbol
+        dim = findfirst(==(dim), labels(t))
+    end
+
+    data = view(parent(t), ntuple(i -> i == dim ? (1:end_ind) : Colon(), ndims(t))...)
+    new_labels = labels(t)
+
+    return Tensor(data, new_labels; t.meta...)
+end
+
 function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
+    canonize!(deepcopy(ψ), center; chi = chi, return_singular_values = return_singular_values)
+end
+
+# TODO modify ψ in place
+function canonize!(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
 
     # Define the local helper function canonize_two_sites within canonize
     function canonize_two_sites(A::Tensor, B::Tensor, i::Int, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
         left_edge, right_edge = extrema(center)
 
-        C = @ein C[a, b, c, d] := A[a, e, c] * B[e, b, d] # C ->  left, right, physical, physical
-        C_perm = permutedims(C, (1, 3, 2, 4))
-        C_matrix = reshape(C_perm, size(C, 1) * size(C, 3), size(C, 2) * size(C, 4)) # C_matrix -> left * physical, right * physical
-        U, S, V = svd(C_matrix)
+        A_alias = A.meta[:alias]
+        B_alias = B.meta[:alias]
+
+        C = contract(A, B)
+
+        left_inds = (kv -> kv[2]).(filter(p -> p.first ≠ :r, collect(A_alias)))
+        U, S, V = svd(C; left_inds=left_inds)
 
         # Truncate if desired bond dimension is provided
-        if chi > 0 && chi < length(S)
-            U = U[:, 1:chi] # U -> left * physical, chi
-            S = S[1:chi] # S -> chi
-            V = V[:, 1:chi] # V -> right * physical, chi
+        if chi > 0 && chi < size(S, 1)
+            U = truncatedims(U, 3, chi)
+            S = Tensor(Diagonal(truncatedims(truncatedims(S, 1, chi), 2, chi)), labels(S))
+            V = truncatedims(V, 1, chi)
         end
 
         # Reshape U and V and update tensors
         if i < left_edge # Move orthogonality center to the right
-            A_new = reshape(U, size(A, 1), size(A, 3), size(U, 2))
-            A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V * diagm(S),(2,1)), size(U, 2), size(B, 2), size(B, 3))
-
+            A_new = replace(U, labels(U)[end]=> A_alias[:r])
+            B_new = replace(V * S, labels(U)[end]=> B_alias[:l])
         elseif i > right_edge # Move orthogonality center to the left
-            A_new = reshape(U * diagm(S), size(A, 1), size(A, 3), size(U, 2))
-            A_new = permutedims(A_new, (1, 3, 2))
-            B_new = reshape(permutedims(V, (2, 1)), size(U, 2), size(B, 2), size(B, 3))
-
+            A_new = replace(U * S, labels(V)[begin]=> A_alias[:r])
+            B_new = replace(V, labels(V)[begin]=> B_alias[:l])
         else # No need to update tensors
             A_new = A
             B_new = B
         end
 
+        A_new = Tensor(parent(A_new), labels(A_new); alias = A_alias)
+        B_new = Tensor(parent(B_new), labels(B_new); alias = B_alias)
+
         return return_singular_values ? (A_new, B_new, S) : (A_new, B_new)
     end
 
     N = length(ψ)
-    tensors_array = [tensors(ψ, i) for i in 1:N] # Copy tensors to arrays
     return_singular_values ? singular_values = Vector{Vector{Float64}}(undef, N-1) : nothing
-
-    # Transform the first and last tensors to be three-dimensional
-    tensors_array[1] = Tensor(
-        reshape(tensors_array[1], (1, size(tensors_array[1])...)),
-        (:empty, labels(tensors_array[1])[1], labels(tensors_array[1])[2]);
-        meta = tensors_array[1].meta,
-    )
-
-    tensors_array[end] = Tensor(
-        reshape(tensors_array[end], (size(tensors_array[end], 1), 1, size(tensors_array[end], 2))),
-        (labels(tensors_array[end])[1], :empty, labels(tensors_array[end])[2]);
-        meta = tensors_array[end].meta,
-    )
 
     # First sweep from left to right
     for i in 1:N-1
-        A = tensors_array[i]
-        B = tensors_array[i+1]
+        A = tensors(ψ, i)
+        B = tensors(ψ, i+1)
 
         A_new, B_new, S = return_singular_values ?
             canonize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
             (canonize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
 
-        # Update tensors in the array
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        end
+        replace!(ψ, A => A_new)
+        replace!(ψ, B => B_new)
+    end
 
     # Second sweep from right to left to ensure canonical form
     for i in N-1:-1:1
-        A = tensors_array[i]
-        B = tensors_array[i+1]
+        A = tensors(ψ, i)
+        B = tensors(ψ, i+1)
 
         A_new, B_new, S = return_singular_values ?
             canonize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
             (canonize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
 
         # Normalize singular values with ./ sqrt(sum(S .^ 2))
-        return_singular_values && (singular_values[i] = S ./ sum(S .^ 2))
+        return_singular_values && (singular_values[i] = parent(S).diag ./ sum(S .^ 2))
 
-        # Update tensors in the array, reshape boundary tensors
-        if i == 1
-            tensors_array[i] =
-                Tensor(reshape(A_new, size(A, 2), size(A, 3)), (labels(A)[2], labels(A)[3]); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        elseif i == N - 1
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(reshape(B_new, size(B, 1), size(B, 3)), (labels(B)[1], labels(B)[3]); meta = B.meta)
-        else
-            tensors_array[i] = Tensor(A_new, labels(A); meta = A.meta)
-            tensors_array[i+1] = Tensor(B_new, labels(B); meta = B.meta)
-        end
+        replace!(ψ, A => A_new)
+        replace!(ψ, B => B_new)
     end
-
-
-    # Create a new MPS object with the updated tensors
-    ψ = MatrixProductState(tensors_array)
 
     return_singular_values ? (ψ, singular_values) : ψ
 end
