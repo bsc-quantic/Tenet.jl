@@ -266,8 +266,8 @@ function canonize!(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{In
             canonize_two_sites(A, B, i, center; chi = chi, return_singular_values = true) :
             (canonize_two_sites(A, B, i, center; chi = chi)..., nothing) # Ignore S
 
-        # Normalize singular values with ./ sum(S)
-        return_singular_values && (singular_values[i] = parent(S).diag ./ sum(S))
+        # Normalize singular values with ./ sqrt(sum(parent(S).diag .^ 2))
+        return_singular_values && (singular_values[i] = parent(S).diag ./ sqrt(sum(parent(S).diag .^ 2)))
 
         replace!(ψ, A => A_new)
         replace!(ψ, B => B_new)
