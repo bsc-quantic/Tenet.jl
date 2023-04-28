@@ -148,13 +148,14 @@
         using LinearAlgebra: I
 
         function is_left_canonical(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), A.meta[:alias][:r] => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
-            return isapprox(contracted, Matrix{Float64}(I, size(A, 2), size(A, 2)), atol=1e-12)
+            label_r = A.meta[:alias][:r]
+            contracted = contract(A, replace(conj(A), label_r => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
+            return isapprox(contracted, Matrix{Float64}(I, size(A, label_r), size(A, label_r)), atol=1e-12)
         end
-
         function is_right_canonical(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), A.meta[:alias][:l] => :new_ind_name), dims = (labels(A)[2], labels(A)[3]))
-            return isapprox(contracted, Matrix{Float64}(I, size(A, 1), size(A, 1)), atol=1e-12)
+            label_l = A.meta[:alias][:l]
+            contracted = contract(A, replace(conj(A), label_l => :new_ind_name))
+            return isapprox(contracted, Matrix{Float64}(I, size(A, label_l), size(A, label_l)), atol=1e-12)
         end
 
         ψ = rand(MatrixProductState{Open}, 16, 2, 8)
