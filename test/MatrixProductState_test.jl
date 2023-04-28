@@ -149,7 +149,7 @@
 
         function is_left_canonical(A::Tensor{T}) where {T}
             label_r = A.meta[:alias][:r]
-            contracted = contract(A, replace(conj(A), label_r => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
+            contracted = contract(A, replace(conj(A), label_r => :new_ind_name))
             return isapprox(contracted, Matrix{Float64}(I, size(A, label_r), size(A, label_r)), atol=1e-12)
         end
         function is_right_canonical(A::Tensor{T}) where {T}
