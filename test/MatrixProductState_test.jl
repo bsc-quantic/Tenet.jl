@@ -147,13 +147,13 @@
     @testset "Functions" begin
         using LinearAlgebra: I
 
-        function is_left_orthogonal(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), labels(A)[2] => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
+        function is_left_canonical(A::Tensor{T}) where {T}
+            contracted = contract(A, replace(conj(A), A.meta[:alias][:r] => :new_ind_name), dims = (labels(A)[1], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 2), size(A, 2)), atol=1e-12)
         end
 
-        function is_right_orthogonal(A::Tensor{T}) where {T}
-            contracted = contract(A, replace(conj(A), labels(A)[1] => :new_ind_name), dims = (labels(A)[2], labels(A)[3]))
+        function is_right_canonical(A::Tensor{T}) where {T}
+            contracted = contract(A, replace(conj(A), A.meta[:alias][:l] => :new_ind_name), dims = (labels(A)[2], labels(A)[3]))
             return isapprox(contracted, Matrix{Float64}(I, size(A, 1), size(A, 1)), atol=1e-12)
         end
 
@@ -165,16 +165,16 @@
                 @test ϕ isa TensorNetwork{MatrixProductState{Open}}
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
-                @test is_left_orthogonal(A)
-                @test is_right_orthogonal(B)
+                @test is_left_canonical(A)
+                @test is_right_canonical(B)
             end
 
             @testset "limit chi" begin
                 ϕ = canonize(ψ, 8; chi = 4)
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
-                @test is_left_orthogonal(A)
-                @test is_right_orthogonal(B)
+                @test is_left_canonical(A)
+                @test is_right_canonical(B)
                 @test any([any((i != 8 && i != 9 ? size(tensors(ϕ, i)) : (0)) .> 4) for i in 1:length(ϕ)]) == false
             end
 
@@ -182,8 +182,8 @@
                 ϕ, σ = canonize(ψ, 8; return_singular_values = true)
 
                 A, B = tensors(ϕ, 6), tensors(ϕ, 12)
-                @test is_left_orthogonal(A)
-                @test is_right_orthogonal(B)
+                @test is_left_canonical(A)
+                @test is_right_canonical(B)
                 @test length(σ) == 15
             end
         end
