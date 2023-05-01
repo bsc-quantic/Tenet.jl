@@ -43,7 +43,7 @@ end
 
 function TensorNetwork{A}(tensors; metadata...) where {A}
     tn = TensorNetwork{A}(; metadata...)
-    union!(tn.indices, ∪(labels.(tensors)...))
+    append!(tn, tensors)
     return tn
 end
 
