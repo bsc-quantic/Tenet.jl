@@ -360,6 +360,16 @@ function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
     return tn
 end
 
+function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
+    tn = copy(tn)
+
+    for (label, i) in slices
+        selectdim!(tn, label, i)
+    end
+
+    return tn
+end
+
 """
     rand(TensorNetwork, n::Integer, regularity::Integer; out = 0, dim = 2:9, seed = nothing, globalind = false)
 
