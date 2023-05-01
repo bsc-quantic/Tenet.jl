@@ -7,11 +7,10 @@ include("Numerics.jl")
 
 import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
-include("Index.jl")
-export Index, isphysical, isvirtual, site, ishyperind, links
+export isphysical, isvirtual, site, ishyperind
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, inds, openinds, hyperinds, select
+export TensorNetwork, tensors, arrays, openlabels, innerlabels, hyperlabels, select, selectdim!
 export contract, contract!
 export Ansatz, ansatz, Arbitrary
 
