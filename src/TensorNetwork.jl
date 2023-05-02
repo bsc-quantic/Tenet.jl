@@ -57,8 +57,7 @@ Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeo
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
 Base.length(x::TensorNetwork) = length(tensors(x))
 
-# TODO refactor for new TensorNetwork definition
-# Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); copy(tn.meta)...)
+Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); copy(tn.metadata)...)
 
 ansatz(::Type{TensorNetwork{A}}) where {A} = A
 ansatz(::TensorNetwork{A}) where {A} = A
@@ -101,7 +100,7 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
 
     # unlink indices
-    for index in labels(tensor)
+    for index in unique(labels(tensor))
         filter!(!=(i), tn.indices[index])
         isempty(tn.indices[index]) && delete!(tn.indices, index)
     end
@@ -129,7 +128,7 @@ Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
 
-function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor}...)
+function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
@@ -157,7 +156,7 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
+function Base.replace!(tn::TensorNetwork, old_new::Pair...)
     for pair in old_new
         replace!(tn, pair)
     end
@@ -170,29 +169,30 @@ end
 Return tensors whose labels match with the list of indices `i`.
 """
 select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = mapreduce(Base.Fix1(select, tn), ∩, i)
-select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], tn.indices[i])
+select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
 
 """
-    selectdim(tn, index, i)
+    slice!(tn, index, i)
 
-Returns a view of the Tensor Network `tn` of slice `i` on `index`.
+In-place slice `index` of the Tensor Network `tn` on dimension `i`.
 """
-Base.selectdim(tn::TensorNetwork, label::Symbol, i) = selectdim!(copy(tn), label, i)
-
-function selectdim!(tn::TensorNetwork, label::Symbol, i)
-    for tensor in select(tn, i)
-        push!(tn, selectdim(tensor, label, i))
-        delete!(tn, tensor)
+function slice!(tn::TensorNetwork, label::Symbol, i)
+    for tensor in select(tn, label)
+        pos = findfirst(t -> t === tensor, tn.tensors)
+        tn.tensors[pos] = selectdim(tensor, label, i)
     end
+
+    i isa Integer && delete!(tn.indices, label)
 
     return tn
 end
 
+Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
 function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
     tn = copy(tn)
 
     for (label, i) in slices
-        selectdim!(tn, label, i)
+        slice!(tn, label, i)
     end
 
     return tn
