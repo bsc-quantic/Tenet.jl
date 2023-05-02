@@ -54,7 +54,7 @@ TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
 # TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{A}(tensors(tn); tn.metadata...)
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices))")
+Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
 Base.length(x::TensorNetwork) = length(tensors(x))
 
 # TODO refactor for new TensorNetwork definition
