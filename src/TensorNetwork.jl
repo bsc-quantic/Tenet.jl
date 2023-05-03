@@ -69,8 +69,9 @@ end
 # ansatz defaults to `Arbitrary`
 TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
 
-# TODO revise metadata compatibility? tensor connections?
-# TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{A}(tensors(tn); tn.metadata...)
+# TODO maybe rename it as `convert` method?
+TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
+    TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
