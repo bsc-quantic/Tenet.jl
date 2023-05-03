@@ -17,6 +17,10 @@ Tensor Networks without a predefined form.
 """
 abstract type Arbitrary <: Ansatz end
 
+# NOTE currently, these are implementation details
+function checktopology end
+function checkmeta end
+
 """
     TensorNetwork
 
@@ -32,14 +36,29 @@ struct TensorNetwork{A}
     metadata::Dict{Symbol,Any}
 
     function TensorNetwork{A}(; metadata...) where {A}
+        # 1. construct graph
         indices = Dict{Symbol,Vector{Int}}()
         tensors = Vector{Tensor}()
-        metadata = Dict{Symbol,Any}(metadata)
-        metadata[:ansatz] = A
+        metadata = Dict{Symbol,Any}()
 
-        new{A}(indices, tensors, metadata)
+        tn = new{A}(indices, tensors, metadata)
+
+        # 2. check topology matches ansatz
+        # TODO do sth to skip check? like @inbounds
+        checktopology(tn)
+
+        # 3. extract extra fields from metadata
+        # TODO do sth to skip check? like @inbounds
+        checkmeta(tn)
+
+        return tn
     end
 end
+
+checktopology(::TensorNetwork{Any}) = true
+checktopology(::TensorNetwork{T}) where {T<:Ansatz} = checktopology(supertype(T))
+checkmeta(::TensorNetwork{Any}) = true
+checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T))
 
 function TensorNetwork{A}(tensors; metadata...) where {A}
     tn = TensorNetwork{A}(; metadata...)
