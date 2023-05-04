@@ -73,20 +73,22 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     # rename connector indices
     newinds = Dict([s => Symbol(uuid4()) for s in sites(A, :out)])
 
-    A = replace(A, [nameof(i) => newinds[site(i)] for i in labels(A, :out)]...)
-    B = replace(B, [nameof(i) => newinds[site(i)] for i in labels(B, :in)]...)
+    A = replace(A, [labels(A, :out, site) => newinds[site] for site in sites(A, :out)]...)
+    B = replace(B, [labels(B, :in, site) => newinds[site] for site in sites(B, :in)]...)
 
     # remove plug metadata on connector indices
-    for i in values(newinds)
-        delete!(A.inds[i].meta, :plug)
-        delete!(B.inds[i].meta, :plug)
+    for site in sites(A, :out)
+        delete!(A[:plug], (site, :out))
+    end
+    for site in sites(B, :in)
+        delete!(B[:plug], (site, :in))
     end
 
     # rename inner indices of B to avoid hyperindices
-    replace!(B, [nameof(i) => Symbol(uuid4()) for i in labels(B, :inner)]...)
+    replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
     # merge tensors and indices
-    tn = TensorNetwork{Tuple{QA,QB}}(; merge(A.meta, B.meta)...)
+    tn = TensorNetwork{Tuple{QA,QB}}(; merge(A.metadata, B.metadata)...)
     append!(tn, A)
     append!(tn, B)
 
