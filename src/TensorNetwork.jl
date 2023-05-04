@@ -49,7 +49,9 @@ struct TensorNetwork{A}
 
         # 3. extract extra fields from metadata
         # TODO do sth to skip check? like @inbounds
-        checkmeta(tn)
+        for T in supertypes(A)
+            !checkmeta(T, tn) && throw(ErrorException("ansatz $T metadata not valid"))
+        end
 
         return tn
     end

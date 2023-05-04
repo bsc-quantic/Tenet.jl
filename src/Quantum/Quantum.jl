@@ -8,6 +8,23 @@ Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (i
 """
 abstract type Quantum <: Ansatz end
 
+function checkmeta(::Type{Quantum}, tn::TensorNetwork)
+    # meta exists
+    haskey(tn.metadata, :plug) || return false
+
+    # meta has correct type
+    tn.metadata[:plug] isa AbstractDict{Tuple{Int,Symbol},Symbol} || return false
+    all(∈(:in, :out) ∘ last, keys(tn.metadata[:plug])) || return false
+
+    # meta's indices exist
+    all(∈(keys(tn.indices)), values(tn.metadata[:plug])) || return false
+
+    # meta's indices are not repeated
+    allunique(values(tn.metadata[:plug])) || return false
+
+    return true
+end
+
 abstract type Bounds end
 abstract type Closed <: Bounds end
 abstract type Open <: Bounds end
