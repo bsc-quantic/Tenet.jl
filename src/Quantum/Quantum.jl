@@ -33,11 +33,14 @@ sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(===(:in) ∘ last, keys(tn[
 sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(===(:out) ∘ last, keys(tn[:plug])))
 
 labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn[:plug]))
+labels(tn::TensorNetwork, ::Val{:plug}, site) = labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
 labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn[:plug]))
 labels(tn::TensorNetwork, ::Val{:in}, site) = tn[:plug][(site, :in)]
 labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn[:plug]))
 labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
+
+tensors(tn::TensorNetwork{<:Quantum}, site::Integer) = select(tn, labels(tn, :plug, site))
 
 abstract type Bounds end
 abstract type Closed <: Bounds end
@@ -148,9 +151,6 @@ function LinearAlgebra.normalize!(
 end
 
 fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
-
-tensors(tn::TensorNetwork{<:Quantum}, i::Integer) =
-    only(tensors(tn, first(Iterators.filter(p -> site(p[2]) == i, tn.inds))[2]))
 
 include("MatrixProductState.jl")
 include("MatrixProductOperator.jl")
