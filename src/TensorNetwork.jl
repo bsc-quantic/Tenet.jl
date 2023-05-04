@@ -50,8 +50,10 @@ struct TensorNetwork{A}
 
         # 3. extract extra fields from metadata
         # TODO do sth to skip check? like @inbounds
-        for T in supertypes(A)
+        T = A
+        while T >: Any
             !checkmeta(T, tn) && throw(ErrorException("ansatz $T metadata not valid"))
+            T = supertype(T)
         end
 
         return tn
@@ -61,7 +63,7 @@ end
 checktopology(::TensorNetwork{Any}) = true
 checktopology(::TensorNetwork{T}) where {T<:Ansatz} = true
 checkmeta(::TensorNetwork{Any}) = true
-checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T))
+checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T), tn)
 
 function TensorNetwork{A}(tensors; metadata...) where {A}
     tn = TensorNetwork{A}(; metadata...)
