@@ -9,7 +9,7 @@ end
 using Quac: Circuit, lanes, arraytype, Swap
 
 function Tenet.TensorNetwork(circuit::Circuit)
-    tn = TensorNetwork{Quantum}()
+    tn = TensorNetwork{Quantum}(; plug = Dict{Tuple{Int,Symbol},Symbol}())
     n = lanes(circuit)
 
     wire = [[Tenet.letter(i)] for i in 1:n]
@@ -37,17 +37,8 @@ function Tenet.TensorNetwork(circuit::Circuit)
     end
 
     for (lane, wireindices) in enumerate(wire)
-        for index in wireindices
-            tn.inds[index].meta[:site] = lane
-        end
-    end
-
-    for input in first.(wire)
-        tn.inds[input].meta[:plug] = :input
-    end
-
-    for output in last.(wire)
-        tn.inds[output].meta[:plug] = :output
+        tn[:plug][(lane, :in)] = wireindices[1]
+        tn[:plug][(lane, :out)] = wireindices[2]
     end
 
     return tn
