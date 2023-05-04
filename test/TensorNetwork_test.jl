@@ -17,8 +17,8 @@
             @test length(tn) == 1
             @test issetequal(labels(tn), [:i, :j])
             @test size(tn) == Dict(:i => 2, :j => 3)
-            @test issetequal(openlabels(tn), [:i, :j])
-            @test isempty(hyperlabels(tn))
+            @test issetequal(labels(tn, :open), [:i, :j])
+            @test isempty(labels(tn, :hyper))
         end
     end
 
@@ -30,8 +30,8 @@
         @test length(tn) == 1
         @test issetequal(labels(tn), [:i, :j, :k])
         @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
-        @test issetequal(openlabels(tn), [:i, :j, :k])
-        @test isempty(hyperlabels(tn))
+        @test issetequal(labels(tn, :open), [:i, :j, :k])
+        @test isempty(labels(tn, :hyper))
     end
 
     @test_throws DimensionMismatch begin
@@ -101,7 +101,7 @@
         push!(tn, tensor)
 
         @test issetequal(labels(tn), [:i])
-        @test issetequal(hyperlabels(tn), [:i])
+        @test issetequal(labels(tn, :hyper), [:i])
 
         delete!(tn, :i)
         @test isempty(tensors(tn))
@@ -122,8 +122,6 @@
     end
 
     @testset "labels" begin
-        using Tenet: openlabels, innerlabels, hyperlabels
-
         tn = TensorNetwork([
             Tensor(zeros(2, 2), (:i, :j)),
             Tensor(zeros(2, 2), (:i, :k)),
@@ -132,9 +130,9 @@
         ])
 
         @test issetequal(labels(tn), (:i, :j, :k, :l, :m))
-        @test issetequal(openlabels(tn), (:j, :k))
-        @test issetequal(innerlabels(tn), (:i, :l, :m))
-        @test issetequal(hyperlabels(tn), (:i,))
+        @test issetequal(labels(tn, :open), (:j, :k))
+        @test issetequal(labels(tn, :inner), (:i, :l, :m))
+        @test issetequal(labels(tn, :hyper), (:i,))
     end
 
     @testset "size" begin
@@ -203,9 +201,9 @@
             replace!(tn, mapping...)
 
             @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
-            @test issetequal(openlabels(tn), (:v, :w))
-            @test issetequal(innerlabels(tn), (:u, :x, :y))
-            @test issetequal(hyperlabels(tn), (:u,))
+            @test issetequal(labels(tn, :open), (:v, :w))
+            @test issetequal(labels(tn, :inner), (:u, :x, :y))
+            @test issetequal(labels(tn, :hyper), (:u,))
 
             @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
             @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)

@@ -10,7 +10,7 @@ import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 export isphysical, isvirtual, site, ishyperind
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, openlabels, innerlabels, hyperlabels, select, selectdim!
+export TensorNetwork, tensors, arrays, select, selectdim!
 export contract, contract!
 export Ansatz, ansatz, Arbitrary
 

@@ -284,7 +284,7 @@ function Random.rand(
     TensorNetwork(tensors)
 end
 
-EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openlabels(tn), kwargs...) =
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = labels(tn, :open), kwargs...) =
     einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
 
 # TODO sequence of indices?
@@ -298,7 +298,8 @@ function contract!(tn::TensorNetwork, i::Symbol)
     return tn
 end
 
-contract(tn::TensorNetwork; outputs = openlabels(tn), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
+contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
+    contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))

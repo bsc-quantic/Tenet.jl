@@ -72,8 +72,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
-        openlabels = nameof.(openinds(tn))
-        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openlabels), tensors(tn))
+        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), Tenet.labels(tn, :open)), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
         map(edges(graph)) do edge
