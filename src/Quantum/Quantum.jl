@@ -29,8 +29,8 @@ end
 sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
 @valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
 sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(===(:in) ∘ last, keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(===(:out) ∘ last, keys(tn[:plug])))
+sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(==(:in) ∘ last, keys(tn[:plug])))
+sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(==(:out) ∘ last, keys(tn[:plug])))
 
 labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn[:plug]))
 labels(tn::TensorNetwork, ::Val{:plug}, site) = labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
