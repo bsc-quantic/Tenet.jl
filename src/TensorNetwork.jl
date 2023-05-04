@@ -97,6 +97,8 @@ Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])],
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
+Base.getindex(tn::TensorNetwork, key::Symbol) = tn.metadata[key]
+
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), labels(tensor) ∩ labels(tn))
         throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))

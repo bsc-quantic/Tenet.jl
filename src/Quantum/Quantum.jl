@@ -13,14 +13,14 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     haskey(tn.metadata, :plug) || return false
 
     # meta has correct type
-    tn.metadata[:plug] isa AbstractDict{Tuple{Int,Symbol},Symbol} || return false
-    all(∈(:in, :out) ∘ last, keys(tn.metadata[:plug])) || return false
+    tn[:plug] isa AbstractDict{Tuple{Int,Symbol},Symbol} || return false
+    all(∈(:in, :out) ∘ last, keys(tn[:plug])) || return false
 
     # meta's indices exist
-    all(∈(keys(tn.indices)), values(tn.metadata[:plug])) || return false
+    all(∈(keys(tn.indices)), values(tn[:plug])) || return false
 
     # meta's indices are not repeated
-    allunique(values(tn.metadata[:plug])) || return false
+    allunique(values(tn[:plug])) || return false
 
     return true
 end
