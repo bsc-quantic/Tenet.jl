@@ -98,17 +98,14 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     tn = deepcopy(tn)
 
-    # TODO refactor internals
-    for i in siteinds(tn)
-        plug = i.meta[:plug]
-        i.meta[:plug] = if plug == :input
-            :output
-        elseif plug == :output
-            :input
-        else
-            # TODO throw error?
-        end
-    end
+    tmp = Dict((site, if dir === :in
+        :out
+    elseif dir === :out
+        :in
+    else
+        dir
+    end) => index for ((site, dir), index) in tn[:plug])
+    merge!(tn[:plug], tmp)
 
     for tensor in tensors(tn)
         tensor .= conj(tensor)
