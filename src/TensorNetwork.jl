@@ -40,7 +40,7 @@ struct TensorNetwork{A}
         # 1. construct graph
         indices = Dict{Symbol,Vector{Int}}()
         tensors = Vector{Tensor}()
-        metadata = Dict{Symbol,Any}()
+        metadata = Dict{Symbol,Any}(metadata)
 
         tn = new{A}(indices, tensors, metadata)
 
