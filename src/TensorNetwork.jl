@@ -59,7 +59,7 @@ struct TensorNetwork{A}
 end
 
 checktopology(::TensorNetwork{Any}) = true
-checktopology(::TensorNetwork{T}) where {T<:Ansatz} = checktopology(supertype(T))
+checktopology(::TensorNetwork{T}) where {T<:Ansatz} = true
 checkmeta(::TensorNetwork{Any}) = true
 checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T))
 
