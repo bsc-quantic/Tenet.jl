@@ -1,5 +1,6 @@
 using LinearAlgebra
 using UUIDs: uuid4
+using ValSplit
 
 """
     Quantum
@@ -25,6 +26,19 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     return true
 end
 
+sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
+@valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
+sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn[:plug])))
+sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(===(:in) ∘ last, keys(tn[:plug])))
+sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(===(:out) ∘ last, keys(tn[:plug])))
+
+labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn[:plug]))
+labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn[:plug]))
+labels(tn::TensorNetwork, ::Val{:in}, site) = tn[:plug][(site, :in)]
+labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn[:plug]))
+labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
+labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
+
 abstract type Bounds end
 abstract type Closed <: Bounds end
 abstract type Open <: Bounds end
@@ -49,35 +63,15 @@ abstract type Operator{B} <: Quantum where {B<:Bounds} end
 bounds(::T) where {T<:Operator} = bounds(T)
 bounds(::Type{<:Operator{B}}) where {B} = B
 
-sites(tn::TensorNetwork) = insites(tn) ∪ outsites(tn)
-# sites(tn::TensorNetwork{<:State}) = outsites(tn)
-# sites(tn::Adjoint{TensorNetwork{<:State}}) = insites(tn)
-siteinds(tn::TensorNetwork) = insiteinds(tn) ∪ outsiteinds(tn)
-
-# TODO maybe don't filter by openinds?
-insites(tn::TensorNetwork) = site.(insiteinds(tn))
-# insites(::TensorNetwork{<:State}) = throw(MethodError(insites, TensorNetwork{<:State}))
-# insites(tn::Adjoint{TensorNetwork}) = outsites(parent(tn))
-insiteinds(tn) = sort!(filter(i -> get(i.meta, :plug, nothing) == :input, openinds(tn)), by = site)
-insiteind(tn, s) = only(filter(i -> site(i) == s, insiteinds(tn)))
-
-# TODO maybe don't filter by openinds?
-outsites(tn::TensorNetwork) = site.(outsiteinds(tn))
-# outsites(tn::Adjoint{TensorNetwork}) = insites(parent(tn))
-outsiteinds(tn) = sort!(filter(i -> get(i.meta, :plug, nothing) == :output, openinds(tn)), by = site)
-outsiteind(tn, s) = only(filter(i -> site(i) == s, outsiteinds(tn)))
-
-physicalinds(tn::TensorNetwork) = Iterators.filter(isphysical, inds(tn)) |> collect
-virtualinds(tn::TensorNetwork) = Iterators.filter(isvirtual, inds(tn)) |> collect
-
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
-    outsites(A) != insites(B) && throw(DimensionMismatch("insites(B) must be equal to outsites(A) to connect them"))
+    sites(A, :out) != sites(B, :in) &&
+        throw(DimensionMismatch("sites(B,:in) must be equal to sites(A,:out) to connect them"))
 
     # rename connector indices
-    newinds = Dict([s => Symbol(uuid4()) for s in outsites(A)])
+    newinds = Dict([s => Symbol(uuid4()) for s in sites(A, :out)])
 
-    A = replace(A, [nameof(i) => newinds[site(i)] for i in outsiteinds(A)]...)
-    B = replace(B, [nameof(i) => newinds[site(i)] for i in insiteinds(B)]...)
+    A = replace(A, [nameof(i) => newinds[site(i)] for i in labels(A, :out)]...)
+    B = replace(B, [nameof(i) => newinds[site(i)] for i in labels(B, :in)]...)
 
     # remove plug metadata on connector indices
     for i in values(newinds)
@@ -86,7 +80,7 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     end
 
     # rename inner indices of B to avoid hyperindices
-    replace!(B, [nameof(i) => Symbol(uuid4()) for i in innerinds(B)]...)
+    replace!(B, [nameof(i) => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
     # merge tensors and indices
     tn = TensorNetwork{Tuple{QA,QB}}(; merge(A.meta, B.meta)...)

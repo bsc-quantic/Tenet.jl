@@ -23,20 +23,10 @@ bounds
 
 ```@docs
 sites
-insites
-outsites
 ```
 
 ```@docs
 tensors(::TensorNetwork{<:Quantum}, ::Integer)
-```
-
-```@docs
-siteinds
-insiteinds
-outsiteinds
-physicalinds
-virtualinds
 ```
 
 ## Adjoint

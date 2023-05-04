@@ -2,6 +2,7 @@ using Base: AbstractVecOrTuple
 using Random
 using EinExprs
 using OMEinsum
+using ValSplit
 
 """
     Ansatz
@@ -87,10 +88,12 @@ ansatz(::TensorNetwork{A}) where {A} = A
 tensors(tn::TensorNetwork) = tn.tensors
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
-labels(tn::TensorNetwork) = collect(keys(tn.indices))
-openlabels(tn::TensorNetwork) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
-innerlabels(tn::TensorNetwork) = map(first, Iterators.filter(==(2) ∘ length ∘ last, tn.indices))
-hyperlabels(tn::TensorNetwork) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork; set::Symbol = :all, kwargs...) = labels(tn, set; kwargs...)
+@valsplit 2 labels(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(labels, "set=$set not recognized"))
+labels(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
+labels(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(==(2) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
 Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)

@@ -19,8 +19,7 @@ export transform, transform!
 
 include("Quantum/Quantum.jl")
 export Quantum, bounds, Open, Closed, State, Operator
-export physicalinds, virtualinds, sites, insites, insiteind, insiteinds, outsites, outsiteind, outsiteinds
-export fidelity
+export sites, fidelity
 
 export MatrixProductState
 export MatrixProductOperator
