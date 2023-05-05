@@ -28,7 +28,7 @@
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         transform!(tn, HyperindConverter)
-        @test isempty(hyperinds(tn))
+        @test isempty(labels(tn, :hyper))
         @test any(t -> get(t.meta, :dual, nothing) == :i && parent(t) isa DeltaArray, tensors(tn))
 
         # TODO @test issetequal(neighbours())

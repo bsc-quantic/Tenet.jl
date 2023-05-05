@@ -21,25 +21,27 @@ struct HyperindConverter <: Transformation end
     Converts hyperindices to COPY tensors.
 """
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in hyperinds(tn)
-        # unlink index
-        tensors = [pop!(tn, tensor) for tensor in links(index)]
+    for index in labels(tn, :hyper)
+        # dimensionality of `index`
+        m = size(tn, index)
 
-        # replace old index
-        indices = Symbol[]
+        # unlink tensors
+        tensors = pop!(tn, index)
+
+        # replace hyperindex for new (non-hyper)index
+        new_indices = Symbol[]
         for (i, tensor) in enumerate(tensors)
-            label = Symbol("$(nameof(index))$i")
-            push!(indices, label)
-            inds = replace(labels(tensor), nameof(index) => label)
+            label = Symbol("$index$i")
+            push!(new_indices, label)
 
-            tensor = Tensor(parent(tensor), inds; tensor.meta...)
+            tensor = replace(tensor, index => label)
             push!(tn, tensor)
         end
 
         # insert COPY tensor
-        N = length(indices)
-        data = DeltaArray{N}(ones(size(index)))
-        tensor = Tensor(data, indices; dual = nameof(index), index.meta...)
+        N = length(new_indices)
+        data = DeltaArray{N}(ones(m))
+        tensor = Tensor(data, new_indices; dual = index)
         push!(tn, tensor)
     end
 end
