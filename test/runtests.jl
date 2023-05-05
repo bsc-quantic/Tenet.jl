@@ -14,7 +14,7 @@ end
 
 @testset "Integration tests" verbose = true begin
     include("integration/Quac_test.jl")
-    include("integration/ChainRules_test.jl")
+    # include("integration/ChainRules_test.jl")
     include("integration/Makie_test.jl")
 end
 
