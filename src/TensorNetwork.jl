@@ -134,6 +134,13 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
         isempty(tn.indices[index]) && delete!(tn.indices, index)
     end
 
+    # update tensor positions in `tn.indices`
+    for locations in values(tn.indices)
+        map!(locations, locations) do loc
+            loc > i ? loc - 1 : loc
+        end
+    end
+
     return tensor
 end
 
