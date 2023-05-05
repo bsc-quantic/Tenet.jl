@@ -46,4 +46,7 @@ function transform!(tn::TensorNetwork, ::HyperindConverter)
     end
 end
 
+tensors(tn::TensorNetwork, ::Val{:dual}) = filter(t -> haskey(t.meta, :dual), tensors(tn))
+# labels(tn::TensorNetwork, ::Val{:dual}) = map(t -> t.meta[:dual], tensors(tn, Val(:dual)))
+
 # TODO column reduction, diagonal reduction, rank simplification, split simplification
