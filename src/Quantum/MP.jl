@@ -105,8 +105,8 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Sta
             χl = min(χ, p^(i - 1))
             χr = min(χ, p^i)
 
-            # swap bond dims after mid
-            after_mid ? (χr, χl) : (χl, χr)
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
         # fix for first site
@@ -143,8 +143,8 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Ope
             χl = min(χ, ip^(i - 1) * op^(i - 1))
             χr = min(χ, ip^i * op^i)
 
-            # swap bond dims after mid
-            after_mid ? (χr, χl) : (χl, χr)
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
         shape = if i == 1
