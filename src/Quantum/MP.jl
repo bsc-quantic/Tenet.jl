@@ -25,28 +25,41 @@ function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     return true
 end
 
-_sitealias(::Type{MatrixProduct{State,Open}}, order, n, i) = order[indexin(if i == 1
-    (:r, :o)
-elseif i == n
-    (:l, :o)
-else
-    (:l, :r, :o)
-end, collect(order))]
+_sitealias(::Type{MatrixProduct{P,Open}}, order, n, i) where {P<:Plug} =
+    if i == 1
+        filter(!=(:l), order)
+    elseif i == n
+        filter(!=(:r), order)
+    else
+        order
+    end
+_sitealias(::Type{MatrixProduct{P,Periodic}}, order, n, i) where {P<:Plug} = tuple(order...)
 
-_sitealias(::Type{MatrixProduct{State,Periodic}}, order, n, i) = tuple(order...)
+defaultorder(::Type{MatrixProduct{State}}) = (:l, :r, :o)
+defaultorder(::Type{MatrixProduct{Operator}}) = (:l, :r, :i, :o)
 
-function MatrixProduct{State,B}(arrays; χ = nothing, order = (:l, :r, :o), metadata...) where {B<:Boundary}
-    issetequal(order, (:l, :r, :o)) || throw(ArgumentError("`order` must be a permutation of the :l, :r and :o"))
+function MatrixProduct{P,B}(
+    arrays;
+    χ = nothing,
+    order = defaultorder(MatrixProduct{P}),
+    metadata...,
+) where {P<:Plug,B<:Boundary}
+    issetequal(order, defaultorder(MatrixProduct{P})) || throw(
+        ArgumentError(
+            "`order` must be a permutation of $(join(String.(defaultorder(MatrixProduct{P})), ',', " and "))",
+        ),
+    )
 
     n = length(arrays)
     vinds = Dict(x => Symbol(uuid4()) for x in ringpeek(1:n))
-    pinds = Dict(i => Symbol(uuid4()) for i in 1:n)
+    oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
+    iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
 
     # mark plug connectors
-    plug = Dict((site, :out) => label for (site, label) in pinds)
+    plug = Dict((site, :out) => label for (site, label) in oinds)
 
     tensors = map(enumerate(arrays)) do (i, array)
-        dirs = _sitealias(MatrixProduct{State,B}, order, n, i)
+        dirs = _sitealias(MatrixProduct{P,B}, order, n, i)
 
         labels = map(dirs) do dir
             if dir === :l
@@ -54,7 +67,9 @@ function MatrixProduct{State,B}(arrays; χ = nothing, order = (:l, :r, :o), meta
             elseif dir === :r
                 vinds[(i, mod1(i + 1, n))]
             elseif dir === :o
-                pinds[i]
+                oinds[i]
+            elseif dir === :i
+                iinds[i]
             end
         end
         alias = Dict(dir => label for (dir, label) in zip(dirs, labels))
@@ -62,7 +77,7 @@ function MatrixProduct{State,B}(arrays; χ = nothing, order = (:l, :r, :o), meta
         Tensor(array, labels; alias = alias)
     end
 
-    return TensorNetwork{MatrixProduct{State,B}}(tensors; χ, plug, metadata...)
+    return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug, metadata...)
 end
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more

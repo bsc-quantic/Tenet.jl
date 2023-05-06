@@ -57,9 +57,12 @@ labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), 
 labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
-tensors(tn::TensorNetwork{<:Quantum}, site::Integer) = tensors(plug(tn), tn, site)
+tensors(tn::TensorNetwork{<:Quantum}, arg, args...) = tensors(plug(tn), tn, arg, args...)
 tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :out, site)) |> only
-tensors(::Type{Operator}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) # TODO only to result? what if input != output?
+@valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
+    throw(MethodError(sites, "dir=$dir not recognized"))
+tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:in}) = select(tn, labels(tn, :in, site)) |> only
+tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:out}) = select(tn, labels(tn, :out, site)) |> only
 
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
     sites(A, :out) != sites(B, :in) &&
