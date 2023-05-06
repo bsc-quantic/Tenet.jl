@@ -93,65 +93,91 @@ end
 #     ContractionPath(path, inputs, output, size_dict)
 # end
 
-# struct MPSSampler{B<:Bounds,T} <: Random.Sampler{TensorNetwork{MatrixProductState{B}}}
-#     n::Int
-#     p::Int
-#     χ::Int
-# end
+# TODO let choose the orthogonality center
+function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{State,Open}})
+    n = sampler.n
+    χ = sampler.χ
+    p = sampler.p
+    T = get(sampler, :eltype, Float64)
 
-# Base.eltype(::MPSSampler{B}) where {B<:Bounds} = TensorNetwork{MatrixProductState{B}}
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, p^(i - 1))
+            χr = min(χ, p^i)
 
-# function Base.rand(
-#     ::Type{MatrixProductState{B}},
-#     n::Integer,
-#     p::Integer,
-#     χ::Integer;
-#     eltype::Type = Float64,
-# ) where {B<:Bounds}
-#     rand(MPSSampler{B,eltype}(n, p, χ))
-# end
+            # swap bond dims after mid
+            after_mid ? (χr, χl) : (χl, χr)
+        end
 
-# # NOTE `Vararg{Integer,3}` for dissambiguation
-# Base.rand(::Type{MatrixProductState}, args::Vararg{Integer,3}; kwargs...) =
-#     rand(MatrixProductState{Open}, args...; kwargs...)
+        # fix for first site
+        i == 1 && ((χl, χr) = (χr, 1))
 
-# # TODO let choose the orthogonality center
-# function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Open,T}) where {T}
-#     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
+        # orthogonalize by Gram-Schmidt algorithm
+        A = gramschmidt!(rand(rng, T, χl, χr * p))
 
-#     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
-#         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
-#             χl = min(χ, p^(i - 1))
-#             χr = min(χ, p^i)
+        reshape(A, χl, χr, p)
+    end
 
-#             # swap bond dims after mid
-#             after_mid ? (χr, χl) : (χl, χr)
-#         end
+    # reshape boundary sites
+    arrays[1] = reshape(arrays[1], p, p)
+    arrays[n] = reshape(arrays[n], p, p)
 
-#         # fix for first site
-#         i == 1 && ((χl, χr) = (χr, 1))
+    # normalize state
+    arrays[1] ./= sqrt(p)
 
-#         # orthogonalize by Gram-Schmidt algorithm
-#         A = gramschmidt!(rand(rng, T, χl, χr * p))
+    MatrixProduct{State,Open}(arrays; χ = χ)
+end
 
-#         reshape(A, χl, χr, p)
-#     end
+# TODO let choose the orthogonality center
+# TODO different input/output physical dims
+function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Operator,Open}})
+    n = sampler.n
+    χ = sampler.χ
+    p = sampler.p
+    T = get(sampler, :eltype, Float64)
 
-#     # reshape boundary sites
-#     arrays[1] = reshape(arrays[1], p, p)
-#     arrays[n] = reshape(arrays[n], p, p)
+    ip = op = p
 
-#     # normalize state
-#     arrays[1] ./= sqrt(p)
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, ip^(i - 1) * op^(i - 1))
+            χr = min(χ, ip^i * op^i)
 
-#     MatrixProductState{Open}(arrays; χ = χ)
-# end
+            # swap bond dims after mid
+            after_mid ? (χr, χl) : (χl, χr)
+        end
 
-# # TODO stable renormalization
-# function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where {T}
-#     n, χ, p = getfield.((sampler,), (:n, :χ, :p))
-#     ψ = MatrixProductState{Closed}([rand(rng, T, χ, χ, p) for _ in 1:n]; χ = χ)
-#     normalize!(ψ)
+        shape = if i == 1
+            (χr, ip, op)
+        elseif i == n
+            (χl, ip, op)
+        else
+            (χl, χr, ip, op)
+        end
 
-#     return ψ
-# end
+        # orthogonalize by Gram-Schmidt algorithm
+        A = gramschmidt!(rand(rng, T, shape[1], prod(shape[2:end])))
+
+        reshape(A, shape)
+    end
+
+    # normalize
+    ζ = min(χ, ip * op)
+    arrays[1] ./= sqrt(ζ)
+
+    MatrixProductOperator{Open}(arrays; χ = χ)
+end
+
+# TODO stable renormalization
+# TODO different input/output physical dims for Operator
+function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{P,Periodic}}) where {P<:Plug}
+    n = sampler.n
+    χ = sampler.χ
+    p = sampler.p
+    T = get(sampler, :eltype, Float64)
+
+    A = MatrixProduct{P,Periodic}([rand(rng, T, [P === State ? (χ, χ, p) : (χ, χ, p, p)]...) for _ in 1:n]; χ = χ)
+    normalize!(A)
+
+    return A
+end

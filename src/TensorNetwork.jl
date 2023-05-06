@@ -310,3 +310,17 @@ contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
+
+struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
+    parameters::NT
+
+    TNSampler{A}(; kwargs...) where {A} = new{A,typeof(values(kwargs))}(values(kwargs))
+end
+
+Base.getproperty(obj::TNSampler{A,<:NamedTuple{K}}, name::Symbol) where {A,K} =
+    name ∈ K ? getfield(obj, :parameters)[name] : getfield(obj, name)
+Base.get(obj::TNSampler, name, default) = get(getfield(obj, :parameters), name, default)
+
+Base.eltype(::TNSampler{A}) where {A<:Ansatz} = TensorNetwork{A}
+
+Base.rand(::Type{A}; kwargs...) where {A<:Ansatz} = rand(TNSampler{A}(; kwargs...))

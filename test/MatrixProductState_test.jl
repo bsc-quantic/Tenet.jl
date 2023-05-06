@@ -58,7 +58,7 @@
                 # 4 => χ < maximum possible χ for the given parameters
                 # 32 => χ > maximum possible χ for the given parameters
                 @testset "χ = $χ" for χ in [4, 32]
-                    ψ = rand(MatrixProduct{State,Open}, 7, 2, 32)
+                    ψ = rand(MatrixProduct{State,Open}, n = 7, p = 2, χ = 32)
 
                     @test ψ isa TensorNetwork{MatrixProduct{State,Open}}
                     @test length(ψ) == 7
