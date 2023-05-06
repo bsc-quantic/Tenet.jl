@@ -94,7 +94,7 @@ labels(tn::TensorNetwork; set::Symbol = :all, kwargs...) = labels(tn, set; kwarg
 @valsplit 2 labels(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(labels, "set=$set not recognized"))
 labels(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
 labels(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
-labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(==(2) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
 labels(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
 Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
