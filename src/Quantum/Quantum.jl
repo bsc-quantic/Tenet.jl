@@ -26,6 +26,23 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     return true
 end
 
+abstract type Boundary end
+abstract type Open <: Boundary end
+abstract type Periodic <: Boundary end
+
+function boundary end
+boundary(::T) where {T<:TensorNetwork} = boundary(T)
+boundary(::Type{T}) where {T<:TensorNetwork} = boundary(ansatz(T))
+
+abstract type Plug end
+abstract type Property <: Plug end
+abstract type State <: Plug end
+abstract type Operator <: Plug end
+
+function plug end
+plug(::T) where {T<:TensorNetwork} = plug(T)
+plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
+
 sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
 @valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
 sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn[:plug])))
@@ -40,31 +57,9 @@ labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), 
 labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
-tensors(tn::TensorNetwork{<:Quantum}, site::Integer) = select(tn, labels(tn, :plug, site))
-
-abstract type Bounds end
-abstract type Closed <: Bounds end
-abstract type Open <: Bounds end
-
-"""
-    State{Bounds}
-
-[`Quantum`](@ref) Tensor Network that only has outputs. Usually, it reflects the _state_ of a physical system.
-
-Its adjoint only has inputs.
-"""
-abstract type State{B} <: Quantum where {B<:Bounds} end
-bounds(::T) where {T<:State} = bounds(T)
-bounds(::Type{<:State{B}}) where {B} = B
-
-"""
-    Operator{Bounds}
-
-[`Quantum`](@ref) Tensor Network that has both inputs and outputs. Generally, it represents evolutionary processes of physical systems.
-"""
-abstract type Operator{B} <: Quantum where {B<:Bounds} end
-bounds(::T) where {T<:Operator} = bounds(T)
-bounds(::Type{<:Operator{B}}) where {B} = B
+tensors(tn::TensorNetwork{<:Quantum}, site::Integer) = tensors(plug(tn), tn, site)
+tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :out, site)) |> only
+tensors(::Type{Operator}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) # TODO only to result? what if input != output?
 
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
     sites(A, :out) != sites(B, :in) &&
@@ -151,5 +146,4 @@ end
 
 fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
 
-include("MatrixProductState.jl")
-include("MatrixProductOperator.jl")
+include("MP.jl")

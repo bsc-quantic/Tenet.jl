@@ -16,11 +16,12 @@ include("Transformations.jl")
 export transform, transform!
 
 include("Quantum/Quantum.jl")
-export Quantum, bounds, Open, Closed, State, Operator
+export Quantum
+export Boundary, boundary, Open, Periodic
+export Plug, plug, Property, State, Operator
 export sites, fidelity
 
-export MatrixProductState
-export MatrixProductOperator
+export MatrixProduct
 
 if !isdefined(Base, :get_extension)
     using Requires
