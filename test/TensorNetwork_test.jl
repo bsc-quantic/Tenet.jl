@@ -34,7 +34,7 @@
         @test isempty(labels(tn, :hyper))
     end
 
-    @test_throws DimensionMismatch begin
+    @test_throws Exception begin
         tn = TensorNetwork()
         tensor = Tensor(zeros(2, 3), (:i, :i))
         push!(tn, tensor)

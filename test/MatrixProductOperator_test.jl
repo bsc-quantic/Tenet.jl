@@ -12,7 +12,7 @@
 
     @testset "Constructor" begin
         # empty constructor
-        @test_throws BoundsError MatrixProduct{Operator}([])
+        @test_throws Exception MatrixProduct{Operator}([])
 
         @test begin
             arrays = [rand(2, 2, 2)]

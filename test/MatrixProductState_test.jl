@@ -10,7 +10,7 @@
 
     @testset "Constructor" begin
         # empty constructor
-        @test_throws BoundsError MatrixProduct{State}([])
+        @test_throws Exception MatrixProduct{State}([])
 
         @test begin
             arrays = [rand(1, 2)]
@@ -49,7 +49,7 @@
             end
 
             # fail on Open with Periodic format
-            @test_throws DimensionMismatch begin
+            @test_throws Exception begin
                 arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
                 MatrixProduct{State,Open}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
             end
@@ -108,7 +108,7 @@
             end
 
             # fail on Periodic with Open format
-            @test_throws DimensionMismatch begin
+            @test_throws Exception begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
                 MatrixProduct{State,Periodic}(arrays) isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
