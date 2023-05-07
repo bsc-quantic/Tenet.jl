@@ -173,8 +173,8 @@ function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     end
 
     # replace existing `Tensor` with new `Tensor`
-    push!(tn, new_tensor)
-    delete!(tn, old_tensor)
+    i = findfirst(t -> t === old_tensor, tn.tensors)
+    splice!(tn.tensors, i, [new_tensor])
 
     return tn
 end
