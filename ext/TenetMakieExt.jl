@@ -1,4 +1,4 @@
-module MakieExt
+module TenetMakieExt
 
 if isdefined(Base, :get_extension)
     using Tenet

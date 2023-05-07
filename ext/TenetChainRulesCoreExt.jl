@@ -1,4 +1,4 @@
-module ChainRulesCoreExt
+module TenetChainRulesCoreExt
 
 if isdefined(Base, :get_extension)
     using Tenet

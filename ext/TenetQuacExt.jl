@@ -1,4 +1,4 @@
-module QuacExt
+module TenetQuacExt
 
 if isdefined(Base, :get_extension)
     using Tenet
