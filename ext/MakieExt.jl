@@ -8,9 +8,9 @@ end
 
 using Combinatorics: combinations
 using Graphs
-using GraphMakie
 using Makie
 using NetworkLayout: dim
+using GraphMakie
 
 function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
