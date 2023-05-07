@@ -8,7 +8,7 @@ include("Numerics.jl")
 import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, select, selectdim!, splice!
+export TensorNetwork, tensors, arrays, select, slice!
 export contract, contract!
 export Ansatz, ansatz, Arbitrary
 
