@@ -60,7 +60,7 @@ jobs:
       - run: |
           using Pkg
           Pkg.test(; coverage=true, julia_args=["--sysimage=test_sysimage.so"])
-        shell: julia --color=yes --depwarn=true --project=@. --inline=yes {0}
+        shell: julia --color=yes --depwarn=yes --project=@. --inline=yes {0}
         env:
           ENABLE_AQUA_TESTS: 1
       - uses: julia-actions/julia-processcoverage@v1
