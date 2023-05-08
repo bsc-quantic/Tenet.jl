@@ -31,7 +31,7 @@ jobs:
         run: |
           using Pkg
           pkg"add PackageCompiler"
-          pkg"add CairoMakie"
+          pkg"add Makie GraphMakie CairoMakie"
           using PackageCompiler
           create_sysimage(["Makie","GraphMakie","CairoMakie"]; sysimage_path="test_sysimage.so")
         shell: julia {0}
