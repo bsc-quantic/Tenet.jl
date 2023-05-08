@@ -35,8 +35,8 @@ jobs:
           using PackageCompiler
           create_sysimage(["Makie","GraphMakie","CairoMakie"]; sysimage_path="test_sysimage.so")
         shell: julia {0}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/cache/save@v3
         with:
-          name: test_sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
           path: test_sysimage.so
+          key: sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
               
