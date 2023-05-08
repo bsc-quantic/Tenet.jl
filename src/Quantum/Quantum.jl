@@ -65,7 +65,7 @@ tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:in}) = sel
 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:out}) = select(tn, labels(tn, :out, site)) |> only
 
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
-    sites(A, :out) != sites(B, :in) &&
+    issetequal(sites(A, :out), sites(B, :in)) ||
         throw(DimensionMismatch("sites(B,:in) must be equal to sites(A,:out) to connect them"))
 
     # rename connector indices
