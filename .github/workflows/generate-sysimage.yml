@@ -1,7 +1,6 @@
 name: "[CI] Generate sysimage"
 on:
   workflow_dispatch:
-concurrency:
 jobs:
   generate:
     name: Julia ${{ matrix.version }} - ${{ matrix.arch }} - ${{ matrix.os }}
