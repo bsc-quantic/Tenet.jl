@@ -30,11 +30,29 @@ jobs:
       - name: Generate sysimage
         run: |
           using Pkg
+          using Logging
+
+          # get list of direct dependencies
+          deps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
+
+          # get test dependencies
+          Pkg.activate("test")
+          testdeps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
+          Pkg.activate(".")
+
+          @info "Dependencies" direct = join(deps, ", ") test = join(testdeps, ", ")
+
+          append!(deps, testdeps)
+
           pkg"add PackageCompiler"
-          pkg"add Makie GraphMakie CairoMakie"
+          
+          # install test deps
+          Pkg.add(testdeps)
+
+          # generate sysimage
           using PackageCompiler
-          create_sysimage(["Makie","GraphMakie","CairoMakie"]; sysimage_path="test_sysimage.so")
-        shell: julia {0}
+          create_sysimage(deps; sysimage_path="test_sysimage.so")
+        shell: julia --project=@. --color=yes {0}
       - uses: actions/cache/save@v3
         with:
           path: test_sysimage.so
