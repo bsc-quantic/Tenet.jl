@@ -44,13 +44,17 @@ jobs:
 
           @info "Dependencies" direct = join(deps, ", ") test = join(testdeps, ", ")
 
+          # filter test-specific deps
+          filter!(!=("Aqua"), testdeps)
+          filter!(!=("Test"), testdeps)
+
+          # install test deps
+          Pkg.add(testdeps)
+
           append!(deps, testdeps)
 
           pkg"add PackageCompiler"
           
-          # install test deps
-          Pkg.add(testdeps)
-
           # generate sysimage
           using PackageCompiler
           create_sysimage(deps; sysimage_path="test_sysimage.so")
