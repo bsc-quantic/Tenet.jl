@@ -53,7 +53,7 @@ jobs:
 
           append!(deps, testdeps)
 
-          pkg"add PackageCompiler"
+          Pkg.add("PackageCompiler")
 
           # NOTE filter CairoMakie because it crashes on sysimage generation
           filter!(!=("CairoMakie"), deps)
