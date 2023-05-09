@@ -49,11 +49,9 @@ jobs:
           filter!(!=("Test"), testdeps)
 
           # install test deps
-          Pkg.add(testdeps)
+          Pkg.add(vcat(["PackageCompiler"], testdeps))
 
           append!(deps, testdeps)
-
-          Pkg.add("PackageCompiler")
 
           # NOTE filter CairoMakie because it crashes on sysimage generation
           filter!(!=("CairoMakie"), deps)
