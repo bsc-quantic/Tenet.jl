@@ -33,10 +33,12 @@ jobs:
           using Logging
 
           # get list of direct dependencies
+          Pkg.instantiate(; verbose=true)
           deps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
 
           # get test dependencies
           Pkg.activate("test")
+          Pkg.instantiate(; verbose=true)
           testdeps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
           Pkg.activate(".")
 
