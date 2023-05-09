@@ -57,6 +57,8 @@ jobs:
           
           # generate sysimage
           using PackageCompiler
+
+          unique!(deps)
           create_sysimage(deps; sysimage_path="test_sysimage.so")
         shell: julia --project=@. --color=yes {0}
       - uses: actions/cache/save@v3
