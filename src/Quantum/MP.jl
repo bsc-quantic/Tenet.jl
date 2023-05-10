@@ -17,10 +17,10 @@ function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     haskey(tn.metadata, :χ) || return false
 
     # meta has correct type
-    tn[:χ] isa Integer && tn[:χ] > 0 || isnothing(tn[:χ]) || return false
+    isnothing(tn[:χ]) || tn[:χ] isa Integer && tn[:χ] > 0 || return false
 
     # no virtual index has dimensionality bigger than χ
-    all(i -> size(tn, i) <= tn[:χ], labels(tn, :inner)) || return false
+    isnothing(tn[:χ]) || all(i -> size(tn, i) <= tn[:χ], labels(tn, :inner)) || return false
 
     return true
 end
