@@ -165,7 +165,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Ope
     ζ = min(χ, ip * op)
     arrays[1] ./= sqrt(ζ)
 
-    MatrixProductOperator{Open}(arrays; χ = χ)
+    MatrixProduct{Operator,Open}(arrays; χ = χ)
 end
 
 # TODO stable renormalization
