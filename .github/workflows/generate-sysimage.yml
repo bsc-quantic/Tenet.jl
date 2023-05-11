@@ -64,6 +64,7 @@ jobs:
           create_sysimage(collect(keys(deps)); sysimage_path="test_sysimage.so")
         shell: julia --project=@. --color=yes {0}
       - uses: actions/cache/save@v3
+        if: always()
         with:
           path: test_sysimage.so
           key: sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
