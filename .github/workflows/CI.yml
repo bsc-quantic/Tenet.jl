@@ -53,7 +53,7 @@ jobs:
           using Pkg
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
           pkg"registry add General"
-        shell: julia {0}
+        shell: julia --color=yes {0}
       - uses: julia-actions/julia-buildpkg@v1
       # - uses: julia-actions/julia-runtest@v1
       - run: |
