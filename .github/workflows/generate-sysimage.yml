@@ -36,7 +36,7 @@ jobs:
           deps = project.dependencies |> keys |> collect
 
           weakdeps = if isdefined(Base, :get_extension)
-              vcat(vcat.(Pkg.Types.read_project(proj.path).weakdeps |> keys |> collect)...)
+              vcat(vcat.(Pkg.Types.read_project(project.path).weakdeps |> keys |> collect)...)
             else
               []
             end
