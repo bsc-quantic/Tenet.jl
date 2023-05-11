@@ -55,7 +55,7 @@ jobs:
           # NOTE filter CairoMakie because it crashes on sysimage generation
           filter!(d -> d.first !=("CairoMakie"), deps)
 
-          Pkg.add([(; name = k, value = v) for (k,v) in deps])
+          Pkg.add([(; name = k, uuid = v) for (k,v) in deps])
 
           # generate sysimage
           Pkg.add("PackageCompile")
