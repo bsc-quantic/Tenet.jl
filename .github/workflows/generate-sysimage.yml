@@ -45,7 +45,7 @@ jobs:
           testdeps = begin
             Pkg.activate("test")
             testdeps = Pkg.project().dependencies |> keys |> collect
-            filter(∉("Aqua", "Test", "ChainRulesTestUtils"), testdeps)
+            filter(∉(["Aqua", "Test", "ChainRulesTestUtils"]), testdeps)
           end
 
           @info "Dependencies" direct = join(deps, ", ") weakdeps = join(weakdeps, ", ") test = join(testdeps, ", ")
