@@ -32,26 +32,27 @@ jobs:
           using Pkg
           using Logging
 
-          # get list of direct dependencies
-          Pkg.instantiate(; verbose=true)
-          deps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
+          project = Pkg.project()
+          deps = project.dependencies |> keys |> collect
+
+          weakdeps = if isdefined(Base.get_extension)
+              vcat(vcat.(Pkg.Types.read_project(proj.path).weakdeps |> keys |> collect)...)
+            else
+              []
+            end
 
           # get test dependencies
-          Pkg.activate("test")
-          Pkg.instantiate(; verbose=true)
-          testdeps = map(proj -> proj.name, filter(proj -> proj.is_direct_dep, collect(values(Pkg.dependencies()))))
-          Pkg.activate(".")
+          testdeps = begin
+            Pkg.activate("test")
+            testdeps = Pkg.project().dependencies |> keys |> collect
+            filter(∉("Aqua", "Test", "ChainRulesTestUtils"), testdeps)
+          end
 
-          @info "Dependencies" direct = join(deps, ", ") test = join(testdeps, ", ")
+          @info "Dependencies" direct = join(deps, ", ") weakdeps = join(weakdeps, ", ") test = join(testdeps, ", ")
 
-          # filter test-specific deps
-          filter!(!=("Aqua"), testdeps)
-          filter!(!=("Test"), testdeps)
-
-          # install test deps
-          Pkg.add(vcat(["PackageCompiler"], testdeps))
-
-          append!(deps, testdeps)
+          Pkg.activate(; temp=true)
+          deps = unique(vcat(deps, weakdeps, testdeps))
+          Pkg.add(vcat(["PackageCompiler"], deps))
 
           # NOTE filter CairoMakie because it crashes on sysimage generation
           filter!(!=("CairoMakie"), deps)
@@ -59,7 +60,6 @@ jobs:
           # generate sysimage
           using PackageCompiler
 
-          unique!(deps)
           create_sysimage(deps; sysimage_path="test_sysimage.so")
         shell: julia --project=@. --color=yes {0}
       - uses: actions/cache/save@v3
