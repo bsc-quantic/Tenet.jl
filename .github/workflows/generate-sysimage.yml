@@ -66,4 +66,3 @@ jobs:
         with:
           path: test_sysimage.so
           key: sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
-              
