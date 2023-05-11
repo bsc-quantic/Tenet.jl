@@ -60,7 +60,7 @@ jobs:
           # generate sysimage
           Pkg.add("PackageCompile")
           using PackageCompiler
-          create_sysimage(deps; sysimage_path="test_sysimage.so")
+          create_sysimage(collect(keys(deps)); sysimage_path="test_sysimage.so")
         shell: julia --project=@. --color=yes {0}
       - uses: actions/cache/save@v3
         with:
