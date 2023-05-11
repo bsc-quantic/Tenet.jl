@@ -89,7 +89,7 @@ jobs:
         id: restore-sysimage
         with:
           path: test_sysimage.so
-          key: sysimage-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.os }}
+          key: sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
       - name: Add Julia registries
         run: |
           using Pkg
