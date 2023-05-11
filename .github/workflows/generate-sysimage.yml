@@ -67,7 +67,7 @@ jobs:
         run: |
           gh extension install actions/gh-actions-cache
           set +e
-          gh actions-cache delete -R ${{ github.repository }} "sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}"
+          gh actions-cache delete -R ${{ github.repository }} --confirm "sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/cache/save@v3
