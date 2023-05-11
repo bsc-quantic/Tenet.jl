@@ -31,12 +31,13 @@ jobs:
         run: |
           using Pkg
           using Logging
+          using UUIDs
 
           project = Pkg.project()
           deps = project.dependencies
 
           weakdeps = if isdefined(Base, :get_extension)
-              Pkg.Types.read_project(project.path).other["weakdeps"]
+              Dict(k => UUID(v) for (k,v) in Pkg.Types.read_project(project.path).other["weakdeps"])
             else
               empty(deps)
             end
