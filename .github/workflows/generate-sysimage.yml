@@ -38,7 +38,7 @@ jobs:
           weakdeps = if isdefined(Base, :get_extension)
               vcat(vcat.(Pkg.Types.read_project(project.path).weakdeps |> keys |> collect)...)
             else
-              []
+              String[]
             end
 
           # get test dependencies
