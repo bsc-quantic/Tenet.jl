@@ -86,7 +86,10 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
     # merge tensors and indices
-    tn = TensorNetwork{Tuple{QA,QB}}([tensors(A)..., tensors(B)...]; mergewith(merge, A.metadata, B.metadata)...)
+    tn = TensorNetwork{Tuple{QA,QB}}(
+        [tensors(A)..., tensors(B)...];
+        mergewith((a, b) -> a isa AbstractDict ? merge(a, b) : a, A.metadata, B.metadata)...,
+    )
 
     return tn
 end
