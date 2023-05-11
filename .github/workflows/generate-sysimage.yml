@@ -57,6 +57,7 @@ jobs:
           filter!(d -> d.first !=("CairoMakie"), deps)
 
           Pkg.add([(; name = k, uuid = v) for (k,v) in deps])
+          Pkg.instantiate(; verbose = true)
 
           # generate sysimage
           Pkg.add("PackageCompile")
