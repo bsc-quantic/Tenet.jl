@@ -33,7 +33,7 @@ jobs:
           using Logging
 
           project = Pkg.project()
-          deps = project.dependencies |> keys |> collect
+          deps = project.dependencies
 
           weakdeps = if isdefined(Base, :get_extension)
               Pkg.Types.read_project(project.path).other["weakdeps"]
