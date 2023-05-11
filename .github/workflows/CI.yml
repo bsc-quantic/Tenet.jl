@@ -71,6 +71,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.8'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
@@ -80,7 +89,7 @@ jobs:
         id: restore-sysimage
         with:
           path: test_sysimage.so
-          key: sysimage-1.8-${{ runner.arch }}-${{ runner.os }}
+          key: sysimage-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.os }}
       - name: Add Julia registries
         run: |
           using Pkg
