@@ -59,7 +59,7 @@ jobs:
           Pkg.add([(; name = k, uuid = v) for (k,v) in deps])
 
           # generate sysimage
-          Pkg.add("PackageCompile")
+          Pkg.add("PackageCompiler")
           using PackageCompiler
           create_sysimage(collect(keys(deps)); sysimage_path="test_sysimage.so")
         shell: julia --project=@. --color=yes {0}
