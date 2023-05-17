@@ -1,4 +1,3 @@
-#using OptimizedEinsum: ContractionPath
 using UUIDs: uuid4
 using IterTools: partition
 using Random

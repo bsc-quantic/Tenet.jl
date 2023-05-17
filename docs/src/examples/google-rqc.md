@@ -10,7 +10,7 @@ using Tenet
 using Distributed
 
 tn = TensorNetwork(RQC(Sycamore, depth=12))
-path = contractpath(tn)
+path = einexpr(tn)
 sliced_inds = [[i => dim for dim in 1:size(tn,i)] for i in slices(path, n=10)]
 
 addprocs(10)

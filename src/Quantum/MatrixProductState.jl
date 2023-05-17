@@ -1,4 +1,3 @@
-using OptimizedEinsum: ContractionPath
 using UUIDs: uuid4
 using Base.Iterators: flatten
 using IterTools: partition

@@ -1,7 +1,5 @@
 using Base.Iterators: Cycle, cycle
 
-const Sequence{T} = Union{AbstractArray{T,1},NTuple{N,T} where {N}}
-
 mutable struct RingPeek{Itr<:Cycle}
     const it::Itr
     base::Any
@@ -38,7 +36,33 @@ end
 function normalizeperm!(permutator)
     permutator .= permutator .- minimum(permutator) .+ 1
     k = only(setdiff(1:4, permutator))
-    permutator[permutator .> k] .-= 1
-    
+    permutator[permutator.>k] .-= 1
+
     permutator
 end
+
+const NUM_UNICODE_LETTERS = VERSION >= v"1.9" ? 136104 : 131756
+
+"""
+    letter(i)
+
+Return `i`-th printable Unicode letter.
+
+# Examples
+
+```jldoctest; setup = :(letter = Tenet.letter)
+julia> letter(1)
+:A
+
+julia> letter(27)
+:a
+
+julia> letter(249)
+:ƃ
+
+julia> letter(20204)
+:櫛
+```
+"""
+letter(i) =
+    Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first |> Symbol
