@@ -45,37 +45,6 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
-
-function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...)
-    # Check if new tensors are already present in the network
-    new_tensors = [new_tensor for (_, new_tensor) in old_new]
-    if !isdisjoint(new_tensors, tn.tensors)
-        throw(ArgumentError("New tensors must not be already present in the network"))
-    end
-
-    for (old_tensor, new_tensor) in old_new
-        # check if old and new tensors are compatible
-        if !issetequal(labels(new_tensor), labels(old_tensor))
-            throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
-        end
-
-        # update index links
-        # TODO remove this part when `Index` is removed
-        for old_label in labels(old_tensor)
-            index_obj = tn.inds[old_label]
-            link_index = findfirst(x -> x === old_tensor, index_obj.links)
-            index_obj.links[link_index] = new_tensor
-        end
-
-        # replace existing `Tensor` with new `Tensor`
-        index = findfirst(x -> x === old_tensor, tn.tensors)
-        tn.tensors[index] = new_tensor
-    end
-
-    return tn
-end
-
 # TODO checks? index metadata?
 TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{B}(tensors(tn); tn.meta...)
 
@@ -231,6 +200,37 @@ function Base.pop!(tn::TensorNetwork, i::Sequence{Symbol})::Vector{Tensor}
 end
 
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
+
+Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
+
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:Tensor}...)
+    # Check if new tensors are already present in the network
+    new_tensors = [new_tensor for (_, new_tensor) in old_new]
+    if !isdisjoint(new_tensors, tn.tensors)
+        throw(ArgumentError("New tensors must not be already present in the network"))
+    end
+
+    for (old_tensor, new_tensor) in old_new
+        # check if old and new tensors are compatible
+        if !issetequal(labels(new_tensor), labels(old_tensor))
+            throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+        end
+
+        # update index links
+        # TODO remove this part when `Index` is removed
+        for old_label in labels(old_tensor)
+            index_obj = tn.inds[old_label]
+            link_index = findfirst(x -> x === old_tensor, index_obj.links)
+            index_obj.links[link_index] = new_tensor
+        end
+
+        # replace existing `Tensor` with new `Tensor`
+        index = findfirst(x -> x === old_tensor, tn.tensors)
+        tn.tensors[index] = new_tensor
+    end
+
+    return tn
+end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
     !isdisjoint(last.(old_new), labels(tn)) && throw(ArgumentError("target symbols must not be already present"))
