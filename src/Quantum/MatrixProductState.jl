@@ -3,7 +3,6 @@ using UUIDs: uuid4
 using Base.Iterators: flatten
 using IterTools: partition
 using Random
-using OMEinsum
 
 abstract type MatrixProductState{B} <: State{B} end
 
@@ -186,17 +185,6 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler{Closed,T}) where
     return ψ
 end
 
-function truncatedims(t::Tensor, dim::Union{Integer, Symbol}, end_ind::Integer)
-    if dim isa Symbol
-        dim = findfirst(==(dim), labels(t))
-    end
-
-    data = view(parent(t), ntuple(i -> i == dim ? (1:end_ind) : Colon(), ndims(t))...)
-    new_labels = labels(t)
-
-    return Tensor(data, new_labels; t.meta...)
-end
-
 function canonize(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{Integer,UnitRange}; chi::Int = 0, return_singular_values::Bool=false)
     canonize!(deepcopy(ψ), center; chi = chi, return_singular_values = return_singular_values)
 end
@@ -218,9 +206,9 @@ function canonize!(ψ::TensorNetwork{MatrixProductState{Open}}, center::Union{In
 
         # Truncate if desired bond dimension is provided
         if chi > 0 && chi < size(S, 1)
-            U = truncatedims(U, 3, chi)
-            S = Tensor(Diagonal(truncatedims(truncatedims(S, 1, chi), 2, chi)), labels(S))
-            V = truncatedims(V, 1, chi)
+            U = view(U, labels(U)[end] => 1:chi)
+            S = Tensor(Diagonal(view(S, labels(S)[1] => 1:chi,  labels(S)[2] => 1:chi)), labels(S))
+            V = view(V, labels(V)[begin] => 1:chi)
         end
 
         # Reshape U and V and update tensors
