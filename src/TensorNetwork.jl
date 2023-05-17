@@ -45,17 +45,9 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-function Base.replace(tn::TensorNetwork, old_new::Pair...)
-    if all(x -> isa(x[1], Symbol) && isa(x[2], Symbol), old_new)
-        return replace_labels!(copy(tn), old_new...)
-    elseif all(x -> isa(x[1], Tensor) && isa(x[2], Tensor), old_new)
-        return replace_tensors!(copy(tn), old_new...)
-    else
-        throw(ArgumentError("The pairs must be either all (Symbol, Symbol) or all (Tensor, Tensor)"))
-    end
-end
+Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
 
-function Base.replace!(tn::TensorNetwork, old_new::Pair...)
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Symbol, <:Symbol}...)
     if all(x -> isa(x[1], Symbol) && isa(x[2], Symbol), old_new)
         return replace_labels!(tn, old_new...)
     elseif all(x -> isa(x[1], Tensor) && isa(x[2], Tensor), old_new)
@@ -65,7 +57,7 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair...)
     end
 end
 
-function replace_tensors!(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...)
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor, <:Tensor}...)
     # Check if new tensors are already present in the network
     new_tensors = [new_tensor for (_, new_tensor) in old_new]
     if !isdisjoint(new_tensors, tn.tensors)
