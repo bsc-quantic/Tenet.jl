@@ -210,7 +210,7 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:Tensor}...)
         throw(ArgumentError("New tensors must not be already present in the network"))
 
     # check if old and new tensors are compatible
-    all((pair,) -> issetequal(labels.(pair)...), old_new) ||
+    all(pair -> issetequal(labels(pair.first), labels(pair.second)), old_new) ||
         throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
 
     for (old_tensor, new_tensor) in old_new
