@@ -8,7 +8,7 @@ function transform! end
 
 transform!(tn::TensorNetwork, transformation::Type{<:Transformation}) = transform!(tn, transformation())
 
-function transform!(tn::TensorNetwork, transformations::Sequence)
+function transform!(tn::TensorNetwork, transformations)
     for transformation in transformations
         transform!(tn, transformation)
     end

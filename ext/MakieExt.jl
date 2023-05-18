@@ -8,13 +8,13 @@ end
 
 using Combinatorics: combinations
 using Graphs
-using GraphMakie
 using Makie
 using NetworkLayout: dim
+using GraphMakie
 
 function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
-    ax, p = plot!(f[1, 1], path; kwargs...)
+    ax, p = plot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
 end
 
@@ -36,22 +36,21 @@ function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...
 end
 
 function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
-    tn = transform(tn, HyperindConverter)
-
-    # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
-    copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
-
-    ghostnodes = map(openinds(tn)) do ind
-        add_vertex!(graph)
-        node = nv(graph) # TODO is this the best way to get the id of the newly created node?
-        tensor = only(links(ind))
-        add_edge!(graph, node, pos[tensor])
-        return node
-    end
+    tn = transform(tn, Tenet.HyperindConverter)
 
     # TODO how to mark multiedges? (i.e. parallel edges)
     handles = IdDict(obj => i for (i, obj) in enumerate(tensors(tn)))
     graph = SimpleGraph([Edge(handles[a], handles[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
+
+    # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
+    copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
+    ghostnodes = map(openinds(tn)) do ind
+        add_vertex!(graph)
+        node = nv(graph) # TODO is this the best way to get the id of the newly created node?
+        tensor = only(links(ind))
+        add_edge!(graph, node, handles[tensor])
+        return node
+    end
 
     # configure graphics
     # TODO refactor hardcoded values into constants
@@ -62,7 +61,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
             if i ∈ ghostnodes
                 0
             else
-                max(15, log2(size(tensors(tn, i)) |> prod))
+                max(15, log2(length(tensors(tn)[i])))
             end
         end
     end
@@ -73,12 +72,13 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
-        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openinds(tn)), tensors(tn))
+        openlabels = nameof.(openinds(tn))
+        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openlabels), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
         map(edges(graph)) do edge
             # case: open edge
-            if any(∋(ghostnodes), [src(edge), dst(edge)])
+            if any(∈(ghostnodes), [src(edge), dst(edge)])
                 notghost = src(edge) ∈ ghostnodes ? dst(edge) : src(edge)
                 inds = nameof.(openinds(tn)) ∩ Tenet.labels(tensors(tn)[notghost])
                 opencounter[notghost] += 1
@@ -86,7 +86,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
             end
 
             # case: hyperedge
-            if any(∋(copytensors), [src(edge), dst(edge)])
+            if any(∈(copytensors), [src(edge), dst(edge)])
                 i = src(edge) ∈ copytensors ? src(edge) : dst(edge)
                 return tensors(tn)[i].meta[:dual] |> string
             end
@@ -98,7 +98,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
     get!(() -> repeat([17], ne(graph)), kwargs, :elabels_textsize)
 
     # plot graph
-    p = graphplot!(ax, graph; kwargs...)
+    graphplot!(ax, graph; kwargs...)
+end
 
-    return AxisPlot(ax, p)
 end

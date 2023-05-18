@@ -1,3 +1,11 @@
+module ChainRulesCoreExt
+
+if isdefined(Base, :get_extension)
+    using Tenet
+else
+    using ..Tenet
+end
+
 using ChainRulesCore
 
 function ChainRulesCore.ProjectTo(tn::T) where {T<:TensorNetwork}
@@ -93,4 +101,6 @@ function ChainRulesCore.rrule(::typeof(contract), tn::TensorNetwork{A}; kwargs..
     end
 
     return c, contract_pullback
+end
+
 end

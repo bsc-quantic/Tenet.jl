@@ -1,4 +1,3 @@
-#using OptimizedEinsum: ContractionPath
 using UUIDs: uuid4
 using IterTools: partition
 using Random
@@ -27,26 +26,29 @@ function MatrixProductOperator{Open}(arrays; χ = nothing, order = (:l, :r, :i, 
     vinds = Dict(x => Symbol(uuid4()) for x in partition(1:n, 2, 1))
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
-    permutator = [order[i] for i in (:l, :r, :i, :o)]
-    # add boundary tensors
-    # first
-    labels = invpermute!([vinds[(1, 2)], iinds[1], oinds[1]], normalizeperm!([order[:r], order[:i], order[:o]]))
-    push!(tn, Tensor(first(arrays), labels))
 
-    # last
-    labels = invpermute!([vinds[(n - 1, n)], iinds[n], oinds[n]], normalizeperm!([order[:l], order[:i], order[:o]]))
-    push!(tn, Tensor(last(arrays), labels))
+    for (i, data) in enumerate(arrays)
+        # Handle boundary cases and inner tensors separately
+        if i == 1
+            labels = [vinds[(1, 2)], iinds[1], oinds[1]]
+            original_order = [:r, :i, :o]
+        elseif i == n
+            labels = [vinds[(n - 1, n)], iinds[n], oinds[n]]
+            original_order = [:l, :i, :o]
+        else
+            lind = vinds[(i - 1, i)]
+            rind = vinds[(i, i + 1)]
+            labels = [lind, rind, iinds[i], oinds[i]]
+            original_order = [:l, :r, :i, :o]
+        end
 
-    # add other tensors
-    for (i, data) in zip(2:n-1, arrays[2:end-1])
-        lind = vinds[(i - 1, i)]
-        rind = vinds[(i, i + 1)]
+        # Filter the order dictionary based on the original_order and sort it following order
+        filtered_order = [p[1] for p in sort(filter(p -> p.first ∈ original_order, collect(order)), by = x -> x[2])]
+        permutator = (ind -> Dict(p => i for (i, p) in enumerate(filtered_order))[ind]).(original_order)
 
-        labels = [lind, rind, iinds[i], oinds[i]]
         invpermute!(labels, permutator)
-
-        tensor = Tensor(data, labels)
-        push!(tn, tensor)
+        alias = Dict([x => y for (x, y) in zip(invpermute!(original_order, permutator), labels)])
+        push!(tn, Tensor(data, labels; alias = alias))
     end
 
     # mark input indices
@@ -91,7 +93,9 @@ function MatrixProductOperator{Closed}(arrays; χ = nothing, order = (:l, :r, :i
 
         labels = [lind, rind, iinds[i], oinds[i]]
         invpermute!(labels, permutator)
-        tensor = Tensor(data, labels)
+        alias = Dict([x => y for (x, y) in zip(invpermute!([:l, :r, :i, :o], permutator), labels)])
+
+        tensor = Tensor(data, labels; alias = alias)
         push!(tn, tensor)
     end
 

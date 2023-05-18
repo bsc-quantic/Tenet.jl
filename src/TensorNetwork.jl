@@ -1,6 +1,5 @@
-import Random: rand
-import OptimizedEinsum
-import OptimizedEinsum: contractpath, Solver, Greedy, ContractionPath
+using Random
+using EinExprs
 using OMEinsum
 
 """
@@ -69,7 +68,7 @@ tensors(tn::TensorNetwork) = tn.tensors
 tensors(tn::TensorNetwork, i::Integer) = tn.tensors[i]
 tensors(tn::TensorNetwork, i::Symbol)::Vector{Tensor} = links(tn.inds[i])
 tensors(tn::TensorNetwork, i::Index)::Vector{Tensor} = tensors(tn, nameof(i))
-tensors(tn::TensorNetwork, inds::Sequence{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
+tensors(tn::TensorNetwork, inds::Base.AbstractVecOrTuple{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 function inds end
@@ -91,7 +90,7 @@ Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Return tensors whose labels match with the list of indices `i`.
 """
-select(tn::TensorNetwork, i::Sequence{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
+select(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
 select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
 
 """
@@ -156,7 +155,7 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     return tn
 end
 
-Base.append!(tn::TensorNetwork, t::Sequence{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
+Base.append!(tn::TensorNetwork, t::Base.AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 function Base.append!(A::TensorNetwork, B::TensorNetwork)
     append!(A, tensors(B))
 
@@ -190,7 +189,7 @@ end
 
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, i::Sequence{Symbol})::Vector{Tensor}
+function Base.pop!(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensors = select(tn, i)
     for tensor in tensors
         _ = pop!(tn, tensor)
@@ -251,20 +250,65 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
     return tn
 end
 
-function rand(::Type{TensorNetwork}, n::Integer, reg::Integer; kwargs...)
-    # TODO `output` is not used
-    output, inputs, size_dict = OptimizedEinsum.rand_equation(n, reg, kwargs...)
+"""
+    rand(TensorNetwork, n, regularity[, out = 0, dim = 2:9, seed = nothing, globalind = false])
+
+Generate a random contraction and shapes.
+
+# Arguments
+
+  - `n`: Number of array arguments.
+  - `regularity`: 'Regularity' of the contraction graph. This essentially determines how many indices each tensor shares with others on average.
+  - `out=0`: Number of output indices (i.e. the number of non-contracted indices).
+  - `dim=2:9`: Range of dimension sizes.
+  - `seed=nothing`: If not `nothing`, seed random generator with this value.
+  - `globalind=false`: Add a global, 'broadcast', dimension to every tensor.
+"""
+function Random.rand(
+    ::Type{TensorNetwork},
+    n::Integer,
+    regularity::Integer;
+    out = 0,
+    dim = 2:9,
+    seed = nothing,
+    globalind = false,
+)
+    !isnothing(seed) && Random.seed!(seed)
+
+    inds = letter.(randperm(n * regularity ÷ 2 + out))
+    size_dict = Dict(ind => rand(dim) for ind in inds)
+
+    outer_inds = Iterators.take(inds, out) |> collect
+    inner_inds = Iterators.drop(inds, out) |> collect
+
+    candidate_inds =
+        [outer_inds, Iterators.flatten(Iterators.repeated(inner_inds, 2))] |> Iterators.flatten |> collect |> shuffle
+
+    inputs = map(x -> [x], Iterators.take(candidate_inds, n))
+
+    for ind in Iterators.drop(candidate_inds, n)
+        i = rand(1:n)
+        while ind in inputs[i]
+            i = rand(1:n)
+        end
+
+        push!(inputs[i], ind)
+    end
+
+    if globalind
+        ninds = length(size_dict)
+        ind = letter(ninds + 1)
+        size_dict[ind] = rand(dim)
+        push!(outer_inds, ind)
+        push!.(inputs, (ind,))
+    end
+
     tensors = [Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
     TensorNetwork(tensors)
 end
 
-function contractpath(tn::TensorNetwork; solver = Greedy, output = openinds(tn), kwargs...)
-    inputs = collect.(labels.(tensors(tn)))
-    output = collect(nameof.(output))
-    size_dict = size(tn)
-
-    contractpath(solver, inputs, output, size_dict)
-end
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openinds(tn), kwargs...) =
+    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
@@ -277,27 +321,7 @@ function contract!(tn::TensorNetwork, i::Symbol)
     push!(tn, tensor)
 end
 
-function contract(tn::TensorNetwork; output = openinds(tn), kwargs...)
-    path = contractpath(tn; output = output, kwargs...)
-
-    # SSA-to-tensor mapping
-    mapping = Dict{Int,Tensor}(i => t for (i, t) in enumerate(tensors(tn)))
-
-    for (c, (a, b)) in zip(Iterators.countfrom(length(path.inputs) + 1), path)
-        A = pop!(mapping, a)
-        B = pop!(mapping, b)
-
-        indsA = labels(A)
-        indsB = labels(B)
-        indsC = symdiff(indsA, indsB) ∪ ∩(output, indsA, indsB)
-
-        C = EinCode((map(String, indsA), map(String, indsB)), tuple(map(String, indsC)...))(A, B)
-
-        mapping[c] = Tensor(C, tuple(indsC...))
-    end
-
-    only(values(mapping))
-end
+contract(tn::TensorNetwork; outputs = openinds(tn), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
