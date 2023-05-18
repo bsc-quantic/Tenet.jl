@@ -204,8 +204,7 @@ Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new..
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:Tensor}...)
     # check if new tensors are already present in the network
-    new_tensors = last.(old_new)
-    isdisjoint(new_tensors, tn.tensors) ||
+    isdisjoint(last.(old_new), tn.tensors) ||
         throw(ArgumentError("New tensors must not be already present in the network"))
 
     # check if old and new tensors are compatible
