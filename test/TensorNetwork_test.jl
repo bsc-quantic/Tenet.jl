@@ -214,6 +214,8 @@
 
         @testset "replace labels" begin
             mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
+
+            @test_throws ArgumentError replace!(tn, :i => :j, :k => :l)
             replace!(tn, mapping...)
 
             @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
@@ -263,6 +265,20 @@
             replace!(tn, A => new_tensor)
             @test new_tensor === tensors(tn, 1)
             @test B === tensors(tn, 2)
+
+            # Test chain of replacements
+            A = Tensor(zeros(2, 2), (:i, :j))
+            B = Tensor(zeros(2, 2), (:j, :k))
+            C = Tensor(zeros(2, 2), (:k, :l))
+            tn = TensorNetwork([A, B, C])
+
+            @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
+
+            new_tensor = Tensor(rand(2, 2), (:i, :j))
+            new_tensor2 = Tensor(ones(2, 2), (:i, :j))
+
+            replace!(tn, A => new_tensor, new_tensor => new_tensor2)
+            @test new_tensor2 === tensors(tn, 1)
         end
     end
 end
