@@ -9,12 +9,10 @@ Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (i
 """
 abstract type Quantum <: Ansatz end
 
-function checkmeta(::Type{Quantum}, tn::TensorNetwork)
-    # meta exists
-    haskey(tn.metadata, :plug) || return false
+metadata(::Type{Quantum}) = NamedTuple{(:plug,),Dict{Tuple{Int,Symbol},Symbol}}
 
+function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # meta has correct type
-    tn[:plug] isa AbstractDict{Tuple{Int,Symbol},Symbol} || return false
     all(∈(:in, :out) ∘ last, keys(tn[:plug])) || return false
 
     # meta's indices exist

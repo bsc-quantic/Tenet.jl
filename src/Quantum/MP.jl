@@ -12,15 +12,17 @@ function MatrixProduct{P}(arrays; boundary::Type{<:Boundary} = Open, kwargs...) 
     MatrixProduct{P,boundary}(arrays; kwargs...)
 end
 
+metadata(::Type{<:MatrixProduct}) = NamedTuple{(:χ,),Tuple{Int}}
+
 function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     # meta exists
     haskey(tn.metadata, :χ) || return false
 
     # meta has correct type
-    isnothing(tn[:χ]) || tn[:χ] isa Integer && tn[:χ] > 0 || return false
+    tn[:χ] > 0 || return false
 
     # no virtual index has dimensionality bigger than χ
-    isnothing(tn[:χ]) || all(i -> size(tn, i) <= tn[:χ], labels(tn, :inner)) || return false
+    all(i -> size(tn, i) <= tn[:χ], labels(tn, :inner)) || return false
 
     return true
 end

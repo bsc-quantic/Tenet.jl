@@ -21,6 +21,7 @@ abstract type Arbitrary <: Ansatz end
 # NOTE currently, these are implementation details
 function checktopology end
 function checkmeta end
+function metadata end
 
 """
     TensorNetwork
@@ -31,18 +32,19 @@ Graph of interconnected tensors.
 
 `TensorNetwork` represents the **dual hypergraph** of the Tensor Network (i.e. vertices are indices and hyperedges are tensors).
 """
-struct TensorNetwork{A}
+struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
     indices::Dict{Symbol,Vector{Int}}
     tensors::Vector{Tensor}
-    metadata::Dict{Symbol,Any}
+    metadata::M
 
     function TensorNetwork{A}(; metadata...) where {A}
         # 1. construct graph
         indices = Dict{Symbol,Vector{Int}}()
         tensors = Vector{Tensor}()
-        metadata = Dict{Symbol,Any}(metadata)
+        M = merge(Tenet.metadata.(superansatzes(A))...)
+        metadata = M(metadata)
 
-        tn = new{A}(indices, tensors, metadata)
+        tn = new{A,M}(indices, tensors, metadata)
 
         # 2. check topology matches ansatz
         # TODO do sth to skip check? like @inbounds
@@ -50,20 +52,19 @@ struct TensorNetwork{A}
 
         # 3. extract extra fields from metadata
         # TODO do sth to skip check? like @inbounds
-        T = A
-        while T >: Any
-            !checkmeta(T, tn) && throw(ErrorException("ansatz $T metadata not valid"))
-            T = supertype(T)
+        for T in superansatzes(A)
+            checkmeta(T, tn) || throw(ErrorException("Ansatz $T metadata is not valid"))
         end
 
         return tn
     end
 end
 
-checktopology(::TensorNetwork{<:Any}) = true
-checktopology(::TensorNetwork{T}) where {T<:Ansatz} = true
-checkmeta(::TensorNetwork{Any}) = true
+checktopology(::TensorNetwork{<:Ansatz}) = true
+checkmeta(::TensorNetwork{Ansatz}) = true
 checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T), tn)
+
+metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 
 function TensorNetwork{A}(tensors; metadata...) where {A}
     tn = TensorNetwork{A}(; metadata...)
@@ -103,6 +104,15 @@ Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])],
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Base.getindex(tn::TensorNetwork, key::Symbol) = tn.metadata[key]
+Base.propertynames(tn::TensorNetwork{A,NamedTuple{N}}) where {A,N} = tuple(fieldnames(tn)..., N...)
+Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
+    if hasfield(T, name)
+        getfield(tn, name)
+    elseif hasproperty(fieldtype(T, :metadata), name)
+        getproperty(getfield(tn, :metadata), name)
+    else
+        throw(KeyError(name))
+    end
 
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), labels(tensor) ∩ labels(tn))
