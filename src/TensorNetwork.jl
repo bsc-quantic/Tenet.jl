@@ -61,8 +61,8 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
 end
 
 checktopology(::TensorNetwork{<:Ansatz}) = true
-checkmeta(::TensorNetwork{Ansatz}) = true
-checkmeta(::TensorNetwork{T}) where {T<:Ansatz} = checkmeta(supertype(T), tn)
+checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
+checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
 
 metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 
@@ -85,7 +85,7 @@ Base.length(x::TensorNetwork) = length(tensors(x))
 
 Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.metadata)...)
 
-ansatz(::Type{TensorNetwork{A}}) where {A} = A
+ansatz(::Type{<:TensorNetwork{A}}) where {A} = A
 ansatz(::TensorNetwork{A}) where {A} = A
 
 tensors(tn::TensorNetwork) = tn.tensors
@@ -131,7 +131,8 @@ end
 Base.append!(tn::TensorNetwork, t::AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 function Base.append!(A::TensorNetwork, B::TensorNetwork)
     append!(A, tensors(B))
-    merge!(A.metadata, B.metadata)
+    # TODO define behaviour
+    # merge!(A.metadata, B.metadata)
     return A
 end
 
