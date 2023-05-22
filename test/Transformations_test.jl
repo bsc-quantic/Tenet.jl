@@ -33,4 +33,32 @@
 
         # TODO @test issetequal(neighbours())
     end
+
+    @testset "Local transformations" begin
+        @testset "DiagonalReduction" begin
+            using Tenet: DiagonalReduction, find_diag_axes
+
+            data = zeros(Float64, 2, 2, 2, 2, 2)
+            data2 = zeros(Float64, 2, 2, 2)
+            for i in 1:2
+                for j in 1:2
+                    data[i, j, i, j, i] = 1 # second and fourth indices are diagonal in data
+                    data[j, i, i, i, j] = 2 # first and fifth indices are diagonal in data
+                    data2[i, i, i] = 1 # all indices are diagonal in data2
+                end
+            end
+
+            A = Tensor(data, (:i, :j, :k, :l, :m))
+            B = Tensor(data2, (:j, :n, :o))
+            C = Tensor(rand(2, 2, 2), (:k, :p, :q))
+
+            tn = TensorNetwork([A, B, C])
+            reduced = transform(tn, DiagonalReduction)
+
+            # Test that all tensors in tn2 have no diagonals
+            for tensor in reduced.tensors
+                @test isempty(find_diag_axes(parent(tensor)))
+            end
+        end
+    end
 end
