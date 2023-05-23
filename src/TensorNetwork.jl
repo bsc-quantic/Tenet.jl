@@ -37,26 +37,35 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
     tensors::Vector{Tensor}
     metadata::M
 
-    function TensorNetwork{A}(; metadata...) where {A}
-        # 1. construct graph
-        indices = Dict{Symbol,Vector{Int}}()
-        tensors = Vector{Tensor}()
+    function TensorNetwork{A}(tensors; metadata...) where {A}
+        indices = Dict{Symbol,Vector{Int}}([])
+
         M = merge(Tenet.metadata.(superansatzes(A))...)
         metadata = M((; metadata...))
 
-        tn = new{A,M}(indices, tensors, metadata)
+        tn = new{A,M}(indices, Tensor[], metadata)
+        append!(tn, tensors)
 
-        # 2. check topology matches ansatz
-        # TODO do sth to skip check? like @inbounds
-        checktopology(tn)
-
-        # 3. extract extra fields from metadata
-        # TODO do sth to skip check? like @inbounds
-        for T in superansatzes(A)
-            checkmeta(T, tn) || throw(ErrorException("Ansatz $T metadata is not valid"))
-        end
-
+        checkansatz(tn)
         return tn
+    end
+end
+
+TensorNetwork{A}(; metadata...) where {A<:Ansatz} = TensorNetwork{A}(Tensor[]; metadata...)
+
+# ansatz defaults to `Arbitrary`
+TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
+
+# TODO maybe rename it as `convert` method?
+TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
+    TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
+
+# TODO do sth to skip checkansatz? like @inbounds
+function checkansatz(tn::TensorNetwork{A}) where {A<:Ansatz}
+    checktopology(tn) || throw(ErrorException("\"$A\" topology not preserved"))
+
+    for T in superansatzes(A)
+        checkmeta(T, tn) || throw(ErrorException("\"$T\" metadata is not valid"))
     end
 end
 
@@ -65,19 +74,6 @@ checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
 checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
 
 metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
-
-function TensorNetwork{A}(tensors; metadata...) where {A}
-    tn = TensorNetwork{A}(; metadata...)
-    append!(tn, tensors)
-    return tn
-end
-
-# ansatz defaults to `Arbitrary`
-TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
-
-# TODO maybe rename it as `convert` method?
-TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
-    TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
