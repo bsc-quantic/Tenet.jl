@@ -66,6 +66,9 @@
             for tensor in reduced.tensors
                 @test isempty(find_diag_axes(parent(tensor)))
             end
+
+            # Test that the resulting contraction contains the same as the original
+            @test contract(reduced) |> parent |> sum ≈ contract(tn) |> parent |> sum
         end
     end
 end
