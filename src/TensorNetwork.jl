@@ -108,8 +108,8 @@ Base.propertynames(tn::TensorNetwork{A,NamedTuple{N}}) where {A,N} = tuple(field
 Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
     if hasfield(T, name)
         getfield(tn, name)
-    elseif hasproperty(fieldtype(T, :metadata), name)
-        getproperty(getfield(tn, :metadata), name)
+    elseif hasfield(fieldtype(T, :metadata), name)
+        getfield(getfield(tn, :metadata), name)
     else
         throw(KeyError(name))
     end
