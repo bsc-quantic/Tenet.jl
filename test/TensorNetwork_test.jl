@@ -203,6 +203,16 @@
         @test targets ⊆ labels(slice)
     end
 
+    @testset "contract" begin
+        tn = rand(TensorNetwork, 5, 3)
+        @test contract(tn) isa Tensor
+
+        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+        B = Tensor(rand(2, 2, 2), (:k, :l, :m))
+        tn = TensorNetwork([A, B])
+        @test contract(tn) isa Tensor
+    end
+
     @testset "Base.replace!" begin
         using Tenet: openinds, hyperinds, select
 

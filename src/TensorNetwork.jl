@@ -307,7 +307,7 @@ function Random.rand(
 end
 
 EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openinds(tn), kwargs...) =
-    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
+    einexpr(optimizer, EinExpr(tensors(tn), nameof.(outputs)); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
