@@ -12,11 +12,11 @@ abstract type Quantum <: Ansatz end
 metadata(::Type{Quantum}) = NamedTuple{(:plug,),Tuple{Dict{Tuple{Int,Symbol},Symbol}}}
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
-    # meta has correct type
-    all(∈((:in, :out)) ∘ last, keys(tn.plug)) || return false
+    # TODO run this check depending if State or Operator
+    last.(keys(tn.plug)) ⊆ (:in, :out) || return false
 
     # meta's indices exist
-    all(∈(keys(tn.indices)), values(tn.plug)) || return false
+    values(tn.plug) ⊆ keys(tn.indices) || return false
 
     # meta's indices are not repeated
     allunique(values(tn.plug)) || return false
