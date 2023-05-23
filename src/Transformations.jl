@@ -1,4 +1,5 @@
 using DeltaArrays
+using OMEinsum
 
 abstract type Transformation end
 
@@ -49,28 +50,21 @@ struct DiagonalReduction <: Transformation end
 function transform!(tn::TensorNetwork, ::DiagonalReduction; output_inds=nothing, atol=1e-12)
     output_inds = output_inds === nothing ? openinds(tn) : output_inds
     queue = collect(keys(tn.tensors))
-    cache = Dict()
 
-    while !isempty(queue)
+    while !isempty(queue) # loop over all tensors
         idx = pop!(queue)
         tensor = tn.tensors[idx]
-        cache_key = ("dr", idx, objectid(tensor.data))
 
-        if haskey(cache, cache_key)
-            continue
-        end
+        diag_axes = find_diag_axes(parent(tensor), atol)
 
-        diag_axes = find_diag_axes(tensor.data, atol)
-
-        if isempty(diag_axes)
-            cache[cache_key] = true
-            continue
-        end
-
-        for (i, j) in diag_axes
+        while !isempty(diag_axes) # loop over all diagonal axes
+            (i, j) = pop!(diag_axes)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
+
+            # do not reduce output indices
             new, old = (ix_j in output_inds) ? ((ix_i in output_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
+            # replace old index in the other tensors in the network
             for other_idx in setdiff(keys(tn.tensors), idx)
                 other_tensor = tn.tensors[other_idx]
                 if old in labels(other_tensor)
@@ -79,10 +73,16 @@ function transform!(tn::TensorNetwork, ::DiagonalReduction; output_inds=nothing,
                 end
             end
 
-            data = view(tensor, old => 1)
-            tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
+            repeated_labels = replace(collect(labels(tensor)), old => new) |> join
+            removed_label = filter(l -> l != old, labels(tensor)) |> join
 
-            !isempty(find_diag_axes(parent(tensor), atol)) && push!(queue, idx)
+            ein_code_str = "ein\"$repeated_labels->$removed_label\""
+            data = eval(Meta.parse("$(ein_code_str)($tensor)"))
+            tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
+            delete!(tn.inds, old)
+
+            tensor = tn.tensors[idx]
+            diag_axes = find_diag_axes(parent(tensor), atol)
         end
     end
 
