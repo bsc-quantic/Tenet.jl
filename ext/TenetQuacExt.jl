@@ -37,8 +37,8 @@ function Tenet.TensorNetwork(circuit::Circuit)
     end
 
     for (lane, wireindices) in enumerate(wire)
-        tn[:plug][(lane, :in)] = wireindices[1]
-        tn[:plug][(lane, :out)] = wireindices[2]
+        tn.plug[(lane, :in)] = wireindices[1]
+        tn.plug[(lane, :out)] = wireindices[2]
     end
 
     return tn

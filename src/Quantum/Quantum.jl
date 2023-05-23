@@ -13,13 +13,13 @@ metadata(::Type{Quantum}) = NamedTuple{(:plug,),Dict{Tuple{Int,Symbol},Symbol}}
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # meta has correct type
-    all(∈(:in, :out) ∘ last, keys(tn[:plug])) || return false
+    all(∈(:in, :out) ∘ last, keys(tn.plug)) || return false
 
     # meta's indices exist
-    all(∈(keys(tn.indices)), values(tn[:plug])) || return false
+    all(∈(keys(tn.indices)), values(tn.plug)) || return false
 
     # meta's indices are not repeated
-    allunique(values(tn[:plug])) || return false
+    allunique(values(tn.plug)) || return false
 
     return true
 end
@@ -43,16 +43,16 @@ plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
 
 sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
 @valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
-sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(==(:in) ∘ last, keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(==(:out) ∘ last, keys(tn[:plug])))
+sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn.plug)))
+sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(==(:in) ∘ last, keys(tn.plug)))
+sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(==(:out) ∘ last, keys(tn.plug)))
 
-labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn[:plug]))
+labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn.plug))
 labels(tn::TensorNetwork, ::Val{:plug}, site) = labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
-labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn[:plug]))
-labels(tn::TensorNetwork, ::Val{:in}, site) = tn[:plug][(site, :in)]
-labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn[:plug]))
-labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
+labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn.plug))
+labels(tn::TensorNetwork, ::Val{:in}, site) = tn.plug[(site, :in)]
+labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn.plug))
+labels(tn::TensorNetwork, ::Val{:out}, site) = tn.plug[(site, :out)]
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
@@ -74,10 +74,10 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
 
     # remove plug metadata on connector indices
     for site in sites(A, :out)
-        delete!(A[:plug], (site, :out))
+        delete!(A.plug, (site, :out))
     end
     for site in sites(B, :in)
-        delete!(B[:plug], (site, :in))
+        delete!(B.plug, (site, :in))
     end
 
     # rename inner indices of B to avoid hyperindices
@@ -97,13 +97,13 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     tn = deepcopy(tn)
 
-    tn.metadata[:plug] = Dict((site, if dir === :in
+    tn.plug = Dict((site, if dir === :in
         :out
     elseif dir === :out
         :in
     else
         dir
-    end) => index for ((site, dir), index) in tn[:plug])
+    end) => index for ((site, dir), index) in tn.plug)
 
     for tensor in tensors(tn)
         tensor .= conj(tensor)
