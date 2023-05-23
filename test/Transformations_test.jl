@@ -42,8 +42,12 @@
             data2 = zeros(Float64, 2, 2, 2)
             for i in 1:2
                 for j in 1:2
-                    data[i, j, i, j, i] = 1 # second and fourth indices are diagonal in data
-                    data[j, i, i, i, j] = 2 # first and fifth indices are diagonal in data
+                    for k in 1:2
+                        # In data the 1st-4th and 2nd-5th indices are diagonal
+                        data[i, j, k, i, j] = k
+                        data[j, i, k, j, i] = k + 2
+                    end
+
                     data2[i, i, i] = 1 # all indices are diagonal in data2
                 end
             end
@@ -52,10 +56,13 @@
             B = Tensor(data2, (:j, :n, :o))
             C = Tensor(rand(2, 2, 2), (:k, :p, :q))
 
+            @test issetequal(find_diag_axes(parent(A)), [(1, 4), (2, 5)])
+            @test issetequal(find_diag_axes(parent(B)), [(1, 2), (1, 3), (2, 3)])
+
             tn = TensorNetwork([A, B, C])
             reduced = transform(tn, DiagonalReduction)
 
-            # Test that all tensors in tn2 have no diagonals
+            # Test that all tensors in reduced have no diagonals
             for tensor in reduced.tensors
                 @test isempty(find_diag_axes(parent(tensor)))
             end
