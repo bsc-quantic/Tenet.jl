@@ -42,7 +42,7 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
         indices = Dict{Symbol,Vector{Int}}()
         tensors = Vector{Tensor}()
         M = merge(Tenet.metadata.(superansatzes(A))...)
-        metadata = M(metadata)
+        metadata = M((; metadata...))
 
         tn = new{A,M}(indices, tensors, metadata)
 
