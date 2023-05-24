@@ -48,7 +48,7 @@ end
 struct DiagonalReduction <: Transformation end
 
 function transform!(tn::TensorNetwork, ::DiagonalReduction; output_inds=nothing, atol=1e-12)
-    output_inds === nothing ? openinds(tn) : output_inds
+    output_inds = output_inds === nothing ? openinds(tn) : output_inds
     queue = collect(keys(tn.tensors))
 
     while !isempty(queue) # loop over all tensors
