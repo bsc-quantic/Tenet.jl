@@ -100,7 +100,8 @@ Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])],
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Base.getindex(tn::TensorNetwork, key::Symbol) = tn.metadata[key]
-Base.propertynames(tn::TensorNetwork{A,NamedTuple{N}}) where {A,N} = tuple(fieldnames(tn)..., N...)
+Base.fieldnames(tn::T) where {T<:TensorNetwork} = fieldnames(T)
+Base.propertynames(tn::TensorNetwork{A,N}) where {A,N} = tuple(fieldnames(tn)..., fieldnames(N)...)
 Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
     if hasfield(T, name)
         getfield(tn, name)
