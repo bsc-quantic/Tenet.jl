@@ -97,13 +97,13 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     tn = deepcopy(tn)
 
-    tn.plug = Dict((site, if dir === :in
+    copy!(tn.plug, Dict((site, if dir === :in
         :out
     elseif dir === :out
         :in
     else
         dir
-    end) => index for ((site, dir), index) in tn.plug)
+    end) => index for ((site, dir), index) in tn.plug))
 
     for tensor in tensors(tn)
         tensor .= conj(tensor)
