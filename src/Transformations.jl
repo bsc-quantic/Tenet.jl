@@ -58,7 +58,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
         idx = pop!(queue)
         tensor = tn.tensors[idx]
 
-        diag_axes = find_diag_axes(parent(tensor), atol)
+        diag_axes = find_diag_axes(parent(tensor), config.atol)
 
         while !isempty(diag_axes) # loop over all diagonal axes
             (i, j) = pop!(diag_axes)
