@@ -38,13 +38,14 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
     metadata::M
 
     function TensorNetwork{A}(tensors; metadata...) where {A}
-        indices = Dict{Symbol,Vector{Int}}([])
+        indices = reduce(enumerate(tensors); init = Dict{Symbol,Vector{Int}}([])) do dict, (i, tensor)
+            mergewith(vcat, dict, Dict([index => [i] for index in labels(tensor)]))
+        end
 
         M = merge(Tenet.metadata.(superansatzes(A))...)
         metadata = M((; metadata...))
 
-        tn = new{A,M}(indices, Tensor[], metadata)
-        append!(tn, tensors)
+        tn = new{A,M}(indices, tensors, metadata)
 
         checkansatz(tn)
         return tn
