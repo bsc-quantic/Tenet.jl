@@ -7,11 +7,11 @@ transform(tn::TensorNetwork, transformations; kwargs...) = (tn = copy(tn); trans
 
 function transform! end
 
-transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) = transform!(tn, transformation(); kwargs...)
+transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) = transform!(tn, transformation(kwargs...))
 
-function transform!(tn::TensorNetwork, transformations; kwargs...)
+function transform!(tn::TensorNetwork, transformations)
     for transformation in transformations
-        transform!(tn, transformation; kwargs...)
+        transform!(tn, transformation)
     end
     return tn
 end
@@ -45,10 +45,13 @@ function transform!(tn::TensorNetwork, ::HyperindConverter)
     end
 end
 
-struct DiagonalReduction <: Transformation end
+Base.@kwdef struct DiagonalReduction <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Symbol} = Symbol[]
+end
 
-function transform!(tn::TensorNetwork, ::DiagonalReduction; output_inds=nothing, atol=1e-12)
-    output_inds = output_inds === nothing ? openinds(tn) : output_inds
+function transform!(tn::TensorNetwork, config::DiagonalReduction)
+    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
     queue = collect(keys(tn.tensors))
 
     while !isempty(queue) # loop over all tensors
@@ -62,7 +65,7 @@ function transform!(tn::TensorNetwork, ::DiagonalReduction; output_inds=nothing,
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not reduce output indices
-            new, old = (ix_j in output_inds) ? ((ix_i in output_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            new, old = (ix_j in skip_inds) ? ((ix_i in skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # replace old index in the other tensors in the network
             for other_idx in setdiff(keys(tn.tensors), idx)
