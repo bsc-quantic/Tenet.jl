@@ -85,7 +85,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             delete!(tn.inds, old)
 
             tensor = tn.tensors[idx]
-            diag_axes = find_diag_axes(parent(tensor), atol)
+            diag_axes = find_diag_axes(parent(tensor), config.atol)
         end
     end
 
