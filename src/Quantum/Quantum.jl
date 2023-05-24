@@ -24,6 +24,26 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     return true
 end
 
+abstract type Composite{Ts<:Tuple} <: Quantum end
+Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
+Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
+
+metadata(A::Type{<:Composite}) = NamedTuple{(:layer, :interlayer),Tuple{NTuple{nlayers(A)},NTuple{nlayers(A) - 1}}}
+
+function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
+    for A in fieldtypes(As)
+        tn_view = layers(tn, i)
+        checkmeta(A, tn_view)
+    end
+end
+
+nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
+
+function layers(tn::TensorNetwork{<:Composite}, i)
+    # TODO create view of TN
+    meta = tn.layer[i]
+end
+
 abstract type Boundary end
 abstract type Open <: Boundary end
 abstract type Periodic <: Boundary end
@@ -62,6 +82,7 @@ tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(t
 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:in}) = select(tn, labels(tn, :in, site)) |> only
 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:out}) = select(tn, labels(tn, :out, site)) |> only
 
+# TODO implement hcat when QA or QB <: Composite
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
     issetequal(sites(A, :out), sites(B, :in)) ||
         throw(DimensionMismatch("sites(B,:in) must be equal to sites(A,:out) to connect them"))
@@ -84,7 +105,7 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
     # merge tensors and indices
-    tn = TensorNetwork{Tuple{QA,QB}}(
+    tn = TensorNetwork{Composite(QA, QB)}(
         [tensors(A)..., tensors(B)...];
         mergewith((a, b) -> a isa AbstractDict ? merge(a, b) : a, A.metadata, B.metadata)...,
     )
