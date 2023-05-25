@@ -47,7 +47,7 @@ end
 
 Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Symbol} = Symbol[]
+    skip::Vector{Index} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::DiagonalReduction)
