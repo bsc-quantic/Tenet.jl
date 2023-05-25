@@ -92,7 +92,13 @@
             @test length(tensors(reduced)) ≤ length(tensors(tn))
 
             # Test that the resulting contraction contains the same as the original
-            @test contract(reduced) ≈ contract(tn)
+            # TODO: the permutation will not be necessary if https://github.com/bsc-quantic/Tensors.jl/issues/27 is fixed
+            contracted_reduced = contract(reduced)
+            contracted_tn = contract(tn)
+
+            # Calculate the permutation for the `reduced` tensor labels to match `tn`
+            perm = sortperm(labels(contracted_reduced), by = x -> findfirst(==(x), labels(contracted_tn)))
+            @test permutedims(contracted_reduced, perm) ≈ contract(tn)
         end
     end
 end
