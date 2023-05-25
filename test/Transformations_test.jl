@@ -70,5 +70,29 @@
             # Test that the resulting contraction contains the same as the original
             @test contract(reduced) |> parent |> sum ≈ contract(tn) |> parent |> sum
         end
+
+        @testset "RankSimplification" begin
+            using Tenet: RankSimplification
+
+            # create a tensor network where tensors B and D can be absorbed
+            A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l))
+            B = Tensor(rand(2, 2), (:i, :m))
+            C = Tensor(rand(2, 2, 2), (:m, :n, :o))
+            D = Tensor(rand(2,), (:p,))
+            E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j))
+
+            tn = TensorNetwork([A, B, C, D, E])
+            reduced = transform(tn, RankSimplification)
+
+            # Test that the resulting tn contains no tensors with larger rank than the original
+            rank = length ∘ size ∘ parent
+            @test max(rank(tensors(reduced)) ≤ max(rank(tensors(tn))))
+
+            # Test that the resulting tn contains <= tensors than the original
+            @test length(tensors(reduced)) ≤ length(tensors(tn))
+
+            # Test that the resulting contraction contains the same as the original
+            @test contract(reduced) ≈ contract(tn)
+        end
     end
 end
