@@ -111,61 +111,61 @@ function transform!(tn::TensorNetwork, config::RankSimplification)
     contracted = true  # Initialize contracted to true
 
     while contracted
-    contracted = false  # Reset contracted to false at the beginning of each iteration
+        contracted = false  # Reset contracted to false at the beginning of each iteration
 
-    for (idx, tensor) in enumerate(tn.tensors) # loop over all tensors
-        connected_tensors = find_connected_tensors(tn, idx)
-        for cidx in connected_tensors
-            c_tensor = tn.tensors[cidx]
+        for (idx, tensor) in enumerate(tn.tensors) # loop over all tensors
+            connected_tensors = find_connected_tensors(tn, idx)
+            for cidx in connected_tensors
+                c_tensor = tn.tensors[cidx]
 
-            # Check if contraction does not increase the rank
-            if should_contract(tensor, c_tensor)
-                # Perform contraction
-                new_tensor = contract(tensor, c_tensor)
+                # Check if contraction does not increase the rank
+                if should_contract(tensor, c_tensor)
+                    # Perform contraction
+                    new_tensor = contract(tensor, c_tensor)
 
-                # Update tensor network
-                tn.tensors[idx] = new_tensor
-                deleteat!(tn.tensors, cidx)
+                    # Update tensor network
+                    tn.tensors[idx] = new_tensor
+                    deleteat!(tn.tensors, cidx)
 
-                # Update indices
-                dummy_labels = labels(tensor) ∩ labels(c_tensor)
-                for label in dummy_labels
-                    delete!(tn.inds, label)
+                    # Update indices
+                    dummy_labels = labels(tensor) ∩ labels(c_tensor)
+                    for label in dummy_labels
+                        delete!(tn.inds, label)
+                    end
+
+                    contracted = true
+
+                    # Break the loop since we modified the network and need to recheck connections
+                    break
                 end
-
-                contracted = true
-
-                # Break the loop since we modified the network and need to recheck connections
-                break
             end
         end
     end
-end
 
-return tn
+    return tn
 end
 
 # Find connected tensors in the tensor network
 function find_connected_tensors(tn::TensorNetwork, idx)
-tensor = tn.tensors[idx]
-connected_tensors = []
+    tensor = tn.tensors[idx]
+    connected_tensors = []
 
-for (other_idx, other_tensor) in enumerate(tn.tensors)
-other_idx != idx && !isempty(labels(tensor) ∩ labels(other_tensor)) && push!(connected_tensors, other_idx)
-end
+    for (other_idx, other_tensor) in enumerate(tn.tensors)
+        other_idx != idx && !isempty(labels(tensor) ∩ labels(other_tensor)) && push!(connected_tensors, other_idx)
+    end
 
-return connected_tensors
+    return connected_tensors
 end
 
 # Check if contracting the two tensors will not increase the rank
 function should_contract(t1::Tensor, t2::Tensor)
-t1_labels = labels(t1)
-t2_labels = labels(t2)
+    t1_labels = labels(t1)
+    t2_labels = labels(t2)
 
-unique_labels = setdiff(t1_labels ∪ t2_labels, t1_labels ∩ t2_labels)
+    unique_labels = setdiff(t1_labels ∪ t2_labels, t1_labels ∩ t2_labels)
 
-# If total number of unique labels is <= the maximum rank of the original tensors
-return length(unique_labels) <= max(length(t1_labels), length(t2_labels))
+    # If total number of unique labels is <= the maximum rank of the original tensors
+    return length(unique_labels) <= max(length(t1_labels), length(t2_labels))
 end
 
 # TODO column reduction, split simplification
