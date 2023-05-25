@@ -76,11 +76,10 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
                 end
             end
 
-            repeated_labels = replace(collect(labels(tensor)), old => new) |> join
-            removed_label = filter(l -> l != old, labels(tensor)) |> join
+            repeated_labels = replace(collect(labels(tensor)), old => new)
+            removed_label = filter(l -> l != old, labels(tensor))
 
-            ein_code_str = "ein\"$repeated_labels->$removed_label\""
-            data = eval(Meta.parse("$(ein_code_str)($tensor)"))
+            data = EinCode((String.(repeated_labels),),[String.(removed_label)...])(tensor)
             tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
             delete!(tn.inds, old)
 
