@@ -79,6 +79,8 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             repeated_labels = replace(collect(labels(tensor)), old => new)
             removed_label = filter(l -> l != old, labels(tensor))
 
+            # TODO rewrite with `Tensors` when it supports it
+            # extract diagonal
             data = EinCode((String.(repeated_labels),),[String.(removed_label)...])(tensor)
             tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
             delete!(tn.inds, old)
