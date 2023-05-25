@@ -97,8 +97,11 @@
             contracted_tn = contract(tn)
 
             # Calculate the permutation for the `reduced` tensor labels to match `tn`
-            perm = sortperm(labels(contracted_reduced), by = x -> findfirst(==(x), labels(contracted_tn)))
+            perm = sortperm(labels_reduced, by = x -> findfirst(==(x), labels_tn))
             @test permutedims(contracted_reduced, perm) ≈ contract(tn)
+
+            # Now, contracted_reduced and contract(tn) have the same labels order
+            @test contracted_reduced ≈ contract(tn)
         end
     end
 end
