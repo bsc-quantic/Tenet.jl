@@ -8,7 +8,8 @@ transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(t
 
 function transform! end
 
-transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) = transform!(tn, transformation(kwargs...))
+transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
+    transform!(tn, transformation(kwargs...))
 
 function transform!(tn::TensorNetwork, transformations)
     for transformation in transformations
@@ -59,7 +60,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
         idx = pop!(queue)
         tensor = tn.tensors[idx]
 
-        diag_axes = find_diag_axes(parent(tensor), config.atol)
+        diag_axes = find_diag_axes(parent(tensor), atol = config.atol)
 
         while !isempty(diag_axes) # loop over all diagonal axes
             (i, j) = pop!(diag_axes)
@@ -82,12 +83,12 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
 
             # TODO rewrite with `Tensors` when it supports it
             # extract diagonal
-            data = EinCode((String.(repeated_labels),),[String.(removed_label)...])(tensor)
+            data = EinCode((String.(repeated_labels),), [String.(removed_label)...])(tensor)
             tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
             delete!(tn.inds, old)
 
             tensor = tn.tensors[idx]
-            diag_axes = find_diag_axes(parent(tensor), config.atol)
+            diag_axes = find_diag_axes(parent(tensor), atol = config.atol)
         end
     end
 
@@ -96,7 +97,7 @@ end
 
 struct RankSimplification <: Transformation end
 
-function transform!(tn::TensorNetwork, config::RankSimplification)
+function transform!(tn::TensorNetwork, ::RankSimplification)
     contracted = true  # Initialize contracted to true
 
     while contracted
@@ -146,13 +147,14 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
 
-        anti_diag_axes = find_anti_diag_axes(parent(tensor), config.atol)
+        anti_diag_axes = find_anti_diag_axes(parent(tensor), atol = config.atol)
 
         for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not gauge output indices
-            _, ix_to_gauge = (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            _, ix_to_gauge =
+                (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
@@ -176,7 +178,7 @@ function find_connected_tensors(tn::TensorNetwork, idx)
     return connected_tensors
 end
 
-function find_diag_axes(x::AbstractArray, atol=1e-12)
+function find_diag_axes(x; atol = 1e-12)
     ndims = size(x)
 
     # Find all the potential diagonals
@@ -190,7 +192,7 @@ function find_diag_axes(x::AbstractArray, atol=1e-12)
     end
 end
 
-function find_anti_diag_axes(x::AbstractArray, atol=1e-12)
+function find_anti_diag_axes(x; atol = 1e-12)
     ndims = size(x)
 
     # Find all the potential anti-diagonals
