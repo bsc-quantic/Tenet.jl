@@ -73,7 +73,7 @@
     end
 
     @testset "AntiDiagonalGauging" begin
-        using Tenet: AntiDiagonalGauging, find_anti_diag_axes
+        using Tenet: AntiDiagonalGauging, find_anti_diag_axes, innerinds, labels
 
         function has_antidiagonal_in_innerinds(tensor, innerinds)
             for (i, j) in find_anti_diag_axes(parent(tensor))
