@@ -71,4 +71,34 @@
             @test contract(reduced) |> parent |> sum ≈ contract(tn) |> parent |> sum
         end
     end
+
+    @testset "AntiDiagonalGauging" begin
+        using Tenet: AntiDiagonalGauging, find_anti_diag_axes
+
+        d = 2  # size of indices
+
+        data = zeros(Float64, d, d, d, d, d)
+        data2 = zeros(Float64, d, d, d)
+        for i in 1:d
+            for j in 1:d
+                for k in 1:d
+                    # In data_anti the 1st-4th and 2nd-5th indices are antidiagonal
+                    data[i, j, k, d-i+1, d-j+1] = k
+                    data[j, i, k, d-j+1, d-i+1] = k + 2
+
+                    data2[i, d-i+1, k] = 1  # 1st-2nd indices are antidiagonal in data2_anti
+                end
+
+            end
+        end
+
+        A = Tensor(data, (:i, :j, :k, :l, :m))
+        B = Tensor(data2, (:j, :n, :o))
+        C = Tensor(rand(d, d, d), (:k, :p, :q))
+
+
+        tn = TensorNetwork([A, B, C])
+
+
+    end
 end
