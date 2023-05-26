@@ -16,7 +16,6 @@ makedocs(
     pages = Any[
         "Home"=>"index.md",
         "Manual"=>[
-            "Tensor" => "tensor.md",
             "Tensor Networks" => "tensor-network.md",
             "Quantum Tensor Networks" => [
                 "Introduction" => "quantum/index.md",

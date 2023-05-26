@@ -44,29 +44,6 @@ function TensorNetwork{A}(tensors; meta...) where {A}
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
-    old_tensor, new_tensor = pair
-
-    # check if old and new tensors are compatible
-    if !issetequal(labels(new_tensor), labels(old_tensor))
-        throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
-    end
-
-    # update index links
-    # TODO remove this part when `Index` is removed
-    for old_label in labels(old_tensor)
-        index_obj = tn.inds[old_label]
-        link_index = findfirst(x -> x === old_tensor, index_obj.links)
-        index_obj.links[link_index] = new_tensor
-    end
-
-    # replace existing `Tensor` with new `Tensor`
-    index = findfirst(x -> x === old_tensor, tn.tensors)
-    tn.tensors[index] = new_tensor
-
-    return tn
-end
-
 # TODO checks? index metadata?
 TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{B}(tensors(tn); tn.meta...)
 
@@ -223,10 +200,36 @@ end
 
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
-Base.replace(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...) = replace!(copy(tn), old_new...)
+Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
+
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:Tensor}...)
+    # check if new tensors are already present in the network
+    isdisjoint(last.(old_new), tn.tensors) ||
+        throw(ArgumentError("New tensors must not be already present in the network"))
+
+    # check if old and new tensors are compatible
+    all(pair -> issetequal(map(labels, pair)...), old_new) ||
+        throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+
+    for (old_tensor, new_tensor) in old_new
+        # update index links
+        # TODO remove this part when `Index` is removed
+        for old_label in labels(old_tensor)
+            index_obj = tn.inds[old_label]
+            link_index = findfirst(x -> x === old_tensor, index_obj.links)
+            index_obj.links[link_index] = new_tensor
+        end
+
+        # replace existing `Tensor` with new `Tensor`
+        index = findfirst(x -> x === old_tensor, tn.tensors)
+        tn.tensors[index] = new_tensor
+    end
+
+    return tn
+end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
-    !isdisjoint(values(old_new), labels(tn)) && throw(ArgumentError("target symbols must not be already present"))
+    isdisjoint(last.(old_new), labels(tn)) || throw(ArgumentError("target symbols must not be already present"))
 
     tensors = unique(Iterators.flatten([select(tn, i) for i in first.(old_new)]) |> collect)
 
@@ -304,7 +307,7 @@ function Random.rand(
 end
 
 EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openinds(tn), kwargs...) =
-    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
+    einexpr(optimizer, EinExpr(tensors(tn), nameof.(outputs)); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
