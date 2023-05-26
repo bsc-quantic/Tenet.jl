@@ -114,10 +114,8 @@ end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
-    queue = collect(keys(tn.tensors))
 
-    while !isempty(queue) # loop over all tensors
-        idx = pop!(queue)
+    for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
 
         anti_diag_axes = find_anti_diag_axes(parent(tensor), config.atol)
