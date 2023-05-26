@@ -126,9 +126,9 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not gauge output indices
-            _, ix_to_gauge = (ix_j in skip_inds) ? ((ix_i in skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            _, ix_to_gauge = (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
-            # flip the order of ix_to_gauge in all tensors where it appears
+            # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
                 ix_to_gauge in labels(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, labels(t)))
             end
@@ -137,7 +137,6 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
 
     return tn
 end
-
 
 function find_anti_diag_axes(x::AbstractArray, atol=1e-12)
     ndims = size(x)
@@ -153,30 +152,5 @@ function find_anti_diag_axes(x::AbstractArray, atol=1e-12)
         end
     end
 end
-
-
-function view_index_plane(tensor::Tensor, ix::Symbol, iy::Symbol)
-    labels = tensor.labels
-    if ix ∉ labels || iy ∉ labels
-        error("Specified indices not found in tensor")
-    end
-
-    # Separate labels into those for our chosen indices and the rest
-    chosen_labels = [ix, iy]
-
-    # Collapse all other dimensions into one using EinCode
-    ein_code = EinCode((String.(collect(labels)),), [String.(chosen_labels)...])
-    reshaped_data = ein_code(tensor.data)
-
-    # # Check if the indices are in the right order and if not, swap them
-    # if labels[1] != ix || labels[2] != iy
-    #     reshaped_data = permutedims(reshaped_data, [findfirst(==(ix), labels), findfirst(==(iy), labels), collect(3:length(size(reshaped_data)))...])
-    # end
-
-    # Now we can return a view of the reshaped data, collapsing all dimensions after the second into one
-    new_dims = size(reshaped_data)
-    return view(reshaped_data, :, :, ones(Int, length(new_dims)-2)... )
-end
-
 
 # TODO column reduction, rank simplification, split simplification
