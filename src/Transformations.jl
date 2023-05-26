@@ -3,7 +3,7 @@ using OMEinsum
 
 abstract type Transformation end
 
-transform(tn::TensorNetwork, transformations) = (tn = copy(tn); transform!(tn, transformations); return tn)
+transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
 
 function transform! end
 
@@ -103,6 +103,50 @@ function find_diag_axes(x::AbstractArray, atol=1e-12)
     return filter(potential_diag_axes) do (d1, d2)
         all(pairs(x)) do (idx, val)
             idx[d1] == idx[d2] || abs(val) <= atol
+        end
+    end
+end
+
+Base.@kwdef struct AntiDiagonalGauging <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Index} = Symbol[]
+end
+
+function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
+    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+
+    for idx in keys(tn.tensors)
+        tensor = tn.tensors[idx]
+
+        anti_diag_axes = find_anti_diag_axes(parent(tensor), config.atol)
+
+        for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
+            ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
+
+            # do not gauge output indices
+            _, ix_to_gauge = (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+
+            # reverse the order of ix_to_gauge in all tensors where it appears
+            for t in tensors(tn)
+                ix_to_gauge in labels(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, labels(t)))
+            end
+        end
+    end
+
+    return tn
+end
+
+function find_anti_diag_axes(x::AbstractArray, atol=1e-12)
+    ndims = size(x)
+
+    # Find all the potential anti-diagonals
+    potential_anti_diag_axes = [(i, j) for i in 1:length(ndims) for j in i+1:length(ndims) if ndims[i] == ndims[j]]
+
+    # Check what elements satisfy the condition
+    return filter(potential_anti_diag_axes) do (d1, d2)
+        d = ndims[d1] # Since d1 and d2 are the same size
+        all(pairs(x)) do (idx, val)
+            idx[d1] != d - idx[d2] || abs(val) <= atol
         end
     end
 end
