@@ -107,4 +107,76 @@ function find_diag_axes(x::AbstractArray, atol=1e-12)
     end
 end
 
+Base.@kwdef struct AntiDiagonalGauging <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Index} = Symbol[]
+end
+
+function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
+    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    queue = collect(keys(tn.tensors))
+
+    while !isempty(queue) # loop over all tensors
+        idx = pop!(queue)
+        tensor = tn.tensors[idx]
+
+        anti_diag_axes = find_anti_diag_axes(parent(tensor), config.atol)
+
+        for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
+            ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
+
+            # do not gauge output indices
+            _, ix_to_gauge = (ix_j in skip_inds) ? ((ix_i in skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+
+            # flip the order of ix_to_gauge in all tensors where it appears
+            for t in tensors(tn)
+                ix_to_gauge in labels(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, labels(t)))
+            end
+        end
+    end
+
+    return tn
+end
+
+
+function find_anti_diag_axes(x::AbstractArray, atol=1e-12)
+    ndims = size(x)
+
+    # Find all the potential anti-diagonals
+    potential_anti_diag_axes = [(i, j) for i in 1:length(ndims) for j in i+1:length(ndims) if ndims[i] == ndims[j]]
+
+    # Check what elements satisfy the condition
+    return filter(potential_anti_diag_axes) do (d1, d2)
+        d = ndims[d1] # Since d1 and d2 are the same size
+        all(pairs(x)) do (idx, val)
+            idx[d1] != d - idx[d2] || abs(val) <= atol
+        end
+    end
+end
+
+
+function view_index_plane(tensor::Tensor, ix::Symbol, iy::Symbol)
+    labels = tensor.labels
+    if ix ∉ labels || iy ∉ labels
+        error("Specified indices not found in tensor")
+    end
+
+    # Separate labels into those for our chosen indices and the rest
+    chosen_labels = [ix, iy]
+
+    # Collapse all other dimensions into one using EinCode
+    ein_code = EinCode((String.(collect(labels)),), [String.(chosen_labels)...])
+    reshaped_data = ein_code(tensor.data)
+
+    # # Check if the indices are in the right order and if not, swap them
+    # if labels[1] != ix || labels[2] != iy
+    #     reshaped_data = permutedims(reshaped_data, [findfirst(==(ix), labels), findfirst(==(iy), labels), collect(3:length(size(reshaped_data)))...])
+    # end
+
+    # Now we can return a view of the reshaped data, collapsing all dimensions after the second into one
+    new_dims = size(reshaped_data)
+    return view(reshaped_data, :, :, ones(Int, length(new_dims)-2)... )
+end
+
+
 # TODO column reduction, rank simplification, split simplification
