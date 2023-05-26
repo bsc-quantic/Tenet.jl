@@ -65,14 +65,16 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not reduce output indices
-            new, old = (ix_j in skip_inds) ? ((ix_i in skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            new, old = (ix_j in nameof.(skip_inds)) ? ((ix_i in nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # replace old index in the other tensors in the network
-            for other_idx in setdiff(keys(tn.tensors), idx)
+            replacements = 0
+            for other_idx in setdiff(keys(tn.tensors)   , idx)
                 other_tensor = tn.tensors[other_idx]
                 if old in labels(other_tensor)
                     new_tensor = replace(other_tensor, old => new)
                     tn.tensors[other_idx] = new_tensor
+                    replacements += 1
                 end
             end
 
@@ -84,6 +86,25 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             data = EinCode((String.(repeated_labels),),[String.(removed_label)...])(tensor)
             tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
             delete!(tn.inds, old)
+
+            # if the new index is in skip_inds, we need to add a COPY tensor
+            if new ∈ nameof.(skip_inds)
+                data = DeltaArray{replacements+2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
+                indices = [Symbol("$(new)$i") for i in 1:replacements+2]
+                copy_tensor = Tensor(data, indices)
+
+                # replace the new index in the other tensors in the network
+                counter = 1
+                for (i, t) in enumerate(tn.tensors)
+                    if new in labels(t)
+                        new_tensor = replace(t, new => indices[counter])
+                        tn.tensors[i] = new_tensor
+                        counter += 1
+                    end
+                end
+
+                push!(tn, copy_tensor)
+            end
 
             tensor = tn.tensors[idx]
             diag_axes = find_diag_axes(parent(tensor), config.atol)
