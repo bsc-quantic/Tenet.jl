@@ -75,6 +75,17 @@
     @testset "AntiDiagonalGauging" begin
         using Tenet: AntiDiagonalGauging, find_anti_diag_axes
 
+        function has_antidiagonal_in_innerinds(tensor, innerinds)
+            for (i, j) in find_anti_diag_axes(parent(tensor))
+                idx_i, idx_j = labels(tensor)[i], labels(tensor)[j]
+
+                if idx_i ∈ nameof.(innerinds) || idx_j ∈ nameof.(innerinds)
+                    return true
+                end
+            end
+            return false
+        end
+
         d = 2  # size of indices
 
         data = zeros(Float64, d, d, d, d, d)
@@ -96,9 +107,20 @@
         B = Tensor(data2, (:j, :n, :o))
         C = Tensor(rand(d, d, d), (:k, :p, :q))
 
+        @test issetequal(find_anti_diag_axes(parent(A)), [(1, 4), (2, 5)])
+        @test issetequal(find_anti_diag_axes(parent(B)), [(1, 2)])
 
         tn = TensorNetwork([A, B, C])
+        gauged = transform(tn, AntiDiagonalGauging)
 
+        # Test that all tensors in gauged have no antidiagonals
+        for tensor in tensors(gauged)
+            @test has_antidiagonal_in_innerinds(tensor, innerinds(gauged)) == false
+        end
 
+        # Test that the resulting contraction is the same as the original
+        # TODO: Change for: @test contract(gauged) ≈ contract(tn), when is fixed
+        A_2, B_2, C_2 = tensors(gauged)
+        @test contract(A, contract(B, C)) ≈ contract(A_2, contract(B_2, C_2))
     end
 end
