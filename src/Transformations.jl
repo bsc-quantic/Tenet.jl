@@ -1,4 +1,5 @@
 using DeltaArrays
+using EinExprs
 using OMEinsum
 
 abstract type Transformation end
@@ -107,9 +108,10 @@ function transform!(tn::TensorNetwork, config::RankSimplification)
                 c_tensor = tn.tensors[cidx]
 
                 # Check if contraction does not increase the rank
-                if should_contract(tensor, c_tensor)
+                path = EinExpr([tensor, c_tensor])
+                if ndims(path) <= maximum(ndims.(path.args))
                     # Perform contraction
-                    new_tensor = contract(tensor, c_tensor)
+                    new_tensor = contract(path)
 
                     # Update tensor network
                     tn.tensors[idx] = new_tensor
@@ -174,17 +176,6 @@ function find_connected_tensors(tn::TensorNetwork, idx)
     return connected_tensors
 end
 
-# Check if contracting the two tensors will not increase the rank
-function should_contract(t1::Tensor, t2::Tensor)
-    t1_labels = labels(t1)
-    t2_labels = labels(t2)
-
-    unique_labels = setdiff(t1_labels ∪ t2_labels, t1_labels ∩ t2_labels)
-
-    # If total number of unique labels is <= the maximum rank of the original tensors
-    return length(unique_labels) <= max(length(t1_labels), length(t2_labels))
-end
-  
 function find_diag_axes(x::AbstractArray, atol=1e-12)
     ndims = size(x)
 
