@@ -3,7 +3,7 @@ using OMEinsum
 
 abstract type Transformation end
 
-transform(tn::TensorNetwork, transformations) = (tn = copy(tn); transform!(tn, transformations); return tn)
+transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
 
 function transform! end
 
