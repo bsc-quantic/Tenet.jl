@@ -98,37 +98,27 @@ end
 struct RankSimplification <: Transformation end
 
 function transform!(tn::TensorNetwork, ::RankSimplification)
-    contracted = true  # Initialize contracted to true
+    @label rank_transformation_start
+    for tensor in tensors(tn)
+        # TODO replace this code for `neighbours` method
+        connected_tensors = mapreduce(label -> select(tn, label), ∪, labels(tensor))
+        filter!(!=(tensor), connected_tensors)
 
-    while contracted
-        contracted = false  # Reset contracted to false at the beginning of each iteration
+        for c_tensor in connected_tensors
+            path = EinExpr([tensor, c_tensor])
 
-        for (idx, tensor) in enumerate(tn.tensors) # loop over all tensors
-            connected_tensors = find_connected_tensors(tn, idx)
-            for cidx in connected_tensors
-                c_tensor = tn.tensors[cidx]
+            # Check if contraction does not increase the rank
+            # TODO implement `removedrank` counter on EinExprs and let it choose function
+            if ndims(path) <= maximum(ndims.(path.args))
+                new_tensor = contract(path)
 
-                # Check if contraction does not increase the rank
-                path = EinExpr([tensor, c_tensor])
-                if ndims(path) <= maximum(ndims.(path.args))
-                    # Perform contraction
-                    new_tensor = contract(path)
+                # Update tensor network
+                push!(tn, new_tensor)
+                delete!(tn, tensor)
+                delete!(tn, c_tensor)
 
-                    # Update tensor network
-                    tn.tensors[idx] = new_tensor
-                    deleteat!(tn.tensors, cidx)
-
-                    # Update indices
-                    dummy_labels = labels(tensor) ∩ labels(c_tensor)
-                    for label in dummy_labels
-                        delete!(tn.inds, label)
-                    end
-
-                    contracted = true
-
-                    # Break the loop since we modified the network and need to recheck connections
-                    break
-                end
+                # Break the loop since we modified the network and need to recheck connections
+                @goto rank_transformation_start
             end
         end
     end
@@ -164,18 +154,6 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     end
 
     return tn
-end
-
-# Find connected tensors in the tensor network
-function find_connected_tensors(tn::TensorNetwork, idx)
-    tensor = tn.tensors[idx]
-    connected_tensors = []
-
-    for (other_idx, other_tensor) in enumerate(tn.tensors)
-        other_idx != idx && !isempty(labels(tensor) ∩ labels(other_tensor)) && push!(connected_tensors, other_idx)
-    end
-
-    return connected_tensors
 end
 
 function find_diag_axes(x; atol = 1e-12)
