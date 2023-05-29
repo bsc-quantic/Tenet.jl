@@ -114,6 +114,5 @@
                 # @test contract(reduced) ≈ contract(tn)
             end
         end
-
     end
 end
