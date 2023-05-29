@@ -22,26 +22,6 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     return true
 end
 
-abstract type Composite{Ts<:Tuple} <: Quantum end
-Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
-Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
-
-metadata(A::Type{<:Composite}) = NamedTuple{(:layer, :interlayer),Tuple{NTuple{nlayers(A)},NTuple{nlayers(A) - 1}}}
-
-function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
-    for A in fieldtypes(As)
-        tn_view = layers(tn, i)
-        checkmeta(A, tn_view)
-    end
-end
-
-nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
-
-function layers(tn::TensorNetwork{<:Composite}, i)
-    # TODO create view of TN
-    meta = tn.layer[i]
-end
-
 abstract type Boundary end
 abstract type Open <: Boundary end
 abstract type Periodic <: Boundary end
@@ -69,6 +49,27 @@ tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn)
 tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
+
+## `Composite` type
+abstract type Composite{Ts<:Tuple} <: Quantum end
+Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
+Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
+
+metadata(A::Type{<:Composite}) = NamedTuple{(:layer, :interlayer),Tuple{NTuple{nlayers(A)},NTuple{nlayers(A) - 1}}}
+
+function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
+    for A in fieldtypes(As)
+        tn_view = layers(tn, i)
+        checkmeta(A, tn_view)
+    end
+end
+
+nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
+
+function layers(tn::TensorNetwork{<:Composite}, i)
+    # TODO create view of TN
+    meta = tn.layer[i]
+end
 
 # TODO implement hcat when QA or QB <: Composite
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
@@ -107,6 +108,7 @@ function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     return tn
 end
 
+## Numerical methods
 function contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...)
     contract(hcat(a, b); kwargs...)
 end
