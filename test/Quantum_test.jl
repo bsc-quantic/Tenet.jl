@@ -1,30 +1,34 @@
 @testset "Quantum" begin
-    tn = TensorNetwork{Quantum}([Tensor(rand(2), (:i,))]; plug = Dict([(1, :out) => :i]))
+    using Bijections
+
+    tn = TensorNetwork{Quantum}(
+        [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];
+        interlayer = [Bijection(Dict([1 => :i, 2 => :j]))],
+    )
 
     @testset "metadata" begin
-        @test fieldnames(Tenet.metadata(Quantum)) === (:plug,)
+        @test fieldnames(Tenet.metadata(Quantum)) === (:interlayer,)
         @test Tenet.checkmeta(tn)
 
-        @test hasproperty(tn, :plug)
-        @test tn.plug == Dict([(1, :out) => :i])
+        @test hasproperty(tn, :interlayer)
+        @test only(tn.interlayer) == Bijection(Dict([1 => :i, 2 => :j]))
     end
 
     # TODO write tests for
     # - boundary
     # - plug
-    # - sites for :plug, :in, :out
 
     @testset "sites" begin
-        @test sites(tn) == sites(tn; dir = :out) == [1]
-        @test isempty(sites(tn, dir = :in))
+        @test issetequal(sites(tn), [1, 2])
     end
 
     @testset "labels" begin
-        @test all(allequal, zip(labels(tn), labels(tn, set = :open), labels(tn, :plug), labels(tn, :out), (:i,)))
-        @test isempty(labels(tn, set = :inner))
+        @test issetequal(labels(tn), [:i, :j, :k, :l])
+        @test issetequal(labels(tn, set = :open), [:i, :j, :l])
+        @test issetequal(labels(tn, set = :plug), [:i, :j])
+        @test issetequal(labels(tn, set = :inner), [:k])
         @test isempty(labels(tn, set = :hyper))
-        @test isempty(labels(tn, set = :in))
-        @test isempty(labels(tn, set = :virtual))
+        @test issetequal(labels(tn, set = :virtual), [:k, :l])
     end
 
     # @testset "tensors" begin
@@ -34,14 +38,8 @@
     @testset "adjoint" begin
         adj = adjoint(tn)
 
-        @test sites(tn, dir = :out) == sites(adj, dir = :in)
-        @test isempty(sites(tn, dir = :in))
-        @test isempty(sites(adj, dir = :out))
-
-        @test labels(tn, set = :plug) == labels(adj, set = :plug)
-        @test labels(tn, set = :out) == labels(adj, set = :in)
-        @test isempty(labels(tn, set = :in))
-        @test isempty(labels(adj, set = :out))
+        @test issetequal(sites(tn), sites(adj))
+        @test all(i -> labels(tn, :plug, i) == labels(adj, :plug, i), sites(tn))
     end
 
     @testset "hcat" begin

@@ -65,12 +65,15 @@
                     arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
                     ψ = MatrixProduct{Operator,Open}(arrays, order = (:l, :r, :i, :o))
 
-                    @test issetequal(keys(tensors(ψ, 1, :out).meta[:alias]), [:r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 2, :out).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 3, :out).meta[:alias]), [:l, :i, :o])
+                    # TODO refactor `select` with `tensors` with output selection
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[1])).meta[:alias]), [:r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[2])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[3])).meta[:alias]), [:l, :i, :o])
 
-                    @test tensors(ψ, 1, :out).meta[:alias][:r] === tensors(ψ, 2, :out).meta[:alias][:l]
-                    @test tensors(ψ, 2, :out).meta[:alias][:r] === tensors(ψ, 3, :out).meta[:alias][:l]
+                    @test only(select(ψ, last(ψ.interlayer)[1])).meta[:alias][:r] ===
+                          only(select(ψ, last(ψ.interlayer)[2])).meta[:alias][:l]
+                    @test only(select(ψ, last(ψ.interlayer)[2])).meta[:alias][:r] ===
+                          only(select(ψ, last(ψ.interlayer)[3])).meta[:alias][:l]
                 end
             end
         end
@@ -116,13 +119,17 @@
                     arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
                     ψ = MatrixProduct{Operator,Periodic}(arrays, order = (:l, :r, :i, :o))
 
-                    @test issetequal(keys(tensors(ψ, 1, :out).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 2, :out).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 3, :out).meta[:alias]), [:l, :r, :i, :o])
+                    # TODO refactor `select` with `tensors` with output selection
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[1])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[2])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[3])).meta[:alias]), [:l, :r, :i, :o])
 
-                    @test tensors(ψ, 1, :out).meta[:alias][:r] === tensors(ψ, 2, :out).meta[:alias][:l]
-                    @test tensors(ψ, 2, :out).meta[:alias][:r] === tensors(ψ, 3, :out).meta[:alias][:l]
-                    @test tensors(ψ, 3, :out).meta[:alias][:r] === tensors(ψ, 1, :out).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:l]
                 end
             end
         end

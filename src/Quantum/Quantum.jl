@@ -1,6 +1,7 @@
 using LinearAlgebra
 using UUIDs: uuid4
 using ValSplit
+using Bijections
 
 """
     Quantum
@@ -9,17 +10,14 @@ Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (i
 """
 abstract type Quantum <: Ansatz end
 
-metadata(::Type{Quantum}) = NamedTuple{(:plug,),Tuple{Dict{Tuple{Int,Symbol},Symbol}}}
+metadata(::Type{Quantum}) = NamedTuple{(:interlayer,),Tuple{Vector{Bijection{Int,Symbol}}}}
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # TODO run this check depending if State or Operator
-    last.(keys(tn.plug)) ⊆ (:in, :out) || return false
+    length(tn.interlayer) >= 1 || return false
 
     # meta's indices exist
-    values(tn.plug) ⊆ keys(tn.indices) || return false
-
-    # meta's indices are not repeated
-    allunique(values(tn.plug)) || return false
+    all(bij -> values(bij) ⊆ labels(tn), tn.interlayer) || return false
 
     return true
 end
@@ -61,45 +59,27 @@ function plug end
 plug(::T) where {T<:TensorNetwork} = plug(T)
 plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
 
-sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
-@valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
-sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn.plug)))
-sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(==(:in) ∘ last, keys(tn.plug)))
-sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(==(:out) ∘ last, keys(tn.plug)))
+sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
-labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn.plug))
-labels(tn::TensorNetwork, ::Val{:plug}, site) = labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
-labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn.plug))
-labels(tn::TensorNetwork, ::Val{:in}, site) = tn.plug[(site, :in)]
-labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn.plug))
-labels(tn::TensorNetwork, ::Val{:out}, site) = tn.plug[(site, :out)]
+labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatmap(values, tn.interlayer))
+labels(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
-tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :out, site)) |> only
+tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
-tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:in}) = select(tn, labels(tn, :in, site)) |> only
-tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:out}) = select(tn, labels(tn, :out, site)) |> only
 
 # TODO implement hcat when QA or QB <: Composite
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
-    issetequal(sites(A, :out), sites(B, :in)) ||
-        throw(DimensionMismatch("sites(B,:in) must be equal to sites(A,:out) to connect them"))
+    issetequal(sites(A), sites(B)) ||
+        throw(DimensionMismatch("A and B must contain the same set of sites in order to connect them"))
 
     # rename connector indices
-    newinds = Dict([s => Symbol(uuid4()) for s in sites(A, :out)])
+    newinds = Dict([s => Symbol(uuid4()) for s in sites(A)])
 
-    A = replace(A, [labels(A, :out, site) => newinds[site] for site in sites(A, :out)]...)
-    B = replace(B, [labels(B, :in, site) => newinds[site] for site in sites(B, :in)]...)
-
-    # remove plug metadata on connector indices
-    for site in sites(A, :out)
-        delete!(A.plug, (site, :out))
-    end
-    for site in sites(B, :in)
-        delete!(B.plug, (site, :in))
-    end
+    A = replace(A, [labels(A, :plug, site) => newinds[site] for site in sites(A)]...)
+    B = replace(B, [labels(B, :plug, site) => newinds[site] for site in sites(B)]...)
 
     # rename inner indices of B to avoid hyperindices
     replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
@@ -118,13 +98,7 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     tn = deepcopy(tn)
 
-    copy!(tn.plug, Dict((site, if dir === :in
-        :out
-    elseif dir === :out
-        :in
-    else
-        dir
-    end) => index for ((site, dir), index) in tn.plug))
+    reverse!(tn.interlayer)
 
     for tensor in tensors(tn)
         tensor .= conj(tensor)
