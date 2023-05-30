@@ -55,20 +55,35 @@ abstract type Composite{Ts<:Tuple} <: Quantum end
 Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
 Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
 
-metadata(A::Type{<:Composite}) = NamedTuple{(:layer, :interlayer),Tuple{NTuple{nlayers(A)},NTuple{nlayers(A) - 1}}}
+metadata(A::Type{<:Composite}) = NamedTuple{(:layermeta,),Tuple{Vector{Dict{Symbol,Any}}}}
 
 function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
-    for A in fieldtypes(As)
+    for (i, A) in enumerate(fieldtypes(As))
         tn_view = layers(tn, i)
-        checkmeta(A, tn_view)
+        checkansatz(tn_view)
     end
+
+    return true
 end
 
 nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
 
-function layers(tn::TensorNetwork{<:Composite}, i)
-    # TODO create view of TN
-    meta = tn.layer[i]
+# TODO create view of TN
+function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
+    A = fieldtypes(As)[i]
+
+    plug(A) <: State && i ∈ extrema(1:length(tn.interlayer)) ||
+        throw(ErrorException("Layer #$i is a state but it is not a extreme layer"))
+
+    interlayer = if plug(A) <: State
+        i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
+    elseif plug(A) <: Operator
+        tn.interlayer[i-1:i]
+    end
+
+    meta = tn.layermeta[i]
+
+    return TensorNetwork{A}(filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn)); interlayer, meta...)
 end
 
 # TODO implement hcat when QA or QB <: Composite
@@ -79,19 +94,33 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     # rename connector indices
     newinds = Dict([s => Symbol(uuid4()) for s in sites(A)])
 
-    A = replace(A, [labels(A, :plug, site) => newinds[site] for site in sites(A)]...)
-    B = replace(B, [labels(B, :plug, site) => newinds[site] for site in sites(B)]...)
+    B = copy(B)
+
+    for site in sites(B)
+        a = labels(A, :plug, site)
+        b = labels(B, :plug, site)
+        if a != b
+            replace!(B, b => a)
+        end
+    end
 
     # rename inner indices of B to avoid hyperindices
     replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
-    # merge tensors and indices
-    tn = TensorNetwork{Composite(QA, QB)}(
-        [tensors(A)..., tensors(B)...];
-        mergewith((a, b) -> a isa AbstractDict ? merge(a, b) : a, A.metadata, B.metadata)...,
-    )
+    # TODO refactor this part to be compatible with more layers
+    foreach(tensor -> tensor.meta[:layer] = 1, tensors(A))
+    foreach(tensor -> tensor.meta[:layer] = 2, tensors(B))
 
-    return tn
+    # merge tensors and indices
+    interlayer = [A.interlayer..., B.interlayer...]
+
+    # TODO merge metadata?
+    layermeta = Dict{Symbol,Any}[
+        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(A.metadata))),
+        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(B.metadata))),
+    ]
+
+    return TensorNetwork{Composite(QA, QB)}([tensors(A)..., tensors(B)...]; interlayer, layermeta)
 end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)

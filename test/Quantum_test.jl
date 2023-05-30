@@ -1,7 +1,10 @@
 @testset "Quantum" begin
     using Bijections
 
-    tn = TensorNetwork{Quantum}(
+    struct MockState <: Quantum end
+    Tenet.plug(::Type{MockState}) = State
+
+    tn = TensorNetwork{MockState}(
         [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];
         interlayer = [Bijection(Dict([1 => :i, 2 => :j]))],
     )
@@ -43,8 +46,11 @@
     end
 
     @testset "hcat" begin
-        let tn = hcat(tn, tn')
-            # TODO
+        let expectation = hcat(tn, tn')
+            @test issetequal(sites(expectation), sites(tn))
+            @test issetequal(labels(expectation, set = :plug), labels(tn, set = :plug))
+            @test isempty(labels(expectation, set = :open))
+            @test issetequal(labels(expectation, set = :inner), labels(expectation, set = :all))
         end
     end
 end
