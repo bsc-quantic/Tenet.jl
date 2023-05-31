@@ -178,6 +178,55 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     return tn
 end
 
+Base.@kwdef struct ColumnReduction <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Index} = Symbol[]
+end
+
+function transform!(tn::TensorNetwork, config::ColumnReduction)
+    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+
+    for idx in keys(tn.tensors)
+        tensor = tn.tensors[idx]
+
+        column_axes = find_column_axes(parent(tensor), atol = config.atol)
+
+        for (d, c) in column_axes # loop over all column axes
+            ix_i = labels(tensor)[d]
+
+            # do not reduce output indices
+            if ix_i ∈ nameof.(skip_inds)
+                continue
+            end
+
+            # reduce all tensors where ix_i appears
+            for (ind, t) in enumerate(tensors(tn))
+                if ix_i ∈ labels(t)
+                    reduced_dims = [i == ix_i ? filter(j -> j != c, 1:size(t, i)) : (1:size(t, i)) for i in labels(t)]
+                    tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), labels(t))
+                end
+            end
+        end
+    end
+
+    return tn
+end
+
+function find_column_axes(x; atol=1e-12)
+    ndims = size(x)
+
+    column_axes = []
+    for d in 1:length(ndims)
+        for i in 1:ndims[d]
+            column = selectdim(x, d, i)
+            if all(abs.(column) .<= atol)
+                push!(column_axes, (d, i))
+            end
+        end
+    end
+    return unique(column_axes)
+end
+
 function find_diag_axes(x; atol = 1e-12)
     ndims = size(x)
 
@@ -207,4 +256,4 @@ function find_anti_diag_axes(x; atol = 1e-12)
     end
 end
 
-# TODO column reduction, split simplification
+# TODO split simplification
