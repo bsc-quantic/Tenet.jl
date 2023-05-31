@@ -217,6 +217,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
                     tn.tensors[ind] = Tensor(new_tensor, new_labels)
                 end
             end
+            delete!(tn.inds, ix_i)
         end
 
         # Then try to reduce the dimensionality of the index in the other tensors
@@ -236,7 +237,6 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
                     tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), labels(t))
                 end
             end
-            delete!(tn.inds, ix_i)
         end
     end
 
