@@ -199,28 +199,57 @@
     end
 
     @testset "ColumnReduction" begin
-        using Tenet: ColumnReduction, find_column_axes, labels
+        using Tenet: ColumnReduction, find_zero_columns, labels
 
-        data = rand(3, 3, 3)
-        data[:,2,:] .= 0 # 2nd column of the 2nd dimension can be reduced
+        @testset "rank reduction" begin
+            data = rand(3, 3, 3)
+            data[:,1:2,:] .= 0 # 1st and 2nd column of the 2nd dimension are zero
+            # Since there is only one non-zero column, the whole 2nd dimension can be reduced
 
-        A = Tensor(data, (:i, :j, :k))
-        B = Tensor(rand(3, 3), (:j, :l))
-        C = Tensor(rand(3, 3), (:k, :m))
+            A = Tensor(data, (:i, :j, :k))
+            B = Tensor(rand(3, 3), (:j, :l))
+            C = Tensor(rand(3, 3), (:j, :m))
 
-        @test issetequal(find_column_axes(parent(A)), [(2, 2)])
+            @test issetequal(find_zero_columns(parent(A)), [(2, 1), (2, 2)])
 
-        tn = TensorNetwork([A, B, C])
-        reduced = transform(tn, ColumnReduction)
+            tn = TensorNetwork([A, B, C])
+            reduced = transform(tn, ColumnReduction)
 
-        # Test that all the tensors in reduced have no columns
-        for tensor in tensors(reduced)
-            @test isempty(find_column_axes(parent(tensor)))
+            # Test that all the tensors in reduced have no columns and they do not have the 2nd :j index
+            for tensor in tensors(reduced)
+                @test isempty(find_zero_columns(parent(tensor)))
+                @test :j ∉ labels(tensor)
+            end
+
+            # Test that the resulting contraction is the same as the original
+            # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
+            A_2, B_2, C_2 = tensors(reduced)
+            @test contract(A, contract(B, C, dims = [])) ≈ contract(A_2, contract(B_2, C_2, dims = []))
         end
 
-        # Test that the resulting contraction is the same as the original
-        # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
-        A_2, B_2, C_2 = tensors(reduced)
-        @test contract(A, contract(B, C)) ≈ contract(A_2, contract(B_2, C_2))
+        @testset "index size reduction" begin
+            data = rand(3, 3, 3)
+            data[:,2,:] .= 0 # 2nd column of the 2nd dimension can be reduced
+
+            A = Tensor(data, (:i, :j, :k))
+            B = Tensor(rand(3, 3), (:j, :l))
+            C = Tensor(rand(3, 3), (:j, :m))
+
+            @test issetequal(find_zero_columns(parent(A)), [(2, 2)])
+
+            tn = TensorNetwork([A, B, C])
+            reduced = transform(tn, ColumnReduction)
+
+            # Test that all the tensors in reduced have no columns and they have smaller dimensions in the 2nd :j index
+            for tensor in tensors(reduced)
+                @test isempty(find_zero_columns(parent(tensor)))
+                @test size(tensor, :j) == 2
+            end
+
+            # Test that the resulting contraction is the same as the original
+            # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
+            A_2, B_2, C_2 = tensors(reduced)
+            @test contract(A, contract(B, C, dims = [])) ≈ contract(A_2, contract(B_2, C_2, dims = []))
+        end
     end
 end
