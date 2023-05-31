@@ -189,9 +189,39 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
 
-        column_axes = find_column_axes(parent(tensor), atol = config.atol)
+        zero_columns = find_zero_columns(parent(tensor), atol=config.atol)
+        zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
 
-        for (d, c) in column_axes # loop over all column axes
+        # find non-zero column for each axis
+        non_zero_columns = [(d, setdiff(1:size(tensor,d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
+
+        # remove axes that have more than one non-zero column
+        axes_to_reduce = [(d, c[1]) for (d, c) in filter(x -> length(x[2]) == 1, non_zero_columns)]
+
+        # First try to reduce the whole index if only one column is non-zeros
+        for (d, c) in axes_to_reduce # loop over all column axes
+            ix_i = labels(tensor)[d]
+
+            # do not reduce output indices
+            if ix_i ∈ nameof.(skip_inds)
+                continue
+            end
+
+            # reduce all tensors where ix_i appears
+            for (ind, t) in enumerate(tensors(tn))
+                if ix_i ∈ labels(t)
+                    # Replace the tensor with the reduced one
+                    new_tensor = selectdim(parent(t), findfirst(l -> l == ix_i, labels(t)), c)
+                    new_labels = filter(l -> l != ix_i, labels(t))
+
+                    tn.tensors[ind] = Tensor(new_tensor, new_labels)
+                end
+            end
+        end
+
+        # Then try to reduce the dimensionality of the index in the other tensors
+        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
+        for (d, c) in zero_columns # loop over all column axes
             ix_i = labels(tensor)[d]
 
             # do not reduce output indices
@@ -212,7 +242,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
-function find_column_axes(x; atol=1e-12)
+function find_zero_columns(x; atol=1e-12)
     ndims = size(x)
 
     column_axes = []
