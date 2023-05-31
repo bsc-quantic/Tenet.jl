@@ -221,6 +221,8 @@
                 @test :j ∉ labels(tensor)
             end
 
+            @test length(tn.inds) > length(reduced.inds)
+
             # Test that the resulting contraction is the same as the original
             # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
             A_2, B_2, C_2 = tensors(reduced)
@@ -245,6 +247,8 @@
                 @test isempty(find_zero_columns(parent(tensor)))
                 @test size(tensor, :j) == 2
             end
+
+            @test length(tn.inds) == length(reduced.inds)
 
             # Test that the resulting contraction is the same as the original
             # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
