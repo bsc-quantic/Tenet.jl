@@ -41,7 +41,7 @@ plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
 
 sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
-labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatmap(values, tn.interlayer))
+labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
 labels(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
