@@ -32,6 +32,7 @@ TenetMakieExt = "Makie"
 TenetQuacExt = "Quac"
 
 [compat]
+Bijections = "0.1"
 Combinatorics = "1.0"
 DeltaArrays = "0.1.0"
 EinExprs = "0.1.1"
