@@ -82,7 +82,7 @@ function MatrixProduct{P,B}(
         Tensor(array, labels; alias = alias)
     end
 
-    return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, interlayer, metadata...)
+    return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
 end
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more

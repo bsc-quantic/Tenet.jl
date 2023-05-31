@@ -10,7 +10,8 @@ Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (i
 """
 abstract type Quantum <: Ansatz end
 
-metadata(::Type{Quantum}) = NamedTuple{(:interlayer,),Tuple{Vector{Bijection{Int,Symbol}}}}
+# NOTE Storing `Plug` type on type parameters is not compatible with `Composite` ansatz. Use Holy traits instead.
+metadata(::Type{Quantum}) = NamedTuple{(:plug, :interlayer),Tuple{Type{<:Plug},Vector{Bijection{Int,Symbol}}}}
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # TODO run this check depending if State or Operator
@@ -36,8 +37,8 @@ abstract type State <: Plug end
 abstract type Operator <: Plug end
 
 function plug end
-plug(::T) where {T<:TensorNetwork} = plug(T)
-plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
+plug(tn::TensorNetwork{<:Quantum}) = tn.plug
+plug(T::Type{<:TensorNetwork}) = plug(ansatz(T))
 
 sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
@@ -81,10 +82,21 @@ function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
         tn.interlayer[i-1:i]
     end
 
+    layer_plug = plug(A)
     meta = tn.layermeta[i]
 
-    return TensorNetwork{A}(filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn)); interlayer, meta...)
+    return TensorNetwork{A}(
+        filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
+        plug = layer_plug,
+        interlayer,
+        meta...,
+    )
 end
+
+Base.merge(::Type{State}, ::Type{State}) = Property
+Base.merge(::Type{State}, ::Type{Operator}) = State
+Base.merge(::Type{Operator}, ::Type{State}) = State
+Base.merge(::Type{Operator}, ::Type{Operator}) = Operator
 
 # TODO implement hcat when QA or QB <: Composite
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
@@ -111,6 +123,8 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     foreach(tensor -> tensor.meta[:layer] = 1, tensors(A))
     foreach(tensor -> tensor.meta[:layer] = 2, tensors(B))
 
+    combined_plug = merge(plug(A), plug(B))
+
     # merge tensors and indices
     interlayer = [A.interlayer..., B.interlayer...]
 
@@ -120,7 +134,7 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
         Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(B.metadata))),
     ]
 
-    return TensorNetwork{Composite(QA, QB)}([tensors(A)..., tensors(B)...]; interlayer, layermeta)
+    return TensorNetwork{Composite(QA, QB)}([tensors(A)..., tensors(B)...]; plug = combined_plug, interlayer, layermeta)
 end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)

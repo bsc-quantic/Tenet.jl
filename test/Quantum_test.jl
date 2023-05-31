@@ -6,11 +6,12 @@
 
     tn = TensorNetwork{MockState}(
         [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];
+        plug = State,
         interlayer = [Bijection(Dict([1 => :i, 2 => :j]))],
     )
 
     @testset "metadata" begin
-        @test fieldnames(Tenet.metadata(Quantum)) === (:interlayer,)
+        @test fieldnames(Tenet.metadata(Quantum)) === (:plug, :interlayer)
         @test Tenet.checkmeta(tn)
 
         @test hasproperty(tn, :interlayer)
