@@ -1,5 +1,6 @@
 using DeltaArrays
 using OMEinsum
+using UUIDs: uuid4
 
 abstract type Transformation end
 
@@ -90,8 +91,8 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # if the new index is in skip_inds, we need to add a COPY tensor
             if new ∈ nameof.(skip_inds)
                 data = DeltaArray{replacements+2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
-                indices = [Symbol("$(new)$i") for i in 1:replacements+2]
-                copy_tensor = Tensor(data, indices)
+                indices = [Symbol(uuid4()) for i in 1:replacements+1]
+                copy_tensor = Tensor(data, (new, indices...))
 
                 # replace the new index in the other tensors in the network
                 counter = 1
