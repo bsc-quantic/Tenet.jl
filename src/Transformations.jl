@@ -243,18 +243,26 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
 end
 
 function find_zero_columns(x; atol=1e-12)
-    ndims = size(x)
+    dims = size(x)
 
-    column_axes = []
-    for d in 1:length(ndims)
-        for i in 1:ndims[d]
-            column = selectdim(x, d, i)
-            if all(abs.(column) .<= atol)
-                push!(column_axes, (d, i))
+    # Create an initial set of all possible column pairs
+    zero_columns = Set((d, c) for d in 1:length(dims) for c in 1:dims[d])
+
+    # Iterate over each element in tensor
+    for index in CartesianIndices(x)
+        val = x[index]
+
+        # For each non-zero element, eliminate the corresponding column from the zero_columns set
+        if abs(val) > atol
+            for d in 1:length(dims)
+                c = index[d]
+                delete!(zero_columns, (d, c))
             end
         end
     end
-    return unique(column_axes)
+
+    # Now the zero_columns set only contains column pairs where all elements are zero
+    return collect(zero_columns)
 end
 
 function find_diag_axes(x; atol = 1e-12)
