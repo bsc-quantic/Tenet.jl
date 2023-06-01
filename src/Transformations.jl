@@ -186,8 +186,7 @@ end
 function transform!(tn::TensorNetwork, config::ColumnReduction)
     skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
 
-    for idx in keys(tn.tensors)
-        tensor = tn.tensors[idx]
+    for tensor in tn.tensors
 
         zero_columns = find_zero_columns(parent(tensor), atol=config.atol)
         zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
