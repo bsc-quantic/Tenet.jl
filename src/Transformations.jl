@@ -178,6 +178,92 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     return tn
 end
 
+Base.@kwdef struct ColumnReduction <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Index} = Symbol[]
+end
+
+function transform!(tn::TensorNetwork, config::ColumnReduction)
+    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+
+    for tensor in tn.tensors
+        zero_columns = find_zero_columns(parent(tensor), atol=config.atol)
+        zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
+
+        # find non-zero column for each axis
+        non_zero_columns = [(d, setdiff(1:size(tensor,d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
+
+        # remove axes that have more than one non-zero column
+        axes_to_reduce = [(d, c[1]) for (d, c) in filter(x -> length(x[2]) == 1, non_zero_columns)]
+
+        # First try to reduce the whole index if only one column is non-zeros
+        for (d, c) in axes_to_reduce # loop over all column axes
+            ix_i = labels(tensor)[d]
+
+            # do not reduce output indices
+            if ix_i ∈ nameof.(skip_inds)
+                continue
+            end
+
+            # reduce all tensors where ix_i appears
+            for (ind, t) in enumerate(tensors(tn))
+                if ix_i ∈ labels(t)
+                    # Replace the tensor with the reduced one
+                    new_tensor = selectdim(parent(t), findfirst(l -> l == ix_i, labels(t)), c)
+                    new_labels = filter(l -> l != ix_i, labels(t))
+
+                    tn.tensors[ind] = Tensor(new_tensor, new_labels)
+                end
+            end
+            delete!(tn.inds, ix_i)
+        end
+
+        # Then try to reduce the dimensionality of the index in the other tensors
+        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
+        for (d, c) in zero_columns # loop over all column axes
+            ix_i = labels(tensor)[d]
+
+            # do not reduce output indices
+            if ix_i ∈ nameof.(skip_inds)
+                continue
+            end
+
+            # reduce all tensors where ix_i appears
+            for (ind, t) in enumerate(tensors(tn))
+                if ix_i ∈ labels(t)
+                    reduced_dims = [i == ix_i ? filter(j -> j != c, 1:size(t, i)) : (1:size(t, i)) for i in labels(t)]
+                    tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), labels(t))
+                end
+            end
+        end
+    end
+
+    return tn
+end
+
+function find_zero_columns(x; atol=1e-12)
+    dims = size(x)
+
+    # Create an initial set of all possible column pairs
+    zero_columns = Set((d, c) for d in 1:length(dims) for c in 1:dims[d])
+
+    # Iterate over each element in tensor
+    for index in CartesianIndices(x)
+        val = x[index]
+
+        # For each non-zero element, eliminate the corresponding column from the zero_columns set
+        if abs(val) > atol
+            for d in 1:length(dims)
+                c = index[d]
+                delete!(zero_columns, (d, c))
+            end
+        end
+    end
+
+    # Now the zero_columns set only contains column pairs where all elements are zero
+    return collect(zero_columns)
+end
+
 function find_diag_axes(x; atol = 1e-12)
     ndims = size(x)
 
@@ -207,4 +293,4 @@ function find_anti_diag_axes(x; atol = 1e-12)
     end
 end
 
-# TODO column reduction, split simplification
+# TODO split simplification
