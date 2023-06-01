@@ -1,4 +1,6 @@
 @testset "MatrixProduct{State}" begin
+    using Tenet: Composite
+
     @testset "plug" begin
         @test plug(MatrixProduct{State}) === State
         @test all(T -> plug(MatrixProduct{State,T}) === State, [Open, Periodic])
@@ -127,6 +129,20 @@
                     @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
                 end
             end
+        end
+    end
+
+    @testset "hcat" begin
+        @test begin
+            arrays = [rand(2, 2), rand(2, 2)]
+            mps =  MatrixProduct{State,Open}(arrays)
+            hcat(mps, mps) isa TensorNetwork{<:Composite}
+        end
+
+        @test begin
+            arrays = [rand(1, 1, 2), rand(1, 1, 2)]
+            mps =  MatrixProduct{State,Periodic}(arrays)
+            hcat(mps, mps) isa TensorNetwork{<:Composite}
         end
     end
 end
