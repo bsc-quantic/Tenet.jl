@@ -89,13 +89,16 @@ nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
 function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
     A = fieldtypes(As)[i]
 
-    plug(A) <: State && i ∈ extrema(1:length(tn.interlayer)) ||
+    if plug(A) <: State && 1 < i < length(fieldtypes(As))
         throw(ErrorException("Layer #$i is a state but it is not a extreme layer"))
+    end
 
     interlayer = if plug(A) <: State
         i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
     elseif plug(A) <: Operator
-        tn.interlayer[i-1:i]
+        # shift if first layer is a state
+        plug(first(fieldtypes(As))) <: State && (i = i - 1)
+        tn.interlayer[i:i+1]
     end
 
     layer_plug = plug(A)
@@ -142,7 +145,7 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     combined_plug = merge(plug(A), plug(B))
 
     # merge tensors and indices
-    interlayer = [A.interlayer..., B.interlayer...]
+    interlayer = [A.interlayer..., collect(Iterators.drop(B.interlayer, 1))...]
 
     # TODO merge metadata?
     layermeta = Dict{Symbol,Any}[
