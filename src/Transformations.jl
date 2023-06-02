@@ -52,7 +52,7 @@ end
 
 Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
+    skip::Vector{Symbol} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::DiagonalReduction)
@@ -153,7 +153,7 @@ end
 
 Base.@kwdef struct AntiDiagonalGauging <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
+    skip::Vector{Symbol} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
@@ -183,7 +183,7 @@ end
 
 Base.@kwdef struct ColumnReduction <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
+    skip::Vector{Symbol} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::ColumnReduction)
