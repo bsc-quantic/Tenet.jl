@@ -1,0 +1,77 @@
+name: "[CI] Generate sysimage"
+on:
+  workflow_dispatch:
+jobs:
+  generate:
+    name: Julia ${{ matrix.version }} - ${{ matrix.arch }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        version:
+          - '1.8'
+          - '1.9'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+    steps:
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          include-all-prereleases: true
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
+        shell: julia {0}
+      - name: Generate sysimage
+        run: |
+          using Pkg
+          using Logging
+          using UUIDs
+
+          project = Pkg.project()
+          deps = project.dependencies
+
+          weakdeps = if isdefined(Base, :get_extension)
+              Dict(k => UUID(v) for (k,v) in Pkg.Types.read_project(project.path).other["weakdeps"])
+            else
+              empty(deps)
+            end
+
+          # get test dependencies
+          testdeps = begin
+            Pkg.activate("test")
+            filter(d -> d.first ∉ (["Aqua", "Test", "ChainRulesTestUtils"]), Pkg.project().dependencies)
+          end
+
+          @info "Dependencies" direct = join(collect(keys(deps)), ", ") weakdeps = join(collect(keys(weakdeps)), ", ") test = join(collect(keys(testdeps)), ", ")
+
+          Pkg.activate(; temp=true)
+          merge!(deps, weakdeps, testdeps)
+          
+          # NOTE filter CairoMakie because it crashes on sysimage generation
+          filter!(d -> d.first !=("CairoMakie"), deps)
+
+          Pkg.add([(; name = k, uuid = v) for (k,v) in deps])
+
+          # generate sysimage
+          Pkg.add("PackageCompiler")
+          using PackageCompiler
+          create_sysimage(collect(keys(deps)); sysimage_path="test_sysimage.so")
+        shell: julia --project=@. --color=yes {0}
+      - name: Clean cache
+        run: |
+          gh extension install actions/gh-actions-cache
+          set +e
+          gh actions-cache delete -R ${{ github.repository }} --confirm "sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache/save@v3
+        if: always()
+        with:
+          path: test_sysimage.so
+          key: sysimage-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.os }}
