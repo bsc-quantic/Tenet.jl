@@ -70,11 +70,12 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not reduce output indices
-            new, old = (ix_j in nameof.(skip_inds)) ? ((ix_i in nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            new, old =
+                (ix_j in nameof.(skip_inds)) ? ((ix_i in nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # replace old index in the other tensors in the network
             replacements = 0
-            for other_idx in setdiff(keys(tn.tensors)   , idx)
+            for other_idx in setdiff(keys(tn.tensors), idx)
                 other_tensor = tn.tensors[other_idx]
                 if old in labels(other_tensor)
                     new_tensor = replace(other_tensor, old => new)
@@ -94,7 +95,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
 
             # if the new index is in skip_inds, we need to add a COPY tensor
             if new ∈ nameof.(skip_inds)
-                data = DeltaArray{replacements+2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
+                data = DeltaArray{replacements + 2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
                 indices = [Symbol(uuid4()) for i in 1:replacements+1]
                 copy_tensor = Tensor(data, (new, indices...))
 
@@ -189,11 +190,12 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
 
     for tensor in tn.tensors
-        zero_columns = find_zero_columns(parent(tensor), atol=config.atol)
+        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
         zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
 
         # find non-zero column for each axis
-        non_zero_columns = [(d, setdiff(1:size(tensor,d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
+        non_zero_columns =
+            [(d, setdiff(1:size(tensor, d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
 
         # remove axes that have more than one non-zero column
         axes_to_reduce = [(d, c[1]) for (d, c) in filter(x -> length(x[2]) == 1, non_zero_columns)]
@@ -243,7 +245,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
-function find_zero_columns(x; atol=1e-12)
+function find_zero_columns(x; atol = 1e-12)
     dims = size(x)
 
     # Create an initial set of all possible column pairs

@@ -138,7 +138,7 @@
     @testset "hcat" begin
         @test begin
             arrays = [rand(2, 2), rand(2, 2)]
-            mps =  MatrixProduct{State,Open}(arrays)
+            mps = MatrixProduct{State,Open}(arrays)
             arrays_o = [rand(2, 2, 2), rand(2, 2, 2)]
             mpo = MatrixProduct{Operator}(arrays_o)
             hcat(mps, mpo) isa TensorNetwork{<:Composite}
@@ -146,7 +146,7 @@
 
         @test begin
             arrays = [rand(2, 2), rand(2, 2)]
-            mps =  MatrixProduct{State,Open}(arrays)
+            mps = MatrixProduct{State,Open}(arrays)
             arrays_o = [rand(2, 2, 2), rand(2, 2, 2)]
             mpo = MatrixProduct{Operator}(arrays_o)
             hcat(mpo, mps) isa TensorNetwork{<:Composite}

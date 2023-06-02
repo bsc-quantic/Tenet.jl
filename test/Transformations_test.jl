@@ -122,7 +122,7 @@
             A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l))
             B = Tensor(rand(2, 2), (:i, :m))
             C = Tensor(rand(2, 2, 2), (:m, :n, :o))
-            D = Tensor(rand(2,), (:p,))
+            D = Tensor(rand(2), (:p,))
             E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j))
 
             tn = TensorNetwork([A, B, C, D, E])
@@ -141,7 +141,10 @@
             contracted_tn = contract(tn)
 
             # Calculate the permutation for the `reduced` tensor labels to match `tn`
-            perm = sortperm(collect(labels(contracted_reduced)), by = x -> findfirst(==(x), collect(labels(contracted_tn))))
+            perm = sortperm(
+                collect(labels(contracted_reduced)),
+                by = x -> findfirst(==(x), collect(labels(contracted_tn))),
+            )
             @test permutedims(contracted_reduced, perm) ≈ contracted_tn
         end
     end
@@ -173,7 +176,6 @@
 
                     data2[i, d-i+1, k] = 1  # 1st-2nd indices are antidiagonal in data2_anti
                 end
-
             end
         end
 
@@ -203,7 +205,7 @@
 
         @testset "rank reduction" begin
             data = rand(3, 3, 3)
-            data[:,1:2,:] .= 0 # 1st and 2nd column of the 2nd dimension are zero
+            data[:, 1:2, :] .= 0 # 1st and 2nd column of the 2nd dimension are zero
             # Since there is only one non-zero column, the whole 2nd dimension can be reduced
 
             A = Tensor(data, (:i, :j, :k))
@@ -231,7 +233,7 @@
 
         @testset "index size reduction" begin
             data = rand(3, 3, 3)
-            data[:,2,:] .= 0 # 2nd column of the 2nd dimension can be reduced
+            data[:, 2, :] .= 0 # 2nd column of the 2nd dimension can be reduced
 
             A = Tensor(data, (:i, :j, :k))
             B = Tensor(rand(3, 3), (:j, :l))

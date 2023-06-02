@@ -135,13 +135,13 @@
     @testset "hcat" begin
         @test begin
             arrays = [rand(2, 2), rand(2, 2)]
-            mps =  MatrixProduct{State,Open}(arrays)
+            mps = MatrixProduct{State,Open}(arrays)
             hcat(mps, mps) isa TensorNetwork{<:Composite}
         end
 
         @test begin
             arrays = [rand(1, 1, 2), rand(1, 1, 2)]
-            mps =  MatrixProduct{State,Periodic}(arrays)
+            mps = MatrixProduct{State,Periodic}(arrays)
             hcat(mps, mps) isa TensorNetwork{<:Composite}
         end
     end
