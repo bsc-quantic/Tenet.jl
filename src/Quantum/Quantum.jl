@@ -51,6 +51,22 @@ tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(t
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
 
+function Base.replace!(tn::TensorNetwork{<:Quantum}, old_new::Pair{Symbol,Symbol})
+    # replace indices in tensor network
+    @invoke replace!(tn::TensorNetwork, old_new)
+
+    old, new = old_new
+
+    # replace indices in interlayers (quantum-specific)
+    for interlayer in Iterators.filter(∋(old) ∘ image, tn.interlayer)
+        site = interlayer(old)
+        delete!(interlayer, site)
+        interlayer[site] = new
+    end
+
+    return tn
+end
+
 ## `Composite` type
 abstract type Composite{Ts<:Tuple} <: Quantum end
 Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
