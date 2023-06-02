@@ -1,6 +1,7 @@
 using LinearAlgebra
 using UUIDs: uuid4
 using ValSplit
+using Bijections
 
 """
     Quantum
@@ -9,19 +10,15 @@ Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (i
 """
 abstract type Quantum <: Ansatz end
 
-function checkmeta(::Type{Quantum}, tn::TensorNetwork)
-    # meta exists
-    haskey(tn.metadata, :plug) || return false
+# NOTE Storing `Plug` type on type parameters is not compatible with `Composite` ansatz. Use Holy traits instead.
+metadata(::Type{Quantum}) = NamedTuple{(:plug, :interlayer),Tuple{Type{<:Plug},Vector{Bijection{Int,Symbol}}}}
 
-    # meta has correct type
-    tn[:plug] isa AbstractDict{Tuple{Int,Symbol},Symbol} || return false
-    all(∈(:in, :out) ∘ last, keys(tn[:plug])) || return false
+function checkmeta(::Type{Quantum}, tn::TensorNetwork)
+    # TODO run this check depending if State or Operator
+    length(tn.interlayer) >= 1 || return false
 
     # meta's indices exist
-    all(∈(keys(tn.indices)), values(tn[:plug])) || return false
-
-    # meta's indices are not repeated
-    allunique(values(tn[:plug])) || return false
+    all(bij -> values(bij) ⊆ labels(tn), tn.interlayer) || return false
 
     return true
 end
@@ -40,58 +37,123 @@ abstract type State <: Plug end
 abstract type Operator <: Plug end
 
 function plug end
-plug(::T) where {T<:TensorNetwork} = plug(T)
-plug(::Type{T}) where {T<:TensorNetwork} = plug(ansatz(T))
+plug(tn::TensorNetwork{<:Quantum}) = tn.plug
+plug(T::Type{<:TensorNetwork}) = plug(ansatz(T))
 
-sites(tn::TensorNetwork; dir::Symbol = :all) = sites(tn, dir)
-@valsplit 2 sites(tn::TensorNetwork, dir::Symbol) = throw(MethodError(sites, "dir=$dir not recognized"))
-sites(tn::TensorNetwork, ::Val{:all}) = unique(first.(keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:in}) = first.(filter(==(:in) ∘ last, keys(tn[:plug])))
-sites(tn::TensorNetwork, ::Val{:out}) = first.(filter(==(:out) ∘ last, keys(tn[:plug])))
+sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
-labels(tn::TensorNetwork, ::Val{:plug}) = unique(values(tn[:plug]))
-labels(tn::TensorNetwork, ::Val{:plug}, site) = labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
-labels(tn::TensorNetwork, ::Val{:in}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :in, tn[:plug]))
-labels(tn::TensorNetwork, ::Val{:in}, site) = tn[:plug][(site, :in)]
-labels(tn::TensorNetwork, ::Val{:out}) = map(last, Iterators.filter((((_, dir), _),) -> dir === :out, tn[:plug]))
-labels(tn::TensorNetwork, ::Val{:out}, site) = tn[:plug][(site, :out)]
+labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
+labels(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
-tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :out, site)) |> only
+tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
-tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:in}) = select(tn, labels(tn, :in, site)) |> only
-tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, ::Val{:out}) = select(tn, labels(tn, :out, site)) |> only
 
+function Base.replace!(tn::TensorNetwork{<:Quantum}, old_new::Pair{Symbol,Symbol})
+    # replace indices in tensor network
+    Base.@invoke replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
+
+    old, new = old_new
+
+    # replace indices in interlayers (quantum-specific)
+    for interlayer in Iterators.filter(∋(old) ∘ image, tn.interlayer)
+        site = interlayer(old)
+        delete!(interlayer, site)
+        interlayer[site] = new
+    end
+
+    return tn
+end
+
+## `Composite` type
+abstract type Composite{Ts<:Tuple} <: Quantum end
+Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
+Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
+
+metadata(A::Type{<:Composite}) = NamedTuple{(:layermeta,),Tuple{Vector{Dict{Symbol,Any}}}}
+
+function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
+    for (i, A) in enumerate(fieldtypes(As))
+        tn_view = layers(tn, i)
+        checkansatz(tn_view)
+    end
+
+    return true
+end
+
+nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
+
+# TODO create view of TN
+function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
+    A = fieldtypes(As)[i]
+
+    if plug(A) <: State && 1 < i < length(fieldtypes(As))
+        throw(ErrorException("Layer #$i is a state but it is not a extreme layer"))
+    end
+
+    interlayer = if plug(A) <: State
+        i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
+    elseif plug(A) <: Operator
+        # shift if first layer is a state
+        plug(first(fieldtypes(As))) <: State && (i = i - 1)
+        tn.interlayer[i:i+1]
+    end
+
+    layer_plug = plug(A)
+    meta = tn.layermeta[i]
+
+    return TensorNetwork{A}(
+        filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
+        plug = layer_plug,
+        interlayer,
+        meta...,
+    )
+end
+
+Base.merge(::Type{State}, ::Type{State}) = Property
+Base.merge(::Type{State}, ::Type{Operator}) = State
+Base.merge(::Type{Operator}, ::Type{State}) = State
+Base.merge(::Type{Operator}, ::Type{Operator}) = Operator
+
+# TODO implement hcat when QA or QB <: Composite
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
-    issetequal(sites(A, :out), sites(B, :in)) ||
-        throw(DimensionMismatch("sites(B,:in) must be equal to sites(A,:out) to connect them"))
+    issetequal(sites(A), sites(B)) ||
+        throw(DimensionMismatch("A and B must contain the same set of sites in order to connect them"))
 
     # rename connector indices
-    newinds = Dict([s => Symbol(uuid4()) for s in sites(A, :out)])
+    newinds = Dict([s => Symbol(uuid4()) for s in sites(A)])
 
-    A = replace(A, [labels(A, :out, site) => newinds[site] for site in sites(A, :out)]...)
-    B = replace(B, [labels(B, :in, site) => newinds[site] for site in sites(B, :in)]...)
+    B = copy(B)
 
-    # remove plug metadata on connector indices
-    for site in sites(A, :out)
-        delete!(A[:plug], (site, :out))
-    end
-    for site in sites(B, :in)
-        delete!(B[:plug], (site, :in))
+    for site in sites(B)
+        a = labels(A, :plug, site)
+        b = labels(B, :plug, site)
+        if a != b
+            replace!(B, b => a)
+        end
     end
 
     # rename inner indices of B to avoid hyperindices
     replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
 
-    # merge tensors and indices
-    tn = TensorNetwork{Tuple{QA,QB}}(
-        [tensors(A)..., tensors(B)...];
-        mergewith((a, b) -> a isa AbstractDict ? merge(a, b) : a, A.metadata, B.metadata)...,
-    )
+    # TODO refactor this part to be compatible with more layers
+    foreach(tensor -> tensor.meta[:layer] = 1, tensors(A))
+    foreach(tensor -> tensor.meta[:layer] = 2, tensors(B))
 
-    return tn
+    combined_plug = merge(plug(A), plug(B))
+
+    # merge tensors and indices
+    interlayer = [A.interlayer..., collect(Iterators.drop(B.interlayer, 1))...]
+
+    # TODO merge metadata?
+    layermeta = Dict{Symbol,Any}[
+        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(A.metadata))),
+        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(B.metadata))),
+    ]
+
+    return TensorNetwork{Composite(QA, QB)}([tensors(A)..., tensors(B)...]; plug = combined_plug, interlayer, layermeta)
 end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
@@ -99,13 +161,7 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     tn = deepcopy(tn)
 
-    tn.metadata[:plug] = Dict((site, if dir === :in
-        :out
-    elseif dir === :out
-        :in
-    else
-        dir
-    end) => index for ((site, dir), index) in tn[:plug])
+    reverse!(tn.interlayer)
 
     for tensor in tensors(tn)
         tensor .= conj(tensor)
@@ -114,6 +170,7 @@ function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
     return tn
 end
 
+## Numerical methods
 function contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...)
     contract(hcat(a, b); kwargs...)
 end

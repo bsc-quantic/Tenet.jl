@@ -2,6 +2,7 @@ using UUIDs: uuid4
 using Base.Iterators: flatten
 using IterTools: partition
 using Random
+using Bijections
 
 abstract type MatrixProduct{P,B} <: Quantum where {P<:Plug,B<:Boundary} end
 
@@ -12,15 +13,14 @@ function MatrixProduct{P}(arrays; boundary::Type{<:Boundary} = Open, kwargs...) 
     MatrixProduct{P,boundary}(arrays; kwargs...)
 end
 
-function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
-    # meta exists
-    haskey(tn.metadata, :χ) || return false
+metadata(::Type{<:MatrixProduct}) = NamedTuple{(:χ,),Tuple{Union{Nothing,Int}}}
 
+function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     # meta has correct type
-    isnothing(tn[:χ]) || tn[:χ] isa Integer && tn[:χ] > 0 || return false
+    isnothing(tn.χ) || tn.χ > 0 || return false
 
     # no virtual index has dimensionality bigger than χ
-    isnothing(tn[:χ]) || all(i -> size(tn, i) <= tn[:χ], labels(tn, :inner)) || return false
+    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, labels(tn, :virtual)) || return false
 
     return true
 end
@@ -55,8 +55,13 @@ function MatrixProduct{P,B}(
     oinds = Dict(i => Symbol(uuid4()) for i in 1:n)
     iinds = Dict(i => Symbol(uuid4()) for i in 1:n)
 
-    # mark plug connectors
-    plug = Dict((site, :out) => label for (site, label) in oinds)
+    interlayer = if P <: State
+        [Bijection(oinds)]
+    elseif P <: Operator
+        [Bijection(iinds), Bijection(oinds)]
+    else
+        throw(ErrorException("Plug $P is not valid"))
+    end
 
     tensors = map(enumerate(arrays)) do (i, array)
         dirs = _sitealias(MatrixProduct{P,B}, order, n, i)
@@ -77,7 +82,7 @@ function MatrixProduct{P,B}(
         Tensor(array, labels; alias = alias)
     end
 
-    return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug, metadata...)
+    return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
 end
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more

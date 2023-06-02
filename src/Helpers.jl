@@ -66,3 +66,13 @@ julia> letter(20204)
 """
 letter(i) =
     Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first |> Symbol
+
+Base.merge(@nospecialize(A::Type{<:NamedTuple}), @nospecialize(Bs::Type{<:NamedTuple}...)) = NamedTuple{
+    foldl((acc, B) -> (acc..., B...), Iterators.map(fieldnames, Bs); init = fieldnames(A)),
+    foldl((acc, B) -> Tuple{fieldtypes(acc)...,B...}, Iterators.map(fieldtypes, Bs); init = A),
+}
+
+function superansatzes(T)
+    S = supertype(T)
+    return T === Ansatz ? (T,) : (T, superansatzes(S)...)
+end
