@@ -53,7 +53,7 @@ tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(t
 
 function Base.replace!(tn::TensorNetwork{<:Quantum}, old_new::Pair{Symbol,Symbol})
     # replace indices in tensor network
-    Base.@invoke replace!(tn::TensorNetwork, old_new)
+    Base.@invoke replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
 
     old, new = old_new
 
