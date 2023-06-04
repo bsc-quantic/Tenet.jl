@@ -56,7 +56,7 @@ Base.@kwdef struct DiagonalReduction <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::DiagonalReduction)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
     queue = collect(keys(tn.tensors))
 
     while !isempty(queue) # loop over all tensors
@@ -70,8 +70,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not reduce output indices
-            new, old =
-                (ix_j in nameof.(skip_inds)) ? ((ix_i in nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            new, old = (ix_j in skip_inds) ? ((ix_i in skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # replace old index in the other tensors in the network
             replacements = 0
@@ -91,10 +90,10 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # extract diagonal
             data = EinCode((String.(repeated_labels),), [String.(removed_label)...])(tensor)
             tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
-            delete!(tn.inds, old)
+            delete!(tn.indices, old)
 
             # if the new index is in skip_inds, we need to add a COPY tensor
-            if new ∈ nameof.(skip_inds)
+            if new ∈ skip_inds
                 data = DeltaArray{replacements + 2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
                 indices = [Symbol(uuid4()) for i in 1:replacements+1]
                 copy_tensor = Tensor(data, (new, indices...))
@@ -157,7 +156,7 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
 
     for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
@@ -168,8 +167,7 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not gauge output indices
-            _, ix_to_gauge =
-                (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            _, ix_to_gauge = (ix_j ∈ skip_inds) ? ((ix_i ∈ skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
@@ -187,7 +185,7 @@ Base.@kwdef struct ColumnReduction <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::ColumnReduction)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
 
     for tensor in tn.tensors
         zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
@@ -205,7 +203,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
             ix_i = labels(tensor)[d]
 
             # do not reduce output indices
-            if ix_i ∈ nameof.(skip_inds)
+            if ix_i ∈ skip_inds
                 continue
             end
 
@@ -219,7 +217,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
                     tn.tensors[ind] = Tensor(new_tensor, new_labels)
                 end
             end
-            delete!(tn.inds, ix_i)
+            delete!(tn.indices, ix_i)
         end
 
         # Then try to reduce the dimensionality of the index in the other tensors
@@ -228,7 +226,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
             ix_i = labels(tensor)[d]
 
             # do not reduce output indices
-            if ix_i ∈ nameof.(skip_inds)
+            if ix_i ∈ skip_inds
                 continue
             end
 

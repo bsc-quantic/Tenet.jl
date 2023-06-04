@@ -258,8 +258,7 @@
             tn = TensorNetwork([A, B])
             replace!(tn, A => new_tensor)
 
-            @test new_tensor === tensors(tn, 1)
-            @test B === tensors(tn, 2)
+            @test issetequal(tensors(tn), [new_tensor, B])
 
             # Test chain of replacements
             A = Tensor(zeros(2, 2), (:i, :j))
@@ -273,7 +272,7 @@
             new_tensor2 = Tensor(ones(2, 2), (:i, :j))
 
             replace!(tn, A => new_tensor, new_tensor => new_tensor2)
-            @test new_tensor2 === tensors(tn, 1)
+            @test issetequal(tensors(tn), [new_tensor2, B, C])
         end
     end
 end

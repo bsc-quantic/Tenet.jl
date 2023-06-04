@@ -36,14 +36,14 @@
 
     @testset "Local transformations" begin
         @testset "DiagonalReduction" begin
-            using Tenet: DiagonalReduction, find_diag_axes, innerinds
+            using Tenet: DiagonalReduction, find_diag_axes
             using DeltaArrays: DeltaArray
 
             function has_diagonal_in_innerinds(tensor, innerinds)
                 for (i, j) in find_diag_axes(parent(tensor))
                     idx_i, idx_j = labels(tensor)[i], labels(tensor)[j]
 
-                    if idx_i ∈ nameof.(innerinds) || idx_j ∈ nameof.(innerinds)
+                    if idx_i ∈ innerinds || idx_j ∈ innerinds
                         return true
                     end
                 end
@@ -107,7 +107,7 @@
                 # Test that all tensors (that are no COPY tensors) in reduced have no
                 #  diagonals in the that are in innerinds
                 for tensor in filter(t -> !(parent(t) isa DeltaArray), tensors(reduced))
-                    @test has_diagonal_in_innerinds(tensor, innerinds(reduced)) == false
+                    @test has_diagonal_in_innerinds(tensor, labels(reduced, set = :inner)) == false
                 end
 
                 # Test that the resulting contraction returns the same as the original
@@ -150,13 +150,13 @@
     end
 
     @testset "AntiDiagonalGauging" begin
-        using Tenet: AntiDiagonalGauging, find_anti_diag_axes, innerinds, labels
+        using Tenet: AntiDiagonalGauging, find_anti_diag_axes, labels
 
         function has_antidiagonal_in_innerinds(tensor, innerinds)
             for (i, j) in find_anti_diag_axes(parent(tensor))
                 idx_i, idx_j = labels(tensor)[i], labels(tensor)[j]
 
-                if idx_i ∈ nameof.(innerinds) || idx_j ∈ nameof.(innerinds)
+                if idx_i ∈ innerinds || idx_j ∈ innerinds
                     return true
                 end
             end
@@ -191,7 +191,7 @@
 
         # Test that all tensors in gauged have no antidiagonals
         for tensor in tensors(gauged)
-            @test has_antidiagonal_in_innerinds(tensor, innerinds(gauged)) == false
+            @test has_antidiagonal_in_innerinds(tensor, labels(gauged, set = :inner)) == false
         end
 
         # Test that the resulting contraction is the same as the original
@@ -223,7 +223,7 @@
                 @test :j ∉ labels(tensor)
             end
 
-            @test length(tn.inds) > length(reduced.inds)
+            @test length(tn.indices) > length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
             # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
@@ -250,7 +250,7 @@
                 @test size(tensor, :j) == 2
             end
 
-            @test length(tn.inds) == length(reduced.inds)
+            @test length(tn.indices) == length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
             # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
