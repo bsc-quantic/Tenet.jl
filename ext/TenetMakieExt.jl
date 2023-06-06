@@ -1,4 +1,4 @@
-module MakieExt
+module TenetMakieExt
 
 if isdefined(Base, :get_extension)
     using Tenet
@@ -39,16 +39,19 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
     tn = transform(tn, Tenet.HyperindConverter)
 
     # TODO how to mark multiedges? (i.e. parallel edges)
-    handles = IdDict(obj => i for (i, obj) in enumerate(tensors(tn)))
-    graph = SimpleGraph([Edge(handles[a], handles[b]) for ind in inds(tn) for (a, b) in combinations(links(ind), 2)])
+    graph = SimpleGraph([Edge(tensors...) for (_, tensors) in tn.indices if length(tensors) > 1])
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
-    ghostnodes = map(openinds(tn)) do ind
+    ghostnodes = map(Tenet.labels(tn, :open)) do ind
+        # create new ghost node
         add_vertex!(graph)
-        node = nv(graph) # TODO is this the best way to get the id of the newly created node?
-        tensor = only(links(ind))
-        add_edge!(graph, node, handles[tensor])
+        node = nv(graph)
+
+        # connect ghost node
+        tensor = only(tn.indices[ind])
+        add_edge!(graph, node, tensor)
+
         return node
     end
 
@@ -72,15 +75,14 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
-        openlabels = nameof.(openinds(tn))
-        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), openlabels), tensors(tn))
+        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), Tenet.labels(tn, :open)), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
         map(edges(graph)) do edge
             # case: open edge
             if any(∈(ghostnodes), [src(edge), dst(edge)])
                 notghost = src(edge) ∈ ghostnodes ? dst(edge) : src(edge)
-                inds = nameof.(openinds(tn)) ∩ Tenet.labels(tensors(tn)[notghost])
+                inds = Tenet.labels(tn, :open) ∩ Tenet.labels(tensors(tn)[notghost])
                 opencounter[notghost] += 1
                 return inds[opencounter[notghost]] |> string
             end

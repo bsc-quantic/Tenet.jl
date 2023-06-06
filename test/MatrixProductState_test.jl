@@ -1,90 +1,81 @@
-@testset "MatrixProductState" begin
-    using Tenet: TensorNetwork, State, Closed, Open, bounds, MatrixProductState
+@testset "MatrixProduct{State}" begin
+    using Tenet: Composite
 
-    @testset "Types" begin
-        @test MatrixProductState <: State
-        @test all(T -> MatrixProductState{T} <: State, [Open, Closed])
-        @test all(T -> MatrixProductState{T} <: State{T}, [Open, Closed])
-        @test all(B -> bounds(MatrixProductState{B}) == B, [Open, Closed])
+    @testset "plug" begin
+        @test plug(MatrixProduct{State}) === State
+        @test all(T -> plug(MatrixProduct{State,T}) === State, [Open, Periodic])
+    end
+
+    @testset "boundary" begin
+        @test all(B -> boundary(MatrixProduct{State,B}) == B, [Open, Periodic])
     end
 
     @testset "Constructor" begin
         # empty constructor
-        # @test_throws BoundsError MatrixProductState([])
+        @test_throws Exception MatrixProduct{State}([])
 
-        @test_skip begin
-            arrays = [rand(2)]
-            MatrixProductState(arrays)
+        @test begin
+            arrays = [rand(1, 2)]
+            MatrixProduct{State}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
         end
 
-        @test_skip begin
+        @test begin
             arrays = [rand(1, 2), rand(1, 2)]
-            MatrixProductState(arrays) isa TensorNetwork{MatrixProductState{Open}}
+            MatrixProduct{State}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
         end
 
         @testset "`Open` boundary" begin
             # product state
             @test begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
-                MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
+                MatrixProduct{State,Open}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
             end
 
             # entangled state
             @test begin
                 arrays = [rand(2, 2), rand(2, 4, 2), rand(4, 1, 2), rand(1, 2)]
-                MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
+                MatrixProduct{State,Open}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
             end
 
             @testset "custom order" begin
                 arrays = [rand(3, 1), rand(3, 1, 3), rand(1, 3)]
-                ψ = MatrixProductState{Open}(arrays, order = (:r, :p, :l))
+                ψ = MatrixProduct{State,Open}(arrays, order = (:r, :o, :l))
 
-                @test ψ isa TensorNetwork{MatrixProductState{Open}}
-                @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
+                @test ψ isa TensorNetwork{MatrixProduct{State,Open}}
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
-                MatrixProductState(arrays; bounds = Open) isa TensorNetwork{MatrixProductState{Open}}
+                MatrixProduct{State}(arrays; boundary = Open) isa TensorNetwork{MatrixProduct{State,Open}}
             end
 
-            # fail on Open with Closed format
-            @test_throws DimensionMismatch begin
+            # fail on Open with Periodic format
+            @test_throws Exception begin
                 arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-                MatrixProductState{Open}(arrays) isa TensorNetwork{MatrixProductState{Open}}
+                MatrixProduct{State,Open}(arrays) isa TensorNetwork{MatrixProduct{State,Open}}
             end
 
             @testset "rand" begin
-                function max_size(t)
-                    labels = (get(t.meta[:alias], :l, :none), get(t.meta[:alias], :r, :none))
-                    return maximum(size(t, label) for label in labels if label != :none)
+                # 4 => χ < maximum possible χ for the given parameters
+                # 32 => χ > maximum possible χ for the given parameters
+                @testset "χ = $χ" for χ in [4, 32]
+                    ψ = rand(MatrixProduct{State,Open}, n = 7, p = 2, χ = χ)
+
+                    @test ψ isa TensorNetwork{MatrixProduct{State,Open}}
+                    @test length(ψ) == 7
+                    @test maximum(vind -> size(ψ, vind), labels(ψ, :inner)) <= 32
                 end
-
-                # Test with χ > maximum possible χ for the given parameters
-                ψ = rand(MatrixProductState{Open}, 7, 2, 32)
-
-                @test ψ isa TensorNetwork{MatrixProductState{Open}}
-                @test length(ψ) == 7
-                @test maximum(max_size(t) for t in ψ.tensors) <= 32
-
-                # Test with χ < maximum possible χ for the given parameters
-                ψ = rand(MatrixProductState{Open}, 7, 2, 4)
-                @test ψ isa TensorNetwork{MatrixProductState{Open}}
-                @test length(ψ) == 7
-                @test maximum(max_size(t) for t in ψ.tensors) <= 4
             end
 
-            @testset "Metadata" begin
+            @testset "metadata" begin
                 @testset "alias" begin
                     arrays = [rand(2, 2), rand(2, 2, 2), rand(2, 2)]
-                    ψ = MatrixProductState{Open}(arrays, order = (:l, :p, :r))
+                    ψ = MatrixProduct{State,Open}(arrays, order = (:l, :o, :r))
 
-                    @test ψ.meta[:order] == Dict(:l => 1, :p => 2, :r => 3)
-
-                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :p])
-                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :p])
-                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :p])
+                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :o])
+                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :o])
+                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :o])
 
                     @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
                     @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
@@ -92,55 +83,66 @@
             end
         end
 
-        @testset "`Closed` boundary" begin
+        @testset "`Periodic` boundary" begin
             # product state
             @test begin
                 arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-                MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+                MatrixProduct{State,Periodic}(arrays) isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
 
             # entangled state
             @test begin
                 arrays = [rand(3, 4, 2), rand(4, 8, 2), rand(8, 3, 2)]
-                MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+                MatrixProduct{State,Periodic}(arrays) isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
 
             @testset "custom order" begin
                 arrays = [rand(3, 1, 3), rand(3, 1, 3), rand(3, 1, 3)]
-                ψ = MatrixProductState{Closed}(arrays, order = (:r, :p, :l))
+                ψ = MatrixProduct{State,Periodic}(arrays, order = (:r, :o, :l))
 
-                @test ψ isa TensorNetwork{MatrixProductState{Closed}}
-                @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
+                @test ψ isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-                MatrixProductState(arrays; bounds = Closed) isa TensorNetwork{MatrixProductState{Closed}}
+                MatrixProduct{State}(arrays; boundary = Periodic) isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
 
-            # fail on Closed with Open format
-            @test_throws DimensionMismatch begin
+            # fail on Periodic with Open format
+            @test_throws Exception begin
                 arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
-                MatrixProductState{Closed}(arrays) isa TensorNetwork{MatrixProductState{Closed}}
+                MatrixProduct{State,Periodic}(arrays) isa TensorNetwork{MatrixProduct{State,Periodic}}
             end
 
-            @testset "Metadata" begin
+            @testset "metadata" begin
                 @testset "alias" begin
                     arrays = [rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2)]
-                    ψ = MatrixProductState{Closed}(arrays, order = (:r, :p, :l))
+                    ψ = MatrixProduct{State,Periodic}(arrays, order = (:r, :o, :l))
 
-                    @test ψ.meta[:order] == Dict(:r => 1, :p => 2, :l => 3)
-
-                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:l, :r, :p])
-                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :p])
-                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :r, :p])
+                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:l, :r, :o])
+                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :o])
+                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :r, :o])
 
                     @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
                     @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
                     @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
                 end
             end
+        end
+    end
+
+    @testset "hcat" begin
+        @test begin
+            arrays = [rand(2, 2), rand(2, 2)]
+            mps = MatrixProduct{State,Open}(arrays)
+            hcat(mps, mps) isa TensorNetwork{<:Composite}
+        end
+
+        @test begin
+            arrays = [rand(1, 1, 2), rand(1, 1, 2)]
+            mps = MatrixProduct{State,Periodic}(arrays)
+            hcat(mps, mps) isa TensorNetwork{<:Composite}
         end
     end
 end

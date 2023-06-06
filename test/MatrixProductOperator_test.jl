@@ -1,35 +1,40 @@
-@testset "MatrixProductOperator" begin
-    using Tenet: TensorNetwork, Operator, Closed, Open, bounds, MatrixProductOperator
+@testset "MatrixProduct{Operator}" begin
+    using Tenet: Operator, Composite
 
-    @testset "Types" begin
-        @test MatrixProductOperator <: Operator
-        @test all(T -> MatrixProductOperator{T} <: Operator, [Open, Closed])
-        @test all(T -> MatrixProductOperator{T} <: Operator{T}, [Open, Closed])
-        @test all(B -> bounds(MatrixProductOperator{B}) == B, [Open, Closed])
+    @testset "plug" begin
+        @test plug(MatrixProduct{Operator}) === Operator
+        @test all(T -> plug(MatrixProduct{Operator,T}) === Operator, [Open, Periodic])
+    end
+
+    @testset "boundary" begin
+        @test all(B -> boundary(MatrixProduct{Operator,B}) == B, [Open, Periodic])
     end
 
     @testset "Constructor" begin
-        @test_skip begin
-            arrays = [rand(2, 2)]
-            MatrixProductOperator(arrays)
+        # empty constructor
+        @test_throws Exception MatrixProduct{Operator}([])
+
+        @test begin
+            arrays = [rand(2, 2, 2)]
+            MatrixProduct{Operator}(arrays) isa TensorNetwork{MatrixProduct{Operator,Open}}
         end
 
         @test begin
-            arrays = [rand(2, 1, 1), rand(2, 1, 1)]
-            MatrixProductOperator(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
+            arrays = [rand(2, 2, 2), rand(2, 2, 2)]
+            MatrixProduct{Operator}(arrays) isa TensorNetwork{MatrixProduct{Operator,Open}}
         end
 
         @testset "`Open` boundary" begin
             # product operator
             @test begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProduct{Operator,Open}(arrays) isa TensorNetwork{MatrixProduct{Operator,Open}}
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProductOperator(arrays; bounds = Open) isa TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProduct{Operator}(arrays; boundary = Open) isa TensorNetwork{MatrixProduct{Operator,Open}}
             end
 
             # entangling operator
@@ -37,7 +42,7 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, i, o), rand(2, 4, i, o), rand(4, i, o)]
-                MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProduct{Operator,Open}(arrays) isa TensorNetwork{MatrixProduct{Operator,Open}}
             end
 
             # entangling operator - change order
@@ -45,44 +50,45 @@
                 i = 3
                 o = 5
                 arrays = [rand(i, 2, o), rand(2, i, 4, o), rand(4, i, o)]
-                MatrixProductOperator{Open}(arrays, order = (:l, :i, :r, :o)) isa
-                TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProduct{Operator,Open}(arrays, order = (:l, :i, :r, :o)) isa
+                TensorNetwork{MatrixProduct{Operator,Open}}
             end
 
-            # fail on Open with Closed format
-            @test_throws DimensionMismatch begin
+            # fail on Open with Periodic format
+            @test_throws MethodError begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProductOperator{Open}(arrays) isa TensorNetwork{MatrixProductOperator{Open}}
+                MatrixProduct{Operator,Open}(arrays) isa TensorNetwork{MatrixProduct{Operator,Open}}
             end
 
-            @testset "Metadata" begin
+            @testset "metadata" begin
                 @testset "alias" begin
                     arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                    ψ = MatrixProductOperator{Open}(arrays, order = (:l, :r, :i, :o))
+                    ψ = MatrixProduct{Operator,Open}(arrays, order = (:l, :r, :i, :o))
 
-                    @test ψ.meta[:order] == Dict(:l => 1, :r => 2, :i => 3, :o => 4)
+                    # TODO refactor `select` with `tensors` with output selection
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[1])).meta[:alias]), [:r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[2])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, last(ψ.interlayer)[3])).meta[:alias]), [:l, :i, :o])
 
-                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :i, :o])
-
-                    @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
-                    @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
+                    @test only(select(ψ, last(ψ.interlayer)[1])).meta[:alias][:r] ===
+                          only(select(ψ, last(ψ.interlayer)[2])).meta[:alias][:l]
+                    @test only(select(ψ, last(ψ.interlayer)[2])).meta[:alias][:r] ===
+                          only(select(ψ, last(ψ.interlayer)[3])).meta[:alias][:l]
                 end
             end
         end
 
-        @testset "`Closed` boundary" begin
+        @testset "`Periodic` boundary" begin
             # product operator
             @test begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
+                MatrixProduct{Operator,Periodic}(arrays) isa TensorNetwork{MatrixProduct{Operator,Periodic}}
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProductOperator(arrays; bounds = Closed) isa TensorNetwork{MatrixProductOperator{Closed}}
+                MatrixProduct{Operator}(arrays; boundary = Periodic) isa TensorNetwork{MatrixProduct{Operator,Periodic}}
             end
 
             # entangling operator
@@ -90,7 +96,7 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
-                MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
+                MatrixProduct{Operator,Periodic}(arrays) isa TensorNetwork{MatrixProduct{Operator,Periodic}}
             end
 
             # entangling operator - change order
@@ -98,49 +104,75 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
-                MatrixProductOperator{Closed}(arrays, order = (:l, :i, :r, :o)) isa
-                TensorNetwork{MatrixProductOperator{Closed}}
+                MatrixProduct{Operator,Periodic}(arrays, order = (:l, :i, :r, :o)) isa
+                TensorNetwork{MatrixProduct{Operator,Periodic}}
             end
 
-            # fail on Closed with Open format
-            @test_throws DimensionMismatch begin
+            # fail on Periodic with Open format
+            @test_throws MethodError begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProductOperator{Closed}(arrays) isa TensorNetwork{MatrixProductOperator{Closed}}
+                MatrixProduct{Operator,Periodic}(arrays) isa TensorNetwork{MatrixProduct{Operator,Periodic}}
             end
 
-            @testset "Metadata" begin
+            @testset "metadata" begin
                 @testset "alias" begin
                     arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                    ψ = MatrixProductOperator{Closed}(arrays, order = (:l, :r, :i, :o))
+                    ψ = MatrixProduct{Operator,Periodic}(arrays, order = (:l, :r, :i, :o))
 
-                    @test ψ.meta[:order] == Dict(:l => 1, :r => 2, :i => 3, :o => 4)
+                    # TODO refactor `select` with `tensors` with output selection
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[1])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[2])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[3])).meta[:alias]), [:l, :r, :i, :o])
 
-                    @test issetequal(keys(tensors(ψ, 1).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 2).meta[:alias]), [:l, :r, :i, :o])
-                    @test issetequal(keys(tensors(ψ, 3).meta[:alias]), [:l, :r, :i, :o])
-
-                    @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
-                    @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
-                    @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:l]
                 end
             end
         end
     end
 
-    @testset "Initialization" begin
-        for params in [
-            (2, 2, 2, 1),
-            (2, 2, 2, 2),
-            (4, 4, 4, 16),
-            (4, 2, 2, 8),
-            (4, 2, 3, 8),
-            (6, 2, 2, 4),
-            (8, 2, 3, 4),
-            # (1, 2, 2, 1),
-            # (1, 3, 3, 1),
-            # (1, 1, 1, 1),
-        ]
-            @test rand(MatrixProductOperator{Open}, params...) isa TensorNetwork{MatrixProductOperator{Open}}
+    @testset "hcat" begin
+        @test begin
+            arrays = [rand(2, 2), rand(2, 2)]
+            mps = MatrixProduct{State,Open}(arrays)
+            arrays_o = [rand(2, 2, 2), rand(2, 2, 2)]
+            mpo = MatrixProduct{Operator}(arrays_o)
+            hcat(mps, mpo) isa TensorNetwork{<:Composite}
+        end
+
+        @test begin
+            arrays = [rand(2, 2), rand(2, 2)]
+            mps = MatrixProduct{State,Open}(arrays)
+            arrays_o = [rand(2, 2, 2), rand(2, 2, 2)]
+            mpo = MatrixProduct{Operator}(arrays_o)
+            hcat(mpo, mps) isa TensorNetwork{<:Composite}
+        end
+
+        @test begin
+            arrays = [rand(2, 2, 2), rand(2, 2, 2)]
+            mpo = MatrixProduct{Operator}(arrays)
+            hcat(mpo, mpo) isa TensorNetwork{<:Composite}
         end
     end
+
+    # @testset "Initialization" begin
+    #     for params in [
+    #         (2, 2, 2, 1),
+    #         (2, 2, 2, 2),
+    #         (4, 4, 4, 16),
+    #         (4, 2, 2, 8),
+    #         (4, 2, 3, 8),
+    #         (6, 2, 2, 4),
+    #         (8, 2, 3, 4),
+    #         # (1, 2, 2, 1),
+    #         # (1, 3, 3, 1),
+    #         # (1, 1, 1, 1),
+    #     ]
+    #         @test rand(MatrixProduct{Operator,Open}, params...) isa TensorNetwork{MatrixProduct{Operator,Open}}
+    #     end
+    # end
 end

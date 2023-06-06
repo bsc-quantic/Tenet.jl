@@ -2,6 +2,7 @@ using DeltaArrays
 using EinExprs
 using OMEinsum
 using UUIDs: uuid4
+using Tensors: parenttype
 
 abstract type Transformation end
 
@@ -25,93 +26,67 @@ struct HyperindConverter <: Transformation end
     Converts hyperindices to COPY tensors.
 """
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in hyperinds(tn)
-        # unlink index
-        tensors = [pop!(tn, tensor) for tensor in links(index)]
+    for index in labels(tn, :hyper)
+        # dimensionality of `index`
+        m = size(tn, index)
 
-        # replace old index
-        indices = Symbol[]
+        # unlink tensors
+        tensors = pop!(tn, index)
+
+        # replace hyperindex for new (non-hyper)index
+        new_indices = Symbol[]
         for (i, tensor) in enumerate(tensors)
-            label = Symbol("$(nameof(index))$i")
-            push!(indices, label)
-            inds = replace(labels(tensor), nameof(index) => label)
+            label = Symbol("$index$i")
+            push!(new_indices, label)
 
-            tensor = Tensor(parent(tensor), inds; tensor.meta...)
+            tensor = replace(tensor, index => label)
             push!(tn, tensor)
         end
 
         # insert COPY tensor
-        N = length(indices)
-        data = DeltaArray{N}(ones(size(index)))
-        tensor = Tensor(data, indices; dual = nameof(index), index.meta...)
+        N = length(new_indices)
+        data = DeltaArray{N}(ones(m))
+        tensor = Tensor(data, new_indices; dual = index)
         push!(tn, tensor)
     end
 end
 
 Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::DiagonalReduction)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
-    queue = collect(keys(tn.tensors))
+    for tensor in filter(tensor -> !(parenttype(typeof(tensor)) <: DeltaArray), tensors(tn))
+        diaginds = find_diag_axes(tensor, atol = config.atol)
+        isempty(diaginds) && continue
 
-    while !isempty(queue) # loop over all tensors
-        idx = pop!(queue)
-        tensor = tn.tensors[idx]
+        transformed_tensor = reduce(diaginds; init = (; target = tensor, copies = Tensor[])) do (target, copies), inds
+            N = length(inds)
 
-        diag_axes = find_diag_axes(parent(tensor), atol = config.atol)
+            # insert COPY tensor
+            new_index = Symbol(uuid4())
+            data = DeltaArray{N + 1}(ones(size(target, first(inds))))
+            push!(copies, Tensor(data, (new_index, inds...)))
 
-        while !isempty(diag_axes) # loop over all diagonal axes
-            (i, j) = pop!(diag_axes)
-            ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
+            # extract diagonal of target tensor
+            # TODO rewrite using `einsum!` when implemented in Tensors
+            data = EinCode(
+                (String.(replace(labels(target), [i => first(inds) for i in inds[2:end]]...)),),
+                String.(filter(∉(inds[2:end]), labels(target))),
+            )(
+                target,
+            )
+            target = Tensor(
+                data,
+                map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), labels(target)));
+                target.meta...,
+            )
 
-            # do not reduce output indices
-            new, old = (ix_j in nameof.(skip_inds)) ? ((ix_i in nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
-
-            # replace old index in the other tensors in the network
-            replacements = 0
-            for other_idx in setdiff(keys(tn.tensors)   , idx)
-                other_tensor = tn.tensors[other_idx]
-                if old in labels(other_tensor)
-                    new_tensor = replace(other_tensor, old => new)
-                    tn.tensors[other_idx] = new_tensor
-                    replacements += 1
-                end
-            end
-
-            repeated_labels = replace(collect(labels(tensor)), old => new)
-            removed_label = filter(l -> l != old, labels(tensor))
-
-            # TODO rewrite with `Tensors` when it supports it
-            # extract diagonal
-            data = EinCode((String.(repeated_labels),), [String.(removed_label)...])(tensor)
-            tn.tensors[idx] = Tensor(data, filter(l -> l != old, labels(tensor)))
-            delete!(tn.inds, old)
-
-            # if the new index is in skip_inds, we need to add a COPY tensor
-            if new ∈ nameof.(skip_inds)
-                data = DeltaArray{replacements+2}(ones(size(tensor, new))) # +2 for the new COPY tensor and the old index
-                indices = [Symbol(uuid4()) for i in 1:replacements+1]
-                copy_tensor = Tensor(data, (new, indices...))
-
-                # replace the new index in the other tensors in the network
-                counter = 1
-                for (i, t) in enumerate(tn.tensors)
-                    if new in labels(t)
-                        new_tensor = replace(t, new => indices[counter])
-                        tn.tensors[i] = new_tensor
-                        counter += 1
-                    end
-                end
-
-                push!(tn, copy_tensor)
-            end
-
-            tensor = tn.tensors[idx]
-            diag_axes = find_diag_axes(parent(tensor), atol = config.atol)
+            return (; target = target, copies = copies)
         end
+
+        transformed_tn = TensorNetwork([transformed_tensor.target, transformed_tensor.copies...])
+        replace!(tn, tensor => transformed_tn)
     end
 
     return tn
@@ -150,11 +125,11 @@ end
 
 Base.@kwdef struct AntiDiagonalGauging <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
+    skip::Vector{Symbol} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
 
     for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
@@ -165,8 +140,7 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
             ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
 
             # do not gauge output indices
-            _, ix_to_gauge =
-                (ix_j ∈ nameof.(skip_inds)) ? ((ix_i ∈ nameof.(skip_inds)) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
+            _, ix_to_gauge = (ix_j ∈ skip_inds) ? ((ix_i ∈ skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
@@ -180,18 +154,19 @@ end
 
 Base.@kwdef struct ColumnReduction <: Transformation
     atol::Float64 = 1e-12
-    skip::Vector{Index} = Symbol[]
+    skip::Vector{Symbol} = Symbol[]
 end
 
 function transform!(tn::TensorNetwork, config::ColumnReduction)
-    skip_inds = isempty(config.skip) ? openinds(tn) : config.skip
+    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
 
     for tensor in tn.tensors
-        zero_columns = find_zero_columns(parent(tensor), atol=config.atol)
+        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
         zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
 
         # find non-zero column for each axis
-        non_zero_columns = [(d, setdiff(1:size(tensor,d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
+        non_zero_columns =
+            [(d, setdiff(1:size(tensor, d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
 
         # remove axes that have more than one non-zero column
         axes_to_reduce = [(d, c[1]) for (d, c) in filter(x -> length(x[2]) == 1, non_zero_columns)]
@@ -201,7 +176,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
             ix_i = labels(tensor)[d]
 
             # do not reduce output indices
-            if ix_i ∈ nameof.(skip_inds)
+            if ix_i ∈ skip_inds
                 continue
             end
 
@@ -215,7 +190,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
                     tn.tensors[ind] = Tensor(new_tensor, new_labels)
                 end
             end
-            delete!(tn.inds, ix_i)
+            delete!(tn.indices, ix_i)
         end
 
         # Then try to reduce the dimensionality of the index in the other tensors
@@ -224,7 +199,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
             ix_i = labels(tensor)[d]
 
             # do not reduce output indices
-            if ix_i ∈ nameof.(skip_inds)
+            if ix_i ∈ skip_inds
                 continue
             end
 
@@ -241,7 +216,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
-function find_zero_columns(x; atol=1e-12)
+function find_zero_columns(x; atol = 1e-12)
     dims = size(x)
 
     # Create an initial set of all possible column pairs
@@ -265,30 +240,35 @@ function find_zero_columns(x; atol=1e-12)
 end
 
 function find_diag_axes(x; atol = 1e-12)
-    ndims = size(x)
+    # find all the potential diagonals
+    potential_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
-    # Find all the potential diagonals
-    potential_diag_axes = [(i, j) for i in 1:length(ndims) for j in i+1:length(ndims) if ndims[i] == ndims[j]]
-
-    # Check what elements satisfy the condition
-    return filter(potential_diag_axes) do (d1, d2)
-        all(pairs(x)) do (idx, val)
+    # check what elements satisfy the condition
+    diag_pairs = filter(potential_diag_axes) do (d1, d2)
+        all(pairs(parent(x))) do (idx, val)
             idx[d1] == idx[d2] || abs(val) <= atol
         end
     end
+
+    # if overlap between pairs of diagonal axes, then all involved axes are diagonal
+    diag_sets = reduce(diag_pairs; init = Vector{Int}[]) do acc, pair
+        i = findfirst(set -> !isdisjoint(set, pair), acc)
+        !isnothing(i) ? union!(acc[i], pair) : push!(acc, collect(pair))
+        return acc
+    end
+
+    # map to index symbols
+    map(set -> map(i -> labels(x)[i], set), diag_sets)
 end
 
 function find_anti_diag_axes(x; atol = 1e-12)
-    ndims = size(x)
-
     # Find all the potential anti-diagonals
-    potential_anti_diag_axes = [(i, j) for i in 1:length(ndims) for j in i+1:length(ndims) if ndims[i] == ndims[j]]
+    potential_anti_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
     # Check what elements satisfy the condition
     return filter(potential_anti_diag_axes) do (d1, d2)
-        d = ndims[d1] # Since d1 and d2 are the same size
-        all(pairs(x)) do (idx, val)
-            idx[d1] != d - idx[d2] || abs(val) <= atol
+        all(pairs(parent(x))) do (idx, val)
+            idx[d1] != size(x, d1) - idx[d2] || abs(val) <= atol
         end
     end
 end

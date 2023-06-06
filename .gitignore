@@ -126,3 +126,4 @@ $RECYCLE.BIN/
 .vscode/settings.json
 .julia
 *.excalidraw
+archive/

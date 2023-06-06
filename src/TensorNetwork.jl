@@ -1,6 +1,8 @@
+using Base: AbstractVecOrTuple
 using Random
 using EinExprs
 using OMEinsum
+using ValSplit
 
 """
     Ansatz
@@ -16,167 +18,136 @@ Tensor Networks without a predefined form.
 """
 abstract type Arbitrary <: Ansatz end
 
+# NOTE currently, these are implementation details
+function checktopology end
+function checkmeta end
+function metadata end
+
 """
     TensorNetwork
 
 Graph of interconnected tensors.
+
+# Implementation details
+
+`TensorNetwork` represents the **dual hypergraph** of the Tensor Network (i.e. vertices are indices and hyperedges are tensors).
 """
-struct TensorNetwork{A}
+struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
+    indices::Dict{Symbol,Vector{Int}}
     tensors::Vector{Tensor}
-    inds::Dict{Symbol,Index}
-    meta::Dict{Symbol,Any}
+    metadata::M
 
-    function TensorNetwork{A}(; meta...) where {A}
-        meta = Dict{Symbol,Any}(meta)
+    function TensorNetwork{A}(tensors; metadata...) where {A}
+        indices = reduce(enumerate(tensors); init = Dict{Symbol,Vector{Int}}([])) do dict, (i, tensor)
+            mergewith(vcat, dict, Dict([index => [i] for index in labels(tensor)]))
+        end
 
-        new{A}(Tensor[], Dict{Symbol,Index}(), meta)
+        M = merge(Tenet.metadata.(superansatzes(A))...)
+        metadata = M((; metadata...))
+
+        tn = new{A,M}(indices, tensors, metadata)
+
+        checkansatz(tn)
+        return tn
     end
 end
 
+TensorNetwork{A}(; metadata...) where {A<:Ansatz} = TensorNetwork{A}(Tensor[]; metadata...)
+
+# ansatz defaults to `Arbitrary`
 TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
-function TensorNetwork{A}(tensors; meta...) where {A}
-    tn = TensorNetwork{A}(; meta...)
 
-    for tensor in tensors
-        push!(tn, tensor)
+# TODO maybe rename it as `convert` method?
+TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
+    TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
+
+# TODO do sth to skip checkansatz? like @inbounds
+function checkansatz(tn::TensorNetwork{A}) where {A<:Ansatz}
+    checktopology(tn) || throw(ErrorException("\"$A\" topology not preserved"))
+
+    for T in superansatzes(A)
+        checkmeta(T, tn) || throw(ErrorException("\"$T\" metadata is not valid"))
     end
-
-    return tn
 end
 
-# TODO checks? index metadata?
-TensorNetwork{A}(tn::TensorNetwork{B}) where {A,B} = TensorNetwork{B}(tensors(tn); tn.meta...)
+checktopology(::TensorNetwork{<:Ansatz}) = true
+checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
+checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
+
+metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(inds(tn))))")
+Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
 Base.length(x::TensorNetwork) = length(tensors(x))
 
-function Base.copy(tn::TensorNetwork{A}) where {A}
-    newtn = TensorNetwork{A}(; copy(tn.meta)...)
-    append!(newtn, copy(tn.tensors))
-    for i in labels(newtn)
-        merge!(newtn.inds[i].meta, copy(tn.inds[i].meta))
-    end
-    return newtn
-end
+Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.metadata)...)
 
-ansatz(::Type{TensorNetwork{A}}) where {A} = A
+ansatz(::Type{<:TensorNetwork{A}}) where {A} = A
 ansatz(::TensorNetwork{A}) where {A} = A
 
-function tensors end
 tensors(tn::TensorNetwork) = tn.tensors
-tensors(tn::TensorNetwork, i::Integer) = tn.tensors[i]
-tensors(tn::TensorNetwork, i::Symbol)::Vector{Tensor} = links(tn.inds[i])
-tensors(tn::TensorNetwork, i::Index)::Vector{Tensor} = tensors(tn, nameof(i))
-tensors(tn::TensorNetwork, inds::Base.AbstractVecOrTuple{Union{Symbol,Index}}) = ∩([tensors(tn, i) for i in inds]...)
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
-function inds end
-inds(tn::TensorNetwork) = values(tn.inds)
-inds(tn::TensorNetwork, label) = tn.inds[label]
-labels(tn::TensorNetwork) = nameof.(inds(tn))
+labels(tn::TensorNetwork; set::Symbol = :all, kwargs...) = labels(tn, set; kwargs...)
+@valsplit 2 labels(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(labels, "set=$set not recognized"))
+labels(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
+labels(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
+labels(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
-openinds(tn::TensorNetwork) = Iterators.filter(isopenind, inds(tn)) |> collect
-innerinds(tn::TensorNetwork) = Iterators.filter(!isopenind, inds(tn)) |> collect
-hyperinds(tn::TensorNetwork) = Iterators.filter(ishyperind, inds(tn)) |> collect
-
-Base.size(tn::TensorNetwork) = Dict(nameof(i) => size(i) for i in inds(tn))
-Base.size(tn::TensorNetwork, i::Symbol) = size(tn.inds[i])
+Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
+Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
-"""
-    select(tn, i)
-
-Return tensors whose labels match with the list of indices `i`.
-"""
-select(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol}) = ∩(map(Base.Fix1(select, tn), i)...)
-select(tn::TensorNetwork, i::Symbol) = links(tn.inds[i])
-
-"""
-    selectdim(tn, index, i)
-
-Returns a view of the Tensor Network `tn` of slice `i` on `index`.
-"""
-Base.selectdim(tn::TensorNetwork, label::Symbol, i) = selectdim!(copy(tn), label, i)
-
-function selectdim!(tn::TensorNetwork, label::Symbol, i)
-    # UNSAFE REGION BEGIN
-    if !isa(i, Integer)
-        index = tn.inds[label]
-        tn.inds[label] = Index(nameof(index), length(i); index.meta...)
+Base.getindex(tn::TensorNetwork, key::Symbol) = tn.metadata[key]
+Base.fieldnames(tn::T) where {T<:TensorNetwork} = fieldnames(T)
+Base.propertynames(tn::TensorNetwork{A,N}) where {A,N} = tuple(fieldnames(tn)..., fieldnames(N)...)
+Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
+    if hasfield(T, name)
+        getfield(tn, name)
+    elseif hasfield(fieldtype(T, :metadata), name)
+        getfield(getfield(tn, :metadata), name)
+    else
+        throw(KeyError(name))
     end
-    # UNSAFE REGION END
-
-    for tensor in links(tn.inds[label])
-        push!(tn, selectdim(tensor, label, i))
-        delete!(tn, tensor)
-    end
-
-    return tn
-end
-
-function Base.view(tn::TensorNetwork, inds::Pair{Symbol,<:Any}...)
-    tn = copy(tn)
-
-    for (label, i) in inds
-        selectdim!(tn, label, i)
-    end
-
-    return tn
-end
-
-function Base.intersect(a::TensorNetwork, b::TensorNetwork{A}) where {A}
-    # TODO add index metadata?
-    # TODO :plug?
-    c = TensorNetwork{A}(filter(tensors(a)) do tensor
-        !isdisjoint(labels(tensor), labels(b))
-    end; a.meta...)
-
-    return c
-end
 
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
-    push!(tensors(tn), tensor)
+    for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), labels(tensor) ∩ labels(tn))
+        throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
+    end
 
-    # TODO merge metadata?
-    for (i, s) in zip(labels(tensor), size(tensor))
-        if i ∉ keys(tn.inds)
-            tn.inds[i] = Index(i, s)
-        end
+    push!(tn.tensors, tensor)
 
-        if s != size(tn.inds[i])
-            throw(DimensionMismatch("size($i)=$s but should be $(size(tn.inds[i]))"))
-        end
-
-        link!(tn.inds[i], tensor)
+    for i in labels(tensor)
+        push!(get!(tn.indices, i, Int[]), length(tn.tensors))
     end
 
     return tn
 end
 
-Base.append!(tn::TensorNetwork, t::Base.AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
+Base.append!(tn::TensorNetwork, t::AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 function Base.append!(A::TensorNetwork, B::TensorNetwork)
     append!(A, tensors(B))
-
-    # merge index metadata
-    for i in labels(B)
-        merge!(A.inds[i].meta, copy(B.inds[i].meta))
-    end
-
+    # TODO define behaviour
+    # merge!(A.metadata, B.metadata)
     return A
 end
 
 function Base.popat!(tn::TensorNetwork, i::Integer)
-    tensor = popat!(tensors(tn), i)
+    tensor = popat!(tn.tensors, i)
 
     # unlink indices
-    for i in unique(labels(tensor))
-        index = tn.inds[i]
-        unlink!(index, tensor)
+    for index in unique(labels(tensor))
+        filter!(!=(i), tn.indices[index])
+        isempty(tn.indices[index]) && delete!(tn.indices, index)
+    end
 
-        # remove index when no tensors plugged in
-        length(links(index)) == 0 && delete!(tn.inds, i)
+    # update tensor positions in `tn.indices`
+    for locations in values(tn.indices)
+        map!(locations, locations) do loc
+            loc > i ? loc - 1 : loc
+        end
     end
 
     return tensor
@@ -189,7 +160,7 @@ end
 
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, i::Base.AbstractVecOrTuple{Symbol})::Vector{Tensor}
+function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensors = select(tn, i)
     for tensor in tensors
         _ = pop!(tn, tensor)
@@ -202,48 +173,84 @@ Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
 
-function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:Tensor}...)
-    # check if new tensors are already present in the network
-    isdisjoint(last.(old_new), tn.tensors) ||
-        throw(ArgumentError("New tensors must not be already present in the network"))
+function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
+    old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
-    all(pair -> issetequal(map(labels, pair)...), old_new) ||
+    if !issetequal(labels(new_tensor), labels(old_tensor))
         throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+    end
 
-    for (old_tensor, new_tensor) in old_new
-        # update index links
-        # TODO remove this part when `Index` is removed
-        for old_label in labels(old_tensor)
-            index_obj = tn.inds[old_label]
-            link_index = findfirst(x -> x === old_tensor, index_obj.links)
-            index_obj.links[link_index] = new_tensor
-        end
+    # replace existing `Tensor` with new `Tensor`
+    i = findfirst(t -> t === old_tensor, tn.tensors)
+    splice!(tn.tensors, i, [new_tensor])
 
-        # replace existing `Tensor` with new `Tensor`
-        index = findfirst(x -> x === old_tensor, tn.tensors)
-        tn.tensors[index] = new_tensor
+    return tn
+end
+
+function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
+    old, new = old_new
+    new ∈ labels(tn) && throw(ArgumentError("new symbol $new is already present"))
+
+    push!(tn.indices, new => pop!(tn.indices, old))
+
+    for i in tn.indices[new]
+        tn.tensors[i] = replace(tn.tensors[i], old_new)
     end
 
     return tn
 end
 
-function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
-    isdisjoint(last.(old_new), labels(tn)) || throw(ArgumentError("target symbols must not be already present"))
+function Base.replace!(tn::TensorNetwork, old_new::Pair...)
+    for pair in old_new
+        replace!(tn, pair)
+    end
+    return tn
+end
 
-    tensors = unique(Iterators.flatten([select(tn, i) for i in first.(old_new)]) |> collect)
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
+    old, new = old_new
+    issetequal(labels(new, set = :open), labels(old)) || throw(ArgumentError("indices must match"))
 
-    # reindex indices
-    # NOTE what if :a => :d, :d => ...? temporal location as a fix
-    tmp = Dict(name => copy(i) for (name, i) in tn.inds if name ∈ first.(old_new))
-    for (old, new) in old_new
-        push!(tn.inds, new => replace(tmp[old], new))
+    # rename internal indices so there is no accidental hyperedge
+    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(labels(tn)), labels(new, set = :inner))]...)
+
+    append!(tn, new)
+    delete!(tn, old)
+
+    return tn
+end
+
+"""
+    select(tn, i)
+
+Return tensors whose labels match with the list of indices `i`.
+"""
+select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = mapreduce(Base.Fix1(select, tn), ∩, i)
+select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
+
+"""
+    slice!(tn, index, i)
+
+In-place slice `index` of the Tensor Network `tn` on dimension `i`.
+"""
+function slice!(tn::TensorNetwork, label::Symbol, i)
+    for tensor in select(tn, label)
+        pos = findfirst(t -> t === tensor, tn.tensors)
+        tn.tensors[pos] = selectdim(tensor, label, i)
     end
 
-    # reindex tensors
-    for tensor in tensors
-        push!(tn, replace(tensor, old_new...))
-        delete!(tn, tensor)
+    i isa Integer && delete!(tn.indices, label)
+
+    return tn
+end
+
+Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
+function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
+    tn = copy(tn)
+
+    for (label, i) in slices
+        slice!(tn, label, i)
     end
 
     return tn
@@ -306,21 +313,36 @@ function Random.rand(
     TensorNetwork(tensors)
 end
 
-EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = openinds(tn), kwargs...) =
-    einexpr(optimizer, EinExpr(tensors(tn), nameof.(outputs)); kwargs...)
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = labels(tn, :open), kwargs...) =
+    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
 function contract!(tn::TensorNetwork, i::Symbol)
-    ts = pop!(tn, i) # map(Base.Fix1(pop!, tn), links(index))
+    tensor = reduce(pop!(tn, i)) do acc, tensor
+        contract(acc, tensor, i)
+    end
 
-    tensor = reduce((acc, t) -> contract(acc, t, i), ts)
-
-    # NOTE index is automatically cleaned
     push!(tn, tensor)
+    return tn
 end
 
-contract(tn::TensorNetwork; outputs = openinds(tn), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
+contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
+    contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
+
+struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
+    parameters::NT
+
+    TNSampler{A}(; kwargs...) where {A} = new{A,typeof(values(kwargs))}(values(kwargs))
+end
+
+Base.getproperty(obj::TNSampler{A,<:NamedTuple{K}}, name::Symbol) where {A,K} =
+    name ∈ K ? getfield(obj, :parameters)[name] : getfield(obj, name)
+Base.get(obj::TNSampler, name, default) = get(getfield(obj, :parameters), name, default)
+
+Base.eltype(::TNSampler{A}) where {A<:Ansatz} = TensorNetwork{A}
+
+Base.rand(::Type{A}; kwargs...) where {A<:Ansatz} = rand(TNSampler{A}(; kwargs...))

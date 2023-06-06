@@ -1,4 +1,4 @@
-module QuacExt
+module TenetQuacExt
 
 if isdefined(Base, :get_extension)
     using Tenet
@@ -7,12 +7,13 @@ else
 end
 
 using Quac: Circuit, lanes, arraytype, Swap
+using Bijections
 
 function Tenet.TensorNetwork(circuit::Circuit)
-    tn = TensorNetwork{Quantum}()
     n = lanes(circuit)
-
     wire = [[Tenet.letter(i)] for i in 1:n]
+    tensors = Tensor[]
+
     i = n + 1
 
     for gate in circuit
@@ -33,24 +34,15 @@ function Tenet.TensorNetwork(circuit::Circuit)
         end |> x -> zip(x...) |> Iterators.flatten |> collect
 
         tensor = Tensor(array, tuple(inds...); gate = gate)
-        push!(tn, tensor)
+        push!(tensors, tensor)
     end
 
-    for (lane, wireindices) in enumerate(wire)
-        for index in wireindices
-            tn.inds[index].meta[:site] = lane
-        end
-    end
+    interlayer = [
+        Bijection(Dict([site => first(index) for (site, index) in enumerate(wire)])),
+        Bijection(Dict([site => last(index) for (site, index) in enumerate(wire)])),
+    ]
 
-    for input in first.(wire)
-        tn.inds[input].meta[:plug] = :input
-    end
-
-    for output in last.(wire)
-        tn.inds[output].meta[:plug] = :output
-    end
-
-    return tn
+    return TensorNetwork{Quantum}(tensors; plug = Tenet.Operator, interlayer)
 end
 
 end
