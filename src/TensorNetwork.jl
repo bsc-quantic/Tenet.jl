@@ -208,6 +208,19 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair...)
     return tn
 end
 
+function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
+    old, new = old_new
+    issetequal(labels(new, set = :open), labels(old)) || throw(ArgumentError("indices must match"))
+
+    # rename internal indices so there is no accidental hyperedge
+    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(labels(tn)), labels(new, set = :inner))]...)
+
+    append!(tn, new)
+    delete!(tn, old)
+
+    return tn
+end
+
 """
     select(tn, i)
 
