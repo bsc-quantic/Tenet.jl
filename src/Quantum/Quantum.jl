@@ -88,27 +88,26 @@ nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
 # TODO create view of TN
 function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
     A = fieldtypes(As)[i]
+    layer_plug = tn.layermeta[i][:plug] # TODO more programmatic access (e.g. plug(tn, i)?)
+    meta = tn.layermeta[i]
 
-    if plug(A) <: State && 1 < i < length(fieldtypes(As))
+    if layer_plug <: State && 1 < i < length(fieldtypes(As))
         throw(ErrorException("Layer #$i is a state but it is not a extreme layer"))
     end
 
-    interlayer = if plug(A) <: State
+    interlayer = if layer_plug <: State
         i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
-    elseif plug(A) <: Operator
+    elseif layer_plug <: Operator
         # shift if first layer is a state
         plug(first(fieldtypes(As))) <: State && (i = i - 1)
         tn.interlayer[i:i+1]
     end
 
-    layer_plug = plug(A)
-    meta = tn.layermeta[i]
-
     return TensorNetwork{A}(
         filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
-        plug = layer_plug,
+        plug=layer_plug,
         interlayer,
-        meta...,
+        meta...
     )
 end
 
