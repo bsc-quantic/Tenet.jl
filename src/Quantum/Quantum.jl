@@ -99,15 +99,15 @@ function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
         i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
     elseif layer_plug <: Operator
         # shift if first layer is a state
-        plug(first(fieldtypes(As))) <: State && (i = i - 1)
+        tn.layermeta[1][:plug] <: State && (i = i - 1)
         tn.interlayer[i:i+1]
     end
 
     return TensorNetwork{A}(
         filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
-        plug=layer_plug,
+        plug = layer_plug,
         interlayer,
-        meta...
+        meta...,
     )
 end
 
