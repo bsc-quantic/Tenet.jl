@@ -129,7 +129,7 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     for site in sites(B)
         a = labels(A, :plug, site)
         b = labels(B, :plug, site)
-        if a != b
+        if a != b && a ∉ labels(B)
             replace!(B, b => a)
         end
     end
