@@ -30,3 +30,5 @@ makedocs(
         "Alternatives"=>"alternatives.md",
     ],
 )
+
+deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git")
