@@ -270,7 +270,7 @@ Generate a random contraction and shapes.
   - `seed=nothing`: If not `nothing`, seed random generator with this value.
   - `globalind=false`: Add a global, 'broadcast', dimension to every tensor.
 """
-function Random.rand(
+function Base.rand(
     ::Type{TensorNetwork},
     n::Integer,
     regularity::Integer;
