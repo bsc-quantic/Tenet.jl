@@ -15,20 +15,23 @@ makedocs(
     authors = "Sergio Sánchez Ramírez and contributors",
     pages = Any[
         "Home"=>"index.md",
-        "Manual"=>[
-            "Tensor Networks" => "tensor-network.md",
-            "Quantum Tensor Networks" => [
-                "Introduction" => "quantum/index.md",
-                "Matrix Product States (MPS) / Operators (MPO)" => "quantum/mps.md",
-            ],
+        "Tensor Networks"=>[
+            "Introduction" => "tensor-network.md",
+            "Contraction" => "contraction.md",
+            "Visualization" => "visualization.md",
             "Transformations" => "transformations.md",
+        ],
+        "Quantum Tensor Networks"=>[
+            "Introduction" => "quantum/index.md",
+            "Matrix Product States (MPS) / Operators (MPO)" => "quantum/mps.md",
         ],
         "Examples"=>[
             "Google's Quantum Advantage experiment" => "examples/google-rqc.md",
             "Matrix Product State classifier" => "examples/mps-ml.md",
         ],
         "Alternatives"=>"alternatives.md",
+        "Developer Reference"=>[],
     ],
 )
 
-deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git")
+deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master")

@@ -1,18 +1,23 @@
 # Tenet.jl
 
-A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers. `Tenet` is,
+!!! danger "Status: Alpha stage 🚧"
+    `Tenet` is currently in alpha stage and thus, the public API might change without notification.
 
-- **Expressible** _It is simple to use._
-- **Flexible** _It can be extended to your own needs._
-- **Performant** _It goes fast._
+A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
+
+- **Expressibility** _Simple to use._
+- **Flexibility** _Extend it to your needs._
+- **Performance** _Goes brr... fast._ 🏎️
 
 !!! info "Registry"
-    `Tenet` and other supporting libraries are located in our own Julia registry.
+    `Tenet` and some of its dependencies are located in our [own Julia registry](https://github.com/bsc-quantic/Registry).
     In order to download `Tenet`, add our registry to your Julia installation by using the [Pkg mode](https://docs.julialang.org/en/v1/stdlib/REPL/#Pkg-mode) in a REPL session,
+
     ```
-    registry add https://github.com/bsc-quantic/Registry
+    ]registry add https://github.com/bsc-quantic/Registry
     ```
     or using the `Pkg` package directly,
+
     ```julia
     using Pkg
     pkg"registry add https://github.com/bsc-quantic/Registry"
@@ -20,43 +25,10 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 
 ## Features
 
-### Arbitrary Tensor Network Contraction
-
-Tenet can represent `TensorNetwork`s of `Arbitrary` form. Thanks to [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl), it can find quasi-optimal contraction paths which can then be computed by [`OMEinsum`](https://github.com/under-Peter/OMEinsum.jl).
-
-### Visualization
-
-Thanks to [`Makie`](https://github.com/MakieOrg/Makie.jl), TNs can be visualized in 2D and 3D on different backends (OpenGL, WebGL and Cairo).
-
-```@setup plot
-# using WGLMakie
-# using JSServe
-# Page(exportable=true, offline=true)
-using CairoMakie
-CairoMakie.activate!(type = "svg")
-```
-
-```@example plot
-using Tenet
-
-tn = rand(TensorNetwork, 10, 3)
-plot(tn, labels=true)
-```
-
-### (Quantum) Tensor Network Ansatzes
-
-Tenet provides some popular Tensor Network Ansatzes. Currently implemented are:
-
-- `MatrixProductState`
-
-## Contents
-
-```@contents
-Pages = [
-    "tensor.md",
-    "tensor-network.md",
-    "ansatz.md",
-    "transformations.md",
-    "alternatives.md",
-]
-```
+- Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
+- Automatic Differentiation of TN contraction
+- Support for arbitrary network structures
+- Local transformations and simplifications
+- 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- High-level interface
+- Translation from quantum circuits

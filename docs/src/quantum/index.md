@@ -1,22 +1,15 @@
 # Introduction
 
-!!! danger "🚧 Broken code 🚧"
-    There is a lot of work in progress, and this code may not work yet.
-    Take this code as an example of what we want to achieve.
+In `Tenet`, we define a [`Quantum`](@ref) Tensor Network as a [`TensorNetwork`](@ref) with a notion of sites and directionality.
 
 ```@docs
 Quantum
 ```
 
-```@docs
-State
-Operator
-```
-
-## Bounds
+## Plugs
 
 ```@docs
-bounds
+plug
 ```
 
 ## Sites
@@ -41,11 +34,17 @@ adjoint
 hcat(::TensorNetwork{<:Quantum}, ::TensorNetwork{<:Quantum})
 ```
 
+## Bounds
+
+```@docs
+boundary
+```
+
 ## Norm
 
 ```@docs
 LinearAlgebra.norm(::TensorNetwork{<:Quantum}, p::Real)
-LinearAlgebra.normalize!(::TensorNetwork{<:Quantum})
+LinearAlgebra.normalize!(::TensorNetwork{<:Quantum}, ::Real)
 ```
 
 ## Fidelity

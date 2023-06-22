@@ -24,9 +24,9 @@ function checkmeta end
 function metadata end
 
 """
-    TensorNetwork
+    TensorNetwork{Ansatz}
 
-Graph of interconnected tensors.
+Graph of interconnected tensors, representing a multilinear equation.
 
 # Implementation details
 
@@ -78,16 +78,54 @@ metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
+
+"""
+    length(tn::TensorNetwork)
+
+Return the number of `Tensor`s in the [`TensorNetwork`](@ref).
+
+See also: [`tensors`](@ref), [`size`](@ref).
+"""
 Base.length(x::TensorNetwork) = length(tensors(x))
 
+"""
+    copy(tn::TensorNetwork)
+
+Return a shallow copy of the [`TensorNetwork`](@ref).
+"""
 Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.metadata)...)
 
+"""
+    ansatz(::TensorNetwork{Ansatz})
+    ansatz(::Type{<:TensorNetwork{Ansatz}})
+
+Return the `Ansatz` of a [`TensorNetwork`](@ref) type or object.
+"""
 ansatz(::Type{<:TensorNetwork{A}}) where {A} = A
 ansatz(::TensorNetwork{A}) where {A} = A
 
+"""
+    tensors(tn::TensorNetwork)
+
+Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
+"""
 tensors(tn::TensorNetwork) = tn.tensors
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
+"""
+    labels(tn::TensorNetwork, set = :all)
+
+Return the names of the indices in the [`TensorNetwork`](@ref).
+
+# Keyword Arguments
+
+  - `set`
+
+      + `:all` (default) All indices.
+      + `:open` Indices only mentioned in one tensor.
+      + `:inner` Indices mentioned at least twice.
+      + `:hyper` Indices mentioned at least in three tensors.
+"""
 labels(tn::TensorNetwork; set::Symbol = :all, kwargs...) = labels(tn, set; kwargs...)
 @valsplit 2 labels(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(labels, "set=$set not recognized"))
 labels(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
@@ -95,6 +133,14 @@ labels(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ 
 labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
 labels(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
+"""
+    size(tn::TensorNetwork)
+    size(tn::TensorNetwork, index)
+
+Return a mapping from indices to their dimensionalities.
+
+If `index` is set, return the dimensionality of `index`. This is equivalent to `size(tn)[index]`.
+"""
 Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
 
@@ -112,6 +158,13 @@ Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
         throw(KeyError(name))
     end
 
+"""
+    push!(tn::TensorNetwork, tensor::Tensor)
+
+Add a new `tensor` to the Tensor Network.
+
+See also: [`append!`](@ref), [`pop!`](@ref).
+"""
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), labels(tensor) ∩ labels(tn))
         throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
@@ -126,6 +179,14 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     return tn
 end
 
+"""
+    append!(tn::TensorNetwork, tensors::AbstractVecOrTuple{<:Tensor})
+    append!(A::TensorNetwork, B::TensorNetwork)
+
+Add a list of tensors to the first `TensorNetwork`.
+
+See also: [`push!`](@ref)
+"""
 Base.append!(tn::TensorNetwork, t::AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
 function Base.append!(A::TensorNetwork, B::TensorNetwork)
     append!(A, tensors(B))
@@ -153,6 +214,15 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
     return tensor
 end
 
+"""
+    pop!(tn::TensorNetwork, tensor::Tensor)
+    pop!(tn::TensorNetwork, i::Union{Symbol,AbstractVecOrTuple{Symbol}})
+
+Remove a tensor from the Tensor Network and returns it. If a `Tensor` is passed, then the first tensor satisfies _egality_ (i.e. `≡` or `===`) will be removed.
+If a `Symbol` or a list of `Symbol`s is passed, then remove and return the tensors that contain all the indices.
+
+See also: [`push!`](@ref), [`delete!`](@ref).
+"""
 function Base.pop!(tn::TensorNetwork, tensor::Tensor)
     i = findfirst(t -> t === tensor, tn.tensors)
     popat!(tn, i)
@@ -169,6 +239,11 @@ function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Ten
     return tensors
 end
 
+"""
+    delete!(tn::TensorNetwork, x)
+
+Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
+"""
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
@@ -188,6 +263,9 @@ function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     return tn
 end
 
+"""
+    replace!(tn::TensorNetwork, old => new...)
+"""
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
     new ∈ labels(tn) && throw(ArgumentError("new symbol $new is already present"))
@@ -222,7 +300,7 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork
 end
 
 """
-    select(tn, i)
+    select(tn::TensorNetwork, i)
 
 Return tensors whose labels match with the list of indices `i`.
 """
@@ -230,9 +308,9 @@ select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = mapreduce(Base.Fix1(s
 select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
 
 """
-    slice!(tn, index, i)
+    slice!(tn::TensorNetwork, index::Symbol, i)
 
-In-place slice `index` of the Tensor Network `tn` on dimension `i`.
+In-place slice `index` of the [`TensorNetwork`](@ref) on dimension `i`.
 """
 function slice!(tn::TensorNetwork, label::Symbol, i)
     for tensor in select(tn, label)
@@ -245,7 +323,13 @@ function slice!(tn::TensorNetwork, label::Symbol, i)
     return tn
 end
 
+"""
+    selectdim(tn::TensorNetwork, index::Symbol, i)
+
+Return a copy of the [`TensorNetwork`](@ref) where `index` has been projected to dimension `i`.
+"""
 Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
+
 function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
     tn = copy(tn)
 
@@ -257,18 +341,18 @@ function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
 end
 
 """
-    rand(TensorNetwork, n, regularity[, out = 0, dim = 2:9, seed = nothing, globalind = false])
+    rand(TensorNetwork, n::Integer, regularity::Integer; out = 0, dim = 2:9, seed = nothing, globalind = false)
 
-Generate a random contraction and shapes.
+Generate a random tensor network.
 
 # Arguments
 
-  - `n`: Number of array arguments.
-  - `regularity`: 'Regularity' of the contraction graph. This essentially determines how many indices each tensor shares with others on average.
-  - `out=0`: Number of output indices (i.e. the number of non-contracted indices).
-  - `dim=2:9`: Range of dimension sizes.
-  - `seed=nothing`: If not `nothing`, seed random generator with this value.
-  - `globalind=false`: Add a global, 'broadcast', dimension to every tensor.
+  - `n` Number of tensors.
+  - `regularity` Average number of indices per tensor.
+  - `out` Number of open indices.
+  - `dim` Range of dimension sizes.
+  - `seed` If not `nothing`, seed random generator with this value.
+  - `globalind` Add a global 'broadcast' dimension to every tensor.
 """
 function Base.rand(
     ::Type{TensorNetwork},

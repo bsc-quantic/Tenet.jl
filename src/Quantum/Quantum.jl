@@ -4,9 +4,9 @@ using ValSplit
 using Bijections
 
 """
-    Quantum
+    Quantum <: Ansatz
 
-Tensor Network [`Ansatz`](@ref) that has a notion of sites and directionality (input/output).
+Tensor Network `Ansatz` that has a notion of sites and directionality (input/output).
 """
 abstract type Quantum <: Ansatz end
 
@@ -36,16 +36,38 @@ abstract type Property <: Plug end
 abstract type State <: Plug end
 abstract type Operator <: Plug end
 
+"""
+    plug(::TensorNetwork{<:Quantum})
+    plug(::Type{<:TensorNetwork})
+
+Return the `Plug` type of the [`TensorNetwork`](@ref). The following `Plug`s are defined in `Tenet`:
+
+  - `State` Only outputs.
+  - `Operator` Inputs and outputs.
+  - `Property` No inputs nor outputs.
+"""
 function plug end
 plug(tn::TensorNetwork{<:Quantum}) = tn.plug
 plug(T::Type{<:TensorNetwork}) = plug(ansatz(T))
 
+"""
+    sites(tn::TensorNetwork{<:Quantum})
+
+Return the sites in which the [`TensorNetwork`](@ref) acts.
+"""
 sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
 labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
 labels(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
 labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
 
+"""
+    tensors(tn::TensorNetwork{<:Quantum}, site::Integer)
+
+Return the `Tensor` connected to the [`TensorNetwork`](@ref) on `site`.
+
+See also: [`sites`](@ref).
+"""
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
 tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
@@ -175,12 +197,28 @@ function contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwar
 end
 
 # TODO look for more stable ways
+"""
+"""
 function LinearAlgebra.norm(ψ::TensorNetwork{<:Quantum}, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
 
     return contract(hcat(ψ, ψ'); kwargs...) |> only |> sqrt |> abs
 end
 
+"""
+    normalize!(ψ::TensorNetwork{<:Quantum}, p::Real = 2; insert::Union{Nothing,Int} = nothing)
+
+In-place normalize the [`TensorNetwork`](@ref).
+
+# Keyword Arguments
+
+  - `insert` Choose the way the normalization is performed:
+
+      + If `insert=nothing` (default), then all tensors are divided by ``\\sqrt[n]{\\lVert \\psi \\rVert_p}`` where `n` is the number of tensors.
+      + If `insert isa Integer`, then the tensor connected to the site pointed by `insert` is divided by the norm.
+
+    Both approaches are mathematically equivalent. Choose between them depending on the numerical properties.
+"""
 function LinearAlgebra.normalize!(
     ψ::TensorNetwork{<:Quantum},
     p::Real = 2;
@@ -203,6 +241,11 @@ function LinearAlgebra.normalize!(
     end
 end
 
+"""
+    fidelity(ψ,ϕ)
+
+Compute the fidelity between states ``\\ket{\\psi}`` and ``\\ket{\\phi}``.
+"""
 fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
 
 include("MP.jl")

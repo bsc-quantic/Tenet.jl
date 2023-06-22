@@ -6,8 +6,22 @@ using Tensors: parenttype
 
 abstract type Transformation end
 
+"""
+    transform(tn::TensorNetwork, config::Transformation)
+    transform(tn::TensorNetwork, configs)
+
+Return a new [`TensorNetwork`](@ref) where some `Transformation` has been performed into it.
+
+See also: [`transform!`](@ref).
+"""
 transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
 
+"""
+    transform!(tn::TensorNetwork, config::Transformation)
+    transform!(tn::TensorNetwork, configs)
+
+In-place version of [`transform`](@ref).
+"""
 function transform! end
 
 transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
@@ -20,11 +34,13 @@ function transform!(tn::TensorNetwork, transformations)
     return tn
 end
 
+"""
+    HyperindConverter <: Transformation
+
+Converts hyperindices to COPY-tensors, represented by `DeltaArray`s.
+"""
 struct HyperindConverter <: Transformation end
 
-"""
-    Converts hyperindices to COPY tensors.
-"""
 function transform!(tn::TensorNetwork, ::HyperindConverter)
     for index in labels(tn, :hyper)
         # dimensionality of `index`
@@ -51,6 +67,13 @@ function transform!(tn::TensorNetwork, ::HyperindConverter)
     end
 end
 
+"""
+    DiagonalReduction <: Transformation
+
+# Keyword Arguments
+
+  - `atol` Absolute tolerance. Defaults to `1e-12`.
+"""
 Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
 end
@@ -92,6 +115,11 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
     return tn
 end
 
+"""
+    RankSimplification <: Transformation
+
+Contract tensors preemptively.
+"""
 struct RankSimplification <: Transformation end
 
 function transform!(tn::TensorNetwork, ::RankSimplification)
@@ -123,6 +151,14 @@ function transform!(tn::TensorNetwork, ::RankSimplification)
     return tn
 end
 
+"""
+    AntiDiagonalGauging <: Transformation
+
+# Keyword Arguments
+
+  - `atol` Absolute tolerance. Defaults to `1e-12`.
+  - `skip`
+"""
 Base.@kwdef struct AntiDiagonalGauging <: Transformation
     atol::Float64 = 1e-12
     skip::Vector{Symbol} = Symbol[]
@@ -152,6 +188,14 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     return tn
 end
 
+"""
+    ColumnReduction <: Transformation
+
+# Keyword Arguments
+
+  - `atol` Absolute tolerance.
+  - `skip`
+"""
 Base.@kwdef struct ColumnReduction <: Transformation
     atol::Float64 = 1e-12
     skip::Vector{Symbol} = Symbol[]
