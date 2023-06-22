@@ -83,7 +83,7 @@ function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
     return true
 end
 
-nlayers(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
+Base.length(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
 
 # TODO create view of TN
 function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
