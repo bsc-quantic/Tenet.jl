@@ -159,6 +159,11 @@
         end
     end
 
+    @testset "norm" begin
+        mpo = rand(MatrixProduct{Operator,Open}, n = 8, p = 2, χ = 8)
+        @test norm(mpo) ≈ 1
+    end
+
     # @testset "Initialization" begin
     #     for params in [
     #         (2, 2, 2, 1),
