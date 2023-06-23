@@ -18,7 +18,7 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 
 - [x] Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
 - [x] Tensor Network slicing/cuttings
-- [x] Automatic Differentiation, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) and [`ChainRules`](https://github.com/JuliaDiff/ChainRulesCore.jl)
+- [x] Automatic Differentiation of TN contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) and [`ChainRules`](https://github.com/JuliaDiff/ChainRulesCore.jl)
 - [ ] Distributed contraction
 - [ ] Quantum Tensor Networks
   - [x] Matrix Product States (MPS)
@@ -29,3 +29,5 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 - [ ] Numerical Tensor Network algorithms
   - [ ] Tensor Renormalization Group (TRG)
   - [ ] Density Matrix Renormalization Group (DMRG)
+- [x] 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- [x] Translation from quantum circuits, powered by [`Quac`](https://github.com/bsc-quantic/Quac.jl)
