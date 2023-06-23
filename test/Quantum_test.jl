@@ -119,5 +119,21 @@
             @test isempty(labels(expectation, set = :open))
             @test issetequal(labels(expectation, set = :inner), labels(expectation, set = :all))
         end
+
+        # @testset "(State, Operator, State)" begin
+        #     expectation = hcat(state, operator, state')
+        #     @test_broken issetequal(sites(expectation), sites(state))
+        #     @test_broken issetequal(labels(expectation, set = :plug), labels(operator, set = :plug))
+        #     @test_broken isempty(labels(expectation, set = :open))
+        #     @test_broken issetequal(labels(expectation, set = :inner), labels(expectation, set = :all))
+        # end
+
+        # @testset "(Operator, Operator, Operator)" begin
+        #     expectation = hcat(operator, operator, operator)
+        #     @test_broken issetequal(sites(expectation), sites(state))
+        #     @test_broken issetequal(labels(expectation, set = :plug), labels(operator, set = :plug))
+        #     @test_broken isempty(labels(expectation, set = :open))
+        #     @test_broken issetequal(labels(expectation, set = :inner), labels(expectation, set = :all))
+        # end
     end
 end
