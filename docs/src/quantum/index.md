@@ -6,13 +6,9 @@ In `Tenet`, we define a [`Quantum`](@ref) Tensor Network as a [`TensorNetwork`](
 Quantum
 ```
 
-## Plugs
-
 ```@docs
 plug
 ```
-
-## Sites
 
 ```@docs
 sites
@@ -20,6 +16,10 @@ sites
 
 ```@docs
 tensors(::TensorNetwork{<:Quantum}, ::Integer)
+```
+
+```@docs
+boundary
 ```
 
 ## Adjoint
@@ -32,12 +32,6 @@ adjoint
 
 ```@docs
 hcat(::TensorNetwork{<:Quantum}, ::TensorNetwork{<:Quantum})
-```
-
-## Bounds
-
-```@docs
-boundary
 ```
 
 ## Norm

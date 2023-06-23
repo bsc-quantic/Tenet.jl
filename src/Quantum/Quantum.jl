@@ -27,6 +27,15 @@ abstract type Boundary end
 abstract type Open <: Boundary end
 abstract type Periodic <: Boundary end
 
+"""
+    boundary(::TensorNetwork)
+    boundary(::Type{<:TensorNetwork})
+
+Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Boundary`s are defined in `Tenet`:
+
+  - `Open`
+  - `Periodic`
+"""
 function boundary end
 boundary(::T) where {T<:TensorNetwork} = boundary(T)
 boundary(::Type{T}) where {T<:TensorNetwork} = boundary(ansatz(T))
@@ -90,6 +99,17 @@ function Base.replace!(tn::TensorNetwork{<:Quantum}, old_new::Pair{Symbol,Symbol
 end
 
 ## `Composite` type
+"""
+    Composite <: Quantum
+
+A [`Quantum`](@ref) ansatz that represents several connected layers of [`Quantum`](@ref) [`TensorNetwork`](@ref)s.
+
+# Implementation details
+
+Introduces a field named `layermeta` that stores the metadata of each layer.
+
+See also: [`hcat`](@ref).
+"""
 abstract type Composite{Ts<:Tuple} <: Quantum end
 Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
 Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
@@ -108,6 +128,11 @@ end
 Base.length(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
 
 # TODO create view of TN
+"""
+    layers(tn::TensorNetwork{<:Composite}, i)
+
+Return a [`TensorNetwork`](@ref) that is shallow copy of the ``i``-th layer of a `Composite` Tensor Network.
+"""
 function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
     A = fieldtypes(As)[i]
     layer_plug = tn.layermeta[i][:plug] # TODO more programmatic access (e.g. plug(tn, i)?)
@@ -139,6 +164,11 @@ Base.merge(::Type{Operator}, ::Type{State}) = State
 Base.merge(::Type{Operator}, ::Type{Operator}) = Operator
 
 # TODO implement hcat when QA or QB <: Composite
+"""
+    hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum}...)::TensorNetwork{<:Composite}
+
+Join [`TensorNetwork`](@ref)s into one by matching sites.
+"""
 function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
     issetequal(sites(A), sites(B)) ||
         throw(DimensionMismatch("A and B must contain the same set of sites in order to connect them"))
@@ -179,6 +209,15 @@ end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 
+"""
+    adjoint(tn::TensorNetwork{<:Quantum})
+
+Return the adjoint [`Tensor Network`](@ref).
+
+# Implementation details
+
+The tensors are not transposed, just `conj!` is applied to them.
+"""
 function Base.adjoint(tn::TensorNetwork{<:Quantum})
     tn = deepcopy(tn)
 
@@ -192,6 +231,11 @@ contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...) = 
 
 # TODO look for more stable ways
 """
+    norm(ψ::TensorNetwork{<:Quantum}, p::Real=2)
+
+Compute the ``p``-norm of a [`Quantum`](@ref) [`TensorNetwork`](@ref).
+
+See also: [`normalize!`](@ref).
 """
 function LinearAlgebra.norm(ψ::TensorNetwork{<:Quantum}, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
@@ -212,6 +256,8 @@ In-place normalize the [`TensorNetwork`](@ref).
       + If `insert isa Integer`, then the tensor connected to the site pointed by `insert` is divided by the norm.
 
     Both approaches are mathematically equivalent. Choose between them depending on the numerical properties.
+
+See also: [`norm`](@ref).
 """
 function LinearAlgebra.normalize!(
     ψ::TensorNetwork{<:Quantum},
