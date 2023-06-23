@@ -6,11 +6,15 @@ push!(LOAD_PATH, "$(@__DIR__)/..")
 
 using Documenter
 using Tenet
+using CairoMakie
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive = true)
 
 makedocs(
-    modules = [Tenet],
+    modules = [
+        Tenet,
+        isdefined(Base, :get_extension) ? Base.get_extension(Tenet, :TenetMakieExt) : Tenet.TenetMakieExt,
+    ],
     sitename = "Tenet.jl",
     authors = "Sergio Sánchez Ramírez and contributors",
     pages = Any[

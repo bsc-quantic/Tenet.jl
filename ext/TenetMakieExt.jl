@@ -12,6 +12,19 @@ using Makie
 using NetworkLayout: dim
 using GraphMakie
 
+"""
+    plot(tn::TensorNetwork; kwargs...)
+    plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
+    plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; kwargs...)
+
+Plot a [`TensorNetwork`](@ref) as a graph.
+
+# Keyword Arguments
+
+  - `labels` Whether to show the index labels. Defaults to `false`.
+  - `layout` Algorithm used to map graph vertices to a (2D or 3D) coordinate system.
+    The algorithms implemented in the `NetworkLayout` package are recommended.
+"""
 function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
     ax, p = plot!(f[1, 1], tn; kwargs...)
