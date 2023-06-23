@@ -94,7 +94,7 @@ abstract type Composite{Ts<:Tuple} <: Quantum end
 Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
 Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
 
-metadata(A::Type{<:Composite}) = NamedTuple{(:layermeta,),Tuple{Vector{Dict{Symbol,Any}}}}
+metadata(::Type{<:Composite}) = NamedTuple{(:layermeta,),Tuple{Vector{Dict{Symbol,Any}}}}
 
 function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
     for (i, A) in enumerate(fieldtypes(As))
@@ -179,22 +179,16 @@ end
 
 Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 
-function Base.adjoint(tn::TensorNetwork{A}) where {A<:Quantum}
+function Base.adjoint(tn::TensorNetwork{<:Quantum})
     tn = deepcopy(tn)
 
     reverse!(tn.interlayer)
-
-    for tensor in tensors(tn)
-        tensor .= conj(tensor)
-    end
+    foreach(conj!, tensors(tn))
 
     return tn
 end
 
-## Numerical methods
-function contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...)
-    contract(hcat(a, b); kwargs...)
-end
+contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...) = contract(hcat(a, b); kwargs...)
 
 # TODO look for more stable ways
 """
