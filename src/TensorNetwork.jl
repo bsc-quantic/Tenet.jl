@@ -397,11 +397,31 @@ function Base.rand(
     TensorNetwork(tensors)
 end
 
+"""
+    einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = labels(tn, :open), kwargs...)
+
+Search a contraction path for the given [`TensorNetwork`](@ref) and return it as a `EinExpr`.
+
+# Keyword Arguments
+
+  - `optimizer` Contraction path optimizer. Check [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) documentation for more info.
+  - `outputs` Indices that won't be contracted. Defaults to open indices.
+  - `kwargs` Options to be passed to the optimizer.
+
+See also: [`contract`](@ref).
+"""
 EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = labels(tn, :open), kwargs...) =
     einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
+"""
+    contract!(tn::TensorNetwork, index::Symbol)
+
+In-place contraction of tensors connected to `index`.
+
+See also: [`contract`](@ref).
+"""
 function contract!(tn::TensorNetwork, i::Symbol)
     tensor = reduce(pop!(tn, i)) do acc, tensor
         contract(acc, tensor, i)
@@ -411,6 +431,15 @@ function contract!(tn::TensorNetwork, i::Symbol)
     return tn
 end
 
+"""
+    contract(tn::TensorNetwork; kwargs...)
+
+Contract a [`TensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
+
+The `kwargs` will be passed down to the [`einexpr`](@ref) function.
+
+See also: [`einexpr`](@ref), [`contract!`](@ref).
+"""
 contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
     contract(einexpr(tn; outputs = outputs, kwargs...))
 

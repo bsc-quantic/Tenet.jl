@@ -40,6 +40,7 @@ export norm, normalize!
 # reexports from Tensors
 export Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
-# TODO reexports from EinExprs
+# reexports from EinExprs
+export einexpr
 
 end
