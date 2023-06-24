@@ -7,6 +7,7 @@ push!(LOAD_PATH, "$(@__DIR__)/..")
 using Documenter
 using Tenet
 using CairoMakie
+using LinearAlgebra
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive = true)
 
