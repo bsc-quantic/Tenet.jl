@@ -8,7 +8,7 @@
 
 A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
 
-- **Expressibility** _Simple to use._ 👶
+- **Expressiveness** _Simple to use._ 👶
 - **Flexibility** _Extend it to your needs._ 🔧
 - **Performance** _Goes brr... fast._ 🏎️
 
