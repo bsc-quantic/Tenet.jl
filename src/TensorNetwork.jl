@@ -27,10 +27,7 @@ function metadata end
     TensorNetwork{Ansatz}
 
 Graph of interconnected tensors, representing a multilinear equation.
-
-# Implementation details
-
-`TensorNetwork` represents the **dual hypergraph** of the Tensor Network (i.e. vertices are indices and hyperedges are tensors).
+Graph vertices represent tensors and graph edges, tensor indices.
 """
 struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
     indices::Dict{Symbol,Vector{Int}}
@@ -246,7 +243,31 @@ Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
+"""
+    replace(tn::TensorNetwork, old => new...)
+
+Return a copy of the [`TensorNetwork`](@ref) where `old` has been replaced by `new`.
+
+See also: [`replace!`](@ref).
+"""
 Base.replace(tn::TensorNetwork, old_new::Pair...) = replace!(copy(tn), old_new...)
+
+"""
+    replace!(tn::TensorNetwork, old => new...)
+
+Replace the element in `old` with the one in `new`. Depending on the types of `old` and `new`, the following behaviour is expected:
+
+  - If `Symbol`s, it will correspond to a index renaming.
+  - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
+
+See also: [`replace`](@ref).
+"""
+function Base.replace!(tn::TensorNetwork, old_new::Pair...)
+    for pair in old_new
+        replace!(tn, pair)
+    end
+    return tn
+end
 
 function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
@@ -263,9 +284,6 @@ function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     return tn
 end
 
-"""
-    replace!(tn::TensorNetwork, old => new...)
-"""
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
     new ∈ labels(tn) && throw(ArgumentError("new symbol $new is already present"))
@@ -276,13 +294,6 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
         tn.tensors[i] = replace(tn.tensors[i], old_new)
     end
 
-    return tn
-end
-
-function Base.replace!(tn::TensorNetwork, old_new::Pair...)
-    for pair in old_new
-        replace!(tn, pair)
-    end
     return tn
 end
 
@@ -310,7 +321,9 @@ select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices
 """
     slice!(tn::TensorNetwork, index::Symbol, i)
 
-In-place slice `index` of the [`TensorNetwork`](@ref) on dimension `i`.
+In-place projection of `index` on dimension `i`.
+
+See also: [`selectdim`](@ref), [`view`](@ref).
 """
 function slice!(tn::TensorNetwork, label::Symbol, i)
     for tensor in select(tn, label)
@@ -327,9 +340,19 @@ end
     selectdim(tn::TensorNetwork, index::Symbol, i)
 
 Return a copy of the [`TensorNetwork`](@ref) where `index` has been projected to dimension `i`.
+
+See also: [`view`](@ref), [`slice!`](@ref).
 """
 Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
 
+"""
+    view(tn::TensorNetwork, index => i...)
+
+Return a copy of the [`TensorNetwork`](@ref) where each `index` has been projected to dimension `i`.
+It is equivalent to a recursive call of [`selectdim`](@ref).
+
+See also: [`selectdim`](@ref), [`slice!`](@ref).
+"""
 function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
     tn = copy(tn)
 
