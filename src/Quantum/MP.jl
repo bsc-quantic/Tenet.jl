@@ -5,7 +5,7 @@ using Random
 using Bijections
 
 """
-    MatrixProduct{P,B} <: Quantum
+    MatrixProduct{P<:Plug,B<:Boundary} <: Quantum
 
 A generic ansatz representing Matrix Product State (MPS) and Matrix Product Operator (MPO) topology, aka Tensor Train.
 Type variable `P` represents the `Plug` type (`State` or `Operator`) and `B` represents the `Boundary` type (`Open` or `Periodic`).
