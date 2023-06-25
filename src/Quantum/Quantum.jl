@@ -212,7 +212,7 @@ Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
 """
     adjoint(tn::TensorNetwork{<:Quantum})
 
-Return the adjoint [`Tensor Network`](@ref).
+Return the adjoint [`TensorNetwork`](@ref).
 
 # Implementation details
 
