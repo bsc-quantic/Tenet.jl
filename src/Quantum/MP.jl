@@ -122,7 +122,7 @@ end
 function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{State,Open}})
     n = sampler.n
     χ = sampler.χ
-    p = sampler.p
+    p = get(sampler, :p, 2)
     T = get(sampler, :eltype, Float64)
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
@@ -158,7 +158,7 @@ end
 function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Operator,Open}})
     n = sampler.n
     χ = sampler.χ
-    p = sampler.p
+    p = get(sampler, :p, 2)
     T = get(sampler, :eltype, Float64)
 
     ip = op = p
@@ -198,7 +198,7 @@ end
 function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{P,Periodic}}) where {P<:Plug}
     n = sampler.n
     χ = sampler.χ
-    p = sampler.p
+    p = get(sampler, :p, 2)
     T = get(sampler, :eltype, Float64)
 
     A = MatrixProduct{P,Periodic}([rand(rng, T, [P === State ? (χ, χ, p) : (χ, χ, p, p)]...) for _ in 1:n]; χ = χ)
