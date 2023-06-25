@@ -37,6 +37,7 @@ makedocs(
         "Alternatives"=>"alternatives.md",
         "Developer Reference"=>[],
     ],
+    format = Documenter.HTML(assets = ["assets/favicon.ico"]),
 )
 
 deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master")
