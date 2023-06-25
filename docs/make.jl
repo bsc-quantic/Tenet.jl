@@ -35,7 +35,6 @@ makedocs(
             "Matrix Product State classifier" => "examples/mps-ml.md",
         ],
         "Alternatives"=>"alternatives.md",
-        "Developer Reference"=>[],
     ],
     format = Documenter.HTML(assets = ["assets/favicon.ico"]),
 )
