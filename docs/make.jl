@@ -28,7 +28,7 @@ makedocs(
         ],
         "Quantum Tensor Networks"=>[
             "Introduction" => "quantum/index.md",
-            "Matrix Product States (MPS) / Operators (MPO)" => "quantum/mps.md",
+            "Matrix Product States (MPS)" => "quantum/mps.md",
         ],
         "Examples"=>[
             "Google's Quantum Advantage experiment" => "examples/google-rqc.md",

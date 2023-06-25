@@ -4,6 +4,16 @@ using IterTools: partition
 using Random
 using Bijections
 
+"""
+    MatrixProduct{P,B} <: Quantum
+
+A generic ansatz representing Matrix Product State (MPS) and Matrix Product Operator (MPO) topology, aka Tensor Train.
+Type variable `P` represents the `Plug` type (`State` or `Operator`) and `B` represents the `Boundary` type (`Open` or `Periodic`).
+
+# Ansatz Fields
+
+  - `χ::Union{Nothing,Int}` Maximum virtual bond dimension.
+"""
 abstract type MatrixProduct{P,B} <: Quantum where {P<:Plug,B<:Boundary} end
 
 boundary(::Type{<:MatrixProduct{P,B}}) where {P,B} = B
@@ -38,6 +48,16 @@ _sitealias(::Type{MatrixProduct{P,Periodic}}, order, n, i) where {P<:Plug} = tup
 defaultorder(::Type{MatrixProduct{State}}) = (:l, :r, :o)
 defaultorder(::Type{MatrixProduct{Operator}}) = (:l, :r, :i, :o)
 
+"""
+    MatrixProduct{P,B}(arrays::AbstractArray[]; χ::Union{Nothing,Int} = nothing, order = defaultorder(MatrixProduct{P}))
+
+Construct a [`TensorNetwork`](@ref) with [`MatrixProduct`](@ref) ansatz, from the arrays of the tensors.
+
+# Keyword Arguments
+
+  - `χ` Maximum virtual bond dimension. Defaults to `nothing`.
+  - `order` Order of tensor indices on `arrays`. Defaults to `(:l, :r, :o)` if `P` is a `State`, `(:l, :r, :i, :o)` if `Operator`.
+"""
 function MatrixProduct{P,B}(
     arrays;
     χ = nothing,
