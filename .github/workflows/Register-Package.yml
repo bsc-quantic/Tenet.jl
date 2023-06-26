@@ -7,8 +7,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.NISUS_APP_ID }}
+          private_key: ${{ secrets.NISUS_PRIVATE_KEY }}
       - uses: bsc-quantic/julia-register@v0.3
         with:
           registry: bsc-quantic/Registry
         env:
-          GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
