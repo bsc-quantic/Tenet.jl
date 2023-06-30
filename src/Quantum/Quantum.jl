@@ -288,4 +288,15 @@ Compute the fidelity between states ``\\ket{\\psi}`` and ``\\ket{\\phi}``.
 """
 fidelity(a, b; kwargs...) = abs(only(contract(a, b'; kwargs...)))^2
 
+"""
+    marginal(ψ, site)
+
+Return the marginal quantum state of site.
+"""
+function marginal(ψ, site)
+    tensor = tensors(ψ, site)
+    index = labels(ψ, :plug, site)
+    sum(tensor, inds = setdiff(labels(tensor), [index]))
+end
+
 include("MP.jl")
