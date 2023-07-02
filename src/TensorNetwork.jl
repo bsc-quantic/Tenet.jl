@@ -19,7 +19,6 @@ Tensor Networks without a predefined form.
 abstract type Arbitrary <: Ansatz end
 
 # NOTE currently, these are implementation details
-function checktopology end
 function checkmeta end
 function metadata end
 
@@ -60,14 +59,11 @@ TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
 
 # TODO do sth to skip checkansatz? like @inbounds
 function checkansatz(tn::TensorNetwork{A}) where {A<:Ansatz}
-    checktopology(tn) || throw(ErrorException("\"$A\" topology not preserved"))
-
     for T in superansatzes(A)
         checkmeta(T, tn) || throw(ErrorException("\"$T\" metadata is not valid"))
     end
 end
 
-checktopology(::TensorNetwork{<:Ansatz}) = true
 checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
 checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
 
