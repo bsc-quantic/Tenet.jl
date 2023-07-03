@@ -23,8 +23,9 @@ function MatrixProduct{P}(arrays; boundary::Type{<:Boundary} = Open, kwargs...) 
     MatrixProduct{P,boundary}(arrays; kwargs...)
 end
 
-metadata(::Type{<:MatrixProduct}) =
-    merge(metadata(supertype(MatrixProduct)), NamedTuple{(:χ,),Tuple{Union{Nothing,Int}}})
+metadata(::Type{<:MatrixProduct}) = merge(metadata(supertype(MatrixProduct)), @NamedTuple begin
+    χ::Union{Nothing,Int}
+end)
 
 function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     # meta has correct type

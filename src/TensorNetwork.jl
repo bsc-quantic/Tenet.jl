@@ -68,7 +68,7 @@ checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
 checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
 
 metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
-metadata(::Type{<:Arbitrary}) = metadata(Ansatz)
+metadata(T::Type{<:Arbitrary}) = metadata(supertype(T))
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")

@@ -3,9 +3,11 @@
 
     struct MockState <: Quantum end
     Tenet.plug(::Type{MockState}) = State
+    Tenet.metadata(::Type{MockState}) = Tenet.metadata(Quantum)
 
     struct MockOperator <: Quantum end
     Tenet.plug(::Type{MockOperator}) = Operator
+    Tenet.metadata(::Type{MockOperator}) = Tenet.metadata(Quantum)
 
     state = TensorNetwork{MockState}(
         [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];

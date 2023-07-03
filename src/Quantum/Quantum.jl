@@ -11,10 +11,10 @@ Tensor Network `Ansatz` that has a notion of sites and directionality (input/out
 abstract type Quantum <: Arbitrary end
 
 # NOTE Storing `Plug` type on type parameters is not compatible with `Composite` ansatz. Use Holy traits instead.
-metadata(::Type{Quantum}) = merge(
-    metadata(supertype(Quantum)),
-    NamedTuple{(:plug, :interlayer),Tuple{Type{<:Plug},Vector{Bijection{Int,Symbol}}}},
-)
+metadata(::Type{Quantum}) = merge(metadata(supertype(Quantum)), @NamedTuple begin
+    plug::Type{<:Plug}
+    interlayer::Vector{Bijection{Int,Symbol}}
+end)
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # TODO run this check depending if State or Operator
@@ -117,7 +117,9 @@ abstract type Composite{Ts<:Tuple} <: Quantum end
 Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
 Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
 
-metadata(::Type{<:Composite}) = NamedTuple{(:layermeta,),Tuple{Vector{Dict{Symbol,Any}}}}
+metadata(::Type{<:Composite}) = merge(metadata(Quantum), @NamedTuple begin
+    layermeta::Vector{Dict{Symbol,Any}}
+end)
 
 function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
     for (i, A) in enumerate(fieldtypes(As))
