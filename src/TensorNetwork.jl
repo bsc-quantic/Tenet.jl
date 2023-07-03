@@ -482,3 +482,5 @@ Base.rand(::Type{A}; kwargs...) where {A<:Ansatz} = rand(TNSampler{A}(; kwargs..
 
 Base.convert(::Type{T}, tn::TensorNetwork{A}) where {T<:Ansatz,A<:T} =
     TensorNetwork{T}(tensors(tn); metadata(T)(tn.metadata)...)
+
+Base.convert(::Type{T}, tn::TensorNetwork{A}; metadata...) where {A<:Ansatz,T<:A} = TensorNetwork{T}(tn; metadata...)
