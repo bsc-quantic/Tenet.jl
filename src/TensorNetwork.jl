@@ -38,7 +38,7 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
             mergewith(vcat, dict, Dict([index => [i] for index in labels(tensor)]))
         end
 
-        M = merge(Tenet.metadata.(superansatzes(A))...)
+        M = Tenet.metadata(A)
         metadata = M((; metadata...))
 
         tn = new{A,M}(indices, tensors, metadata)
@@ -68,6 +68,7 @@ checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
 checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
 
 metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
+metadata(::Type{<:Arbitrary}) = metadata(Ansatz)
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")

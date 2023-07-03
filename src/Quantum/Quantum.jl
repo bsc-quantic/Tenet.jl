@@ -8,10 +8,13 @@ using Bijections
 
 Tensor Network `Ansatz` that has a notion of sites and directionality (input/output).
 """
-abstract type Quantum <: Ansatz end
+abstract type Quantum <: Arbitrary end
 
 # NOTE Storing `Plug` type on type parameters is not compatible with `Composite` ansatz. Use Holy traits instead.
-metadata(::Type{Quantum}) = NamedTuple{(:plug, :interlayer),Tuple{Type{<:Plug},Vector{Bijection{Int,Symbol}}}}
+metadata(::Type{Quantum}) = merge(
+    metadata(supertype(Quantum)),
+    NamedTuple{(:plug, :interlayer),Tuple{Type{<:Plug},Vector{Bijection{Int,Symbol}}}},
+)
 
 function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     # TODO run this check depending if State or Operator
