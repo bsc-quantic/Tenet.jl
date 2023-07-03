@@ -479,3 +479,6 @@ Base.get(obj::TNSampler, name, default) = get(getfield(obj, :parameters), name, 
 Base.eltype(::TNSampler{A}) where {A<:Ansatz} = TensorNetwork{A}
 
 Base.rand(::Type{A}; kwargs...) where {A<:Ansatz} = rand(TNSampler{A}(; kwargs...))
+
+Base.convert(::Type{T}, tn::TensorNetwork{A}) where {T<:Ansatz,A<:T} =
+    TensorNetwork{T}(tensors(tn); metadata(T)(tn.metadata)...)
