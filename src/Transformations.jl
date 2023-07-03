@@ -3,6 +3,7 @@ using EinExprs
 using OMEinsum
 using UUIDs: uuid4
 using Tensors: parenttype
+using Combinatorics: combinations
 
 abstract type Transformation end
 
@@ -260,6 +261,64 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
+Base.@kwdef struct SplitSimplification <: Transformation
+    atol::Float64 = 1e-10  # A threshold for SVD rank determination
+end
+
+function transform!(tn::TensorNetwork, config::SplitSimplification)
+    done = false  # This flag will be set to true when no further changes are made
+
+    while !done
+        done = true  # Assume no changes will be made this pass
+
+        # Create a copy of the list of tensors so we can modify the original while iterating
+        tensor_list = copy(tensors(tn))
+
+        for tensor in tensor_list
+            inds = labels(tensor)
+
+            partitions = Iterators.flatten(combinations(inds, r) for r = 1:(length(inds)-1))
+
+            # Iterate over all possible bipartitions of the tensor's indices
+            for bipartition in partitions
+                left_inds = collect(bipartition)
+                right_inds = setdiff(inds, left_inds)
+
+                # Perform an SVD across the bipartition
+                u, s, v = svd(tensor; left_inds=left_inds)
+
+                # Get the singular values and decide the rank
+                singular_values = diag(s)
+                rank_s = sum(singular_values .> config.atol)
+
+                if rank_s < length(singular_values)
+                    # Remove unnecessary data in u, s, v
+                    u = view(u, labels(s)[1] => 1:rank_s)
+                    s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
+                    v = view(v, labels(s)[2] => 1:rank_s)
+
+                    # Replace the original tensor with the two new ones
+                    tensor_l = u * s
+                    tensor_r = v
+
+                    pop!(tn, tensor)  # Remove the old tensor
+                    push!(tn, tensor_l)  # Add the new tensors
+                    push!(tn, tensor_r)
+
+                    done = false  # A change was made, so we'll need to go another pass
+                    break  # Exit the inner loop early
+                end
+            end
+
+            if !done
+                break  # Exit the outer loop early
+            end
+        end
+    end
+
+    return tn
+end
+
 function find_zero_columns(x; atol = 1e-12)
     dims = size(x)
 
@@ -316,5 +375,3 @@ function find_anti_diag_axes(x; atol = 1e-12)
         end
     end
 end
-
-# TODO split simplification
