@@ -1,5 +1,15 @@
 using UUIDs: uuid4
 
+"""
+    ProjectedEntangledPair{P<:Plug,B<:Boundary} <: Quantum
+
+A generic ansatz representing Projected Entangled Pair States (PEPS) and Projected Entangled Pair Operators (PEPO).
+Type variable `P` represents the `Plug` type (`State` or `Operator`) and `B` represents the `Boundary` type (`Open` or `Periodic`).
+
+# Ansatz Fields
+
+  - `χ::Union{Nothing,Int}` Maximum virtual bond dimension.
+"""
 abstract type ProjectedEntangledPair{P,B} <: Quantum where {P<:Plug,B<:Boundary} end
 
 boundary(::Type{<:ProjectedEntangledPair{P,B}}) where {P,B} = B
@@ -38,6 +48,16 @@ _sitealias(::Type{ProjectedEntangledPair{P,Periodic}}, order, _, _) where {P<:Pl
 defaultorder(::Type{ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
 defaultorder(::Type{ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
 
+"""
+    ProjectedEntangledPair{P,B}(arrays::Matrix{AbstractArray}; χ::Union{Nothing,Int} = nothing, order = defaultorder(ProjectedEntangledPair{P}))
+
+Construct a [`TensorNetwork`](@ref) with [`ProjectedEntangledPair`](@ref) ansatz, from the arrays of the tensors.
+
+# Keyword Arguments
+
+  - `χ` Maximum virtual bond dimension. Defaults to `nothing`.
+  - `order` Order of the tensor indices on `arrays`. Defaults to `(:l, :r, :u, :d, :o)` if `P` is a `State`, `(:l, :r, :u, :d, :i, :o)` if `Operator`.
+"""
 function ProjectedEntangledPair{P,B}(
     arrays;
     χ = nothing,

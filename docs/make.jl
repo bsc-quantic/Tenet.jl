@@ -29,6 +29,7 @@ makedocs(
         "Quantum Tensor Networks"=>[
             "Introduction" => "quantum/index.md",
             "Matrix Product States (MPS)" => "quantum/mps.md",
+            "Projected Entangled Pair States (PEPS)" => "quantum/peps.md",
         ],
         "Examples"=>[
             "Google's Quantum Advantage experiment" => "examples/google-rqc.md",
