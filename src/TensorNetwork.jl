@@ -357,19 +357,6 @@ function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
         slice!(tn, label, i)
     end
 
-    i isa Integer && delete!(tn.indices, label)
-
-    return tn
-end
-
-Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
-function Base.view(tn::TensorNetwork, slices::Pair{Symbol,<:Any}...)
-    tn = copy(tn)
-
-    for (label, i) in slices
-        slice!(tn, label, i)
-    end
-
     return tn
 end
 
