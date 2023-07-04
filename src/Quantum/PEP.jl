@@ -9,8 +9,18 @@ function ProjectedEntangledPair{P}(arrays; boundary::Type{<:Boundary} = Open, kw
     ProjectedEntangledPair{P,boundary}(arrays; kwargs...)
 end
 
+metadata(T::Type{<:ProjectedEntangledPair}) = merge(metadata(supertype(T)), @NamedTuple begin
+    χ::Union{Nothing,Int}
+end)
+
 function checkmeta(::Type{ProjectedEntangledPair{P,B}}, tn::TensorNetwork) where {P,B}
-    # TODO
+    # meta has correct value
+    isnothing(tn.χ) || tn.χ > 0 || return false
+
+    # no virtual index has dimensionality bigger than χ
+    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, labels(tn, :virtual)) || return false
+
+    return true
 end
 
 function _sitealias(::Type{ProjectedEntangledPair{P,Open}}, order, size, pos) where {P<:Plug}
