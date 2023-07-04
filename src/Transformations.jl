@@ -286,15 +286,15 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
                 s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
                 v = view(v, labels(s)[2] => 1:rank_s)
 
-                # Replace the original tensor with the two new ones
+                # replace the original tensor with factorization
                 tensor_l = u * s
                 tensor_r = v
 
-                pop!(tn, tensor)  # Remove the old tensor
-                push!(tn, dropdims(tensor_l, dims = tuple(findall(size(tensor_l) .== 1)...))) # Add the new tensors
-                push!(tn, dropdims(tensor_r, dims = tuple(findall(size(tensor_r) .== 1)...)))
+                push!(tn, dropdims(tensor_l))
+                push!(tn, dropdims(tensor_r))
+                pop!(tn, tensor)
 
-                # Break the loop since we modified the network and need to recheck connections
+                # iterator is no longer valid, so restart loop
                 @goto split_simplification_start
             end
         end
