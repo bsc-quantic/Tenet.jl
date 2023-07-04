@@ -302,8 +302,8 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
                     tensor_r = v
 
                     pop!(tn, tensor)  # Remove the old tensor
-                    push!(tn, tensor_l)  # Add the new tensors
-                    push!(tn, tensor_r)
+                    push!(tn, dropdims(tensor_l, dims = tuple(findall(size(tensor_l) .== 1)...))) # Add the new tensors
+                    push!(tn, dropdims(tensor_r, dims = tuple(findall(size(tensor_r) .== 1)...)))
 
                     done = false  # A change was made, so we'll need to go another pass
                     break  # Exit the inner loop early
