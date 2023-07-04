@@ -266,53 +266,41 @@ Base.@kwdef struct SplitSimplification <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::SplitSimplification)
-    done = false  # This flag will be set to true when no further changes are made
+    @label split_simplification_start
+    for tensor in tensors(tn)
+        inds = labels(tensor)
 
-    while !done
-        done = true  # Assume no changes will be made this pass
+        # iterate all bipartitions of the tensor's indices
+        bipartitions = Iterators.flatten(combinations(inds, r) for r = 1:(length(inds)-1))
+        for bipartition in bipartitions
+            left_inds = collect(bipartition)
+            right_inds = setdiff(inds, left_inds)
 
-        # Create a copy of the list of tensors so we can modify the original while iterating
-        tensor_list = copy(tensors(tn))
+            # perform an SVD across the bipartition
+            u, s, v = svd(tensor; left_inds=left_inds)
 
-        for tensor in tensor_list
-            inds = labels(tensor)
+            singular_values = diag(s)
+            rank_s = sum(singular_values .> config.atol)
 
-            # iterate all bipartitions of the tensor's indices
-            bipartitions = Iterators.flatten(combinations(inds, r) for r = 1:(length(inds)-1))
-            for bipartition in bipartitions
-                left_inds = collect(bipartition)
-                right_inds = setdiff(inds, left_inds)
+            if rank_s < length(singular_values)
+                # Remove unnecessary data in u, s, v
+                u = view(u, labels(s)[1] => 1:rank_s)
+                s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
+                v = view(v, labels(s)[2] => 1:rank_s)
 
-                # perform an SVD across the bipartition
-                u, s, v = svd(tensor; left_inds=left_inds)
+                # Replace the original tensor with the two new ones
+                tensor_l = u * s
+                tensor_r = v
 
-                rank_s = sum(diag(s) .> config.atol)
+                pop!(tn, tensor)  # Remove the old tensor
+                push!(tn, dropdims(tensor_l, dims = tuple(findall(size(tensor_l) .== 1)...))) # Add the new tensors
+                push!(tn, dropdims(tensor_r, dims = tuple(findall(size(tensor_r) .== 1)...)))
 
-                if rank_s < length(singular_values)
-                    # Remove unnecessary data in u, s, v
-                    u = view(u, labels(s)[1] => 1:rank_s)
-                    s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
-                    v = view(v, labels(s)[2] => 1:rank_s)
-
-                    # Replace the original tensor with the two new ones
-                    tensor_l = u * s
-                    tensor_r = v
-
-                    pop!(tn, tensor)  # Remove the old tensor
-                    push!(tn, dropdims(tensor_l, dims = tuple(findall(size(tensor_l) .== 1)...))) # Add the new tensors
-                    push!(tn, dropdims(tensor_r, dims = tuple(findall(size(tensor_r) .== 1)...)))
-
-                    done = false  # A change was made, so we'll need to go another pass
-                    break  # Exit the inner loop early
-                end
-            end
-
-            if !done
-                break  # Exit the outer loop early
+                # Break the loop since we modified the network and need to recheck connections
+                @goto split_simplification_start
             end
         end
     end
-
     return tn
 end
 
