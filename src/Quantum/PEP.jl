@@ -155,7 +155,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangle
     # normalize state
     arrays[1, 1] ./= P <: State ? sqrt(p) : p
 
-    ProjectedEntangledPair{State,Open}(arrays; χ)
+    ProjectedEntangledPair{P,Open}(arrays; χ)
 end
 
 # TODO normalize
@@ -188,5 +188,5 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangle
     # normalize state
     arrays[1, 1] ./= P <: State ? sqrt(p) : p
 
-    ProjectedEntangledPair{State,Periodic}(arrays; χ)
+    ProjectedEntangledPair{P,Periodic}(arrays; χ)
 end
