@@ -1,6 +1,5 @@
 using UUIDs: uuid4
 using Base.Iterators: flatten
-using IterTools: partition
 using Random
 using Bijections
 
@@ -106,6 +105,9 @@ function MatrixProduct{P,B}(
 
     return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
 end
+
+const MPS = MatrixProduct{State}
+const MPO = MatrixProduct{Operator}
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more
 # function contractpath(a::TensorNetwork{<:MatrixProductState}, b::TensorNetwork{<:MatrixProductState})
