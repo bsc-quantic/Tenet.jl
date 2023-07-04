@@ -3,6 +3,7 @@ using EinExprs
 using OMEinsum
 using UUIDs: uuid4
 using Tensors: parenttype
+using Combinatorics: combinations
 
 abstract type Transformation end
 
@@ -260,6 +261,47 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
+Base.@kwdef struct SplitSimplification <: Transformation
+    atol::Float64 = 1e-10  # A threshold for SVD rank determination
+end
+
+function transform!(tn::TensorNetwork, config::SplitSimplification)
+    @label split_simplification_start
+    for tensor in tensors(tn)
+        inds = labels(tensor)
+
+        # iterate all bipartitions of the tensor's indices
+        bipartitions = Iterators.flatten(combinations(inds, r) for r = 1:(length(inds)-1))
+        for bipartition in bipartitions
+            left_inds = collect(bipartition)
+            right_inds = setdiff(inds, left_inds)
+
+            # perform an SVD across the bipartition
+            u, s, v = svd(tensor; left_inds=left_inds)
+            rank_s = sum(diag(s) .> config.atol)
+
+            if rank_s < size(s,1)
+                # truncate data
+                u = view(u, labels(s)[1] => 1:rank_s)
+                s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
+                v = view(v, labels(s)[2] => 1:rank_s)
+
+                # replace the original tensor with factorization
+                tensor_l = u * s
+                tensor_r = v
+
+                push!(tn, dropdims(tensor_l))
+                push!(tn, dropdims(tensor_r))
+                pop!(tn, tensor)
+
+                # iterator is no longer valid, so restart loop
+                @goto split_simplification_start
+            end
+        end
+    end
+    return tn
+end
+
 function find_zero_columns(x; atol = 1e-12)
     dims = size(x)
 
@@ -316,5 +358,3 @@ function find_anti_diag_axes(x; atol = 1e-12)
         end
     end
 end
-
-# TODO split simplification
