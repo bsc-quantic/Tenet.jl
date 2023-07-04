@@ -92,3 +92,7 @@ function ProjectedEntangledPair{P,B}(
 
     return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
 end
+
+const PEPS = ProjectedEntangledPair{State}
+const PEPO = ProjectedEntangledPair{Operator}
+
