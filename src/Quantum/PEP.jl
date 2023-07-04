@@ -39,7 +39,8 @@ defaultorder(::Type{ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
 defaultorder(::Type{ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
 
 function ProjectedEntangledPair{P,B}(
-    arrays::Matrix;
+    arrays;
+    χ = nothing,
     order = defaultorder(ProjectedEntangledPair{P}),
     metadata...,
 ) where {P<:Plug,B<:Boundary}
@@ -55,9 +56,13 @@ function ProjectedEntangledPair{P,B}(
     oinds = Dict((i, j) => Symbol(uuid4()) for i in 1:m for j in 1:n)
     iinds = Dict((i, j) => Symbol(uuid4()) for i in 1:m for j in 1:n)
 
-    # mark plug connectors
-    plug = Dict((site, :out) => label for (site, label) in oinds)
-    # TODO mark input plugs
+    interlayer = if P <: State
+        [Bijection(oinds)]
+    elseif P <: Operator
+        [Bijection(iinds), Bijection(oinds)]
+    else
+        throw(ErrorException("Plug $P is not valid"))
+    end
 
     tensors = map(zip(Iterators.map(Tuple, eachindex(arrays)), arrays)) do ((i, j), array)
         dirs = _sitealias(ProjectedEntangledPair{P,B}, order, (m, n), (i, j))
@@ -82,5 +87,5 @@ function ProjectedEntangledPair{P,B}(
         Tensor(array, labels; alias = alias)
     end
 
-    return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; plug, metadata...)
+    return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
 end
