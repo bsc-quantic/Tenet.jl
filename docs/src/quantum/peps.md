@@ -28,6 +28,8 @@ Label(fig[1,2, Bottom()], "Periodic") # hide
 fig # hide
 ```
 
+## Projected Entangled Pair Operators (PEPO)
+
 ```@example viz
 fig = Figure() # hide
 
@@ -42,8 +44,6 @@ Label(fig[1,2, Bottom()], "Periodic") # hide
 
 fig # hide
 ```
-
-## Projected Entangled Pair Operators (PEPO)
 
 ```@docs
 ProjectedEntangledPair
