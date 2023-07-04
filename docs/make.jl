@@ -39,4 +39,4 @@ makedocs(
     format = Documenter.HTML(assets = ["assets/favicon.ico"]),
 )
 
-deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master")
+deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master", push_preview = true)
