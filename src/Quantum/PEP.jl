@@ -96,3 +96,77 @@ end
 const PEPS = ProjectedEntangledPair{State}
 const PEPO = ProjectedEntangledPair{Operator}
 
+# TODO normalize
+# TODO let choose the orthogonality center
+# TODO different input/output physical dims
+function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangledPair{P,Open}}) where {P<:Plug}
+    rows = sampler.rows
+    cols = sampler.cols
+    χ = sampler.χ
+    p = get(sampler, :p, 2)
+    T = get(sampler, :eltype, Float64)
+
+    arrays::Matrix{AbstractArray{T,N} where {N}} = reshape(
+        map(Iterators.product(1:rows, 1:cols)) do (i, j)
+            shape = filter(
+                !=(1),
+                [
+                    i === 1 ? 1 : χ,
+                    i === rows ? 1 : χ,
+                    j === 1 ? 1 : χ,
+                    j === cols ? 1 : χ,
+                    p,
+                    if P <: State
+                        1
+                    elseif P <: Operator
+                        p
+                    else
+                        throw(ErrorException("$P is not a valid Plug type"))
+                    end,
+                ],
+            )
+
+            rand(rng, T, shape...)
+        end,
+        rows,
+        cols,
+    )
+
+    # normalize state
+    arrays[1, 1] ./= P <: State ? sqrt(p) : p
+
+    ProjectedEntangledPair{State,Open}(arrays; χ)
+end
+
+# TODO normalize
+# TODO let choose the orthogonality center
+# TODO different input/output physical dims
+function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangledPair{P,Periodic}}) where {P<:Plug}
+    rows = sampler.rows
+    cols = sampler.cols
+    χ = sampler.χ
+    p = get(sampler, :p, 2)
+    T = get(sampler, :eltype, Float64)
+
+    arrays::Matrix{AbstractArray{T,N} where {N}} = reshape(
+        map(Iterators.product(1:rows, 1:cols)) do (i, j)
+            shape = tuple([χ, χ, χ, χ]..., ([if P <: State
+                (p,)
+            elseif P <: Operator
+                (p, p)
+            else
+                throw(ErrorException("$P is not a valid Plug type"))
+            end]...)...)
+
+            # A = gramschmidt!(rand(rng, T, shape[1], prod(shape[1:end])))
+            A = rand(rng, T, shape...)
+        end,
+        rows,
+        cols,
+    )
+
+    # normalize state
+    arrays[1, 1] ./= P <: State ? sqrt(p) : p
+
+    ProjectedEntangledPair{State,Periodic}(arrays; χ)
+end
