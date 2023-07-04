@@ -278,12 +278,10 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
 
             # perform an SVD across the bipartition
             u, s, v = svd(tensor; left_inds=left_inds)
+            rank_s = sum(diag(s) .> config.atol)
 
-            singular_values = diag(s)
-            rank_s = sum(singular_values .> config.atol)
-
-            if rank_s < length(singular_values)
-                # Remove unnecessary data in u, s, v
+            if rank_s < size(s,1)
+                # truncate data
                 u = view(u, labels(s)[1] => 1:rank_s)
                 s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
                 v = view(v, labels(s)[2] => 1:rank_s)
