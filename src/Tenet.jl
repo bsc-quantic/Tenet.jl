@@ -22,6 +22,7 @@ export Plug, plug, Property, State, Operator
 export sites, fidelity
 
 export MatrixProduct
+export ProjectedEntangledPair, PEPS, PEPO
 
 if !isdefined(Base, :get_extension)
     using Requires

@@ -305,3 +305,4 @@ function marginal(ψ, site)
 end
 
 include("MP.jl")
+include("PEP.jl")
