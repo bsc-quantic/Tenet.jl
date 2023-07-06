@@ -82,7 +82,11 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
         end
     end
     get!(() -> map(i -> i ∈ copytensors ? :diamond : :circle, 1:nv(graph)), kwargs, :node_marker)
-    get!(() -> map(i -> i ∈ copytensors ? :black : :white, 1:nv(graph)), kwargs, :node_color)
+    get!(
+        () -> map(i -> i ∈ copytensors ? :black : Makie.RGBf(240 // 256, 180 // 256, 100 // 256), 1:nv(graph)),
+        kwargs,
+        :node_color,
+    )
 
     get!(kwargs, :node_attr, (colormap = :viridis, strokewidth = 2.0, strokecolor = :black))
 
