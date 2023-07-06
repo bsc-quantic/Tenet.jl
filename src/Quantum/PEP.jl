@@ -96,9 +96,9 @@ function ProjectedEntangledPair{P,B}(
             elseif dir === :r
                 hinds[(i, (j, mod1(j + 1, n)))]
             elseif dir === :u
-                vinds[((mod1(i - 1, n), i), j)]
+                vinds[((mod1(i - 1, m), i), j)]
             elseif dir === :d
-                vinds[((i, mod1(i + 1, n)), j)]
+                vinds[((i, mod1(i + 1, m)), j)]
             elseif dir === :i
                 iinds[(i, j)]
             elseif dir === :o
