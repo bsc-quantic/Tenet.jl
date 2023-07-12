@@ -40,7 +40,7 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
 
         # Check for inconsistent dimensions
         for (index, idxs) in indices
-            allequal(i -> size(tensors[i], index), idxs) ||
+            allequal(Iterators.map(i -> size(tensors[i], index), idxs)) ||
                 throw(DimensionMismatch("Different sizes specified for index $index"))
         end
 
