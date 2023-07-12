@@ -40,10 +40,8 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
 
         # Check for inconsistent dimensions
         for (index, idxs) in indices
-            sizes = [size(tensors[i], index) for i in idxs]
-            if !all(x -> x == sizes[1], sizes)
+            allequal(i -> size(tensors[i], index), idxs) ||
                 throw(DimensionMismatch("Different sizes specified for index $index"))
-            end
         end
 
         M = Tenet.metadata(A)
