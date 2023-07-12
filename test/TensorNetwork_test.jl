@@ -19,6 +19,10 @@
             @test size(tn) == Dict(:i => 2, :j => 3)
             @test issetequal(labels(tn, :open), [:i, :j])
             @test isempty(labels(tn, :hyper))
+
+            tensor1 = Tensor(zeros(2, 2), (:i, :j))
+            tensor2 = Tensor(zeros(3, 3), (:j, :k))
+            @test_throws DimensionMismatch tn = TensorNetwork([tensor1, tensor2])
         end
     end
 
@@ -32,6 +36,8 @@
         @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
         @test issetequal(labels(tn, :open), [:i, :j, :k])
         @test isempty(labels(tn, :hyper))
+
+        @test_throws DimensionMismatch push!(tn, Tensor(zeros(3, 3), (:i, :j)))
     end
 
     @test_throws Exception begin

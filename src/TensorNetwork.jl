@@ -38,6 +38,12 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
             mergewith(vcat, dict, Dict([index => [i] for index in labels(tensor)]))
         end
 
+        # Check for inconsistent dimensions
+        for (index, idxs) in indices
+            allequal(Iterators.map(i -> size(tensors[i], index), idxs)) ||
+                throw(DimensionMismatch("Different sizes specified for index $index"))
+        end
+
         M = Tenet.metadata(A)
         metadata = M((; metadata...))
 

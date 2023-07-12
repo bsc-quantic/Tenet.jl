@@ -16,7 +16,7 @@
     )
 
     operator = TensorNetwork{MockOperator}(
-        [Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 2, 5), (:b, :c, :e, :f))];
+        [Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))];
         plug = Operator,
         interlayer = [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))],
     )
