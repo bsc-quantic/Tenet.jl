@@ -272,7 +272,11 @@ end
 """
     SplitSimplification <: Transformation
 
-Reduces the rank of some tensors in the `TensorNetwork` by splitting some tensors into two. It uses the singular value decomposition to identify the tensors that can be split without increasing the maximum rank of the network.
+Reduce the rank of some tensors in the `TensorNetwork` by decomposing some tensors using the singular value decomposition (SVD).
+The tensors chosen are the ones that can be decomposed without increasing the maximum rank of the network.
+
+SplitSimplification <: Transformation
+
 
 # Keyword Arguments
 
