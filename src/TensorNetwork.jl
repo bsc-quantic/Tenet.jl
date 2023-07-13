@@ -322,6 +322,14 @@ select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = mapreduce(Base.Fix1(s
 select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
 
 """
+    in(tensor::Tensor, tn::TensorNetwork)
+
+Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
+This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
+"""
+Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, labels(tensor)))
+
+"""
     slice!(tn::TensorNetwork, index::Symbol, i)
 
 In-place projection of `index` on dimension `i`.
