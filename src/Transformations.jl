@@ -271,16 +271,16 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
         inds = labels(tensor)
 
         # iterate all bipartitions of the tensor's indices
-        bipartitions = Iterators.flatten(combinations(inds, r) for r = 1:(length(inds)-1))
+        bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
         for bipartition in bipartitions
             left_inds = collect(bipartition)
             right_inds = setdiff(inds, left_inds)
 
             # perform an SVD across the bipartition
-            u, s, v = svd(tensor; left_inds=left_inds)
+            u, s, v = svd(tensor; left_inds = left_inds)
             rank_s = sum(diag(s) .> config.atol)
 
-            if rank_s < size(s,1)
+            if rank_s < size(s, 1)
                 # truncate data
                 u = view(u, labels(s)[1] => 1:rank_s)
                 s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)

@@ -259,7 +259,7 @@
         using Tenet: SplitSimplification
 
         v1 = Tensor([1, 2, 3], (:i,))
-        v2 = Tensor([4, 5, 6], (:j, ))
+        v2 = Tensor([4, 5, 6], (:j,))
         m1 = Tensor(rand(3, 3), (:k, :l))
 
         t1 = contract(v1, v2)
