@@ -202,7 +202,7 @@ Reduce the dimension of a `Tensor` in a `TensorNetwork` when it contains columns
 
 # Keyword Arguments
 
-  - `atol` Absolute tolerance.
+  - `atol` Absolute tolerance. Defaults to `1e-12`.
   - `skip` List of indices to skip. Defaults to `[]`.
 """
 Base.@kwdef struct ColumnReduction <: Transformation
