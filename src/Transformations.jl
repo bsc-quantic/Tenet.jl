@@ -71,7 +71,7 @@ end
 """
     DiagonalReduction <: Transformation
 
-Reduces the dimension of a `Tensor` in a `TensorNetwork` when it has a pair of indices that fulfil a diagonal structure.
+Reduce the dimension of a `Tensor` in a `TensorNetwork` when it has a pair of indices that fulfil a diagonal structure.
 
 # Keyword Arguments
 
@@ -121,7 +121,7 @@ end
 """
     RankSimplification <: Transformation
 
-Reduces the rank of the `TensorNetwork` by contracting some tensors preemptively.
+Reduce the rank of the `TensorNetwork` by contracting some tensors preemptively.
 This is done by identifying pairs of tensors in the network which can be contracted together without increasing the maximum rank of the network.
 """
 struct RankSimplification <: Transformation end
@@ -158,13 +158,13 @@ end
 """
     AntiDiagonalGauging <: Transformation
 
-Modifies the `TensorNetwork` by reversing the order of some indices of tensors that fulfill an anti-diagonal condition.
+Modify the `TensorNetwork` by reversing the order of some indices of tensors that fulfill an anti-diagonal condition.
 While this transformation doesn't directly enhance computational efficiency, it sets up the `TensorNetwork` for other operations that do.
 
 # Keyword Arguments
 
   - `atol` Absolute tolerance. Defaults to `1e-12`.
-  - `skip` A list of indices to skip. Defaults to `[]`.
+  - `skip` List of indices to skip. Defaults to `[]`.
 """
 Base.@kwdef struct AntiDiagonalGauging <: Transformation
     atol::Float64 = 1e-12
@@ -198,12 +198,12 @@ end
 """
     ColumnReduction <: Transformation
 
-Reduces the dimension of a `Tensor` in a `TensorNetwork` when it contains columns with all elements smaller than `atol`.
+Reduce the dimension of a `Tensor` in a `TensorNetwork` when it contains columns with all elements smaller than `atol`.
 
 # Keyword Arguments
 
   - `atol` Absolute tolerance.
-  - `skip` A list of indices to skip. Defaults to `[]`.
+  - `skip` List of indices to skip. Defaults to `[]`.
 """
 Base.@kwdef struct ColumnReduction <: Transformation
     atol::Float64 = 1e-12
@@ -272,11 +272,11 @@ end
 """
     SplitSimplification <: Transformation
 
-Reduces the rank of some tensors in the `TensorNetwork` by splitting some tensors into two. It uses teh singular value decomposition to identify the tensors that can be split without increasing the maximum rank of the network.
+Reduces the rank of some tensors in the `TensorNetwork` by splitting some tensors into two. It uses the singular value decomposition to identify the tensors that can be split without increasing the maximum rank of the network.
 
 # Keyword Arguments
 
-  - `atol` Absolute tolerance.
+  - `atol` Absolute tolerance. Defaults to `1e-10`.
 """
 Base.@kwdef struct SplitSimplification <: Transformation
     atol::Float64 = 1e-10  # A threshold for SVD rank determination
