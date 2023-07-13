@@ -23,8 +23,8 @@ makedocs(
         "Tensor Networks"=>[
             "Introduction" => "tensor-network.md",
             "Contraction" => "contraction.md",
-            "Visualization" => "visualization.md",
             "Transformations" => "transformations.md",
+            "Visualization" => "visualization.md",
         ],
         "Quantum Tensor Networks"=>[
             "Introduction" => "quantum/index.md",
