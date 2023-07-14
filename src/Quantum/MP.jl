@@ -2,6 +2,7 @@ using UUIDs: uuid4
 using Base.Iterators: flatten
 using Random
 using Bijections
+using Muscle: gramschmidt!
 
 """
     MatrixProduct{P<:Plug,B<:Boundary} <: Quantum
