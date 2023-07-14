@@ -15,6 +15,7 @@ on:
       - '**.jl'
       - 'docs/*'
       - '.github/workflows/CI.yml'
+  workflow_dispatch:
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
