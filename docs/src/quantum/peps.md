@@ -8,6 +8,7 @@ Makie.inline!(true)
 set_theme!(resolution=(800,400))
 
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 
 using Tenet
 using NetworkLayout

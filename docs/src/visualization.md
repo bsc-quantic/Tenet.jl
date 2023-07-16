@@ -5,6 +5,9 @@ using Makie
 Makie.inline!(true)
 set_theme!(resolution=(800,400))
 
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+
 using Tenet
 ```
 
@@ -15,7 +18,6 @@ Makie.plot(::Tenet.TensorNetwork)
 ```
 
 ```@example viz
-using CairoMakie # hide
 tn = rand(TensorNetwork, 14, 4, seed=0) # hide
 plot(tn, labels=true)
 ```

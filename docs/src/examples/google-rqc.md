@@ -1,5 +1,10 @@
 # Google's Quantum Advantage experiment
 
+```@setup circuit
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+```
+
 !!! danger "🚧 Broken code 🚧"
     There is a lot of work in progress, and this code may not work yet.
     Specifically, `slices` is not implemented yet.
@@ -29,6 +34,8 @@ The experiment consisted on sampling Random Quantum Circuits (RQC). The state of
 
 ...
 
+Thanks to `Tenet`'s much cared design, the experiment can be replicated conceptually in less than 20loc.
+
 ```@example circuit
 using QuacIO
 using Tenet
@@ -39,6 +46,30 @@ _sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 
 circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format = QuacIO.Qflex(), sites = _sites);
 tn = TensorNetwork(circuit)
 plot(tn) # hide
+```
+
+```@example circuit
+# simplify Tensor Network by preemptively contracting trivial cases
+tn = transform(tn, Tenet.RankSimplification)
+plot(tn) # hide
+```
+
+```julia
+addprocs(10)
+@everywhere using Tenet, EinExprs
+
+# parallel stochastic contraction path search
+@everywhere tn = $tn
+path = @distributed (x -> minimum(flops, x...)) for _ in 1:100
+    einexpr(tn, optimizer = Greedy)
+end
+```
+
+```@example circuit
+using EinExprs # hide
+using NetworkLayout # hide
+path = einexpr(tn, optimizer = Greedy) # hide
+plot(path, layout=Stress()) # hide
 ```
 
 ```julia
