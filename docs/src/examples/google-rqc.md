@@ -55,6 +55,8 @@ plot(tn) # hide
 ```
 
 ```julia
+using Distributed
+
 addprocs(10)
 @everywhere using Tenet, EinExprs
 
@@ -73,17 +75,7 @@ plot(path, layout=Stress()) # hide
 ```
 
 ```julia
-using Distributed
 using Iterators: product
-
-addprocs(10)
-@everywhere using Tenet, EinExprs
-
-# parallel stochastic contraction path search
-@everywhere tn = $tn
-path = @distributed (x -> minimum(flops, x...)) for _ in 1:100
-    einexpr(tn, optimizer = Greedy)
-end
 
 # parallel sliced contraction
 # NOTE `slices` not implemented yet
