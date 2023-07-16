@@ -2,15 +2,15 @@
 
 !!! danger "🚧 Broken code 🚧"
     There is a lot of work in progress, and this code may not work yet.
-    Specifically, `Quac.parse` is not yet merged into `master` branch and `slices` is not implemented yet.
+    Specifically, `slices` is not implemented yet.
     Take this code as an example of what we want to achieve.
 
 !!! info "Dependencies 📦"
-    This example uses `Quac` and `EinExprs` in combination with `Tenet`.
+    This example uses `QuacIO` and `EinExprs` in combination with `Tenet`.
     Both packages can be found in [Quantic's registry](https://github.com/bsc-quantic/Registry) and can be installed in Pkg mode.
 
-    ```
-    add Quac EinExprs
+    ```julia
+    add QuacIO EinExprs
     ```
 
     It also requires the circuit in `sycamore_m53_d10.qasm` file that can be found in ...
@@ -30,27 +30,23 @@ The experiment consisted on sampling Random Quantum Circuits (RQC). The state of
 ...
 
 ```@example circuit
-using Quac # hide
-circuit = Quac.parse("sycamore_m53_d10.qasm") # hide
+using QuacIO
+using Tenet
+
+_sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 72, 73, 74, 75, 76, 83, 84, 85, 94];
+
+# load circuit and convert to `TensorNetwork`
+circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format = QuacIO.Qflex(), sites = _sites);
+tn = TensorNetwork(circuit)
+plot(tn) # hide
 ```
 
-Thanks to `Tenet`'s much cared design, the experiment can be replicated conceptually in less than 20loc.
-
 ```julia
-using Quac
-using Tenet
 using Distributed
 using Iterators: product
 
 addprocs(10)
 @everywhere using Tenet, EinExprs
-
-# load circuit and convert to `TensorNetwork`
-circuit = Quac.parse("sycamore_m53_d10.qasm")
-tn = TensorNetwork(circuit)
-
-# simplify Tensor Network by preemptively contracting trivial cases
-tn = transform(tn, RankSimplification)
 
 # parallel stochastic contraction path search
 @everywhere tn = $tn
