@@ -76,7 +76,7 @@
             )
 
             # Test that the resulting contraction returns the same as the original
-            # @test contract(reduced) ≈ contract(tn)
+            @test contract(reduced) ≈ contract(tn)
         end
 
         @testset "openinds" begin
@@ -111,7 +111,7 @@
             end
 
             # Test that the resulting contraction returns the same as the original
-            # @test contract(reduced) ≈ contract(tn)
+            @test contract(reduced) ≈ contract(tn)
         end
     end
 
@@ -136,13 +136,7 @@
         @test length(tensors(reduced)) ≤ length(tensors(tn))
 
         # Test that the resulting contraction contains the same as the original
-        # TODO: the permutation will not be necessary if https://github.com/bsc-quantic/Tensors.jl/issues/27 is fixed
-        contracted_reduced = contract(reduced)
-        contracted_tn = contract(tn)
-
-        # Calculate the permutation for the `reduced` tensor labels to match `tn`
-        perm = sortperm(collect(labels(contracted_reduced)), by = x -> findfirst(==(x), collect(labels(contracted_tn))))
-        @test permutedims(contracted_reduced, perm) ≈ contracted_tn
+        @test contract(reduced) ≈ contract(tn)
     end
 
     @testset "AntiDiagonalGauging" begin
@@ -191,9 +185,7 @@
         end
 
         # Test that the resulting contraction is the same as the original
-        # TODO: Change for: @test contract(gauged) ≈ contract(tn), when is fixed
-        A_2, B_2, C_2 = tensors(gauged)
-        @test contract(A, contract(B, C)) ≈ contract(A_2, contract(B_2, C_2))
+        @test contract(gauged) ≈ contract(tn)
     end
 
     @testset "ColumnReduction" begin
@@ -222,9 +214,7 @@
             @test length(tn.indices) > length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
-            # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
-            A_2, B_2, C_2 = tensors(reduced)
-            @test contract(A, contract(B, C, dims = [])) ≈ contract(A_2, contract(B_2, C_2, dims = []))
+            @test contract(reduced) ≈ contract(contract(A, B; dims=[]), C)
         end
 
         @testset "index size reduction" begin
@@ -243,15 +233,13 @@
             # Test that all the tensors in reduced have no columns and they have smaller dimensions in the 2nd :j index
             for tensor in tensors(reduced)
                 @test isempty(Tenet.find_zero_columns(parent(tensor)))
-                # @assert size(tensor, :j) == 2
+                @test size(tensor, :j) == 2
             end
 
             @test length(tn.indices) == length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
-            # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
-            A_2, B_2, C_2 = tensors(reduced)
-            @test contract(A, contract(B, C, dims = [])) ≈ contract(A_2, contract(B_2, C_2, dims = []))
+            @test contract(reduced) ≈ view(contract(tn), :j => 1:2:3)
         end
     end
 
@@ -278,9 +266,6 @@
         @test smallest_deleted > largest_new
 
         # Test that the resulting contraction is the same as the original
-        # TODO: Change for: @test contract(reduced) ≈ contract(tn), when is fixed
-        A_2, B_2, C_2, D_2, E_2 = tensors(reduced)
-        c_reduced = contract(contract(contract(contract(A_2, B_2), C_2), D_2), E_2)
-        @test contract(contract(tensors(tn)[1], tensors(tn)[2]), tensors(tn)[3]) ≈ c_reduced
+        @test contract(reduced) ≈ contract(tn)
     end
 end
