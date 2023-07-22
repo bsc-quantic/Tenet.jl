@@ -5,11 +5,6 @@ using CairoMakie
 CairoMakie.activate!(type = "svg")
 ```
 
-!!! danger "🚧 Broken code 🚧"
-    There is a lot of work in progress, and this code may not work yet.
-    Specifically, `slices` is not implemented yet.
-    Take this code as an example of what we want to achieve.
-
 !!! info "Dependencies 📦"
     This example uses `QuacIO` and `EinExprs` in combination with `Tenet`.
     Both packages can be found in [Quantic's registry](https://github.com/bsc-quantic/Registry) and can be installed in Pkg mode.
@@ -79,7 +74,7 @@ using Iterators: product
 
 # parallel sliced contraction
 # NOTE `slices` not implemented yet
-cuttings = [[i => dim for dim in 1:size(tn,i)] for i in slices(path, n=10)]
+cuttings = [[i => dim for dim in 1:size(tn,i)] for i in findslices(FlopsScorer(), path, slices=100)]
 
 @everywhere path = $path
 res = @distributed (+) for proj_inds in product(cuttings...)
