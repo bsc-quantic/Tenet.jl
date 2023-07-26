@@ -121,7 +121,7 @@ end
 """
     RankSimplification <: Transformation
 
-Reduce the rank of the [`TensorNetwork`](@ref) by contracting some tensors preemptively.
+Reduce the complexity of the [`TensorNetwork`](@ref) by contracting some tensors preemptively.
 This is done by identifying pairs of tensors in the network which can be contracted together without increasing the maximum rank of the network.
 """
 struct RankSimplification <: Transformation end
