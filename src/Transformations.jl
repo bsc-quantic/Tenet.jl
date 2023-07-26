@@ -71,7 +71,7 @@ end
 """
     DiagonalReduction <: Transformation
 
-Reduce the dimension of a `Tensor` in a `TensorNetwork` when it has a pair of indices that fulfil a diagonal structure.
+Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it has a pair of indices that fulfil a diagonal structure.
 
 # Keyword Arguments
 
@@ -121,7 +121,7 @@ end
 """
     RankSimplification <: Transformation
 
-Reduce the rank of the `TensorNetwork` by contracting some tensors preemptively.
+Reduce the rank of the [`TensorNetwork`](@ref) by contracting some tensors preemptively.
 This is done by identifying pairs of tensors in the network which can be contracted together without increasing the maximum rank of the network.
 """
 struct RankSimplification <: Transformation end
@@ -158,8 +158,8 @@ end
 """
     AntiDiagonalGauging <: Transformation
 
-Modify the `TensorNetwork` by reversing the order of some indices of tensors that fulfill an anti-diagonal condition.
-While this transformation doesn't directly enhance computational efficiency, it sets up the `TensorNetwork` for other operations that do.
+Modify the [`TensorNetwork`](@ref) by reversing the order of some indices of tensors that fulfill an anti-diagonal condition.
+While this transformation doesn't directly enhance computational efficiency, it sets up the [`TensorNetwork`](@ref) for other operations that do.
 
 # Keyword Arguments
 
@@ -198,7 +198,7 @@ end
 """
     ColumnReduction <: Transformation
 
-Reduce the dimension of a `Tensor` in a `TensorNetwork` when it contains columns with all elements smaller than `atol`.
+Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
 
 # Keyword Arguments
 
@@ -272,7 +272,7 @@ end
 """
     SplitSimplification <: Transformation
 
-Reduce the rank of some tensors in the `TensorNetwork` by decomposing some tensors using the singular value decomposition (SVD).
+Reduce the rank of some tensors in the [`TensorNetwork`](@ref) by decomposing some tensors using the singular value decomposition (SVD).
 The tensors chosen are the ones that can be decomposed without increasing the maximum rank of the network.
 
 SplitSimplification <: Transformation
