@@ -38,7 +38,7 @@ end
 """
     HyperindConverter <: Transformation
 
-Converts hyperindices to COPY-tensors, represented by `DeltaArray`s.
+Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
 """
 struct HyperindConverter <: Transformation end
 
