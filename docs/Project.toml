@@ -2,6 +2,7 @@
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+QuacIO = "0dfb065c-ad45-4a42-9a50-cb82c165eb0b"
 
 [compat]
 CairoMakie = "0.10"
