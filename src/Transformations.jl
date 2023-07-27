@@ -121,8 +121,7 @@ end
 """
     RankSimplification <: Transformation
 
-Reduce the complexity of the [`TensorNetwork`](@ref) by contracting some tensors preemptively.
-This is done by identifying pairs of tensors in the network which can be contracted together without increasing the maximum rank of the network.
+Preemptively contract tensors whose result doesn't increase in size.
 """
 struct RankSimplification <: Transformation end
 
@@ -158,7 +157,7 @@ end
 """
     AntiDiagonalGauging <: Transformation
 
-Modify the [`TensorNetwork`](@ref) by reversing the order of some indices of tensors that fulfill an anti-diagonal condition.
+Reverse the order of tensor indices that fulfill the anti-diagonal condition.
 While this transformation doesn't directly enhance computational efficiency, it sets up the [`TensorNetwork`](@ref) for other operations that do.
 
 # Keyword Arguments
@@ -198,7 +197,7 @@ end
 """
     ColumnReduction <: Transformation
 
-Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
+Truncate the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
 
 # Keyword Arguments
 
@@ -272,11 +271,7 @@ end
 """
     SplitSimplification <: Transformation
 
-Reduce the rank of some tensors in the [`TensorNetwork`](@ref) by decomposing some tensors using the singular value decomposition (SVD).
-The tensors chosen are the ones that can be decomposed without increasing the maximum rank of the network.
-
-SplitSimplification <: Transformation
-
+Reduce the rank of tensors in the [`TensorNetwork`](@ref) by decomposing them using the Singular Value Decomposition (SVD). Tensors whose factorization do not increase the maximum rank of the network are left decomposed.
 
 # Keyword Arguments
 
