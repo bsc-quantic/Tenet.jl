@@ -186,16 +186,6 @@
                 MatrixProduct{Operator,Infinite}(arrays) isa TensorNetwork{MatrixProduct{Operator,Infinite}}
             end
 
-            @testset "tensors" begin
-                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                ψ = MatrixProduct{Operator,Infinite}(arrays, order = (:l, :r, :i, :o))
-
-                @test_throws ArgumentError tensors(ψ)
-                @test tensors(ψ, 1) == tensors(ψ, 4)
-                @test tensors(ψ, -1) == tensors(ψ, 3)
-                @test length(ψ) == Inf
-            end
-
             @testset "metadata" begin
                 @testset "alias" begin
                     arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
@@ -212,6 +202,16 @@
                           only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:l]
                     @test only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:r] ===
                           only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:l]
+                end
+
+                @testset "tensors" begin
+                    arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+                    ψ = MatrixProduct{Operator,Infinite}(arrays, order = (:l, :r, :i, :o))
+
+                    @test tensors(ψ, 1) isa Tensor
+                    @test length(ψ) == Inf
+                    @test tensors(ψ, 4) == tensors(ψ, 1)
+                    @test tensors(ψ, 0) == tensors(ψ, 3)
                 end
             end
         end

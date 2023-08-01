@@ -146,6 +146,68 @@
                 end
             end
         end
+
+        @testset "`Infinite` boundary" begin
+            # product state
+            @test begin
+                arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
+                MatrixProduct{State,Infinite}(arrays) isa TensorNetwork{MatrixProduct{State,Infinite}}
+            end
+
+            # entangled state
+            @test begin
+                arrays = [rand(3, 4, 2), rand(4, 8, 2), rand(8, 3, 2)]
+                MatrixProduct{State,Infinite}(arrays) isa TensorNetwork{MatrixProduct{State,Infinite}}
+            end
+
+            @testset "custom order" begin
+                arrays = [rand(3, 1, 3), rand(3, 1, 3), rand(3, 1, 3)]
+                ψ = MatrixProduct{State,Infinite}(arrays, order = (:r, :o, :l))
+
+                @test ψ isa TensorNetwork{MatrixProduct{State,Infinite}}
+            end
+
+            # alternative constructor
+            @test begin
+                arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
+                MatrixProduct{State}(arrays; boundary = Infinite) isa TensorNetwork{MatrixProduct{State,Infinite}}
+            end
+
+            # fail on Infinite with Open format
+            @test_throws Exception begin
+                arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
+                MatrixProduct{State,Infinite}(arrays) isa TensorNetwork{MatrixProduct{State,Infinite}}
+            end
+
+            @testset "metadata" begin
+                @testset "alias" begin
+                    arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+                    ψ = MatrixProduct{Operator,Infinite}(arrays, order = (:l, :r, :i, :o))
+
+                    # TODO refactor `select` with `tensors` with output selection
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[1])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[2])).meta[:alias]), [:l, :r, :i, :o])
+                    @test issetequal(keys(only(select(ψ, first(ψ.interlayer)[3])).meta[:alias]), [:l, :r, :i, :o])
+
+                    @test only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[2])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:l]
+                    @test only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:r] ===
+                          only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:l]
+                end
+
+                @testset "tensors" begin
+                    arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
+                    ψ = MatrixProduct{State,Infinite}(arrays, order = (:l, :r, :o))
+
+                    @test tensors(ψ, 1) isa Tensor
+                    @test length(ψ) == Inf
+                    @test tensors(ψ, 4) == tensors(ψ, 1)
+                    @test tensors(ψ, 0) == tensors(ψ, 3)
+                end
+            end
+        end
     end
 
     @testset "hcat" begin
