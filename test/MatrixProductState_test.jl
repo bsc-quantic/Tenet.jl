@@ -80,6 +80,14 @@
                     @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
                     @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
                 end
+
+                @testset "tensors" begin
+                    arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
+                    ψ = MatrixProduct{State,Open}(arrays, order = (:l, :r, :o))
+
+                    @test tensors(ψ, 1) isa Tensor
+                    @test size(tensors(ψ)) |> first == length(ψ) == 3
+                end
             end
         end
 
@@ -127,6 +135,14 @@
                     @test tensors(ψ, 1).meta[:alias][:r] === tensors(ψ, 2).meta[:alias][:l]
                     @test tensors(ψ, 2).meta[:alias][:r] === tensors(ψ, 3).meta[:alias][:l]
                     @test tensors(ψ, 3).meta[:alias][:r] === tensors(ψ, 1).meta[:alias][:l]
+                end
+
+                @testset "tensors" begin
+                    arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
+                    ψ = MatrixProduct{State,Periodic}(arrays, order = (:l, :r, :o))
+
+                    @test tensors(ψ, 1) isa Tensor
+                    @test size(tensors(ψ)) |> first == length(ψ) == 3
                 end
             end
         end
