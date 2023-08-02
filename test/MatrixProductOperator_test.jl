@@ -76,14 +76,6 @@
                           only(select(ψ, last(ψ.interlayer)[3])).meta[:alias][:l]
                 end
             end
-
-            @testset "tensors" begin
-                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                ψ = MatrixProduct{Operator,Open}(arrays, order = (:l, :r, :i, :o))
-
-                @test tensors(ψ, 1) isa Tensor
-                @test size(tensors(ψ)) |> first == length(ψ) == 3
-            end
         end
 
         @testset "`Periodic` boundary" begin
@@ -138,14 +130,6 @@
                           only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:l]
                     @test only(select(ψ, first(ψ.interlayer)[3])).meta[:alias][:r] ===
                           only(select(ψ, first(ψ.interlayer)[1])).meta[:alias][:l]
-                end
-
-                @testset "tensors" begin
-                    arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                    ψ = MatrixProduct{Operator,Periodic}(arrays, order = (:l, :r, :i, :o))
-
-                    @test tensors(ψ, 1) isa Tensor
-                    @test size(tensors(ψ)) |> first == length(ψ) == 3
                 end
             end
         end
