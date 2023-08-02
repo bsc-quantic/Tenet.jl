@@ -118,7 +118,7 @@ const PEPS = ProjectedEntangledPair{State}
 const PEPO = ProjectedEntangledPair{Operator}
 
 tensors(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}, args...) where {P<:Plug} =
-    throw(ArgumentError("You need to specify the site for an infinite MatrixProduct$P"))
+    throw(MethodError("You need to specify the site for an infinite MatrixProduct$P"))
 
 tensors(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}, site::Int, args...) where {P<:Plug} =
     tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
