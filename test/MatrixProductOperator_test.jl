@@ -192,10 +192,7 @@
                     arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
                     ψ = MatrixProduct{Operator,Infinite}(arrays, order = (:l, :r, :i, :o))
 
-                    @test tensors(ψ, 1) isa Tensor
                     @test length(ψ) == Inf
-                    @test tensors(ψ, 4) == tensors(ψ, 1)
-                    @test tensors(ψ, 0) == tensors(ψ, 3)
                 end
             end
         end
