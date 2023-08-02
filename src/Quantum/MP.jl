@@ -111,14 +111,8 @@ end
 const MPS = MatrixProduct{State}
 const MPO = MatrixProduct{Operator}
 
-tensors(ψ::TensorNetwork{MatrixProduct{P,Infinite}}, args...) where {P<:Plug} =
-    throw(MethodError("You need to specify the site for an infinite MatrixProduct$P"))
-
 tensors(ψ::TensorNetwork{MatrixProduct{P,Infinite}}, site::Int, args...) where {P<:Plug} =
     tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
-
-Base.show(io::IO, ψ::TensorNetwork{MatrixProduct{P,Infinite}}) where {P<:Plug} =
-    print(io, "$(typeof(ψ))(#tensors=∞, #labels=∞)")
 
 Base.length(ψ::TensorNetwork{MatrixProduct{P,Infinite}}) where {P<:Plug} = Inf
 
