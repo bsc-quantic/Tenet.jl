@@ -83,7 +83,7 @@ Return the `Tensor` connected to the [`TensorNetwork`](@ref) on `site`.
 See also: [`sites`](@ref).
 """
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
-tensors(::Union{Type{Operator}, Type{State}}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
+tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
 
