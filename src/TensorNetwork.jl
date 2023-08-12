@@ -478,7 +478,7 @@ contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
     contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
-contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); append!(tn, t); contract(tn; kwargs...))
+contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); push!(tn, t); contract(tn; kwargs...))
 
 struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
     parameters::NT
