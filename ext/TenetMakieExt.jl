@@ -4,7 +4,7 @@ using Tenet
 using Combinatorics: combinations
 using Graphs
 using Makie
-using NetworkLayout: dim
+
 using GraphMakie
 
 """
@@ -26,8 +26,11 @@ function Makie.plot(tn::TensorNetwork; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
 end
 
+# NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
+__networklayout_dim(x) = typeof(x).super.parameters |> first
+
 function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
-    ax = if haskey(kwargs, :layout) && dim(kwargs[:layout]) == 3
+    ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
         Axis3(f[1, 1])
     else
         ax = Axis(f[1, 1])
