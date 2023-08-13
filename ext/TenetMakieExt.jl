@@ -1,11 +1,6 @@
 module TenetMakieExt
 
-if isdefined(Base, :get_extension)
-    using Tenet
-else
-    using ..Tenet
-end
-
+using Tenet
 using Combinatorics: combinations
 using Graphs
 using Makie
