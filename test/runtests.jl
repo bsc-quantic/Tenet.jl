@@ -3,6 +3,8 @@ using Tenet
 
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
+    include("Tensor_test.jl")
+    include("Numerics_test.jl")
     include("TensorNetwork_test.jl")
     include("Quantum_test.jl")
     include("Transformations_test.jl")
@@ -13,6 +15,7 @@ using Tenet
 end
 
 @testset "Integration tests" verbose = true begin
+    include("integration/BlockArray_test.jl")
     include("integration/Quac_test.jl")
     # include("integration/ChainRules_test.jl")
     include("integration/Makie_test.jl")

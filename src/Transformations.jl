@@ -2,7 +2,7 @@ using DeltaArrays
 using EinExprs
 using OMEinsum
 using UUIDs: uuid4
-using Tensors: parenttype
+using Tenet: parenttype
 using Combinatorics: combinations
 
 abstract type Transformation end

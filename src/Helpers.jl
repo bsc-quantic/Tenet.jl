@@ -76,3 +76,10 @@ function superansatzes(T)
     S = supertype(T)
     return T === Ansatz ? (T,) : (T, superansatzes(S)...)
 end
+
+# NOTE from https://stackoverflow.com/q/54652787
+function nonunique(x)
+    uniqueindexes = indexin(unique(x), x)
+    nonuniqueindexes = setdiff(1:length(x), uniqueindexes)
+    unique(x[nonuniqueindexes])
+end

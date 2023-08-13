@@ -2,7 +2,11 @@ module Tenet
 
 include("Helpers.jl")
 
-import Tensors: Tensor, contract, labels, dim, tags, hastag, tag!, untag!
+include("Tensor.jl")
+export Tensor, contract, labels, dim, expand
+export tags, hastag, tag!, untag!
+
+include("Numerics.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, select, slice!
@@ -34,9 +38,6 @@ end
 
 # reexports from LinearAlgebra
 export norm, normalize!
-
-# reexports from Tensors
-export Tensor, contract, labels, dim, tags, hastag, tag!, untag!
 
 # reexports from EinExprs
 export einexpr

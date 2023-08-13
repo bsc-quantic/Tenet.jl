@@ -49,7 +49,7 @@
         end
 
         @testset "innerinds" begin
-            using Tensors: parenttype
+            using Tenet: parenttype
 
             data = zeros(Float64, 2, 2, 2, 2)
             for i in 1:2
