@@ -47,8 +47,6 @@
     end
 
     @testset "contract" begin
-        using OMEinsum
-
         @testset "axis sum" begin
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
 
