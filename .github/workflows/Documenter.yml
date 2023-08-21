@@ -40,6 +40,8 @@ jobs:
         uses: julia-actions/julia-buildpkg@latest
       - name: Generate documentation
         run: julia --color=yes docs/make.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v1.0.5
         with:
