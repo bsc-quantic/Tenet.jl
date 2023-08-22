@@ -1,15 +1,9 @@
 name: Documenter
 on:
   push:
-    tags:
-      - 'v*'
-    branches:
-      - "master"
-    paths:
-      - '**.toml'
-      - '**.jl'
-      - 'docs/*'
-
+    branches: [master]
+    tags: [v*]
+  pull_request:
   workflow_dispatch:
 
 permissions:
