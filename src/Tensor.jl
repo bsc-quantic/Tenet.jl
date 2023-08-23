@@ -221,7 +221,7 @@ function expand(tensor::Tensor; label, axis = 1, size = 1, method = :zeros)
         # method === :identity ? __expand_identity(array, axis, size) :
         throw(ArgumentError("method \"$method\" is not valid"))
 
-    inds = (inds(tensor)[1:axis-1]..., label, inds(tensor)[axis:end]...)
+    inds = (Tenet.inds(tensor)[1:axis-1]..., label, Tenet.inds(tensor)[axis:end]...)
 
     return Tensor(data, inds; tensor.meta...)
 end
