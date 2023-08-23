@@ -64,7 +64,7 @@
 
                     @test ψ isa TensorNetwork{MatrixProduct{State,Open}}
                     @test length(ψ) == 7
-                    @test maximum(vind -> size(ψ, vind), labels(ψ, :inner)) <= 32
+                    @test maximum(vind -> size(ψ, vind), inds(ψ, :inner)) <= 32
                 end
             end
 

@@ -1,4 +1,5 @@
 using UUIDs: uuid4
+using EinExprs: inds
 
 """
     ProjectedEntangledPair{P<:Plug,B<:Boundary} <: Quantum
@@ -28,7 +29,7 @@ function checkmeta(::Type{ProjectedEntangledPair{P,B}}, tn::TensorNetwork) where
     isnothing(tn.χ) || tn.χ > 0 || return false
 
     # no virtual index has dimensionality bigger than χ
-    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, labels(tn, :virtual)) || return false
+    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, inds(tn, :virtual)) || return false
 
     return true
 end
@@ -90,7 +91,7 @@ function ProjectedEntangledPair{P,B}(
     tensors = map(zip(Iterators.map(Tuple, eachindex(IndexCartesian(), arrays)), arrays)) do ((i, j), array)
         dirs = _sitealias(ProjectedEntangledPair{P,B}, order, (m, n), (i, j))
 
-        labels = map(dirs) do dir
+        inds = map(dirs) do dir
             if dir === :l
                 hinds[(i, (mod1(j - 1, n), j))]
             elseif dir === :r
@@ -105,9 +106,9 @@ function ProjectedEntangledPair{P,B}(
                 oinds[(i, j)]
             end
         end
-        alias = Dict(dir => label for (dir, label) in zip(dirs, labels))
+        alias = Dict(dir => label for (dir, label) in zip(dirs, inds))
 
-        Tensor(array, labels; alias = alias)
+        Tensor(array, inds; alias = alias)
     end |> vec
 
     return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; χ, plug = P, interlayer, metadata...)

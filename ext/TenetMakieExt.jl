@@ -16,7 +16,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
 
 # Keyword Arguments
 
-  - `labels` Whether to show the index labels. Defaults to `false`.
+  - `inds` Whether to show the index labels. Defaults to `false`.
   - `layout` Algorithm used to map graph vertices to a (2D or 3D) coordinate system.
     The algorithms implemented in the `NetworkLayout` package are recommended.
 """
@@ -54,7 +54,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
-    ghostnodes = map(Tenet.labels(tn, :open)) do ind
+    ghostnodes = map(inds(tn, :open)) do ind
         # create new ghost node
         add_vertex!(graph)
         node = nv(graph)
@@ -90,14 +90,14 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
-        opentensors = findall(t -> !isdisjoint(Tenet.labels(t), Tenet.labels(tn, :open)), tensors(tn))
+        opentensors = findall(t -> !isdisjoint(inds(t), inds(tn, :open)), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
         map(edges(graph)) do edge
             # case: open edge
             if any(∈(ghostnodes), [src(edge), dst(edge)])
                 notghost = src(edge) ∈ ghostnodes ? dst(edge) : src(edge)
-                inds = Tenet.labels(tn, :open) ∩ Tenet.labels(tensors(tn)[notghost])
+                inds = Tenet.inds(tn, :open) ∩ Tenet.inds(tensors(tn)[notghost])
                 opencounter[notghost] += 1
                 return inds[opencounter[notghost]] |> string
             end
@@ -108,7 +108,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
                 return tensors(tn)[i].meta[:dual] |> string
             end
 
-            return join(Tenet.labels(tensors(tn)[src(edge)]) ∩ Tenet.labels(tensors(tn)[dst(edge)]), ',')
+            return join(Tenet.inds(tensors(tn)[src(edge)]) ∩ Tenet.inds(tensors(tn)[dst(edge)]), ',')
         end
     end
     get!(() -> repeat([:black], ne(graph)), kwargs, :elabels_color)

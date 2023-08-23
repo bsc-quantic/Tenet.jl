@@ -4,7 +4,7 @@
             tn = TensorNetwork()
             @test ansatz(tn) == ansatz(typeof(tn)) === Tenet.Arbitrary
             @test isempty(tensors(tn))
-            @test isempty(labels(tn))
+            @test isempty(inds(tn))
             @test isempty(size(tn))
         end
 
@@ -15,10 +15,10 @@
             @test only(tensors(tn)) === tensor
 
             @test length(tn) == 1
-            @test issetequal(labels(tn), [:i, :j])
+            @test issetequal(inds(tn), [:i, :j])
             @test size(tn) == Dict(:i => 2, :j => 3)
-            @test issetequal(labels(tn, :open), [:i, :j])
-            @test isempty(labels(tn, :hyper))
+            @test issetequal(inds(tn, :open), [:i, :j])
+            @test isempty(inds(tn, :hyper))
 
             tensor1 = Tensor(zeros(2, 2), (:i, :j))
             tensor2 = Tensor(zeros(3, 3), (:j, :k))
@@ -32,10 +32,10 @@
 
         push!(tn, tensor)
         @test length(tn) == 1
-        @test issetequal(labels(tn), [:i, :j, :k])
+        @test issetequal(inds(tn), [:i, :j, :k])
         @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
-        @test issetequal(labels(tn, :open), [:i, :j, :k])
-        @test isempty(labels(tn, :hyper))
+        @test issetequal(inds(tn, :open), [:i, :j, :k])
+        @test isempty(inds(tn, :hyper))
 
         @test_throws DimensionMismatch push!(tn, Tensor(zeros(3, 3), (:i, :j)))
     end
@@ -106,8 +106,8 @@
         tensor = Tensor(zeros(2, 2, 2), (:i, :i, :i))
         push!(tn, tensor)
 
-        @test issetequal(labels(tn), [:i])
-        @test issetequal(labels(tn, :hyper), [:i])
+        @test issetequal(inds(tn), [:i])
+        @test issetequal(inds(tn, :hyper), [:i])
 
         delete!(tn, :i)
         @test isempty(tensors(tn))
@@ -124,10 +124,10 @@
         tn_copy = copy(tn)
 
         @test tensors(tn_copy) !== tensors(tn) && all(tensors(tn_copy) .=== tensors(tn))
-        @test labels(tn) !== labels(tn_copy) && issetequal(labels(tn), labels(tn_copy))
+        @test inds(tn) !== inds(tn_copy) && issetequal(inds(tn), inds(tn_copy))
     end
 
-    @testset "labels" begin
+    @testset "inds" begin
         tn = TensorNetwork([
             Tensor(zeros(2, 2), (:i, :j)),
             Tensor(zeros(2, 2), (:i, :k)),
@@ -135,10 +135,10 @@
             Tensor(zeros(2, 2), (:l, :m)),
         ])
 
-        @test issetequal(labels(tn), (:i, :j, :k, :l, :m))
-        @test issetequal(labels(tn, :open), (:j, :k))
-        @test issetequal(labels(tn, :inner), (:i, :l, :m))
-        @test issetequal(labels(tn, :hyper), (:i,))
+        @test issetequal(inds(tn), (:i, :j, :k, :l, :m))
+        @test issetequal(inds(tn, :open), (:j, :k))
+        @test issetequal(inds(tn, :inner), (:i, :l, :m))
+        @test issetequal(inds(tn, :hyper), (:i,))
     end
 
     @testset "size" begin
@@ -177,22 +177,22 @@
 
     # @testset "selectdim" begin
     #     tn = rand(TensorNetwork, 10, 3)
-    #     label = first(labels(tn))
+    #     label = first(inds(tn))
 
-    #     @test label ∉ labels(view(tn, label => 1))
-    #     @test label ∈ labels(view(tn, label => 1:1))
+    #     @test label ∉ inds(view(tn, label => 1))
+    #     @test label ∈ inds(view(tn, label => 1:1))
     #     @test size(view(tn, label => 1:1), label) == 1
     # end
 
     @testset "view" begin
         tn = rand(TensorNetwork, 10, 3, seed = 1)
-        targets = labels(tn)[1:3]
+        targets = inds(tn)[1:3]
 
         slice = @view tn[[label => 1 for label in targets]...]
-        @test isdisjoint(targets, labels(slice))
+        @test isdisjoint(targets, inds(slice))
 
         slice = @view tn[[label => 1:1 for label in targets]...]
-        @test targets ⊆ labels(slice)
+        @test targets ⊆ inds(slice)
     end
 
     @testset "contract" begin
@@ -212,16 +212,16 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        @testset "replace labels" begin
+        @testset "replace inds" begin
             mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
 
             @test_throws ArgumentError replace!(tn, :i => :j, :k => :l)
             replace!(tn, mapping...)
 
-            @test issetequal(labels(tn), (:u, :v, :w, :x, :y))
-            @test issetequal(labels(tn, :open), (:v, :w))
-            @test issetequal(labels(tn, :inner), (:u, :x, :y))
-            @test issetequal(labels(tn, :hyper), (:u,))
+            @test issetequal(inds(tn), (:u, :v, :w, :x, :y))
+            @test issetequal(inds(tn, :open), (:v, :w))
+            @test issetequal(inds(tn, :inner), (:u, :x, :y))
+            @test issetequal(inds(tn, :hyper), (:u,))
 
             @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
             @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
@@ -244,13 +244,13 @@
             @test new_tensor === tn.tensors[2]
 
             # Check if connections are maintained
-            # for label in labels(new_tensor)
+            # for label in inds(new_tensor)
             #     index = tn.inds[label]
             #     @test new_tensor in index.links
             #     @test !(old_tensor in index.links)
             # end
 
-            # New tensor network with two tensors with the same labels
+            # New tensor network with two tensors with the same inds
             A = Tensor(rand(2, 2), (:u, :w))
             B = Tensor(rand(2, 2), (:u, :w))
             tn = TensorNetwork([A, B])

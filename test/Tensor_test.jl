@@ -2,7 +2,7 @@
     @testset "Constructors" begin
         @testset "Number" begin
             tensor = Tensor(1.0, tags = Set(["TEST"]))
-            @test labels(tensor) == ()
+            @test inds(tensor) == ()
             @test parent(tensor) == fill(1.0)
             @test hastag(tensor, "TEST")
         end
@@ -11,7 +11,7 @@
             data = ones(2, 2, 2)
             tensor = Tensor(data, [:i, :j, :k])
 
-            @test labels(tensor) == (:i, :j, :k)
+            @test inds(tensor) == (:i, :j, :k)
             @test parent(tensor) === data
 
             @test_throws DimensionMismatch Tensor(zeros(2, 3), (:i, :i))
@@ -22,8 +22,8 @@
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test tensor !== copy(tensor)
         @test parent(tensor) === parent(copy(tensor))
-        @test labels(tensor) == labels(copy(tensor))
-        @test labels(tensor) === labels(copy(tensor))
+        @test inds(tensor) == inds(copy(tensor))
+        @test inds(tensor) === inds(copy(tensor))
         @test tensor.meta == copy(tensor).meta
         @test tensor.meta !== copy(tensor).meta
 
@@ -65,17 +65,17 @@
     @testset "Base.replace" begin
         # no :alias in meta
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-        @test labels(replace(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
+        @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
         @test parent(replace(tensor, :i => :u, :j => :v, :k => :w)) === parent(tensor)
 
-        @test labels(replace(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
+        @test inds(replace(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
         @test parent(replace(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
 
         # :alias in meta
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k); alias = Dict(:left => :i, :right => :j, :up => :k))
 
         replaced_tensor = replace(tensor, :i => :u, :j => :v, :k => :w)
-        @test labels(replaced_tensor) == (:u, :v, :w)
+        @test inds(replaced_tensor) == (:u, :v, :w)
         @test parent(replaced_tensor) === parent(tensor)
         @test replaced_tensor.meta[:alias] == Dict(:left => :u, :right => :v, :up => :w)
     end
@@ -83,7 +83,7 @@
     @testset "dim" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test dim(tensor, 1) == 1
-        for (i, label) in enumerate(labels(tensor))
+        for (i, label) in enumerate(inds(tensor))
             @test dim(tensor, label) == i
         end
 
@@ -113,8 +113,8 @@
 
         @test parent(selectdim(tensor, :i, 1)) == selectdim(data, 1, 1)
         @test parent(selectdim(tensor, :j, 2)) == selectdim(data, 2, 2)
-        @test issetequal(labels(selectdim(tensor, :i, 1)), (:j, :k))
-        @test issetequal(labels(selectdim(tensor, :i, 1:1)), (:i, :j, :k))
+        @test issetequal(inds(selectdim(tensor, :i, 1)), (:j, :k))
+        @test issetequal(inds(selectdim(tensor, :i, 1:1)), (:i, :j, :k))
     end
 
     @testset "view" begin
@@ -125,10 +125,10 @@
         @test parent(view(tensor, :i => 1)) == view(data, 1, :, :)
         @test parent(view(tensor, :j => 2)) == view(data, :, 2, :)
         @test parent(view(tensor, :i => 2, :k => 1)) == view(data, 2, :, 1)
-        @test :i ∉ labels(view(tensor, :i => 1))
+        @test :i ∉ inds(view(tensor, :i => 1))
 
         @test parent(view(tensor, :i => 1:1)) == view(data, 1:1, :, :)
-        @test :i ∈ labels(view(tensor, :i => 1:1))
+        @test :i ∈ inds(view(tensor, :i => 1:1))
     end
 
     @testset "permutedims" begin
@@ -136,7 +136,7 @@
         tensor = Tensor(data, (:i, :j, :k))
         perm = (3, 1, 2)
 
-        @test permutedims(tensor, perm) |> labels == (:k, :i, :j)
+        @test permutedims(tensor, perm) |> inds == (:k, :i, :j)
         @test permutedims(tensor, perm) |> parent == permutedims(data, perm)
         @test permutedims(tensor, perm).meta !== tensor.meta
 
@@ -174,7 +174,7 @@
             data = rand(Complex{Float64}, 2)
             tensor = Tensor(data, (:i,); test = "TEST")
 
-            @test adjoint(tensor) |> labels == labels(tensor)
+            @test adjoint(tensor) |> inds == inds(tensor)
             @test adjoint(tensor) |> ndims == 1
             @test adjoint(tensor).meta == tensor.meta
 
@@ -187,7 +187,7 @@
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j); test = "TEST")
 
-            @test adjoint(tensor) |> labels == labels(tensor)
+            @test adjoint(tensor) |> inds == inds(tensor)
             @test adjoint(tensor) |> ndims == 2
             @test adjoint(tensor).meta == tensor.meta
 
@@ -200,7 +200,7 @@
             data = rand(Complex{Float64}, 2)
             tensor = Tensor(data, (:i,); test = "TEST")
 
-            @test transpose(tensor) |> labels == labels(tensor)
+            @test transpose(tensor) |> inds == inds(tensor)
             @test transpose(tensor) |> ndims == 1
             @test transpose(tensor).meta == tensor.meta
 
@@ -213,7 +213,7 @@
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j); test = "TEST")
 
-            @test transpose(tensor) |> labels == (:j, :i)
+            @test transpose(tensor) |> inds == (:j, :i)
             @test transpose(tensor) |> ndims == 2
             @test transpose(tensor).meta == tensor.meta
 
@@ -226,26 +226,26 @@
         tensor = Tensor(data, (:i, :j, :k))
 
         let new = expand(tensor, label = :x, axis = 1)
-            @test labels(new) == (:x, :i, :j, :k)
+            @test inds(new) == (:x, :i, :j, :k)
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
         let new = expand(tensor, label = :x, axis = 3)
-            @test labels(new) == (:i, :j, :x, :k)
+            @test inds(new) == (:i, :j, :x, :k)
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
         let new = expand(tensor, label = :x, axis = 1, size = 2, method = :zeros)
-            @test labels(new) == (:x, :i, :j, :k)
+            @test inds(new) == (:x, :i, :j, :k)
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor
-            @test selectdim(new, :x, 2) == Tensor(zeros(size(data)...), labels(tensor))
+            @test selectdim(new, :x, 2) == Tensor(zeros(size(data)...), inds(tensor))
         end
 
         let new = expand(tensor, label = :x, axis = 1, size = 2, method = :repeat)
-            @test labels(new) == (:x, :i, :j, :k)
+            @test inds(new) == (:x, :i, :j, :k)
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor
             @test selectdim(new, :x, 2) == tensor

@@ -1,40 +1,40 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
+using EinExprs
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    labels::NTuple{N,Symbol}
+    inds::NTuple{N,Symbol}
     meta::Dict{Symbol,Any}
 
-    function Tensor{T,N,A}(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor{T,N,A}(data::A, inds::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}}
         meta = Dict{Symbol,Any}(meta...)
         haskey(meta, :tags) || (meta[:tags] = Set{String}())
-        all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), labels))), nonunique(collect(labels))) ||
+        all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(collect(inds))) ||
             throw(DimensionMismatch("nonuniform size of repeated indices"))
 
-        new{T,N,A}(data, labels, meta)
+        new{T,N,A}(data, inds, meta)
     end
 end
 
-Tensor(data, labels::Vector{Symbol}; meta...) = Tensor(data, tuple(labels...); meta...)
-Tensor(data::A, labels::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}} =
-    Tensor{T,N,A}(data, labels; meta...)
-Tensor{T,N,A}(data::A, labels::NTuple{N,Symbol}, meta) where {T,N,A<:AbstractArray{T,N}} =
-    Tensor{T,N,A}(data, labels; meta...)
+Tensor(data, inds::Vector{Symbol}; meta...) = Tensor(data, tuple(inds...); meta...)
+Tensor(data::A, inds::NTuple{N,Symbol}; meta...) where {T,N,A<:AbstractArray{T,N}} = Tensor{T,N,A}(data, inds; meta...)
+Tensor{T,N,A}(data::A, inds::NTuple{N,Symbol}, meta) where {T,N,A<:AbstractArray{T,N}} =
+    Tensor{T,N,A}(data, inds; meta...)
 
 Tensor(data::AbstractArray{T,0}; meta...) where {T} = Tensor(data, (); meta...)
 Tensor(data::Number; meta...) = Tensor(fill(data); meta...)
 
-Base.copy(t::Tensor) = Tensor(parent(t), labels(t); deepcopy(t.meta)...)
+Base.copy(t::Tensor) = Tensor(parent(t), inds(t); deepcopy(t.meta)...)
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     data = copy(t.data)
-    labels = t.labels
+    inds = t.inds
     meta = deepcopy(t.meta)
-    return Tensor(data, labels; (k => v for (k, v) in meta)...)
+    return Tensor(data, inds; (k => v for (k, v) in meta)...)
 end
 
-# TODO pass new labels and meta
+# TODO pass new inds and meta
 function Base.similar(t::Tensor{_,N}, ::Type{T}; kwargs...) where {_,T,N}
     if N == 0
         return Tensor(similar(parent(t), T), (); kwargs...)
@@ -43,24 +43,24 @@ function Base.similar(t::Tensor{_,N}, ::Type{T}; kwargs...) where {_,T,N}
     end
 end
 # TODO fix this
-function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; labels = labels(t), meta...) where {T}
+function Base.similar(t::Tensor, ::Type{T}, dims::Int64...; inds = inds(t), meta...) where {T}
     data = similar(parent(t), T, dims)
 
     # copy metadata
     metadata = copy(t.meta)
     merge!(metadata, meta)
 
-    Tensor(data, labels; meta...)
+    Tensor(data, inds; meta...)
 end
 
 function __find_index_permutation(a, b)
-    labels_b = collect(Union{Missing,Symbol}, b)
+    inds_b = collect(Union{Missing,Symbol}, b)
 
     Iterators.map(a) do label
-        i = findfirst(isequal(label), labels_b)
+        i = findfirst(isequal(label), inds_b)
 
         # mark element as used
-        labels_b[i] = missing
+        inds_b[i] = missing
 
         i
     end |> collect
@@ -72,8 +72,8 @@ Base.:(==)(a::Tensor, b::Tensor) = isequal(a, b)
 Base.isequal(a::AbstractArray, b::Tensor) = false
 Base.isequal(a::Tensor, b::AbstractArray) = false
 function Base.isequal(a::Tensor, b::Tensor)
-    issetequal(labels(a), labels(b)) || return false
-    perm = __find_index_permutation(labels(a), labels(b))
+    issetequal(inds(a), inds(b)) || return false
+    perm = __find_index_permutation(inds(a), inds(b))
     return all(eachindex(IndexCartesian(), a)) do i
         j = CartesianIndex(Tuple(permute!(collect(Tuple(i)), invperm(perm))))
         isequal(a[i], b[j])
@@ -83,19 +83,19 @@ end
 Base.isapprox(a::AbstractArray, b::Tensor) = false
 Base.isapprox(a::Tensor, b::AbstractArray) = false
 function Base.isapprox(a::Tensor, b::Tensor)
-    issetequal(labels(a), labels(b)) || return false
-    perm = __find_index_permutation(labels(a), labels(b))
+    issetequal(inds(a), inds(b)) || return false
+    perm = __find_index_permutation(inds(a), inds(b))
     return all(eachindex(IndexCartesian(), a)) do i
         j = CartesianIndex(Tuple(permute!(collect(Tuple(i)), invperm(perm))))
         isapprox(a[i], b[j])
     end
 end
 
-labels(t::Tensor) = t.labels
+EinExprs.inds(t::Tensor) = t.inds
 
 # NOTE: `replace` does not currenly support cyclic replacements
 function Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...)
-    new_labels = replace(labels(t), old_new...)
+    new_inds = replace(inds(t), old_new...)
     new_meta = deepcopy(t.meta)
     old_new_dict = Base.ImmutableDict(old_new...)
 
@@ -103,14 +103,14 @@ function Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...)
         get(old_new_dict, i, i)
     end
 
-    return Tensor(parent(t), new_labels; new_meta...)
+    return Tensor(parent(t), new_inds; new_meta...)
 end
 
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
 dim(t::Tensor, i::Number) = i
-dim(t::Tensor, i::Symbol) = findall(==(i), labels(t)) |> first
+dim(t::Tensor, i::Symbol) = findall(==(i), inds(t)) |> first
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))
@@ -125,13 +125,13 @@ Base.IndexStyle(T::Type{<:Tensor}) = IndexStyle(parenttype(T))
 @propagate_inbounds Base.getindex(t::Tensor, i...) = getindex(parent(t), i...)
 @propagate_inbounds function Base.getindex(t::Tensor; i...)
     length(i) == 0 && return (getindex ∘ parent)(t)
-    return getindex(t, [get(i, label, Colon()) for label in labels(t)]...)
+    return getindex(t, [get(i, label, Colon()) for label in inds(t)]...)
 end
 
 @propagate_inbounds Base.setindex!(t::Tensor, v, i...) = setindex!(parent(t), v, i...)
 @propagate_inbounds function Base.setindex!(t::Tensor, v; i...)
     length(i) == 0 && return setindex!(parent(t), v)
-    return setindex!(t, v, [get(i, label, Colon()) for label in labels(t)]...)
+    return setindex!(t, v, [get(i, label, Colon()) for label in inds(t)]...)
 end
 
 Base.firstindex(t::Tensor) = firstindex(parent(t))
@@ -169,48 +169,48 @@ function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}
     similar(tensor, ElType)
 end
 
-Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), labels(t); t.meta...)
+Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), inds(t); t.meta...)
 function Base.selectdim(t::Tensor, d::Integer, i::Integer)
     data = selectdim(parent(t), d, i)
-    indices = [label for (i, label) in enumerate(labels(t)) if i != d]
+    indices = [label for (i, label) in enumerate(inds(t)) if i != d]
     Tensor(data, indices; t.meta...)
 end
 
 Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
 
-Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((labels(t),), perm); t.meta...)
+Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((inds(t),), perm); t.meta...)
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
 function Base.permutedims(t::Tensor{T,N}, perm::NTuple{N,Symbol}) where {T,N}
-    perm = map(i -> findfirst(==(i), labels(t)), perm)
+    perm = map(i -> findfirst(==(i), inds(t)), perm)
     permutedims(t, perm)
 end
 
 Base.dropdims(t::Tensor; dims = tuple(findall(==(1), size(t))...)) =
-    Tensor(dropdims(parent(t); dims), labels(t)[setdiff(1:ndims(t), dims)]; t.meta...)
+    Tensor(dropdims(parent(t); dims), inds(t)[setdiff(1:ndims(t), dims)]; t.meta...)
 
 Base.view(t::Tensor, i...) =
-    Tensor(view(parent(t), i...), [label for (label, j) in zip(labels(t), i) if !(j isa Integer)]; t.meta...)
+    Tensor(view(parent(t), i...), [label for (label, j) in zip(inds(t), i) if !(j isa Integer)]; t.meta...)
 
 function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
-    indices = map(labels(t)) do ind
+    indices = map(Tenet.inds(t)) do ind
         i = findfirst(x -> x == ind, first.(inds))
         !isnothing(i) ? inds[i].second : Colon()
     end
 
     let data = view(parent(t), indices...),
-        labels = [label for (index, label) in zip(indices, labels(t)) if !(index isa Integer)]
+        inds = [label for (index, label) in zip(indices, Tenet.inds(t)) if !(index isa Integer)]
 
-        Tensor(data, labels; t.meta...)
+        Tensor(data, inds; t.meta...)
     end
 end
 
-Base.adjoint(t::Tensor) = Tensor(conj(parent(t)), labels(t); t.meta...)
+Base.adjoint(t::Tensor) = Tensor(conj(parent(t)), inds(t); t.meta...)
 
 # NOTE: Maybe use transpose for lazy transposition ?
 Base.transpose(t::Tensor{T,1,A}) where {T,A<:AbstractArray{T,1}} = permutedims(t, (1,))
 Base.transpose(t::Tensor{T,2,A}) where {T,A<:AbstractArray{T,2}} =
-    Tensor(transpose(parent(t)), reverse(labels(t)); t.meta...)
+    Tensor(transpose(parent(t)), reverse(inds(t)); t.meta...)
 
 function expand(tensor::Tensor; label, axis = 1, size = 1, method = :zeros)
     array = parent(tensor)
@@ -221,9 +221,9 @@ function expand(tensor::Tensor; label, axis = 1, size = 1, method = :zeros)
         # method === :identity ? __expand_identity(array, axis, size) :
         throw(ArgumentError("method \"$method\" is not valid"))
 
-    labels = (labels(tensor)[1:axis-1]..., label, labels(tensor)[axis:end]...)
+    inds = (inds(tensor)[1:axis-1]..., label, inds(tensor)[axis:end]...)
 
-    return Tensor(data, labels; tensor.meta...)
+    return Tensor(data, inds; tensor.meta...)
 end
 
 function __expand_zeros(array, axis, size)

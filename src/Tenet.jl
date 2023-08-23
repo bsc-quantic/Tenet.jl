@@ -3,7 +3,7 @@ module Tenet
 include("Helpers.jl")
 
 include("Tensor.jl")
-export Tensor, contract, labels, dim, expand
+export Tensor, contract, dim, expand
 export tags, hastag, tag!, untag!
 
 include("Numerics.jl")
@@ -29,6 +29,6 @@ export ProjectedEntangledPair, PEPS, PEPO
 export norm, normalize!
 
 # reexports from EinExprs
-export einexpr
+export einexpr, inds
 
 end

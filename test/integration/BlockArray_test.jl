@@ -12,7 +12,7 @@
         tensor = Tensor(data, indices)
         block_tensor = Tensor(block_array, indices)
 
-        @test labels(block_tensor) == labels(tensor)
+        @test inds(block_tensor) == inds(tensor)
         @test Array(parent(block_tensor)) ≈ parent(tensor)
     end
 
@@ -31,7 +31,7 @@
 
         @test parent(permuted_block_tensor) isa BlockArray
         @test parent(permuted_block_tensor) |> blocksizes == ([1, 3], [2, 2], [2, 2])
-        @test labels(permuted_block_tensor) == labels(permuted_tensor)
+        @test inds(permuted_block_tensor) == inds(permuted_tensor)
         @test Array(parent(permuted_block_tensor)) ≈ parent(permuted_tensor)
     end
 
@@ -51,7 +51,7 @@
             contracted_block_tensor = contract(block_tensor1, block_tensor2)
 
             @test parent(contracted_block_tensor) isa BlockArray
-            @test contracted_block_tensor |> labels == (:i, :k)
+            @test contracted_block_tensor |> inds == (:i, :k)
             @test contracted_block_tensor |> blocksizes == ([3, 1], [2, 2])
             @test Array(parent(contracted_block_tensor)) ≈ parent(contracted_tensor)
         end
@@ -66,7 +66,7 @@
 
             contracted_tensor = contract(tensor, block_tensor)
 
-            @test contracted_tensor |> labels == (:i, :k)
+            @test contracted_tensor |> inds == (:i, :k)
             @test (contracted_tensor|>parent|>blocksizes)[2] == [2, 2]
             @test Array(parent(contracted_tensor)) ≈ parent(contract(tensor, Tensor(data2, [:j, :k])))
         end

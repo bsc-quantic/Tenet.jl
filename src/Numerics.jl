@@ -1,6 +1,7 @@
 using OMEinsum
 using LinearAlgebra
 using UUIDs: uuid4
+using EinExprs: inds
 
 # TODO test array container typevar on output
 for op in [
@@ -29,13 +30,13 @@ for op in [
 end
 
 """
-    contract(a::Tensor[, b::Tensor, dims=nonunique([labels(a)..., labels(b)...])])
+    contract(a::Tensor[, b::Tensor, dims=nonunique([inds(a)..., inds(b)...])])
 
 Perform tensor contraction operation.
 """
-function contract(a::Tensor, b::Tensor; dims = (∩(labels(a), labels(b))))
-    ia = labels(a)
-    ib = labels(b)
+function contract(a::Tensor, b::Tensor; dims = (∩(inds(a), inds(b))))
+    ia = inds(a)
+    ib = inds(b)
     i = ∩(dims, ia, ib)
 
     ic = tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))...)
@@ -46,8 +47,8 @@ function contract(a::Tensor, b::Tensor; dims = (∩(labels(a), labels(b))))
     return Tensor(data, ic)
 end
 
-function contract(a::Tensor; dims = nonunique(labels(a)))
-    ia = labels(a)
+function contract(a::Tensor; dims = nonunique(inds(a)))
+    ia = inds(a)
     i = ∩(dims, ia)
 
     ic = tuple(setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))...)
@@ -73,18 +74,17 @@ Base.:*(a::Tensor, b::Tensor) = contract(a, b)
 Base.:*(a::Tensor, b) = contract(a, b)
 Base.:*(a, b::Tensor) = contract(a, b)
 
-LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) =
-    Base.@invoke svd(t::Tensor; left_inds = (first(labels(t)),), kwargs...)
+LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
 function LinearAlgebra.svd(t::Tensor; left_inds, kwargs...)
     if isempty(left_inds)
         throw(ErrorException("no left-indices in SVD factorization"))
-    elseif any(∉(labels(t)), left_inds)
+    elseif any(∉(inds(t)), left_inds)
         # TODO better error exception and checks
-        throw(ErrorException("all left-indices must be in $(labels(t))"))
+        throw(ErrorException("all left-indices must be in $(inds(t))"))
     end
 
-    right_inds = setdiff(labels(t), left_inds)
+    right_inds = setdiff(inds(t), left_inds)
     if isempty(right_inds)
         # TODO better error exception and checks
         throw(ErrorException("no right-indices in SVD factorization"))
@@ -112,21 +112,21 @@ function LinearAlgebra.svd(t::Tensor; left_inds, kwargs...)
     return U, s, Vt
 end
 
-LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds = (first(labels(t)),), kwargs...)
+LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
 function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)
     isdisjoint(left_inds, right_inds) ||
         throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
 
     left_inds, right_inds =
-        isempty(left_inds) ? (setdiff(labels(t), right_inds), right_inds) :
-        isempty(right_inds) ? (left_inds, setdiff(labels(t), left_inds)) :
+        isempty(left_inds) ? (setdiff(inds(t), right_inds), right_inds) :
+        isempty(right_inds) ? (left_inds, setdiff(inds(t), left_inds)) :
         throw(ArgumentError("cannot set both left and right indices"))
 
     all(!isempty, (left_inds, right_inds)) || throw(ArgumentError("no right-indices left in QR factorization"))
-    all(∈(labels(t)), left_inds ∪ right_inds) || throw(ArgumentError("indices must be in $(labels(t))"))
+    all(∈(inds(t)), left_inds ∪ right_inds) || throw(ArgumentError("indices must be in $(inds(t))"))
 
-    virtualind ∉ labels(t) || throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
+    virtualind ∉ inds(t) || throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
 
     # permute array
     tensor = permutedims(t, (left_inds..., right_inds...))

@@ -28,7 +28,7 @@
         using UUIDs: uuid4
 
         tn = rand(TensorNetwork, 10, 3)
-        mapping = [label => Symbol(uuid4()) for label in labels(tn)]
+        mapping = [label => Symbol(uuid4()) for label in inds(tn)]
 
         # TODO fails in check_result.jl@161 -> `c_actual = collect(Broadcast.materialize(actual))`
         # test_rrule(replace, tn, mapping...)

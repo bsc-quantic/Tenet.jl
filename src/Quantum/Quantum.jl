@@ -2,6 +2,7 @@ using LinearAlgebra
 using UUIDs: uuid4
 using ValSplit
 using Bijections
+using EinExprs: inds
 
 """
     Quantum <: Ansatz
@@ -21,7 +22,7 @@ function checkmeta(::Type{Quantum}, tn::TensorNetwork)
     length(tn.interlayer) >= 1 || return false
 
     # meta's indices exist
-    all(bij -> values(bij) ⊆ labels(tn), tn.interlayer) || return false
+    all(bij -> values(bij) ⊆ inds(tn), tn.interlayer) || return false
 
     return true
 end
@@ -69,9 +70,9 @@ Return the sites in which the [`TensorNetwork`](@ref) acts.
 """
 sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
 
-labels(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
-labels(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # labels(tn, Val(:in), site) ∪ labels(tn, Val(:out), site)
-labels(tn::TensorNetwork, ::Val{:virtual}) = setdiff(labels(tn, Val(:all)), labels(tn, Val(:plug)))
+EinExprs.inds(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
+EinExprs.inds(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # inds(tn, Val(:in), site) ∪ inds(tn, Val(:out), site)
+EinExprs.inds(tn::TensorNetwork, ::Val{:virtual}) = setdiff(inds(tn, Val(:all)), inds(tn, Val(:plug)))
 
 """
     tensors(tn::TensorNetwork{<:Quantum}, site::Integer)
@@ -81,7 +82,7 @@ Return the `Tensor` connected to the [`TensorNetwork`](@ref) on `site`.
 See also: [`sites`](@ref).
 """
 tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
-tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, labels(tn, :plug, site)) |> only
+tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, inds(tn, :plug, site)) |> only
 @valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
 
@@ -184,15 +185,15 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
     B = copy(B)
 
     for site in sites(B)
-        a = labels(A, :plug, site)
-        b = labels(B, :plug, site)
-        if a != b && a ∉ labels(B)
+        a = inds(A, :plug, site)
+        b = inds(B, :plug, site)
+        if a != b && a ∉ inds(B)
             replace!(B, b => a)
         end
     end
 
     # rename inner indices of B to avoid hyperindices
-    replace!(B, [i => Symbol(uuid4()) for i in labels(B, :inner)]...)
+    replace!(B, [i => Symbol(uuid4()) for i in inds(B, :inner)]...)
 
     # TODO refactor this part to be compatible with more layers
     foreach(tensor -> tensor.meta[:layer] = 1, tensors(A))
@@ -300,8 +301,8 @@ Return the marginal quantum state of site.
 """
 function marginal(ψ, site)
     tensor = tensors(ψ, site)
-    index = labels(ψ, :plug, site)
-    sum(tensor, inds = setdiff(labels(tensor), [index]))
+    index = inds(ψ, :plug, site)
+    sum(tensor, inds = setdiff(inds(tensor), [index]))
 end
 
 include("MP.jl")
