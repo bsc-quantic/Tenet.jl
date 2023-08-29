@@ -35,7 +35,7 @@ struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
 
     function TensorNetwork{A}(tensors; metadata...) where {A}
         indices = reduce(enumerate(tensors); init = Dict{Symbol,Vector{Int}}([])) do dict, (i, tensor)
-            mergewith(vcat, dict, Dict([index => [i] for index in labels(tensor)]))
+            mergewith(vcat, dict, Dict([index => [i] for index in inds(tensor)]))
         end
 
         # Check for inconsistent dimensions
@@ -77,7 +77,7 @@ metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 metadata(T::Type{<:Arbitrary}) = metadata(supertype(T))
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #labels=$(length(tn.indices)))")
+Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(tn.indices)))")
 
 """
     length(tn::TensorNetwork)
@@ -113,7 +113,7 @@ tensors(tn::TensorNetwork) = tn.tensors
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 """
-    labels(tn::TensorNetwork, set = :all)
+    inds(tn::TensorNetwork, set = :all)
 
 Return the names of the indices in the [`TensorNetwork`](@ref).
 
@@ -126,12 +126,12 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-labels(tn::TensorNetwork; set::Symbol = :all, kwargs...) = labels(tn, set; kwargs...)
-@valsplit 2 labels(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(labels, "set=$set not recognized"))
-labels(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
-labels(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
-labels(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
-labels(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
+EinExprs.inds(tn::TensorNetwork; set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
+@valsplit 2 EinExprs.inds(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(inds, "set=$set not recognized"))
+EinExprs.inds(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
+EinExprs.inds(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
+EinExprs.inds(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
+EinExprs.inds(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
 """
     size(tn::TensorNetwork)
@@ -166,13 +166,13 @@ Add a new `tensor` to the Tensor Network.
 See also: [`append!`](@ref), [`pop!`](@ref).
 """
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
-    for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), labels(tensor) ∩ labels(tn))
+    for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
         throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
     end
 
     push!(tn.tensors, tensor)
 
-    for i in labels(tensor)
+    for i in inds(tensor)
         push!(get!(tn.indices, i, Int[]), length(tn.tensors))
     end
 
@@ -199,7 +199,7 @@ function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
 
     # unlink indices
-    for index in unique(labels(tensor))
+    for index in unique(inds(tensor))
         filter!(!=(i), tn.indices[index])
         isempty(tn.indices[index]) && delete!(tn.indices, index)
     end
@@ -276,8 +276,8 @@ function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
-    if !issetequal(labels(new_tensor), labels(old_tensor))
-        throw(ArgumentError("New tensor labels do not match the existing tensor labels"))
+    if !issetequal(inds(new_tensor), inds(old_tensor))
+        throw(ArgumentError("New tensor indices do not match the existing tensor inds"))
     end
 
     # replace existing `Tensor` with new `Tensor`
@@ -289,7 +289,7 @@ end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
-    new ∈ labels(tn) && throw(ArgumentError("new symbol $new is already present"))
+    new ∈ inds(tn) && throw(ArgumentError("new symbol $new is already present"))
 
     push!(tn.indices, new => pop!(tn.indices, old))
 
@@ -302,10 +302,10 @@ end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
     old, new = old_new
-    issetequal(labels(new, set = :open), labels(old)) || throw(ArgumentError("indices must match"))
+    issetequal(inds(new, set = :open), inds(old)) || throw(ArgumentError("indices must match"))
 
     # rename internal indices so there is no accidental hyperedge
-    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(labels(tn)), labels(new, set = :inner))]...)
+    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(inds(tn)), inds(new, set = :inner))]...)
 
     append!(tn, new)
     delete!(tn, old)
@@ -316,7 +316,7 @@ end
 """
     select(tn::TensorNetwork, i)
 
-Return tensors whose labels match with the list of indices `i`.
+Return tensors whose indices match with the list of indices `i`.
 """
 select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = mapreduce(Base.Fix1(select, tn), ∩, i)
 select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
@@ -327,7 +327,7 @@ select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
 This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
 """
-Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, labels(tensor)))
+Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, inds(tensor)))
 
 """
     slice!(tn::TensorNetwork, index::Symbol, i)
@@ -432,7 +432,7 @@ function Base.rand(
 end
 
 """
-    einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = labels(tn, :open), kwargs...)
+    einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
 
 Search a contraction path for the given [`TensorNetwork`](@ref) and return it as a `EinExpr`.
 
@@ -444,8 +444,14 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = labels(tn, :open), kwargs...) =
-    einexpr(optimizer, EinExpr(tensors(tn), outputs); kwargs...)
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
+    optimizer,
+    EinExpr(
+        outputs,
+        [EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for tensor in tensors(tn)],
+    );
+    kwargs...,
+)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
@@ -474,8 +480,7 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-contract(tn::TensorNetwork; outputs = labels(tn, :open), kwargs...) =
-    contract(einexpr(tn; outputs = outputs, kwargs...))
+contract(tn::TensorNetwork; outputs = inds(tn, :open), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
 
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); push!(tn, t); contract(tn; kwargs...))

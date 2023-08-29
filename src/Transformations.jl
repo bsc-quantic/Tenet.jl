@@ -2,7 +2,7 @@ using DeltaArrays
 using EinExprs
 using OMEinsum
 using UUIDs: uuid4
-using Tensors: parenttype
+using Tenet: parenttype
 using Combinatorics: combinations
 
 abstract type Transformation end
@@ -43,7 +43,7 @@ Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
 struct HyperindConverter <: Transformation end
 
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in labels(tn, :hyper)
+    for index in inds(tn, :hyper)
         # dimensionality of `index`
         m = size(tn, index)
 
@@ -97,14 +97,14 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
             data = EinCode(
-                (String.(replace(labels(target), [i => first(inds) for i in inds[2:end]]...)),),
-                String.(filter(∉(inds[2:end]), labels(target))),
+                (String.(replace(Tenet.inds(target), [i => first(inds) for i in inds[2:end]]...)),),
+                String.(filter(∉(inds[2:end]), Tenet.inds(target))),
             )(
                 target,
             )
             target = Tensor(
                 data,
-                map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), labels(target)));
+                map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
                 target.meta...,
             )
 
@@ -129,25 +129,28 @@ function transform!(tn::TensorNetwork, ::RankSimplification)
     @label rank_transformation_start
     for tensor in tensors(tn)
         # TODO replace this code for `neighbours` method
-        connected_tensors = mapreduce(label -> select(tn, label), ∪, labels(tensor))
+        connected_tensors = mapreduce(label -> select(tn, label), ∪, inds(tensor))
         filter!(!=(tensor), connected_tensors)
 
         for c_tensor in connected_tensors
-            path = EinExpr([tensor, c_tensor])
+            # TODO keep output inds?
+            path = sum([
+                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
+                tensor in [tensor, c_tensor]
+            ])
 
             # Check if contraction does not increase the rank
-            # TODO implement `removedrank` counter on EinExprs and let it choose function
-            if ndims(path) <= maximum(ndims.(path.args))
-                new_tensor = contract(path)
+            EinExprs.removedrank(path) < 0 && continue
 
-                # Update tensor network
-                push!(tn, new_tensor)
-                delete!(tn, tensor)
-                delete!(tn, c_tensor)
+            new_tensor = contract(tensor, c_tensor)
 
-                # Break the loop since we modified the network and need to recheck connections
-                @goto rank_transformation_start
-            end
+            # Update tensor network
+            push!(tn, new_tensor)
+            delete!(tn, tensor)
+            delete!(tn, c_tensor)
+
+            # Break the loop since we modified the network and need to recheck connections
+            @goto rank_transformation_start
         end
     end
 
@@ -171,7 +174,7 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
-    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
+    skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
     for idx in keys(tn.tensors)
         tensor = tn.tensors[idx]
@@ -179,14 +182,14 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
         anti_diag_axes = find_anti_diag_axes(parent(tensor), atol = config.atol)
 
         for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
-            ix_i, ix_j = labels(tensor)[i], labels(tensor)[j]
+            ix_i, ix_j = inds(tensor)[i], inds(tensor)[j]
 
             # do not gauge output indices
             _, ix_to_gauge = (ix_j ∈ skip_inds) ? ((ix_i ∈ skip_inds) ? continue : (ix_j, ix_i)) : (ix_i, ix_j)
 
             # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
-                ix_to_gauge in labels(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, labels(t)))
+                ix_to_gauge in inds(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, inds(t)))
             end
         end
     end
@@ -210,7 +213,7 @@ Base.@kwdef struct ColumnReduction <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::ColumnReduction)
-    skip_inds = isempty(config.skip) ? labels(tn, set = :open) : config.skip
+    skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
     for tensor in tn.tensors
         zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
@@ -225,7 +228,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
 
         # First try to reduce the whole index if only one column is non-zeros
         for (d, c) in axes_to_reduce # loop over all column axes
-            ix_i = labels(tensor)[d]
+            ix_i = inds(tensor)[d]
 
             # do not reduce output indices
             if ix_i ∈ skip_inds
@@ -234,12 +237,12 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
 
             # reduce all tensors where ix_i appears
             for (ind, t) in enumerate(tensors(tn))
-                if ix_i ∈ labels(t)
+                if ix_i ∈ inds(t)
                     # Replace the tensor with the reduced one
-                    new_tensor = selectdim(parent(t), findfirst(l -> l == ix_i, labels(t)), c)
-                    new_labels = filter(l -> l != ix_i, labels(t))
+                    new_tensor = selectdim(parent(t), findfirst(l -> l == ix_i, inds(t)), c)
+                    new_inds = filter(l -> l != ix_i, inds(t))
 
-                    tn.tensors[ind] = Tensor(new_tensor, new_labels)
+                    tn.tensors[ind] = Tensor(new_tensor, new_inds)
                 end
             end
             delete!(tn.indices, ix_i)
@@ -248,7 +251,7 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
         # Then try to reduce the dimensionality of the index in the other tensors
         zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
         for (d, c) in zero_columns # loop over all column axes
-            ix_i = labels(tensor)[d]
+            ix_i = inds(tensor)[d]
 
             # do not reduce output indices
             if ix_i ∈ skip_inds
@@ -257,9 +260,9 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
 
             # reduce all tensors where ix_i appears
             for (ind, t) in enumerate(tensors(tn))
-                if ix_i ∈ labels(t)
-                    reduced_dims = [i == ix_i ? filter(j -> j != c, 1:size(t, i)) : (1:size(t, i)) for i in labels(t)]
-                    tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), labels(t))
+                if ix_i ∈ inds(t)
+                    reduced_dims = [i == ix_i ? filter(j -> j != c, 1:size(t, i)) : (1:size(t, i)) for i in inds(t)]
+                    tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), inds(t))
                 end
             end
         end
@@ -284,7 +287,7 @@ end
 function transform!(tn::TensorNetwork, config::SplitSimplification)
     @label split_simplification_start
     for tensor in tensors(tn)
-        inds = labels(tensor)
+        inds = Tenet.inds(tensor)
 
         # iterate all bipartitions of the tensor's indices
         bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
@@ -298,9 +301,9 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
 
             if rank_s < size(s, 1)
                 # truncate data
-                u = view(u, labels(s)[1] => 1:rank_s)
-                s = view(s, (idx -> idx => 1:rank_s).(labels(s))...)
-                v = view(v, labels(s)[2] => 1:rank_s)
+                u = view(u, Tenet.inds(s)[1] => 1:rank_s)
+                s = view(s, (idx -> idx => 1:rank_s).(Tenet.inds(s))...)
+                v = view(v, Tenet.inds(s)[2] => 1:rank_s)
 
                 # replace the original tensor with factorization
                 tensor_l = u * s
@@ -360,7 +363,7 @@ function find_diag_axes(x; atol = 1e-12)
     end
 
     # map to index symbols
-    map(set -> map(i -> labels(x)[i], set), diag_sets)
+    map(set -> map(i -> inds(x)[i], set), diag_sets)
 end
 
 function find_anti_diag_axes(x; atol = 1e-12)

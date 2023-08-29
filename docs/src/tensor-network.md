@@ -28,7 +28,7 @@ Information about a `TensorNetwork` can be queried with the following functions.
 ## Query information
 
 ```@docs
-labels(::TensorNetwork)
+inds(::TensorNetwork)
 size(::TensorNetwork)
 tensors(::TensorNetwork)
 length(::TensorNetwork)

@@ -1,11 +1,6 @@
 module TenetQuacExt
 
-if isdefined(Base, :get_extension)
-    using Tenet
-else
-    using ..Tenet
-end
-
+using Tenet
 using Quac: Circuit, lanes, arraytype, Swap
 using Bijections
 

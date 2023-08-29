@@ -3,6 +3,7 @@ using Base.Iterators: flatten
 using Random
 using Bijections
 using Muscle: gramschmidt!
+using EinExprs: inds
 
 """
     MatrixProduct{P<:Plug,B<:Boundary} <: Quantum
@@ -32,7 +33,7 @@ function checkmeta(::Type{MatrixProduct{P,B}}, tn::TensorNetwork) where {P,B}
     isnothing(tn.χ) || tn.χ > 0 || return false
 
     # no virtual index has dimensionality bigger than χ
-    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, labels(tn, :virtual)) || return false
+    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, inds(tn, :virtual)) || return false
 
     return true
 end
@@ -89,7 +90,7 @@ function MatrixProduct{P,B}(
     tensors = map(enumerate(arrays)) do (i, array)
         dirs = _sitealias(MatrixProduct{P,B}, order, n, i)
 
-        labels = map(dirs) do dir
+        inds = map(dirs) do dir
             if dir === :l
                 vinds[(mod1(i - 1, n), i)]
             elseif dir === :r
@@ -100,9 +101,9 @@ function MatrixProduct{P,B}(
                 iinds[i]
             end
         end
-        alias = Dict(dir => label for (dir, label) in zip(dirs, labels))
+        alias = Dict(dir => label for (dir, label) in zip(dirs, inds))
 
-        Tensor(array, labels; alias = alias)
+        Tensor(array, inds; alias = alias)
     end
 
     return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
@@ -122,7 +123,7 @@ Base.length(ψ::TensorNetwork{MatrixProduct{P,Infinite}}) where {P<:Plug} = Inf
 
 #     b = replace(b, [nameof(outsiteind(b, s)) => nameof(outsiteind(a, s)) for s in sites(a)]...)
 #     path = nameof.(flatten([physicalinds(a), flatten(zip(virtualinds(a), virtualinds(b)))]) |> collect)
-#     inputs = flatten([tensors(a), tensors(b)]) .|> labels
+#     inputs = flatten([tensors(a), tensors(b)]) .|> inds
 #     output = Symbol[]
 #     size_dict = merge(size(a), size(b))
 
