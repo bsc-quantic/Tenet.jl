@@ -18,7 +18,7 @@ export transform, transform!
 
 include("Quantum/Quantum.jl")
 export Quantum
-export Boundary, boundary, Open, Periodic
+export Boundary, boundary, Open, Periodic, Infinite
 export Plug, plug, Property, State, Operator
 export sites, fidelity
 

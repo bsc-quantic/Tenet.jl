@@ -38,7 +38,7 @@ end
 """
     HyperindConverter <: Transformation
 
-Converts hyperindices to COPY-tensors, represented by `DeltaArray`s.
+Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
 """
 struct HyperindConverter <: Transformation end
 
@@ -70,6 +70,8 @@ end
 
 """
     DiagonalReduction <: Transformation
+
+Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it has a pair of indices that fulfil a diagonal structure.
 
 # Keyword Arguments
 
@@ -119,7 +121,7 @@ end
 """
     RankSimplification <: Transformation
 
-Contract tensors preemptively.
+Preemptively contract tensors whose result doesn't increase in size.
 """
 struct RankSimplification <: Transformation end
 
@@ -158,10 +160,13 @@ end
 """
     AntiDiagonalGauging <: Transformation
 
+Reverse the order of tensor indices that fulfill the anti-diagonal condition.
+While this transformation doesn't directly enhance computational efficiency, it sets up the [`TensorNetwork`](@ref) for other operations that do.
+
 # Keyword Arguments
 
   - `atol` Absolute tolerance. Defaults to `1e-12`.
-  - `skip`
+  - `skip` List of indices to skip. Defaults to `[]`.
 """
 Base.@kwdef struct AntiDiagonalGauging <: Transformation
     atol::Float64 = 1e-12
@@ -195,10 +200,12 @@ end
 """
     ColumnReduction <: Transformation
 
+Truncate the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
+
 # Keyword Arguments
 
-  - `atol` Absolute tolerance.
-  - `skip`
+  - `atol` Absolute tolerance. Defaults to `1e-12`.
+  - `skip` List of indices to skip. Defaults to `[]`.
 """
 Base.@kwdef struct ColumnReduction <: Transformation
     atol::Float64 = 1e-12
@@ -264,6 +271,15 @@ function transform!(tn::TensorNetwork, config::ColumnReduction)
     return tn
 end
 
+"""
+    SplitSimplification <: Transformation
+
+Reduce the rank of tensors in the [`TensorNetwork`](@ref) by decomposing them using the Singular Value Decomposition (SVD). Tensors whose factorization do not increase the maximum rank of the network are left decomposed.
+
+# Keyword Arguments
+
+  - `atol` Absolute tolerance. Defaults to `1e-10`.
+"""
 Base.@kwdef struct SplitSimplification <: Transformation
     atol::Float64 = 1e-10  # A threshold for SVD rank determination
 end

@@ -45,6 +45,7 @@ function _sitealias(::Type{ProjectedEntangledPair{P,Open}}, order, size, pos) wh
     end
 end
 _sitealias(::Type{ProjectedEntangledPair{P,Periodic}}, order, _, _) where {P<:Plug} = tuple(order...)
+_sitealias(::Type{ProjectedEntangledPair{P,Infinite}}, order, _, _) where {P<:Plug} = tuple(order...)
 
 defaultorder(::Type{ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
 defaultorder(::Type{ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
@@ -116,6 +117,11 @@ end
 
 const PEPS = ProjectedEntangledPair{State}
 const PEPO = ProjectedEntangledPair{Operator}
+
+tensors(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}, site::Int, args...) where {P<:Plug} =
+    tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
+
+Base.length(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}) where {P<:Plug} = Inf
 
 # TODO normalize
 # TODO let choose the orthogonality center

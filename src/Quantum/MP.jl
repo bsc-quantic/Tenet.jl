@@ -47,6 +47,7 @@ _sitealias(::Type{MatrixProduct{P,Open}}, order, n, i) where {P<:Plug} =
         order
     end
 _sitealias(::Type{MatrixProduct{P,Periodic}}, order, n, i) where {P<:Plug} = tuple(order...)
+_sitealias(::Type{MatrixProduct{P,Infinite}}, order, n, i) where {P<:Plug} = tuple(order...)
 
 defaultorder(::Type{MatrixProduct{State}}) = (:l, :r, :o)
 defaultorder(::Type{MatrixProduct{Operator}}) = (:l, :r, :i, :o)
@@ -110,6 +111,11 @@ end
 
 const MPS = MatrixProduct{State}
 const MPO = MatrixProduct{Operator}
+
+tensors(ψ::TensorNetwork{MatrixProduct{P,Infinite}}, site::Int, args...) where {P<:Plug} =
+    tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
+
+Base.length(ψ::TensorNetwork{MatrixProduct{P,Infinite}}) where {P<:Plug} = Inf
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more
 # function contractpath(a::TensorNetwork{<:MatrixProductState}, b::TensorNetwork{<:MatrixProductState})

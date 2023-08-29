@@ -30,6 +30,7 @@ end
 abstract type Boundary end
 abstract type Open <: Boundary end
 abstract type Periodic <: Boundary end
+abstract type Infinite <: Boundary end
 
 """
     boundary(::TensorNetwork)
@@ -39,6 +40,7 @@ Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Bounda
 
   - `Open`
   - `Periodic`
+  - `Infinite`
 """
 function boundary end
 boundary(::T) where {T<:TensorNetwork} = boundary(T)
