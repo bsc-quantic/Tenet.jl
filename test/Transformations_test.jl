@@ -76,7 +76,7 @@
             )
 
             # Test that the resulting contraction returns the same as the original
-            @test_skip contract(reduced) ≈ contract(tn)
+            @test contract(reduced) ≈ contract(tn)
         end
 
         @testset "openinds" begin
@@ -111,7 +111,7 @@
             end
 
             # Test that the resulting contraction returns the same as the original
-            @test_skip contract(reduced) ≈ contract(tn)
+            @test contract(reduced) ≈ contract(tn)
         end
     end
 
@@ -136,7 +136,7 @@
         @test length(tensors(reduced)) ≤ length(tensors(tn))
 
         # Test that the resulting contraction contains the same as the original
-        @test_skip contract(reduced) ≈ contract(tn)
+        @test contract(reduced) ≈ contract(tn)
     end
 
     @testset "AntiDiagonalGauging" begin
@@ -185,7 +185,7 @@
         end
 
         # Test that the resulting contraction is the same as the original
-        @test_skip contract(gauged) ≈ contract(tn)
+        @test contract(gauged) ≈ contract(tn)
     end
 
     @testset "ColumnReduction" begin
@@ -214,7 +214,7 @@
             @test length(tn.indices) > length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
-            @test_skip contract(reduced) ≈ contract(contract(A, B; dims = []), C)
+            @test contract(reduced) ≈ contract(contract(A, B; dims = []), C)
         end
 
         @testset "index size reduction" begin
@@ -239,7 +239,7 @@
             @test length(tn.indices) == length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
-            @test_skip contract(reduced) ≈ view(contract(tn), :j => 1:2:3)
+            @test contract(reduced) ≈ view(contract(tn), :j => 1:2:3)
         end
     end
 
@@ -266,6 +266,6 @@
         @test smallest_deleted > largest_new
 
         # Test that the resulting contraction is the same as the original
-        @test_skip contract(reduced) ≈ contract(tn)
+        @test contract(reduced) ≈ contract(tn)
     end
 end

@@ -210,6 +210,6 @@
 
     @testset "norm" begin
         mps = rand(MatrixProduct{State,Open}, n = 8, p = 2, χ = 8)
-        @test_skip norm(mps) ≈ 1
+        @test norm(mps) ≈ 1
     end
 end

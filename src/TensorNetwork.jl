@@ -456,15 +456,15 @@ EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
 """
-    contract!(tn::TensorNetwork, index::Symbol)
+    contract!(tn::TensorNetwork, index)
 
 In-place contraction of tensors connected to `index`.
 
 See also: [`contract`](@ref).
 """
-function contract!(tn::TensorNetwork, i::Symbol)
+function contract!(tn::TensorNetwork, i)
     tensor = reduce(pop!(tn, i)) do acc, tensor
-        contract(acc, tensor, i)
+        contract(acc, tensor, dims = i)
     end
 
     push!(tn, tensor)
@@ -480,10 +480,22 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-contract(tn::TensorNetwork; outputs = inds(tn, :open), kwargs...) = contract(einexpr(tn; outputs = outputs, kwargs...))
+function contract(tn::TensorNetwork; kwargs...)
+    path = einexpr(tn; kwargs...)
 
+    tn = copy(tn)
+
+    for indices in contractorder(path)
+        contract!(tn, indices)
+    end
+
+    tensors(tn) |> only
+end
+
+contract!(t::Tensor, tn::TensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
+contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn; kwargs...))
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
-contract(tn::TensorNetwork, t::Tensor; kwargs...) = (tn = copy(tn); push!(tn, t); contract(tn; kwargs...))
+contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
 struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
     parameters::NT

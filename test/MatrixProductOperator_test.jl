@@ -224,7 +224,7 @@
 
     @testset "norm" begin
         mpo = rand(MatrixProduct{Operator,Open}, n = 8, p = 2, χ = 8)
-        @test_skip norm(mpo) ≈ 1
+        @test norm(mpo) ≈ 1
     end
 
     # @testset "Initialization" begin
