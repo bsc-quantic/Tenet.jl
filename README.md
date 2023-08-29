@@ -18,16 +18,23 @@ A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at loc
 
 - [x] Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
 - [x] Tensor Network slicing/cuttings
-- [x] Automatic Differentiation of TN contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) and [`ChainRules`](https://github.com/JuliaDiff/ChainRulesCore.jl)
+- [x] Automatic Differentiation of TN contraction
 - [ ] Distributed contraction
 - [ ] Quantum Tensor Networks
   - [x] Matrix Product States (MPS)
   - [x] Matrix Product Operators (MPO)
   - [ ] Tree Tensor Networks (TTN)
-  - [ ] Projected Entangled Pair States (PEPS)
+  - [x] Projected Entangled Pair States (PEPS)
   - [ ] Multiscale Entanglement Renormalization Ansatz (MERA)
 - [ ] Numerical Tensor Network algorithms
   - [ ] Tensor Renormalization Group (TRG)
   - [ ] Density Matrix Renormalization Group (DMRG)
-- [x] 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- [x] Local Tensor Network transformations
+  - [x] Hyperindex converter
+  - [x] Rank simplification
+  - [x] Diagonal reduction
+  - [x] Anti-diagonal gauging
+  - [x] Column reduction
+  - [x] Split simplification
+- [x] 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
 - [x] Translation from quantum circuits, powered by [`Quac`](https://github.com/bsc-quantic/Quac.jl)
