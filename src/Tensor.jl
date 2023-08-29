@@ -25,8 +25,6 @@ Tensor{T,N,A}(data::A, inds::NTuple{N,Symbol}, meta) where {T,N,A<:AbstractArray
 Tensor(data::AbstractArray{T,0}; meta...) where {T} = Tensor(data, (); meta...)
 Tensor(data::Number; meta...) = Tensor(fill(data); meta...)
 
-Base.convert(::Type{EinExprs.Tensor}, tensor::Tensor) = (; array = parent(tensor), inds = inds(tensor))
-
 Base.copy(t::Tensor) = Tensor(parent(t), inds(t); deepcopy(t.meta)...)
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}

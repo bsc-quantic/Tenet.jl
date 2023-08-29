@@ -444,8 +444,14 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) =
-    einexpr(optimizer, EinExpr(outputs, map(t -> (array = parent(t), inds = inds(t)), tensors(tn))); kwargs...)
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
+    optimizer,
+    EinExpr(
+        outputs,
+        [EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for tensor in tensors(tn)],
+    );
+    kwargs...,
+)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
