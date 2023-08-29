@@ -95,14 +95,14 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
             data = EinCode(
-                (String.(replace(inds(target), [i => first(inds) for i in inds[2:end]]...)),),
-                String.(filter(∉(inds[2:end]), inds(target))),
+                (String.(replace(Tenet.inds(target), [i => first(inds) for i in inds[2:end]]...)),),
+                String.(filter(∉(inds[2:end]), Tenet.inds(target))),
             )(
                 target,
             )
             target = Tensor(
                 data,
-                map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), inds(target)));
+                map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
                 target.meta...,
             )
 
@@ -268,7 +268,7 @@ end
 function transform!(tn::TensorNetwork, config::SplitSimplification)
     @label split_simplification_start
     for tensor in tensors(tn)
-        inds = inds(tensor)
+        inds = Tenet.inds(tensor)
 
         # iterate all bipartitions of the tensor's indices
         bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
@@ -282,9 +282,9 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
 
             if rank_s < size(s, 1)
                 # truncate data
-                u = view(u, inds(s)[1] => 1:rank_s)
-                s = view(s, (idx -> idx => 1:rank_s).(inds(s))...)
-                v = view(v, inds(s)[2] => 1:rank_s)
+                u = view(u, Tenet.inds(s)[1] => 1:rank_s)
+                s = view(s, (idx -> idx => 1:rank_s).(Tenet.inds(s))...)
+                v = view(v, Tenet.inds(s)[2] => 1:rank_s)
 
                 # replace the original tensor with factorization
                 tensor_l = u * s
