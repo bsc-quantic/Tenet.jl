@@ -131,21 +131,24 @@ function transform!(tn::TensorNetwork, ::RankSimplification)
         filter!(!=(tensor), connected_tensors)
 
         for c_tensor in connected_tensors
-            path = EinExpr([tensor, c_tensor])
+            # TODO keep output inds?
+            path = sum([
+                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
+                tensor in [tensor, c_tensor]
+            ])
 
             # Check if contraction does not increase the rank
-            # TODO implement `removedrank` counter on EinExprs and let it choose function
-            if ndims(path) <= maximum(ndims.(path.args))
-                new_tensor = contract(path)
+            EinExprs.removedrank(path) < 0 && continue
 
-                # Update tensor network
-                push!(tn, new_tensor)
-                delete!(tn, tensor)
-                delete!(tn, c_tensor)
+            new_tensor = contract(tensor, c_tensor)
 
-                # Break the loop since we modified the network and need to recheck connections
-                @goto rank_transformation_start
-            end
+            # Update tensor network
+            push!(tn, new_tensor)
+            delete!(tn, tensor)
+            delete!(tn, c_tensor)
+
+            # Break the loop since we modified the network and need to recheck connections
+            @goto rank_transformation_start
         end
     end
 
