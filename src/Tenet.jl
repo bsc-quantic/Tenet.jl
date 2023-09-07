@@ -22,7 +22,7 @@ export Boundary, boundary, Open, Periodic, Infinite
 export Plug, plug, Property, State, Operator
 export sites, fidelity
 
-export MatrixProduct
+export MatrixProduct, MPS, MPO
 export ProjectedEntangledPair, PEPS, PEPO
 
 # reexports from LinearAlgebra
