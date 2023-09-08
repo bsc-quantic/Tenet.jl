@@ -24,9 +24,8 @@ jobs:
         run: |
           using Pkg
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
         shell: julia {0}
-      - name: Build package
-        uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
