@@ -1,25 +1,26 @@
 using Pkg
 Pkg.activate(@__DIR__)
+Pkg.develop(path = joinpath(@__DIR__, ".."))
 Pkg.instantiate()
 
-push!(LOAD_PATH, "$(@__DIR__)/..")
-
 using Documenter
+using DocumenterCitations
 using Tenet
 using CairoMakie
 using LinearAlgebra
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive = true)
 
+bib = CitationBibliography(joinpath(@__DIR__, "refs.bib"))
+
 makedocs(
-    modules = [
-        Tenet,
-        isdefined(Base, :get_extension) ? Base.get_extension(Tenet, :TenetMakieExt) : Tenet.TenetMakieExt,
-    ],
+    bib,
+    modules = [Tenet, Base.get_extension(Tenet, :TenetMakieExt)],
     sitename = "Tenet.jl",
     authors = "Sergio Sánchez Ramírez and contributors",
     pages = Any[
         "Home"=>"index.md",
+        "Tensors"=>"tensors.md",
         "Tensor Networks"=>[
             "Introduction" => "tensor-network.md",
             "Contraction" => "contraction.md",
@@ -36,8 +37,12 @@ makedocs(
             "Matrix Product State classifier" => "examples/mps-ml.md",
         ],
         "Alternatives"=>"alternatives.md",
+        "References"=>"references.md",
     ],
-    format = Documenter.HTML(assets = ["assets/favicon.ico"]),
+    format = Documenter.HTML(
+        prettyurls = false,
+        assets = ["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"],
+    ),
 )
 
 deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master", push_preview = true)

@@ -4,6 +4,6 @@ Contraction path optimization and execution is delegated to the [`EinExprs`](htt
 
 ```@docs
 einexpr(::TensorNetwork)
-contract
+contract(::TensorNetwork)
 contract!
 ```

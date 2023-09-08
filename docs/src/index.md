@@ -1,7 +1,13 @@
 # Tenet.jl
 
-!!! warning "Status: Alpha stage 🚧"
-    `Tenet` is currently in a design stage and thus, the public API might change without notification. We do follow Julia's SemVer specification, so until we arrive to v1.0, patch version upgrades won't break the interface but minor version upgrades might.
+!!! info "BSC-Quantic's Registry"
+    `Tenet` and some of its dependencies are located in our [own Julia registry](https://github.com/bsc-quantic/Registry).
+    In order to download `Tenet`, add our registry to your Julia installation by using the [Pkg mode](https://docs.julialang.org/en/v1/stdlib/REPL/#Pkg-mode) in a REPL session,
+
+    ```julia
+    using Pkg
+    pkg"registry add https://github.com/bsc-quantic/Registry"
+    ```
 
 A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
 
@@ -9,19 +15,11 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 - **Flexibility** _Extend it to your needs_ 🔧
 - **Performance** _Goes brr... fast_ 🏎️
 
-!!! info "BSC-Quantic's Registry"
-    `Tenet` and some of its dependencies are located in our [own Julia registry](https://github.com/bsc-quantic/Registry).
-    In order to download `Tenet`, add our registry to your Julia installation by using the [Pkg mode](https://docs.julialang.org/en/v1/stdlib/REPL/#Pkg-mode) in a REPL session,
+A video of its presentation at JuliaCon 2023 can be seen here:
 
-    ```
-    ]registry add https://github.com/bsc-quantic/Registry
-    ```
-    or using the `Pkg` package directly,
-
-    ```julia
-    using Pkg
-    pkg"registry add https://github.com/bsc-quantic/Registry"
-    ```
+```@raw html
+<iframe class="youtube-video" width="560" height="315" src="https://www.youtube-nocookie.com/embed/gyufVG56TEQ?si=t8MFW41vey1u5vAm&amp;start=326" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+```
 
 ## Features
 
@@ -31,6 +29,7 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 - Quantum Tensor Networks
   - Matrix Product States (MPS)
   - Matrix Product Operators (MPO)
+  - Projected Entangled Pair States (PEPS)
 - 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
 - Translation from quantum circuits, powered by [`Quac`](https://github.com/bsc-quantic/Quac.jl)
 
@@ -41,7 +40,6 @@ The following feature are not yet implemented but are work in progress or are th
 - Distributed contraction
 - Quantum Tensor Networks
   - Tree Tensor Networks (TTN)
-  - Projected Entangled Pair States (PEPS)
   - Multiscale Entanglement Renormalization Ansatz (MERA)
 - Numerical Tensor Network algorithms
   - Tensor Renormalization Group (TRG)
