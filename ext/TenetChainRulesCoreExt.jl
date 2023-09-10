@@ -21,19 +21,9 @@ function ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...)
 end
 
 # WARN type-piracy
-function ChainRulesCore.rrule(::typeof(setdiff), s, itrs...)
-    setdiff_pullback(_) = fill(NoTangent(), 2 + length(itrs))
-    return setdiff(s, itrs...), setdiff_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(union), s, itrs...)
-    union_pullback(_) = fill(NoTangent(), 2 + length(itrs))
-    return union(s, itrs...), union_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(intersect), s, itrs...)
-    intersect_pullback(_) = fill(NoTangent(), 2 + length(itrs))
-    return intersect(s, itrs...), intersect_pullback
-end
+@non_differentiable setdiff(s, itrs...)
+@non_differentiable union(s, itrs...)
+@non_differentiable intersect(s, itrs...)
+@non_differentiable symdiff(s, itrs...)
 
 end
