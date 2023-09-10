@@ -19,15 +19,20 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 
 [weakdeps]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
+TenetChainRulesCoreExt = "ChainRulesCore"
 TenetMakieExt = "Makie"
 TenetQuacExt = "Quac"
+TenetZygoteExt = "Zygote"
 
 [compat]
 Bijections = "0.1"
+ChainRulesCore = "1.0"
 Combinatorics = "1.0"
 DeltaArrays = "0.1.1"
 EinExprs = "0.5.2"
@@ -39,4 +44,5 @@ OMEinsum = "0.7"
 Permutations = "0.4"
 Quac = "0.2"
 ValSplit = "0.1"
+Zygote = "0.6"
 julia = "1.9"
