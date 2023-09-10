@@ -21,9 +21,9 @@ function ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...)
 end
 
 # WARN type-piracy
-@non_differentiable setdiff(s, itrs...)
-@non_differentiable union(s, itrs...)
-@non_differentiable intersect(s, itrs...)
-@non_differentiable symdiff(s, itrs...)
+@non_differentiable setdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
+@non_differentiable union(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
+@non_differentiable intersect(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
+@non_differentiable symdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 
 end
