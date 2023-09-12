@@ -3,11 +3,13 @@ module TenetChainRulesCoreExt
 using Tenet
 using ChainRulesCore
 
-ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor} =
+function ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor}
     ProjectTo{T}(; data = ProjectTo(tensor.data), inds = tensor.inds, meta = tensor.meta)
+end
 
-(projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:Tensor} =
+function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:Tensor}
     T(projector.data(dx.data), projector.inds; projector.meta...)
+end
 
 ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), T(Δ, inds; meta...)
 
