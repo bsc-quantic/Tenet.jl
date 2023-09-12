@@ -214,7 +214,7 @@
             @test length(tn.indices) > length(reduced.indices)
 
             # Test that the resulting contraction is the same as the original
-            @test contract(reduced) ≈ contract(contract(A, B; dims = []), C)
+            @test contract(reduced) ≈ contract(contract(A, B; dims = Symbol[]), C)
         end
 
         @testset "index size reduction" begin
