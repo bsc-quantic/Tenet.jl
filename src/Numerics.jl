@@ -29,19 +29,27 @@ for op in [
     @eval Base.$op(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = broadcast($op, a, b)
 end
 
+# NOTE used for marking non-differentiability
+# NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
+__omeinsum_sym2str(x) = String[string(i) for i in x]
+
 """
     contract(a::Tensor[, b::Tensor, dims=nonunique([inds(a)..., inds(b)...])])
 
 Perform tensor contraction operation.
 """
 function contract(a::Tensor, b::Tensor; dims = (∩(inds(a), inds(b))))
-    ia = inds(a)
-    ib = inds(b)
+    ia = inds(a) |> collect
+    ib = inds(b) |> collect
     i = ∩(dims, ia, ib)
 
-    ic = tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))...)
+    ic = setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
 
-    data = EinCode((String.(ia), String.(ib)), String.(ic))(parent(a), parent(b))
+    _ia = __omeinsum_sym2str(ia)
+    _ib = __omeinsum_sym2str(ib)
+    _ic = __omeinsum_sym2str(ic)
+
+    data = EinCode((_ia, _ib), _ic)(parent(a), parent(b))
 
     # TODO merge metadata?
     return Tensor(data, ic)

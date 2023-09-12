@@ -20,6 +20,11 @@ function ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...)
     return T(data, inds; meta...), Tensor_pullback
 end
 
+@non_differentiable copy(tn::TensorNetwork)
+
+# NOTE fix problem with vector generator in `contract`
+@non_differentiable Tenet.__omeinsum_sym2str(x)
+
 # WARN type-piracy
 @non_differentiable setdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 @non_differentiable union(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
