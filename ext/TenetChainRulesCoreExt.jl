@@ -9,6 +9,8 @@ ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor} =
 (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:Tensor} =
     T(projector.data(dx.data), projector.inds; projector.meta...)
 
+ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), T(Δ, inds; meta...)
+
 function ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...)
     Tensor_pullback(Δ) = (NoTangent(), Δ.data, NoTangent())
     return T(data, inds; meta...), Tensor_pullback
