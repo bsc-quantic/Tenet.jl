@@ -11,26 +11,14 @@
         )
     end
 
-    @testset "contract" begin
-        @testset "TensorNetwork" begin
-            tn = rand(TensorNetwork, 2, 3)
+    @testset "Tensor" begin
+        test_frule(Tensor, fill(1.0), Symbol[])
+        test_rrule(Tensor, fill(1.0), Symbol[])
 
-            @test frule((nothing, tn), contract, tn) isa Tuple{Tensor{eltype(tn),0},Tensor{eltype(tn),0}}
-            @test rrule(contract, tn) isa Tuple{Tensor{eltype(tn),0},Function}
+        test_frule(Tensor, fill(1.0, 2), Symbol[:i])
+        test_rrule(Tensor, fill(1.0, 2), Symbol[:i])
 
-            # TODO FiniteDifferences crashes
-            # test_frule(contract, tn)
-            # test_rrule(contract, tn)
-        end
-    end
-
-    @testset "replace" begin
-        using UUIDs: uuid4
-
-        tn = rand(TensorNetwork, 10, 3)
-        mapping = [label => Symbol(uuid4()) for label in inds(tn)]
-
-        # TODO fails in check_result.jl@161 -> `c_actual = collect(Broadcast.materialize(actual))`
-        # test_rrule(replace, tn, mapping...)
+        test_frule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
+        test_rrule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
     end
 end
