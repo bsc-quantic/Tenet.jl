@@ -84,8 +84,6 @@ fig # hide
 # Transformations
 
 ## Hyperindex converter
-!!! warn "Note"
-    This transformation is always used by default when visualizing a `TensorNetwork` with `plot`.
 ```@docs
 Tenet.HyperindConverter
 ```
