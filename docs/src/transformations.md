@@ -62,7 +62,9 @@ set_theme!(resolution=(800,400)) # hide
 sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 72, 73, 74, 75, 76, 83, 84, 85, 94]
 circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format=QuacIO.Qflex(), sites=sites)
 tn = TensorNetwork(circuit)
-transformed_tn = transform(tn, Tenet.RankSimplification)
+
+# Apply transformations to the tensor network
+transformed_tn = transform(tn, [Tenet.AntiDiagonalGauging, Tenet.DiagonalReduction, Tenet.ColumnReduction, Tenet.RankSimplification])
 
 fig = Figure() # hide
 ax1 = Axis(fig[1, 1]) # hide
