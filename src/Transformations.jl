@@ -345,6 +345,10 @@ function find_zero_columns(x; atol = 1e-12)
 end
 
 function find_diag_axes(x; atol = 1e-12)
+    if ndims(parent(x)) == 1 # Skip 1D tensors
+        return []
+    end
+
     # find all the potential diagonals
     potential_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
@@ -367,6 +371,10 @@ function find_diag_axes(x; atol = 1e-12)
 end
 
 function find_anti_diag_axes(x; atol = 1e-12)
+    if ndims(parent(x)) == 1 # Skip 1D tensors
+        return []
+    end
+
     # Find all the potential anti-diagonals
     potential_anti_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
