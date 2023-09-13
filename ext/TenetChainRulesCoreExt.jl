@@ -13,9 +13,9 @@ end
 
 ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), T(Δ, inds; meta...)
 
-_Tensor_pullback(Δ) = (NoTangent(), Δ.data, NoTangent())
-_Tensor_pullback(Δ::AbstractThunk) = _Tensor_pullback(unthunk(Δ))
-ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), _Tensor_pullback
+Tensor_pullback(Δ) = (NoTangent(), Δ.data, NoTangent())
+Tensor_pullback(Δ::AbstractThunk) = Tensor_pullback(unthunk(Δ))
+ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), Tensor_pullback
 
 @non_differentiable copy(tn::TensorNetwork)
 
