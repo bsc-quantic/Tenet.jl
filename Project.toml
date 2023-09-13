@@ -20,11 +20,13 @@ ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 
 [weakdeps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 
 [extensions]
 TenetChainRulesCoreExt = "ChainRulesCore"
+TenetFiniteDifferencesExt = "FiniteDifferences"
 TenetMakieExt = "Makie"
 TenetQuacExt = "Quac"
 
