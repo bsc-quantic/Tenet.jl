@@ -39,6 +39,7 @@ end
     HyperindConverter <: Transformation
 
 Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
+This transformation is always used by default when visualizing a `TensorNetwork` with `plot`.
 """
 struct HyperindConverter <: Transformation end
 
