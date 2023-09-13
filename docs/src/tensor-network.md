@@ -10,7 +10,7 @@ can be represented visually as
 
 ```@raw html
 <figure>
-<img width=500 src="../assets/tn-sketch.svg" alt="Sketch of a Tensor Network">
+<img width=500 src="assets/tn-sketch.svg" alt="Sketch of a Tensor Network">
 <figcaption>Sketch of a Tensor Network</figcaption>
 </figure>
 ```
