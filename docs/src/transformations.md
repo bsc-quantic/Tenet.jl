@@ -77,8 +77,8 @@ hidespines!(ax1) # hide
 hidedecorations!(ax2) # hide
 hidespines!(ax2) # hide
 
-Label(fig[1, 1, Bottom()], "Original Tensor Network") # hide
-Label(fig[1, 2, Bottom()], "Transformed Tensor Network") # hide
+Label(fig[1, 1, Bottom()], "Original") # hide
+Label(fig[1, 2, Bottom()], "Transformed") # hide
 
 fig # hide
 ```
@@ -139,8 +139,8 @@ smooth_annotation!( #hide
     phase_shift = 1.9) #hide
 plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=100),  node_color=[orange, orange, red, :black, :black, :black, :black, :black]) #hide
 
-Label(fig[1, 1, Bottom()], "Original Tensor Network") #hide
-Label(fig[1, 2, Bottom()], "Transformed Tensor Network") #hide
+Label(fig[1, 1, Bottom()], "Original") #hide
+Label(fig[1, 2, Bottom()], "Transformed") #hide
 
 fig #hide
 ```
@@ -199,8 +199,8 @@ smooth_annotation!( #hide
     phase_shift = 0) #hide
 plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=1); node_color=[red, orange, orange, :black, :black, :black, :black, :black]) #hide
 
-Label(fig[1, 1, Bottom()], "Original Tensor Network") #hide
-Label(fig[1, 2, Bottom()], "Transformed Tensor Network") #hide
+Label(fig[1, 1, Bottom()], "Original") #hide
+Label(fig[1, 2, Bottom()], "Transformed") #hide
 
 fig #hide
 ```
@@ -252,8 +252,8 @@ smooth_annotation!( #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 0) #hide
 
-Label(fig[1, 1, Bottom()], "Original Tensor Network") #hide
-Label(fig[1, 2, Bottom()], "Transformed Tensor Network") #hide
+Label(fig[1, 1, Bottom()], "Original") #hide
+Label(fig[1, 2, Bottom()], "Transformed") #hide
 plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_color=[red, orange, orange, :black, :black, :black]) #hide
 
 fig #hide
@@ -305,8 +305,8 @@ smooth_annotation!( #hide
     fluctuation_amplitude = 0.18, #hide
     phase_shift = 0.8) #hide
 
-Label(fig[1, 1, Bottom()], "Original Tensor Network") #hide
-Label(fig[1, 2, Bottom()], "Transformed Tensor Network") #hide
+Label(fig[1, 1, Bottom()], "Original") #hide
+Label(fig[1, 2, Bottom()], "Transformed") #hide
 plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_color=[orange, orange, red, red, red, :black, :black, :black, :black]) #hide
 
 fig #hide
