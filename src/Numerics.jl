@@ -79,8 +79,8 @@ contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs
 Alias for [`contract`](@ref).
 """
 Base.:*(a::Tensor, b::Tensor) = contract(a, b)
-Base.:*(a::Tensor, b) = contract(a, b)
-Base.:*(a, b::Tensor) = contract(a, b)
+Base.:*(a::T, b::Number) where {T<:Tensor} = T(parent(a) * b, inds(a); a.meta...)
+Base.:*(a::Number, b::T) where {T<:Tensor} = T(a * parent(b), inds(b); b.meta...)
 
 LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
