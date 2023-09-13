@@ -39,6 +39,7 @@ end
     HyperindConverter <: Transformation
 
 Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
+This transformation is always used by default when visualizing a `TensorNetwork` with `plot`.
 """
 struct HyperindConverter <: Transformation end
 
@@ -92,7 +93,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # insert COPY tensor
             new_index = Symbol(uuid4())
             data = DeltaArray{N + 1}(ones(size(target, first(inds))))
-            push!(copies, Tensor(data, (new_index, inds...)))
+            push!(copies, Tensor(data, (new_index, inds...), dual = new_index))
 
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
@@ -345,6 +346,9 @@ function find_zero_columns(x; atol = 1e-12)
 end
 
 function find_diag_axes(x; atol = 1e-12)
+    # skip 1D tensors
+    ndims(parent(x)) == 1 && return []
+
     # find all the potential diagonals
     potential_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
@@ -367,6 +371,9 @@ function find_diag_axes(x; atol = 1e-12)
 end
 
 function find_anti_diag_axes(x; atol = 1e-12)
+    # skip 1D tensors
+    ndims(parent(x)) == 1 && return []
+
     # Find all the potential anti-diagonals
     potential_anti_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
 
