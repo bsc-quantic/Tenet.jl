@@ -92,7 +92,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # insert COPY tensor
             new_index = Symbol(uuid4())
             data = DeltaArray{N + 1}(ones(size(target, first(inds))))
-            push!(copies, Tensor(data, (new_index, inds...)))
+            push!(copies, Tensor(data, (new_index, inds...), dual = new_index))
 
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
