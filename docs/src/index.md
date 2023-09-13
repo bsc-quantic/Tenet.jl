@@ -18,7 +18,9 @@ A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at
 A video of its presentation at JuliaCon 2023 can be seen here:
 
 ```@raw html
-<iframe class="youtube-video" width="560" height="315" src="https://www.youtube-nocookie.com/embed/gyufVG56TEQ?si=t8MFW41vey1u5vAm&amp;start=326" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<div class="youtube-video">
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/8BHGtm6FRMk?si=bPXB6bPtK695HFIR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
 ```
 
 ## Features

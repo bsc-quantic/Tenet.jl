@@ -12,7 +12,9 @@ A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at loc
 - **Flexibility** _Extend it to your needs._ 🔧
 - **Performance** _Goes brr... fast._ 🏎️
 
-`Tenet` can be executed both at local environments and on large supercomputers.
+A video of its presentation at JuliaCon 2023 can be seen here:
+
+[![Watch the video](https://img.youtube.com/vi/8BHGtm6FRMk/maxresdefault.jpg)](https://youtu.be/8BHGtm6FRMk)
 
 ## Features
 
