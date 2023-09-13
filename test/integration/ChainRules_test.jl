@@ -12,4 +12,15 @@
         test_frule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
         test_rrule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
     end
+
+    # NOTE fixes some problems on testing, not sure why
+    Base.collect(tn::TensorNetwork) = tensors(tn)
+
+    @testset "TensorNetwork" begin
+        a = Tensor(rand(4, 2), (:i, :j))
+        b = Tensor(rand(2, 3), (:j, :k))
+
+        test_frule(TensorNetwork, Tensor[a, b])
+        test_rrule(TensorNetwork, Tensor[a, b])
+    end
 end
