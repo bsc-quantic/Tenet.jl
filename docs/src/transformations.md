@@ -91,6 +91,10 @@ Tenet.HyperindConverter
 ```
 
 ## Diagonal reduction
+```@docs
+Tenet.DiagonalReduction
+```
+
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
 fig = Figure() #hide
@@ -143,10 +147,6 @@ Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
 
 fig #hide
-```
-
-```@docs
-Tenet.DiagonalReduction
 ```
 
 ## Anti-diagonal reduction
