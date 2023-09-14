@@ -32,11 +32,13 @@ function ChainRulesCore.ProjectTo(tn::T) where {T<:TensorNetwork}
     ProjectTo{T}(; tensors = ProjectTo(tn.tensors), metadata = tn.metadata)
 end
 
-function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {A<:Ansatz,T<:TensorNetwork{A}}
-    TensorNetwork{A}(projector.tensors(dx.tensors); projector.metadata...)
+function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:TensorNetwork}
+    dx.tensors isa NoTangent && return NoTangent()
+    Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
 end
 
 function Base.:+(x::TensorNetwork{A}, Δ::Tangent{TensorNetwork}) where {A<:Ansatz}
+    # TODO match tensors by indices
     tensors = map(+, x.tensors, Δ.tensors)
     TensorNetwork{A}(tensors; x.metadata...)
 end
