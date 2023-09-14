@@ -19,6 +19,8 @@ Plot a [`TensorNetwork`](@ref) as a graph.
   - `inds` Whether to show the index labels. Defaults to `false`.
   - `layout` Algorithm used to map graph vertices to a (2D or 3D) coordinate system.
     The algorithms implemented in the `NetworkLayout` package are recommended.
+  - `labels` Whether to show the tensor labels. Defaults to `false`.
+    Additionally, all the keyword arguments of `GraphMakie.graphplot` are supported.
 """
 function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
