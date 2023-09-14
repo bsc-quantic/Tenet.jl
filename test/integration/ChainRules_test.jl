@@ -17,6 +17,10 @@
     Base.collect(tn::TensorNetwork) = tensors(tn)
 
     @testset "TensorNetwork" begin
+        # TODO it crashes
+        # test_frule(TensorNetwork, Tensor[])
+        # test_rrule(TensorNetwork, Tensor[])
+
         a = Tensor(rand(4, 2), (:i, :j))
         b = Tensor(rand(2, 3), (:j, :k))
 
