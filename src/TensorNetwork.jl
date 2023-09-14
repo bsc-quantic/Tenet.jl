@@ -480,16 +480,12 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-function contract(tn::TensorNetwork; kwargs...)
-    path = einexpr(tn; kwargs...)
+function contract(tn::TensorNetwork; path = einexpr(tn))
+    # TODO does `first` work always?
+    length(path.args) == 0 && return select(tn, inds(path)) |> first
 
-    tn = copy(tn)
-
-    for indices in contractorder(path)
-        contract!(tn, indices)
-    end
-
-    tensors(tn) |> only
+    intermediates = map(subpath -> contract(tn; path = subpath), path.args)
+    contract(intermediates...; dims = suminds(path))
 end
 
 contract!(t::Tensor, tn::TensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
