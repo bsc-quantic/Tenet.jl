@@ -14,7 +14,7 @@ transform!
 ```
 
 # Example: RQC simplification
-Here we show how can we reduce the complexity of the tensor network by applying a tranformation to it. We take as an example the Sycamore circuit from the [Google's quantum supremacy paper](https://www.nature.com/articles/s41586-019-1666-5)
+Here we show how can we reduce the complexity of the tensor network by applying a tranformation to it. We take as an example the Sycamore circuit from the [Google's quantum advantage paper][arute2019quantum](@cite)
 
 ```@setup plot
 using Makie
