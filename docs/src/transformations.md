@@ -1,5 +1,42 @@
 # Transformations
 
+```@setup plot
+using Makie
+Makie.inline!(true)
+
+using CairoMakie
+using Tenet
+using NetworkLayout
+
+function smooth_annotation!(f; color=Makie.RGBAf(110 // 256, 170 // 256, 250 // 256, 60 // 256), xlims=[-2, 2], ylims=[-2, 2], offset_x=0.0, offset_y=0.0, radius_x=1.0, radius_y=1.0, num_waves=5, fluctuation_amplitude=0.1, phase_shift=0.0)
+    ax = Axis(f)
+    hidedecorations!(ax)
+    hidespines!(ax)
+
+    # Define limits of the plot
+    xlims!(ax, xlims...)
+    ylims!(ax, ylims...)
+
+    # Create a perturbed filled shape
+    theta = LinRange(0, 2π, 100)
+
+    fluctuations = fluctuation_amplitude .* sin.(num_waves .* theta .+ phase_shift)
+
+    # Apply the fluctuations and radius scaling
+    perturbed_radius_x = radius_x .+ fluctuations
+    perturbed_radius_y = radius_y .+ fluctuations
+
+    circle_points = [Point2f((perturbed_radius_x[i]) * cos(theta[i]) + offset_x,
+                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in 1:length(theta)]
+
+    poly!(ax, circle_points, color=color, closed=true)
+end
+
+bg_blue = Makie.RGBAf(110 // 256, 170 // 256, 250 // 256, 50 // 256)
+orange = Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
+red = Makie.RGBf(240 // 256, 90 // 256, 70 // 256)
+```
+
 In tensor network computations, it is good practice to apply various transformations to simplify the network structure, reduce computational cost, or prepare the network for further operations. These transformations modify the network's structure locally by permuting, contracting, factoring or truncating tensors.
 
 A crucial reason why these methods are indispensable lies in their ability to drastically reduce the problem size of the contraction path search and also the contraction. This doesn't necessarily involve reducing the maximum rank of the Tensor Network itself, but more importantly, it reduces the size (or rank) of the involved tensors.
@@ -250,46 +287,6 @@ fig #hide
 ## Example: RQC simplification
 
 Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on the Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
-
-```@setup plot
-using Makie
-Makie.inline!(true)
-
-using CairoMakie
-using Tenet
-using NetworkLayout
-
-using Pkg
-Pkg.add("QuacIO")
-
-function smooth_annotation!(f; color=Makie.RGBAf(110 // 256, 170 // 256, 250 // 256, 60 // 256), xlims=[-2, 2], ylims=[-2, 2], offset_x=0.0, offset_y=0.0, radius_x=1.0, radius_y=1.0, num_waves=5, fluctuation_amplitude=0.1, phase_shift=0.0)
-    ax = Axis(f)
-    hidedecorations!(ax)
-    hidespines!(ax)
-
-    # Define limits of the plot
-    xlims!(ax, xlims...)
-    ylims!(ax, ylims...)
-
-    # Create a perturbed filled shape
-    theta = LinRange(0, 2π, 100)
-
-    fluctuations = fluctuation_amplitude .* sin.(num_waves .* theta .+ phase_shift)
-
-    # Apply the fluctuations and radius scaling
-    perturbed_radius_x = radius_x .+ fluctuations
-    perturbed_radius_y = radius_y .+ fluctuations
-
-    circle_points = [Point2f((perturbed_radius_x[i]) * cos(theta[i]) + offset_x,
-                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in 1:length(theta)]
-
-    poly!(ax, circle_points, color=color, closed=true)
-end
-
-bg_blue = Makie.RGBAf(110 // 256, 170 // 256, 250 // 256, 50 // 256) #hide
-orange = Makie.RGBf(240 // 256, 180 // 256, 100 // 256) #hide
-red = Makie.RGBf(240 // 256, 90 // 256, 70 // 256) #hide
-```
 
 ```@example plot
 using QuacIO
