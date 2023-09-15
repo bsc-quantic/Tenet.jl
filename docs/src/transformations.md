@@ -16,11 +16,13 @@ transform!
 ## Transformations
 
 ### Hyperindex converter
+
 ```@docs
 Tenet.HyperindConverter
 ```
 
 ### Diagonal reduction
+
 ```@docs
 Tenet.DiagonalReduction
 ```
@@ -80,11 +82,13 @@ fig #hide
 ```
 
 ### Anti-diagonal reduction
+
 ```@docs
 Tenet.AntiDiagonalGauging
 ```
 
 ### Rank simplification
+
 ```@docs
 Tenet.RankSimplification
 ```
@@ -190,6 +194,7 @@ fig #hide
 ```
 
 ### Split simplification
+
 ```@docs
 Tenet.SplitSimplification
 ```
@@ -242,8 +247,8 @@ plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_
 fig #hide
 ```
 
+## Example: RQC simplification
 
-# Example: RQC simplification
 Here we show how can we reduce the complexity of the tensor network by applying a tranformation to it. We take as an example the Sycamore circuit from the Google's quantum advantage paper[arute2019quantum](@cite).
 
 ```@setup plot
@@ -285,6 +290,7 @@ bg_blue = Makie.RGBAf(110 // 256, 170 // 256, 250 // 256, 50 // 256) #hide
 orange = Makie.RGBf(240 // 256, 180 // 256, 100 // 256) #hide
 red = Makie.RGBf(240 // 256, 90 // 256, 70 // 256) #hide
 ```
+
 ```@example plot
 using QuacIO
 set_theme!(resolution=(800,400)) # hide
