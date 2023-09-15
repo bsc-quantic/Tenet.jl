@@ -4,7 +4,7 @@ In tensor network computations, it is good practice to apply various transformat
 
 A crucial reason why these methods are indispensable lies in their ability to drastically reduce the problem size of the contraction path search and also the contraction. This doesn't necessarily involve reducing the maximum rank of the Tensor Network itself, but more importantly, it reduces the size (or rank) of the involved tensors.
 
-Our approach has been significantly inspired by the ideas presented in the [Quimb](https://quimb.readthedocs.io/) library, explained in [this paper](https://arxiv.org/pdf/2002.01935.pdf).
+Our approach has been significantly inspired by the ideas presented in the [Quimb](https://quimb.readthedocs.io/) library, explained in [this paper](https://arxiv.org/pdf/2002.01935.pdf)[gray2021hyper](@cite).
 
 In Tenet, we provide a set of predefined transformations which you can apply to your `TensorNetwork` using both the `transform`/`transform!` functions.
 
