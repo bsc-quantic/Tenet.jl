@@ -16,8 +16,6 @@ Plot a [`TensorNetwork`](@ref) as a graph.
 
 # Keyword Arguments
 
-  - `layout` Mapping from graph vertices to a (2D or 3D) coordinate system.
-    The algorithms implemented in the `NetworkLayout` package are recommended.
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
   -  The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
