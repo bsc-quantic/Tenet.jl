@@ -249,7 +249,7 @@ fig #hide
 
 ## Example: RQC simplification
 
-Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
+Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on the Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
 
 ```@setup plot
 using Makie
