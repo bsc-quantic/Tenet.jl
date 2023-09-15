@@ -17,8 +17,6 @@ Tensor_pullback(Δ) = (NoTangent(), Δ.data, NoTangent())
 Tensor_pullback(Δ::AbstractThunk) = Tensor_pullback(unthunk(Δ))
 ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), Tensor_pullback
 
-@non_differentiable copy(tn::TensorNetwork)
-
 # NOTE fix problem with vector generator in `contract`
 @non_differentiable Tenet.__omeinsum_sym2str(x)
 
