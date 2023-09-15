@@ -83,14 +83,14 @@ Label(fig[1, 2, Bottom()], "Transformed") # hide
 fig # hide
 ```
 
-# Transformations
+## Transformations
 
-## Hyperindex converter
+### Hyperindex converter
 ```@docs
 Tenet.HyperindConverter
 ```
 
-## Diagonal reduction
+### Diagonal reduction
 ```@docs
 Tenet.DiagonalReduction
 ```
@@ -149,12 +149,12 @@ Label(fig[1, 2, Bottom()], "Transformed") #hide
 fig #hide
 ```
 
-## Anti-diagonal reduction
+### Anti-diagonal reduction
 ```@docs
 Tenet.AntiDiagonalGauging
 ```
 
-## Rank simplification
+### Rank simplification
 ```@docs
 Tenet.RankSimplification
 ```
@@ -205,7 +205,7 @@ Label(fig[1, 2, Bottom()], "Transformed") #hide
 fig #hide
 ```
 
-## Column reduction
+### Column reduction
 
 ```@docs
 Tenet.ColumnReduction
@@ -259,7 +259,7 @@ plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_col
 fig #hide
 ```
 
-## Split simplification
+### Split simplification
 ```@docs
 Tenet.SplitSimplification
 ```
