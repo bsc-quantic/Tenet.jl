@@ -4,7 +4,7 @@ In tensor network computations, it is good practice to apply various transformat
 
 A crucial reason why these methods are indispensable lies in their ability to drastically reduce the problem size of the contraction path search and also the contraction. This doesn't necessarily involve reducing the maximum rank of the Tensor Network itself, but more importantly, it reduces the size (or rank) of the involved tensors.
 
-Our approach has been significantly inspired by the ideas presented in the [Quimb](https://quimb.readthedocs.io/) library, explained in [this paper](https://arxiv.org/pdf/2002.01935.pdf).
+Our approach is based in [gray2021hyper](@cite), which can also be found in [quimb](https://quimb.readthedocs.io/).
 
 In Tenet, we provide a set of predefined transformations which you can apply to your `TensorNetwork` using both the `transform`/`transform!` functions.
 
@@ -249,7 +249,7 @@ fig #hide
 
 ## Example: RQC simplification
 
-Here we show how can we reduce the complexity of the tensor network by applying a tranformation to it. We take as an example the Sycamore circuit from the [Google's quantum supremacy paper](https://www.nature.com/articles/s41586-019-1666-5)
+Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on the Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
 
 ```@setup plot
 using Makie
