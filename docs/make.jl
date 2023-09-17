@@ -43,6 +43,8 @@ makedocs(
         assets = ["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"],
     ),
     plugins = [bib],
+    checkdocs = :exports,
+    warnonly = true,
 )
 
 deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master", push_preview = true)
