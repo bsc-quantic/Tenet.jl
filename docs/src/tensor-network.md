@@ -32,6 +32,7 @@ inds(::TensorNetwork)
 size(::TensorNetwork)
 tensors(::TensorNetwork)
 length(::TensorNetwork)
+ansatz
 ```
 
 ## Modification
@@ -65,8 +66,5 @@ view(::TensorNetwork)
 
 ```@docs
 Base.copy(::TensorNetwork)
-```
-
-```@docs
 Base.rand(::Type{TensorNetwork}, n::Integer, regularity::Integer)
 ```
