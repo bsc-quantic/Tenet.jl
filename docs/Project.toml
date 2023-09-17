@@ -7,6 +7,7 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 NetworkLayout = "46757867-2c16-5918-afeb-47bfcb05e46a"
 QuacIO = "0dfb065c-ad45-4a42-9a50-cb82c165eb0b"
 Tenet = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Documenter = "1"
