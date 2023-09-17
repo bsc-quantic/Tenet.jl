@@ -1,7 +1,7 @@
 name = "Tenet"
 uuid = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
 authors = ["Sergio Sánchez Ramírez <sergio.sanchez.ramirez@bsc.es>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
