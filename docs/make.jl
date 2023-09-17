@@ -11,10 +11,9 @@ using LinearAlgebra
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive = true)
 
-bib = CitationBibliography(joinpath(@__DIR__, "refs.bib"))
+bib = CitationBibliography(joinpath(@__DIR__, "refs.bib"); style = :authoryear)
 
 makedocs(
-    bib,
     modules = [Tenet, Base.get_extension(Tenet, :TenetMakieExt)],
     sitename = "Tenet.jl",
     authors = "Sergio Sánchez Ramírez and contributors",
@@ -43,6 +42,7 @@ makedocs(
         prettyurls = false,
         assets = ["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"],
     ),
+    plugins = [bib],
 )
 
 deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master", push_preview = true)
