@@ -34,7 +34,7 @@ makedocs(
         ],
         "Examples"=>[
             "Google's Quantum Advantage experiment" => "examples/google-rqc.md",
-            "Matrix Product State classifier" => "examples/mps-ml.md",
+            "Automatic Differentiation on Tensor Network contraction" => "examples/ad-tn.md",
         ],
         "Alternatives"=>"alternatives.md",
         "References"=>"references.md",
