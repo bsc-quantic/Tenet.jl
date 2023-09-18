@@ -220,4 +220,53 @@
             @test tensor2_recovered ≈ parent(tensor2)
         end
     end
+
+    @testset "lu" begin
+        data = rand(2, 2, 2)
+        tensor = Tensor(data, (:i, :j, :k))
+
+        @testset "[exceptions]" begin
+            # Throw exception if left_inds is not provided
+            @test_throws ErrorException lu(tensor)
+            # Throw exception if left_inds ∉ labels(tensor)
+            @test_throws ErrorException lu(tensor, (:l,))
+            # throw exception if no right-inds
+            @test_throws ErrorException lu(tensor, (:i,:j,:k))
+        end
+
+        @testset "labels" begin
+            P, L, U = lu(tensor, labels(tensor)[1:2])
+            @test labels(P)[1:2] == labels(tensor)[1:2]
+            @test labels(P)[3:4] == labels(L)[1:2]
+            @test labels(L)[3] == labels(U)[1]
+            @test labels(U)[2] == labels(tensor)[3]
+        end
+
+        @testset "size" begin
+            P, L, U = lu(tensor, labels(tensor)[1:2])
+            @test size(P) == (2, 2, 2, 2)
+            @test size(L) == (2, 2, 2)
+            @test size(U) == (2, 2)
+
+            # Additional test with different dimensions
+            data2 = rand(2, 4, 6, 8)
+            tensor2 = Tensor(data2, (:i, :j, :k, :l))
+            P2, L2, U2 = lu(tensor2, labels(tensor2)[1:2])
+            @test size(P2) == (2, 4, 2, 4)
+            @test size(L2) == (2, 4, 8)
+            @test size(U2) == (8, 6, 8)
+        end
+
+        @testset "[accuracy]" begin
+            P, L, U = lu(tensor, labels(tensor)[1:2])
+            tensor_recovered = contract(contract(P, L), U)
+            @test tensor_recovered ≈ tensor
+
+            data2 = rand(2, 4, 6, 8)
+            tensor2 = Tensor(data2, (:i, :j, :k, :l))
+            P2, L2, U2 = lu(tensor2, labels(tensor2)[1:2])
+            tensor2_recovered = contract(contract(P2, L2), U2)
+            @test tensor2_recovered ≈ tensor2
+        end
+    end
 end
