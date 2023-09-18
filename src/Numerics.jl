@@ -165,3 +165,39 @@ function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind
 
     return Q, R
 end
+
+LinearAlgebra.lu(t::Tensor; left_inds=(), kwargs...) = lu(t, left_inds; kwargs...)
+
+function LinearAlgebra.lu(t::Tensor, left_inds; kwargs...)
+   # TODO better error exception and checks
+   isempty(left_inds) && throw(ErrorException("no left-indices in LU factorization"))
+   left_inds ⊆ labels(t) || throw(ErrorException("all left-indices must be in $(labels(t))"))
+
+   right_inds = setdiff(labels(t), left_inds)
+   isempty(right_inds) && throw(ErrorException("no right-indices in LU factorization"))
+
+   # permute array
+   tensor = permutedims(t, (left_inds..., right_inds...))
+   data = reshape(parent(tensor), prod(i -> size(t, i), left_inds), prod(i -> size(t, i), right_inds))
+
+   # compute LU
+   L, U, p = lu(data; kwargs...)
+
+   # build permutation matrix
+   P = Matrix{eltype(data)}(I, size(L, 1), size(L, 1))
+   P = P[invperm(p), :]
+
+   # tensorify results
+   L = reshape(L, ([size(t, ind) for ind in left_inds]..., size(L, 2)))
+   U = reshape(U, (size(U, 1), [size(t, ind) for ind in right_inds]...))
+   P = reshape(P, (append!([size(t, ind) for ind in left_inds], [size(t, ind) for ind in left_inds])...))
+
+   shared_inds_PL = (Symbol(uuid4()), Symbol(uuid4()))
+   shared_inds_LU = Symbol(uuid4())
+
+   P = Tensor(P, (left_inds..., shared_inds_PL...))
+   L = Tensor(L, (shared_inds_PL..., shared_inds_LU))
+   U = Tensor(U, (shared_inds_LU, right_inds...))
+
+   return P, L, U
+end
