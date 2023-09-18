@@ -171,9 +171,9 @@ LinearAlgebra.lu(t::Tensor; left_inds=(), kwargs...) = lu(t, left_inds; kwargs..
 function LinearAlgebra.lu(t::Tensor, left_inds; kwargs...)
    # TODO better error exception and checks
    isempty(left_inds) && throw(ErrorException("no left-indices in LU factorization"))
-   left_inds ⊆ labels(t) || throw(ErrorException("all left-indices must be in $(labels(t))"))
+   left_inds ⊆ inds(t) || throw(ErrorException("all left-indices must be in $(inds(t))"))
 
-   right_inds = setdiff(labels(t), left_inds)
+   right_inds = setdiff(inds(t), left_inds)
    isempty(right_inds) && throw(ErrorException("no right-indices in LU factorization"))
 
    # permute array
