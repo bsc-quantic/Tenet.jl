@@ -2,7 +2,7 @@
     @testset "Constructors" begin
         @testset "Number" begin
             tensor = Tensor(1.0)
-            @test inds(tensor) == ()
+            @test isempty(inds(tensor))
             @test parent(tensor) == fill(1.0)
         end
 
@@ -10,7 +10,7 @@
             data = ones(2, 2, 2)
             tensor = Tensor(data, [:i, :j, :k])
 
-            @test inds(tensor) == (:i, :j, :k)
+            @test inds(tensor) == [:i, :j, :k]
             @test parent(tensor) === data
 
             @test_throws DimensionMismatch Tensor(zeros(2, 3), (:i, :i))
@@ -20,7 +20,7 @@
     @testset "copy" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test parent(tensor) == parent(copy(tensor))
-        @test inds(tensor) === inds(copy(tensor))
+        @test inds(tensor) == inds(copy(tensor))
 
         @test copy(view(tensor, :i => 1)) isa Tensor
         @test parent(copy(view(tensor, :i => 1))) isa Array
@@ -59,10 +59,10 @@
 
     @testset "Base.replace" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-        @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
+        @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == [:u, :v, :w]
         @test parent(replace(tensor, :i => :u, :j => :v, :k => :w)) === parent(tensor)
 
-        @test inds(replace(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
+        @test inds(replace(tensor, :a => :u, :b => :v, :c => :w)) == [:i, :j, :k]
         @test parent(replace(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
     end
 
@@ -122,7 +122,7 @@
         tensor = Tensor(data, (:i, :j, :k))
         perm = (3, 1, 2)
 
-        @test permutedims(tensor, perm) |> inds == (:k, :i, :j)
+        @test permutedims(tensor, perm) |> inds == [:k, :i, :j]
         @test permutedims(tensor, perm) |> parent == permutedims(data, perm)
 
         newtensor = Tensor(similar(data), (:a, :b, :c))
@@ -195,7 +195,7 @@
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j))
 
-            @test transpose(tensor) |> inds == (:j, :i)
+            @test transpose(tensor) |> inds == [:j, :i]
             @test transpose(tensor) |> ndims == 2
 
             @test isapprox(only(transpose(tensor) * tensor), tr(transpose(data) * data))
@@ -207,26 +207,26 @@
         tensor = Tensor(data, (:i, :j, :k))
 
         let new = expand(tensor, label = :x, axis = 1)
-            @test inds(new) == (:x, :i, :j, :k)
+            @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
         let new = expand(tensor, label = :x, axis = 3)
-            @test inds(new) == (:i, :j, :x, :k)
+            @test inds(new) == [:i, :j, :x, :k]
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
         let new = expand(tensor, label = :x, axis = 1, size = 2, method = :zeros)
-            @test inds(new) == (:x, :i, :j, :k)
+            @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor
             @test selectdim(new, :x, 2) == Tensor(zeros(size(data)...), inds(tensor))
         end
 
         let new = expand(tensor, label = :x, axis = 1, size = 2, method = :repeat)
-            @test inds(new) == (:x, :i, :j, :k)
+            @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor
             @test selectdim(new, :x, 2) == tensor

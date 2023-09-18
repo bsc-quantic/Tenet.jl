@@ -1,23 +1,26 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
 using EinExprs
+using ImmutableArrays
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    inds::NTuple{N,Symbol}
+    inds::ImmutableVector{Symbol}
 
-    function Tensor{T,N,A}(data::A, inds::NTuple{N,Symbol}) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor{T,N,A}(data::A, inds::AbstractVector) where {T,N,A<:AbstractArray{T,N}}
+        length(inds) == N ||
+            throw(ArgumentError("ndims(data) [$(ndims(data))] must be equal to length(inds) [$(length(inds))]"))
         all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(collect(inds))) ||
             throw(DimensionMismatch("nonuniform size of repeated indices"))
 
-        new{T,N,A}(data, inds)
+        new{T,N,A}(data, ImmutableArray(inds))
     end
 end
 
-Tensor(data, inds::Vector{Symbol}) = Tensor(data, tuple(inds...))
-Tensor(data::A, inds::NTuple{N,Symbol}) where {T,N,A<:AbstractArray{T,N}} = Tensor{T,N,A}(data, inds)
+Tensor(data::A, inds::AbstractVector{Symbol}) where {T,N,A<:AbstractArray{T,N}} = Tensor{T,N,A}(data, inds)
+Tensor(data::A, inds::NTuple{N,Symbol}) where {T,N,A<:AbstractArray{T,N}} = Tensor{T,N,A}(data, collect(inds))
 
-Tensor(data::AbstractArray{T,0}) where {T} = Tensor(data, ())
+Tensor(data::AbstractArray{T,0}) where {T} = Tensor(data, Symbol[])
 Tensor(data::Number) = Tensor(fill(data))
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
@@ -29,7 +32,7 @@ end
 # TODO pass new inds
 function Base.similar(t::Tensor{_,N}, ::Type{T}) where {_,T,N}
     if N == 0
-        return Tensor(similar(parent(t), T), ())
+        return Tensor(similar(parent(t), T), Symbol[])
     else
         similar(t, T, size(t)...)
     end

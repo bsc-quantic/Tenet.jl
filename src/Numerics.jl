@@ -58,7 +58,7 @@ function contract(a::Tensor; dims = nonunique(inds(a)))
     ia = inds(a)
     i = ∩(dims, ia)
 
-    ic = tuple(setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))...)
+    ic = setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))
 
     data = EinCode((String.(ia),), String.(ic))(parent(a))
 

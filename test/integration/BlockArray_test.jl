@@ -51,7 +51,7 @@
             contracted_block_tensor = contract(block_tensor1, block_tensor2)
 
             @test parent(contracted_block_tensor) isa BlockArray
-            @test contracted_block_tensor |> inds == (:i, :k)
+            @test contracted_block_tensor |> inds == [:i, :k]
             @test contracted_block_tensor |> blocksizes == ([3, 1], [2, 2])
             @test Array(parent(contracted_block_tensor)) ≈ parent(contracted_tensor)
         end
@@ -66,7 +66,7 @@
 
             contracted_tensor = contract(tensor, block_tensor)
 
-            @test contracted_tensor |> inds == (:i, :k)
+            @test contracted_tensor |> inds == [:i, :k]
             @test (contracted_tensor|>parent|>blocksizes)[2] == [2, 2]
             @test Array(parent(contracted_tensor)) ≈ parent(contract(tensor, Tensor(data2, [:j, :k])))
         end
