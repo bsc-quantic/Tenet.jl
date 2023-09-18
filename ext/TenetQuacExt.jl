@@ -28,7 +28,7 @@ function Tenet.TensorNetwork(circuit::Circuit)
             (from, to)
         end |> x -> zip(x...) |> Iterators.flatten |> collect
 
-        tensor = Tensor(array, tuple(inds...); gate = gate)
+        tensor = Tensor(array, tuple(inds...))
         push!(tensors, tensor)
     end
 

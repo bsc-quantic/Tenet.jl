@@ -159,7 +159,9 @@ function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
     end
 
     return TensorNetwork{A}(
-        filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
+        # TODO revise this
+        #filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
+        tensors(tn);
         plug = layer_plug,
         interlayer,
         meta...,
@@ -196,10 +198,6 @@ function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantu
 
     # rename inner indices of B to avoid hyperindices
     replace!(B, [i => Symbol(uuid4()) for i in inds(B, :inner)]...)
-
-    # TODO refactor this part to be compatible with more layers
-    foreach(tensor -> tensor.meta[:layer] = 1, tensors(A))
-    foreach(tensor -> tensor.meta[:layer] = 2, tensors(B))
 
     combined_plug = merge(plug(A), plug(B))
 

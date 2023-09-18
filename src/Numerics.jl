@@ -51,7 +51,6 @@ function contract(a::Tensor, b::Tensor; dims = (∩(inds(a), inds(b))))
 
     data = EinCode((_ia, _ib), _ic)(parent(a), parent(b))
 
-    # TODO merge metadata?
     return Tensor(data, ic)
 end
 
@@ -63,7 +62,6 @@ function contract(a::Tensor; dims = nonunique(inds(a)))
 
     data = EinCode((String.(ia),), String.(ic))(parent(a))
 
-    # TODO merge metadata
     return Tensor(data, ic)
 end
 
@@ -79,8 +77,8 @@ contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs
 Alias for [`contract`](@ref).
 """
 Base.:*(a::Tensor, b::Tensor) = contract(a, b)
-Base.:*(a::T, b::Number) where {T<:Tensor} = T(parent(a) * b, inds(a); a.meta...)
-Base.:*(a::Number, b::T) where {T<:Tensor} = T(a * parent(b), inds(b); b.meta...)
+Base.:*(a::T, b::Number) where {T<:Tensor} = T(parent(a) * b, inds(a))
+Base.:*(a::Number, b::T) where {T<:Tensor} = T(a * parent(b), inds(b))
 
 LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 

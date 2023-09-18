@@ -1,10 +1,9 @@
 @testset "Tensor" begin
     @testset "Constructors" begin
         @testset "Number" begin
-            tensor = Tensor(1.0, tags = Set(["TEST"]))
+            tensor = Tensor(1.0)
             @test inds(tensor) == ()
             @test parent(tensor) == fill(1.0)
-            @test hastag(tensor, "TEST")
         end
 
         @testset "Array" begin
@@ -20,12 +19,8 @@
 
     @testset "copy" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-        @test tensor !== copy(tensor)
-        @test parent(tensor) === parent(copy(tensor))
-        @test inds(tensor) == inds(copy(tensor))
+        @test parent(tensor) == parent(copy(tensor))
         @test inds(tensor) === inds(copy(tensor))
-        @test tensor.meta == copy(tensor).meta
-        @test tensor.meta !== copy(tensor).meta
 
         @test copy(view(tensor, :i => 1)) isa Tensor
         @test parent(copy(view(tensor, :i => 1))) isa Array
@@ -63,21 +58,12 @@
     end
 
     @testset "Base.replace" begin
-        # no :alias in meta
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == (:u, :v, :w)
         @test parent(replace(tensor, :i => :u, :j => :v, :k => :w)) === parent(tensor)
 
         @test inds(replace(tensor, :a => :u, :b => :v, :c => :w)) == (:i, :j, :k)
         @test parent(replace(tensor, :a => :u, :b => :v, :c => :w)) === parent(tensor)
-
-        # :alias in meta
-        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k); alias = Dict(:left => :i, :right => :j, :up => :k))
-
-        replaced_tensor = replace(tensor, :i => :u, :j => :v, :k => :w)
-        @test inds(replaced_tensor) == (:u, :v, :w)
-        @test parent(replaced_tensor) === parent(tensor)
-        @test replaced_tensor.meta[:alias] == Dict(:left => :u, :right => :v, :up => :w)
     end
 
     @testset "dim" begin
@@ -138,7 +124,6 @@
 
         @test permutedims(tensor, perm) |> inds == (:k, :i, :j)
         @test permutedims(tensor, perm) |> parent == permutedims(data, perm)
-        @test permutedims(tensor, perm).meta !== tensor.meta
 
         newtensor = Tensor(similar(data), (:a, :b, :c))
         permutedims!(newtensor, tensor, perm)
@@ -172,11 +157,10 @@
     @testset "adjoint" begin
         @testset "Vector" begin
             data = rand(Complex{Float64}, 2)
-            tensor = Tensor(data, (:i,); test = "TEST")
+            tensor = Tensor(data, (:i,))
 
             @test adjoint(tensor) |> inds == inds(tensor)
             @test adjoint(tensor) |> ndims == 1
-            @test adjoint(tensor).meta == tensor.meta
 
             @test isapprox(only(tensor' * tensor), data' * data)
         end
@@ -185,11 +169,10 @@
             using LinearAlgebra: tr
 
             data = rand(Complex{Float64}, 2, 2)
-            tensor = Tensor(data, (:i, :j); test = "TEST")
+            tensor = Tensor(data, (:i, :j))
 
             @test adjoint(tensor) |> inds == inds(tensor)
             @test adjoint(tensor) |> ndims == 2
-            @test adjoint(tensor).meta == tensor.meta
 
             @test isapprox(only(tensor' * tensor), tr(data' * data))
         end
@@ -198,11 +181,10 @@
     @testset "transpose" begin
         @testset "Vector" begin
             data = rand(Complex{Float64}, 2)
-            tensor = Tensor(data, (:i,); test = "TEST")
+            tensor = Tensor(data, (:i,))
 
             @test transpose(tensor) |> inds == inds(tensor)
             @test transpose(tensor) |> ndims == 1
-            @test transpose(tensor).meta == tensor.meta
 
             @test isapprox(only(transpose(tensor) * tensor), transpose(data) * data)
         end
@@ -211,11 +193,10 @@
             using LinearAlgebra: tr
 
             data = rand(Complex{Float64}, 2, 2)
-            tensor = Tensor(data, (:i, :j); test = "TEST")
+            tensor = Tensor(data, (:i, :j))
 
             @test transpose(tensor) |> inds == (:j, :i)
             @test transpose(tensor) |> ndims == 2
-            @test transpose(tensor).meta == tensor.meta
 
             @test isapprox(only(transpose(tensor) * tensor), tr(transpose(data) * data))
         end

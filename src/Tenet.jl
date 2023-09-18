@@ -4,7 +4,6 @@ include("Helpers.jl")
 
 include("Tensor.jl")
 export Tensor, contract, dim, expand
-export tags, hastag, tag!, untag!
 
 include("Numerics.jl")
 

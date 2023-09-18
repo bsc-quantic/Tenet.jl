@@ -206,7 +206,7 @@
     end
 
     @testset "Base.replace!" begin
-        t_ij = Tensor(zeros(2, 2), (:i, :j); tags = Set{String}(["TEST"]))
+        t_ij = Tensor(zeros(2, 2), (:i, :j))
         t_ik = Tensor(zeros(2, 2), (:i, :k))
         t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
         t_lm = Tensor(zeros(2, 2), (:l, :m))
@@ -226,8 +226,6 @@
             @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
             @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
             @test only(select(tn, (:u, :x, :y))) == replace(t_ilm, mapping...)
-
-            @test hastag(only(select(tn, (:u, :v))), "TEST")
         end
 
         @testset "replace tensors" begin

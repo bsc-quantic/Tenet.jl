@@ -29,7 +29,6 @@
 
         transform!(tn, HyperindConverter)
         @test isempty(inds(tn, :hyper))
-        @test any(t -> get(t.meta, :dual, nothing) == :i && parent(t) isa DeltaArray, tensors(tn))
 
         # TODO @test issetequal(neighbours())
     end

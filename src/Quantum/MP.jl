@@ -101,9 +101,8 @@ function MatrixProduct{P,B}(
                 iinds[i]
             end
         end
-        alias = Dict(dir => label for (dir, label) in zip(dirs, inds))
 
-        Tensor(array, inds; alias = alias)
+        Tensor(array, inds)
     end
 
     return TensorNetwork{MatrixProduct{P,B}}(tensors; χ, plug = P, interlayer, metadata...)

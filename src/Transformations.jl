@@ -43,6 +43,7 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 """
 struct HyperindConverter <: Transformation end
 
+# TODO look for alternative to marking transformed tensors
 function transform!(tn::TensorNetwork, ::HyperindConverter)
     for index in inds(tn, :hyper)
         # dimensionality of `index`
@@ -64,7 +65,7 @@ function transform!(tn::TensorNetwork, ::HyperindConverter)
         # insert COPY tensor
         N = length(new_indices)
         data = DeltaArray{N}(ones(m))
-        tensor = Tensor(data, new_indices; dual = index)
+        tensor = Tensor(data, new_indices)
         push!(tn, tensor)
     end
 end
@@ -93,7 +94,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # insert COPY tensor
             new_index = Symbol(uuid4())
             data = DeltaArray{N + 1}(ones(size(target, first(inds))))
-            push!(copies, Tensor(data, (new_index, inds...), dual = new_index))
+            push!(copies, Tensor(data, (new_index, inds...)))
 
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
@@ -106,7 +107,6 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             target = Tensor(
                 data,
                 map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
-                target.meta...,
             )
 
             return (; target = target, copies = copies)
