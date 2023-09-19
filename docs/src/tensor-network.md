@@ -32,7 +32,7 @@ inds(::TensorNetwork)
 size(::TensorNetwork)
 tensors(::TensorNetwork)
 length(::TensorNetwork)
-ansatz
+domain
 ```
 
 ## Modification

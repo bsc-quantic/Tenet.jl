@@ -9,8 +9,8 @@ include("Numerics.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, select, slice!
+export Domain, domain
 export contract, contract!
-export Ansatz, ansatz, Arbitrary
 
 include("Transformations.jl")
 export transform, transform!

@@ -72,11 +72,6 @@ Base.merge(@nospecialize(A::Type{<:NamedTuple}), @nospecialize(Bs::Type{<:NamedT
     foldl((acc, B) -> Tuple{fieldtypes(acc)...,B...}, Iterators.map(fieldtypes, Bs); init = A),
 }
 
-function superansatzes(T)
-    S = supertype(T)
-    return T === Ansatz ? (T,) : (T, superansatzes(S)...)
-end
-
 # NOTE from https://stackoverflow.com/q/54652787
 function nonunique(x)
     uniqueindexes = indexin(unique(x), x)

@@ -35,10 +35,10 @@ function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:TensorNetw
     Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
 end
 
-function Base.:+(x::TensorNetwork{A}, Δ::Tangent{TensorNetwork}) where {A<:Ansatz}
+function Base.:+(x::TensorNetwork{D}, Δ::Tangent{TensorNetwork}) where {D}
     # TODO match tensors by indices
     tensors = map(+, x.tensors, Δ.tensors)
-    TensorNetwork{A}(tensors; x.metadata...)
+    TensorNetwork{D}(tensors; x.metadata...)
 end
 
 function ChainRulesCore.frule((_, Δ), T::Type{<:TensorNetwork}, tensors; metadata...)

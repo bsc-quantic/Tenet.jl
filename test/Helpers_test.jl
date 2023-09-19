@@ -27,8 +27,4 @@
               merge(A, N, B) ===
               NamedTuple{(:a, :b),Tuple{Int,Float64}}
     end
-
-    @testset "superansatzes" begin
-        @test Tenet.superansatzes(Arbitrary) === (Arbitrary, Ansatz)
-    end
 end

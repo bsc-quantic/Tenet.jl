@@ -5,76 +5,88 @@ using OMEinsum
 using ValSplit
 
 """
-    Ansatz
+    Domain
 
-Type representing the predefined form of the Tensor Network.
+Type representing the extra fields of the Tensor Network.
 """
-abstract type Ansatz end
+abstract type Domain end
+
+Base.fieldnames(::D) where {D<:Domain} = fieldnames(D)
+Base.fieldnames(::Type{<:Domain}) = ()
+inheritfieldnames(::D) where {D<:Domain} = inheritfieldnames(D)
+@generated inheritfieldnames(D::Type{<:Domain}) = :((fieldnames(supertype(D))..., fieldnames(D)...))
+
+Base.fieldtypes(::D) where {D<:Domain} = fieldtypes(D)
+Base.fieldtypes(::Type{<:Domain}) = ()
+inheritfieldtypes(::D) where {D<:Domain} = inheritfieldtypes(D)
+@generated inheritfieldtypes(D::Type{<:Domain}) = :((fieldtypes(supertype(D))..., fieldtypes(D)...))
+
+function checkdomain end
 
 """
-    Arbitrary
-
-Tensor Networks without a predefined form.
-"""
-abstract type Arbitrary <: Ansatz end
-
-# NOTE currently, these are implementation details
-function checkmeta end
-function metadata end
-
-"""
-    TensorNetwork{Ansatz}
+    TensorNetwork{Domain}
 
 Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
-struct TensorNetwork{A<:Ansatz,M<:NamedTuple}
+struct TensorNetwork{D<:Domain,F<:NamedTuple}
     indices::Dict{Symbol,Vector{Int}}
     tensors::Vector{Tensor}
-    metadata::M
+    attr::F
 
-    function TensorNetwork{A}(tensors; metadata...) where {A}
+    function TensorNetwork{D}(tensors; attr...) where {D}
         indices = reduce(enumerate(tensors); init = Dict{Symbol,Vector{Int}}([])) do dict, (i, tensor)
             mergewith(vcat, dict, Dict([index => [i] for index in inds(tensor)]))
         end
 
-        # Check for inconsistent dimensions
+        # check dimension inconsistencies
         for (index, idxs) in indices
             allequal(Iterators.map(i -> size(tensors[i], index), idxs)) ||
-                throw(DimensionMismatch("Different sizes specified for index $index"))
+                throw(DimensionMismatch("Different dimensions specified for index $index"))
         end
 
-        M = Tenet.metadata(A)
-        metadata = M((; metadata...))
+        F = NamedTuple{inheritfieldnames(D),Tuple{inheritfieldtypes(D)...}}
+        attr = F((; attr...))
 
-        tn = new{A,M}(indices, tensors, metadata)
+        tn = new{D,F}(indices, tensors, attr)
+        checkdomain(tn)
 
-        checkansatz(tn)
         return tn
     end
 end
 
-TensorNetwork{A}(; metadata...) where {A<:Ansatz} = TensorNetwork{A}(Tensor[]; metadata...)
-
-# ansatz defaults to `Arbitrary`
-TensorNetwork(args...; kwargs...) = TensorNetwork{Arbitrary}(args...; kwargs...)
+TensorNetwork{D}(; attr...) where {D<:Domain} = TensorNetwork{D}(Tensor[]; attr...)
+TensorNetwork(args...; kwargs...) = TensorNetwork{Domain}(args...; kwargs...)
 
 # TODO maybe rename it as `convert` method?
-TensorNetwork{A}(tn::TensorNetwork{B}; metadata...) where {A,B} =
-    TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
+# TensorNetwork{A}(tn::TensorNetwork{B}; attr...) where {A,B} = TensorNetwork{A}(tensors(tn); merge(tn.attr, attr)...)
 
-# TODO do sth to skip checkansatz? like @inbounds
-function checkansatz(tn::TensorNetwork{A}) where {A<:Ansatz}
-    for T in superansatzes(A)
-        checkmeta(T, tn) || throw(ErrorException("\"$T\" metadata is not valid"))
+"""
+    domain(::TensorNetwork{Domain})
+    domain(::Type{<:TensorNetwork{Domain}})
+
+Return the `Domain` of a [`TensorNetwork`](@ref).
+"""
+domain(::TensorNetwork{D}) where {D} = D
+domain(::Type{<:TensorNetwork{D}}) where {D} = D
+
+# TODO do sth to skip `checkdomain`? like `@inbounds`
+checkdomain(tn::TensorNetwork{Domain}) = nothing
+@generated function inheritcheckdomain(tn::TensorNetwork)
+    D = domain(tn)
+
+    # top recursive bound on Domain
+    D === Domain && return quote
+        @invoke checkdomain(tn::TensorNetwork{D})
+    end
+
+    # recursively add `checkdomain` calls to parent types
+    supercheck = @invoke inheritcheckdomain(tn::TensorNetwork{supertype(D)})
+    quote
+        $(supercheck...)
+        checkdomain(tn::TensorNetwork{D})
     end
 end
-
-checkmeta(::Type{<:Ansatz}, ::TensorNetwork) = true
-checkmeta(tn::TensorNetwork{T}) where {T<:Ansatz} = all(A -> checkmeta(A, tn), superansatzes(T))
-
-metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
-metadata(T::Type{<:Arbitrary}) = metadata(supertype(T))
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::TensorNetwork) =
@@ -86,15 +98,6 @@ Base.show(io::IO, tn::TensorNetwork) =
 Return a shallow copy of the [`TensorNetwork`](@ref).
 """
 Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.metadata)...)
-
-"""
-    ansatz(::TensorNetwork{Ansatz})
-    ansatz(::Type{<:TensorNetwork{Ansatz}})
-
-Return the `Ansatz` of a [`TensorNetwork`](@ref) type or object.
-"""
-ansatz(::Type{<:TensorNetwork{A}}) where {A} = A
-ansatz(::TensorNetwork{A}) where {A} = A
 
 """
     tensors(tn::TensorNetwork)
@@ -138,14 +141,14 @@ Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])],
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
-Base.getindex(tn::TensorNetwork, key::Symbol) = tn.metadata[key]
+Base.getindex(tn::TensorNetwork, key::Symbol) = tn.attr[key]
 Base.fieldnames(tn::T) where {T<:TensorNetwork} = fieldnames(T)
 Base.propertynames(tn::TensorNetwork{A,N}) where {A,N} = tuple(fieldnames(tn)..., fieldnames(N)...)
 Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
     if hasfield(T, name)
         getfield(tn, name)
-    elseif hasfield(fieldtype(T, :metadata), name)
-        getfield(getfield(tn, :metadata), name)
+    elseif hasfield(fieldtype(T, :attr), name)
+        getfield(getfield(tn, :attr), name)
     else
         throw(KeyError(name))
     end
@@ -485,22 +488,22 @@ contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn;
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
-struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
+struct TNSampler{D<:Domain,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{D}}
     parameters::NT
 
-    TNSampler{A}(; kwargs...) where {A} = new{A,typeof(values(kwargs))}(values(kwargs))
+    TNSampler{D}(; kwargs...) where {D} = new{D,typeof(values(kwargs))}(values(kwargs))
 end
 
 Base.getproperty(obj::TNSampler{A,<:NamedTuple{K}}, name::Symbol) where {A,K} =
     name ∈ K ? getfield(obj, :parameters)[name] : getfield(obj, name)
 Base.get(obj::TNSampler, name, default) = get(getfield(obj, :parameters), name, default)
 
-Base.eltype(::TNSampler{A}) where {A<:Ansatz} = TensorNetwork{A}
+Base.eltype(::TNSampler{D}) where {D<:Domain} = TensorNetwork{A}
 
-Base.rand(A::Type{<:Ansatz}; kwargs...) = rand(Random.default_rng(), A; kwargs...)
-Base.rand(rng::AbstractRNG, ::Type{A}; kwargs...) where {A<:Ansatz} = rand(rng, TNSampler{A}(; kwargs...))
+Base.rand(D::Type{<:Domain}; kwargs...) = rand(Random.default_rng(), D; kwargs...)
+Base.rand(rng::AbstractRNG, ::Type{D}; kwargs...) where {D<:Domain} = rand(rng, TNSampler{D}(; kwargs...))
 
-Base.convert(::Type{T}, tn::TensorNetwork{A}) where {T<:Ansatz,A<:T} =
-    TensorNetwork{T}(tensors(tn); metadata(T)(tn.metadata)...)
+Base.convert(::Type{T}, tn::TensorNetwork{D}) where {T<:Domain,D<:T} =
+    TensorNetwork{T}(tensors(tn); NamedTuple{inheritfieldnames(T),Tuple{inheritfieldtypes(T)...}}(tn.attr)...)
 
-Base.convert(::Type{T}, tn::TensorNetwork{A}; metadata...) where {A<:Ansatz,T<:A} = TensorNetwork{T}(tn; metadata...)
+Base.convert(::Type{T}, tn::TensorNetwork{D}; attr...) where {D<:Domain,T<:D} = TensorNetwork{T}(tn; attr...)
