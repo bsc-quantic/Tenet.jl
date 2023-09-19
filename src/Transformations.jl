@@ -43,30 +43,29 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 """
 struct HyperindConverter <: Transformation end
 
-# TODO look for alternative to marking transformed tensors
+function hyperflatten(tn::TensorNetwork)
+    map(inds(tn, :hyper)) do hyperindex
+        n = select(tn, hyperindex) |> length
+        hyperindex => map(1:n) do i
+            Symbol("$hyperindex$i")
+        end
+    end |> Dict
+end
+
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in inds(tn, :hyper)
-        # dimensionality of `index`
-        m = size(tn, index)
+    for (hyperindex, flatindices) in hyperflatten(tn)
+        # insert COPY tensor
+        array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
+        tensor = Tensor(array, flatindices)
+        push!(tn, tensor)
 
-        # unlink tensors
-        tensors = pop!(tn, index)
-
-        # replace hyperindex for new (non-hyper)index
-        new_indices = Symbol[]
-        for (i, tensor) in enumerate(tensors)
-            label = Symbol("$index$i")
-            push!(new_indices, label)
-
-            tensor = replace(tensor, index => label)
+        # replace hyperindex for new flat Indices
+        # TODO move this part to `replace!`?
+        tensors = pop!(tn, hyperindex)
+        for (flatindex, tensor) in zip(flatindices, tensors)
+            tensor = replace(tensor, hyperindex => flatindex)
             push!(tn, tensor)
         end
-
-        # insert COPY tensor
-        N = length(new_indices)
-        data = DeltaArray{N}(ones(m))
-        tensor = Tensor(data, new_indices)
-        push!(tn, tensor)
     end
 end
 
