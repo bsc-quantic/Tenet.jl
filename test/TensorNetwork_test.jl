@@ -14,7 +14,7 @@
 
             @test only(tensors(tn)) === tensor
 
-            @test length(tn) == 1
+            @test length(tn.tensors) == 1
             @test issetequal(inds(tn), [:i, :j])
             @test size(tn) == Dict(:i => 2, :j => 3)
             @test issetequal(inds(tn, :open), [:i, :j])
@@ -31,7 +31,7 @@
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
 
         push!(tn, tensor)
-        @test length(tn) == 1
+        @test length(tn.tensors) == 1
         @test issetequal(inds(tn), [:i, :j, :k])
         @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
         @test issetequal(inds(tn, :open), [:i, :j, :k])
@@ -64,7 +64,7 @@
             tn = TensorNetwork([tensor])
 
             @test pop!(tn, tensor) === tensor
-            @test length(tn) == 0
+            @test length(tn.tensors) == 0
             @test isempty(tensors(tn))
             @test isempty(size(tn))
         end
@@ -74,7 +74,7 @@
             tn = TensorNetwork([tensor])
 
             @test only(pop!(tn, :i)) === tensor
-            @test length(tn) == 0
+            @test length(tn.tensors) == 0
             @test isempty(tensors(tn))
             @test isempty(size(tn))
         end
@@ -84,7 +84,7 @@
             tn = TensorNetwork([tensor])
 
             @test only(pop!(tn, (:i, :j))) === tensor
-            @test length(tn) == 0
+            @test length(tn.tensors) == 0
             @test isempty(tensors(tn))
             @test isempty(size(tn))
         end
@@ -96,7 +96,7 @@
         tn = TensorNetwork([tensor])
 
         @test delete!(tn, tensor) === tn
-        @test length(tn) == 0
+        @test length(tn.tensors) == 0
         @test isempty(tensors(tn))
         @test isempty(size(tn))
     end
@@ -116,7 +116,7 @@
     @testset "rand" begin
         tn = rand(TensorNetwork, 10, 3)
         @test tn isa TensorNetwork{Arbitrary}
-        @test length(tn) == 10
+        @test length(tn.tensors) == 10
     end
 
     @testset "copy" begin

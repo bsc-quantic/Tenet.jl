@@ -114,8 +114,6 @@ const MPO = MatrixProduct{Operator}
 tensors(ψ::TensorNetwork{MatrixProduct{P,Infinite}}, site::Int, args...) where {P<:Plug} =
     tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
 
-Base.length(ψ::TensorNetwork{MatrixProduct{P,Infinite}}) where {P<:Plug} = Inf
-
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more
 # function contractpath(a::TensorNetwork{<:MatrixProductState}, b::TensorNetwork{<:MatrixProductState})
 #     !issetequal(sites(a), sites(b)) && throw(ArgumentError("both tensor networks are expected to have same sites"))
