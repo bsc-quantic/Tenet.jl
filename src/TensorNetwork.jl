@@ -77,16 +77,8 @@ metadata(::Type{<:Ansatz}) = NamedTuple{(),Tuple{}}
 metadata(T::Type{<:Arbitrary}) = metadata(supertype(T))
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) = print(io, "$(typeof(tn))(#tensors=$(length(tn)), #inds=$(length(tn.indices)))")
-
-"""
-    length(tn::TensorNetwork)
-
-Return the number of `Tensor`s in the [`TensorNetwork`](@ref).
-
-See also: [`tensors`](@ref), [`size`](@ref).
-"""
-Base.length(x::TensorNetwork) = length(tensors(x))
+Base.show(io::IO, tn::TensorNetwork) =
+    print(io, "$(typeof(tn))(#tensors=$(length(tn.tensors)), #inds=$(length(tn.indices)))")
 
 """
     copy(tn::TensorNetwork)

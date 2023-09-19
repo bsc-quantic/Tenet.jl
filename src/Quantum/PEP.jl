@@ -120,8 +120,6 @@ const PEPO = ProjectedEntangledPair{Operator}
 tensors(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}, site::Int, args...) where {P<:Plug} =
     tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
 
-Base.length(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}) where {P<:Plug} = Inf
-
 # TODO normalize
 # TODO let choose the orthogonality center
 # TODO different input/output physical dims
