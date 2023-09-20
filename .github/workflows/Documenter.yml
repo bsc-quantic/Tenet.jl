@@ -20,19 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: '1.9'
       - name: Add Julia registries
         run: |
           using Pkg
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
           pkg"registry add General"
         shell: julia {0}
-      - name: Install dependencies
-        run: julia --color=yes --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      - name: Build and deploy
+      - uses: julia-actions/julia-docdeploy@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
-        run: julia --color=yes --project=docs/ docs/make.jl
-      
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
