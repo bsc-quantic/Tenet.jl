@@ -180,6 +180,22 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
 end
 
 """
+    select(tn::TensorNetwork, i)
+
+Return tensors whose indices match with the list of indices `i`.
+"""
+select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = filter(Base.Fix1(⊆, i) ∘ inds, tensors(tn))
+select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
+
+"""
+    in(tensor::Tensor, tn::TensorNetwork)
+
+Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
+This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
+"""
+Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, inds(tensor)))
+
+"""
     append!(tn::TensorNetwork, tensors::AbstractVecOrTuple{<:Tensor})
     append!(A::TensorNetwork, B::TensorNetwork)
 
@@ -312,22 +328,6 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork
 
     return tn
 end
-
-"""
-    select(tn::TensorNetwork, i)
-
-Return tensors whose indices match with the list of indices `i`.
-"""
-select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = filter(Base.Fix1(⊆, i) ∘ inds, tensors(tn))
-select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
-
-"""
-    in(tensor::Tensor, tn::TensorNetwork)
-
-Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
-This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
-"""
-Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, inds(tensor)))
 
 """
     slice!(tn::TensorNetwork, index::Symbol, i)
