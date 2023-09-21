@@ -188,6 +188,13 @@ select(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol}) = filter(Base.Fix1(⊆,
 select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
 
 """
+    getindex(tn::TensorNetwork, i::Symbol...; mul = 1)
+
+Return the tensor whose indices match `i`. If more than one
+"""
+Base.getindex(tn::TensorNetwork, i::Symbol...; mul = 1) = select(tn, i)[mul]
+
+"""
     in(tensor::Tensor, tn::TensorNetwork)
 
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
