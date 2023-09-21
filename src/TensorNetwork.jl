@@ -199,7 +199,9 @@ select(tn::TensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices
 
 Return the tensor whose indices match `i`. If more than one
 """
-Base.getindex(tn::TensorNetwork, i::Symbol...; mul = 1) = select(tn, i)[mul]
+function Base.getindex(tn::TensorNetwork, i::Symbol...; mul = 1)
+    Iterators.drop(Iterators.filter(tensor -> issetequal(i, inds(tensor)), tn.tensors), mul - 1) |> first
+end
 
 """
     in(tensor::Tensor, tn::TensorNetwork)
