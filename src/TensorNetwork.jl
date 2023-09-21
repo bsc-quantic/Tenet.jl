@@ -158,6 +158,11 @@ If `index` is set, return the dimensionality of `index`. This is equivalent to `
 Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
 
+"""
+    eltype(tn::TensorNetwork)
+
+Return the `eltype` of the [`Tensor`](@ref) resulting from contracting the [`TensorNetwork`](@ref).
+"""
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 """
