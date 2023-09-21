@@ -13,13 +13,15 @@ abstract type Domain end
 
 Base.fieldnames(::D) where {D<:Domain} = fieldnames(D)
 Base.fieldnames(::Type{<:Domain}) = ()
+inheritfieldnames(::Type{Domain}) = ()
 inheritfieldnames(::D) where {D<:Domain} = inheritfieldnames(D)
-@generated inheritfieldnames(D::Type{<:Domain}) = :((fieldnames(supertype(D))..., fieldnames(D)...))
+inheritfieldnames(D::Type{<:Domain}) = (fieldnames(supertype(D))..., fieldnames(D)...)
 
 Base.fieldtypes(::D) where {D<:Domain} = fieldtypes(D)
 Base.fieldtypes(::Type{<:Domain}) = ()
+inheritfieldtypes(::Type{Domain}) = ()
 inheritfieldtypes(::D) where {D<:Domain} = inheritfieldtypes(D)
-@generated inheritfieldtypes(D::Type{<:Domain}) = :((fieldtypes(supertype(D))..., fieldtypes(D)...))
+inheritfieldtypes(D::Type{<:Domain}) = (fieldtypes(supertype(D))..., fieldtypes(D)...)
 
 function checkdomain end
 
