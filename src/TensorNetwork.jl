@@ -204,19 +204,22 @@ Base.in(tensor::Tensor, tn::TensorNetwork) = in(tensor, select(tn, inds(tensor))
 
 """
     append!(tn::TensorNetwork, tensors::AbstractVecOrTuple{<:Tensor})
-    append!(A::TensorNetwork, B::TensorNetwork)
 
 Add a list of tensors to the first `TensorNetwork`.
 
-See also: [`push!`](@ref)
+See also: [`push!`](@ref), [`merge!`](@ref)
 """
 Base.append!(tn::TensorNetwork, t::AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
-function Base.append!(A::TensorNetwork, B::TensorNetwork)
-    append!(A, tensors(B))
-    # TODO define behaviour
-    # merge!(A.metadata, B.metadata)
-    return A
-end
+
+"""
+    merge!(self::TensorNetwork, other::TensorNetwork...)
+
+Merge `other` into `self`.
+
+See also: [`append!`](@ref)
+"""
+Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(other))
+Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init = self)
 
 function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
