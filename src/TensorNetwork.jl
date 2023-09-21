@@ -63,6 +63,21 @@ TensorNetwork(args...; kwargs...) = TensorNetwork{Domain}(args...; kwargs...)
 # TODO maybe rename it as `convert` method?
 # TensorNetwork{A}(tn::TensorNetwork{B}; attr...) where {A,B} = TensorNetwork{A}(tensors(tn); merge(tn.attr, attr)...)
 
+Base.fieldnames(::T) where {T<:TensorNetwork} = fieldnames(T)
+Base.fieldnames(::Type{TensorNetwork}) = (:indices, :tensors)
+Base.fieldnames(::Type{<:TensorNetwork{D}}) where {D<:Domain} = (fieldnames(TensorNetwork)..., fieldnames(D)...)
+Base.fieldtypes(::T) where {T<:TensorNetwork} = fieldtypes(T)
+Base.fieldtypes(::Type{TensorNetwork}) = (Dict{Symbol,Vector{Int}}, Vector{Tensor})
+Base.fieldtypes(::Type{<:TensorNetwork{D}}) where {D<:Domain} = (fieldtypes(TensorNetwork)..., fieldtypes(D)...)
+Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
+    if hasfield(T, name)
+        getfield(tn, name)
+    elseif hasfield(fieldtype(T, :attr), name)
+        getfield(getfield(tn, :attr), name)
+    else
+        throw(KeyError(name))
+    end
+
 """
     domain(::TensorNetwork{Domain})
     domain(::Type{<:TensorNetwork{Domain}})
@@ -142,18 +157,6 @@ Base.size(tn::TensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
 Base.size(tn::TensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
-
-Base.getindex(tn::TensorNetwork, key::Symbol) = tn.attr[key]
-Base.fieldnames(tn::T) where {T<:TensorNetwork} = fieldnames(T)
-Base.propertynames(tn::TensorNetwork{A,N}) where {A,N} = tuple(fieldnames(tn)..., fieldnames(N)...)
-Base.getproperty(tn::T, name::Symbol) where {T<:TensorNetwork} =
-    if hasfield(T, name)
-        getfield(tn, name)
-    elseif hasfield(fieldtype(T, :attr), name)
-        getfield(getfield(tn, :attr), name)
-    else
-        throw(KeyError(name))
-    end
 
 """
     push!(tn::TensorNetwork, tensor::Tensor)
