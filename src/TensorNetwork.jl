@@ -106,8 +106,10 @@ checkdomain(tn::TensorNetwork{Domain}) = nothing
 end
 
 Base.summary(io::IO, x::TensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::TensorNetwork) =
-    print(io, "$(typeof(tn))(#tensors=$(length(tn.tensors)), #inds=$(length(tn.indices)))")
+Base.show(io::IO, tn::TensorNetwork{Domain}) =
+    print(io, "TensorNetwork(#tensors=$(length(tn.tensors)), #inds=$(length(tn.indices)))")
+Base.show(io::IO, tn::TensorNetwork{D}) where {D<:Domain} =
+    print(io, "TensorNetwork{$D}(#tensors=$(length(tn.tensors)), #inds=$(length(tn.indices)))")
 
 """
     copy(tn::TensorNetwork)
