@@ -99,7 +99,7 @@ Base.show(io::IO, tn::TensorNetwork) =
 
 Return a shallow copy of the [`TensorNetwork`](@ref).
 """
-Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.metadata)...)
+Base.copy(tn::TensorNetwork{A}) where {A} = TensorNetwork{A}(copy(tn.tensors); deepcopy(tn.attr)...)
 
 """
     tensors(tn::TensorNetwork)
