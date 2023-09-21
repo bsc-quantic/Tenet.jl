@@ -88,7 +88,7 @@ domain(::TensorNetwork{D}) where {D} = D
 domain(::Type{<:TensorNetwork{D}}) where {D} = D
 
 # TODO do sth to skip `checkdomain`? like `@inbounds`
-checkdomain(tn::TensorNetwork{Domain}) = nothing
+checkdomain(::TensorNetwork{Domain}) = nothing
 @generated function inheritcheckdomain(tn::TensorNetwork)
     D = domain(tn)
 
