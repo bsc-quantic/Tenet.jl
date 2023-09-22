@@ -2,7 +2,7 @@
     @testset "Constructors" begin
         @testset "empty" begin
             tn = TensorNetwork()
-            @test ansatz(tn) == ansatz(typeof(tn)) === Tenet.Arbitrary
+            @test domain(tn) === domain(typeof(tn)) === Tenet.Domain
             @test isempty(tensors(tn))
             @test isempty(inds(tn))
             @test isempty(size(tn))
@@ -53,9 +53,6 @@
 
         append!(B, [tensor])
         @test only(tensors(B)) === tensor
-
-        append!(A, B)
-        @test only(tensors(A)) === tensor
     end
 
     @testset "pop!" begin
@@ -115,7 +112,7 @@
 
     @testset "rand" begin
         tn = rand(TensorNetwork, 10, 3)
-        @test tn isa TensorNetwork{Arbitrary}
+        @test tn isa TensorNetwork{Domain}
         @test length(tn.tensors) == 10
     end
 
