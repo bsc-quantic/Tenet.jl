@@ -1,36 +1,131 @@
 using LinearAlgebra
 using UUIDs: uuid4
 using ValSplit
-using Bijections
+using Bijections: Bijection
 using EinExprs: inds
 
 """
-    Quantum <: Ansatz
+    Quantum <: Domain
 
 Tensor Network `Ansatz` that has a notion of sites and directionality (input/output).
 """
-abstract type Quantum <: Arbitrary end
+struct Quantum <: Domain end
 
-# NOTE Storing `Plug` type on type parameters is not compatible with `Composite` ansatz. Use Holy traits instead.
-metadata(::Type{Quantum}) = merge(metadata(supertype(Quantum)), @NamedTuple begin
-    plug::Type{<:Plug}
-    interlayer::Vector{Bijection{Int,Symbol}}
-end)
+# NOTE info about the fields:
+# - :layer => stores names of virtual indices belonging to each layer
+# - :plug => stores names of physical indices belonging to each interlayer
+# - :ansatz => stores ansatz trait of each layer
+Base.fieldnames(::Type{Quantum}) = (:layer, :plug, :ansatz)
+Base.fieldtypes(::Type{Quantum}) = (Vector{Set{Symbol}}, Vector{Bijection{Int,Symbol}}, Vector{Ansatz})
 
-function checkmeta(::Type{Quantum}, tn::TensorNetwork)
-    # TODO run this check depending if State or Operator
-    length(tn.interlayer) >= 1 || return false
+function checkdomain(tn::TensorNetwork{Quantum})
+    # correct number of layers
+    length(tn.layer) == length(tn.ansatz) ||
+        throw(ArgumentError(":layer [$(length(tn.layer))] and :ansatz [$(length(tn.ansatz))] must have equal length"))
 
-    # meta's indices exist
-    all(bij -> values(bij) ⊆ inds(tn), tn.interlayer) || return false
+    # correct number of interlayers
+    S = socket(tn)
+    if S isa Property
+        length(tn.plug) == length(tn.layer) - 1
+    elseif S isa State
+        length(tn.plug) == length(tn.layer)
+    elseif S isa Operator
+        length(tn.plug) == length(tn.layer) + 1
+    else
+        false
+    end || throw(
+        ArgumentError(
+            "number of plugs [$(length(tn.plug))] does not match number of layers [$(length(tn.plug))] for socket $S",
+        ),
+    )
 
-    return true
+    # virtual indices exist
+    all(is -> is ⊆ inds(tn), tn.layer) || throw(ArgumentError("all virtual indices in :layer must exist"))
+
+    # physical indices exist
+    all(is -> is ⊆ inds(tn), Iterators.map(values, tn.plug))
+
+    # TODO virtual indices from different layers are not mixed
+
+    # TODO call `checkansatz` on each layer
 end
 
+EinExprs.inds(tn::TensorNetwork{Quantum}, ::Val{:physical}) = unique(Iterators.flatten(Iterators.map(values, tn.plug)))
+EinExprs.inds(tn::TensorNetwork{Quantum}, ::Val{:virtual}) = setdiff(inds(tn, Val(:all)), inds(tn, Val(:physical)))
+EinExprs.inds(tn::TensorNetwork{Quantum}, ::Val{:plug}, site) = last(tn.plug)[site]
+function EinExprs.inds(tn::TensorNetwork{Quantum}, ::Val{:out})
+    socket(tn) isa State ||
+        socket(tn) isa Operator ||
+        throw(ErrorException("Must be a State or Operator to have output indices"))
+    last(tn.plug) |> values
+end
+function EinExprs.inds(tn::TensorNetwork{Quantum}, ::Val{in})
+    socket(tn) isa Operator || throw(ErrorException("Must be an Operator in order to have input indices"))
+    first(tn.plug) |> values
+end
+
+function Base.replace!(tn::TensorNetwork{Quantum}, old_new::Pair{Symbol,Symbol})
+    # replace indices in tensor network
+    Base.@invoke replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
+
+    old, new = old_new
+
+    # replace indices in layers
+    for layer in tn.layer
+        replace!(layer, old_new)
+    end
+
+    # replace indices in interlayers
+    for plug in Iterators.filter(∋(old) ∘ values, tn.plug)
+        site = plug(old)
+        delete!(plug, site)
+        plug[site] = new
+    end
+
+    return tn
+end
+
+"""
+    nlayers(tn::TensorNetwork{Quantum})
+
+Return the number of layers of a [`Quantum`](@ref) [`TensorNetwork`](@ref).
+"""
+nlayers(tn::TensorNetwork{Quantum}) = length(tn.layer)
+
+"""
+    sites(tn::TensorNetwork{Quantum})
+
+Return the sites in which the [`TensorNetwork`](@ref) acts.
+"""
+sites(tn::TensorNetwork{Quantum}) = collect(mapreduce(keys, ∪, tn.plug))
+
+"""
+    adjoint(tn::TensorNetwork{Quantum})
+
+Return the adjoint [`TensorNetwork`](@ref).
+
+# Implementation details
+
+The tensors are not transposed, just `conj` is applied to them.
+"""
+Base.adjoint(tn::TensorNetwork{Quantum}) = TensorNetwork{Quantum}(
+    map(conj, tensors(tn));
+    layer = reverse(tn.layer),
+    plug = reverse(tn.plug),
+    ansatz = reverse(tn.ansatz),
+)
+
 abstract type Boundary end
-abstract type Open <: Boundary end
-abstract type Periodic <: Boundary end
-abstract type Infinite <: Boundary end
+struct Open <: Boundary end
+struct Periodic <: Boundary end
+struct Infinite <: Boundary end
+
+abstract type Socket end
+struct Property <: Socket end
+struct State <: Socket end
+struct Operator <: Socket end
+
+abstract type Ansatz{S<:Socket,B<:Boundary} end
 
 """
     boundary(::TensorNetwork)
@@ -43,216 +138,120 @@ Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Bounda
   - `Infinite`
 """
 function boundary end
-boundary(::T) where {T<:TensorNetwork} = boundary(T)
-boundary(::Type{T}) where {T<:TensorNetwork} = boundary(ansatz(T))
-
-abstract type Plug end
-abstract type Property <: Plug end
-abstract type State <: Plug end
-abstract type Operator <: Plug end
+boundary(::Type{<:Ansatz{S,B}}) where {S,B} = B()
+boundary(tn::TensorNetwork{Quantum}) = boundary(first(tn.ansatz)) # TODO is this ok?
 
 """
-    plug(::TensorNetwork{<:Quantum})
-    plug(::Type{<:TensorNetwork})
+    socket(::TensorNetwork{Quantum})
+    socket(::Type{<:TensorNetwork})
 
-Return the `Plug` type of the [`TensorNetwork`](@ref). The following `Plug`s are defined in `Tenet`:
+Return the `Socket` type of the [`TensorNetwork`](@ref). The following `Socket`s are defined in `Tenet`:
 
   - `State` Only outputs.
   - `Operator` Inputs and outputs.
   - `Property` No inputs nor outputs.
 """
-function plug end
-plug(tn::TensorNetwork{<:Quantum}) = tn.plug
-plug(T::Type{<:TensorNetwork}) = plug(ansatz(T))
+function socket end
+socket(::Ansatz{S}) where {S} = S()
+socket(::Type{<:Ansatz{S}}) where {S} = S()
+socket(tn::TensorNetwork{Quantum}) = foldl(merge, Iterators.map(socket, tn.ansatz))
 
+Base.merge(::State, ::State) = Property()
+Base.merge(::State, ::Operator) = State()
+Base.merge(::Operator, ::State) = State()
+Base.merge(::Operator, ::Operator) = Operator()
+
+# TODO finish `tensors` methods
 """
-    sites(tn::TensorNetwork{<:Quantum})
-
-Return the sites in which the [`TensorNetwork`](@ref) acts.
-"""
-sites(tn::TensorNetwork) = collect(mapreduce(keys, ∪, tn.interlayer))
-
-EinExprs.inds(tn::TensorNetwork, ::Val{:plug}) = unique(Iterators.flatten(Iterators.map(values, tn.interlayer)))
-EinExprs.inds(tn::TensorNetwork, ::Val{:plug}, site) = last(tn.interlayer)[site] # inds(tn, Val(:in), site) ∪ inds(tn, Val(:out), site)
-EinExprs.inds(tn::TensorNetwork, ::Val{:virtual}) = setdiff(inds(tn, Val(:all)), inds(tn, Val(:plug)))
-
-"""
-    tensors(tn::TensorNetwork{<:Quantum}, site::Integer)
+    tensors(tn::TensorNetwork{Quantum}, site::Integer)
 
 Return the `Tensor` connected to the [`TensorNetwork`](@ref) on `site`.
 
 See also: [`sites`](@ref).
 """
-tensors(tn::TensorNetwork{<:Quantum}, site::Integer, args...) = tensors(plug(tn), tn, site, args...)
-tensors(::Type{State}, tn::TensorNetwork{<:Quantum}, site) = select(tn, inds(tn, :plug, site)) |> only
-@valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{<:Quantum}, site, dir::Symbol) =
+tensors(tn::TensorNetwork{Quantum}, site::Integer, args...) = tensors(socket(tn), tn, site, args...)
+tensors(::Type{State}, tn::TensorNetwork{Quantum}, site) = select(tn, inds(tn, :plug, site)) |> only
+@valsplit 4 tensors(T::Type{Operator}, tn::TensorNetwork{Quantum}, site, dir::Symbol) =
     throw(MethodError(sites, "dir=$dir not recognized"))
 
-function Base.replace!(tn::TensorNetwork{<:Quantum}, old_new::Pair{Symbol,Symbol})
-    # replace indices in tensor network
-    Base.@invoke replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
-
-    old, new = old_new
-
-    # replace indices in interlayers (quantum-specific)
-    for interlayer in Iterators.filter(∋(old) ∘ image, tn.interlayer)
-        site = interlayer(old)
-        delete!(interlayer, site)
-        interlayer[site] = new
-    end
-
-    return tn
-end
-
-## `Composite` type
 """
-    Composite <: Quantum
+    layer(tn::TensorNetwork{Quantum}, i)
 
-A [`Quantum`](@ref) ansatz that represents several connected layers of [`Quantum`](@ref) [`TensorNetwork`](@ref)s.
-
-# Implementation details
-
-Introduces a field named `layermeta` that stores the metadata of each layer.
-
-See also: [`hcat`](@ref).
+Return a [`Quantum`](@ref) [`TensorNetwork`](@ref) that is a shallow copy of the ``i``-th layer of a .
 """
-abstract type Composite{Ts<:Tuple} <: Quantum end
-Composite(@nospecialize(Ts::Type{<:Quantum}...)) = Composite{Tuple{Ts...}}
-Base.fieldtypes(::Type{Composite{Ts}}) where {Ts} = fieldtypes(Ts)
+function layer(tn::TensorNetwork{Quantum}, i)
+    1 <= i <= length(tn.layer) || throw(ArgumentError("Layer $i is out of bounds"))
 
-metadata(::Type{<:Composite}) = merge(metadata(Quantum), @NamedTuple begin
-    layermeta::Vector{Dict{Symbol,Any}}
-end)
-
-function checkmeta(As::Type{<:Composite}, tn::TensorNetwork)
-    for (i, A) in enumerate(fieldtypes(As))
-        tn_view = layers(tn, i)
-        checkansatz(tn_view)
-    end
-
-    return true
-end
-
-Base.length(@nospecialize(T::Type{<:Composite})) = length(fieldtypes(T))
-
-# TODO create view of TN
-"""
-    layers(tn::TensorNetwork{<:Composite}, i)
-
-Return a [`TensorNetwork`](@ref) that is shallow copy of the ``i``-th layer of a `Composite` Tensor Network.
-"""
-function layers(tn::TensorNetwork{As}, i) where {As<:Composite}
-    A = fieldtypes(As)[i]
-    layer_plug = tn.layermeta[i][:plug] # TODO more programmatic access (e.g. plug(tn, i)?)
-    meta = tn.layermeta[i]
-
-    if layer_plug <: State && 1 < i < length(fieldtypes(As))
+    # select plugs
+    S = socket(tn.ansatz[i])
+    if S <: State && i ∈ [1, length(nlayers(tn))]
         throw(ErrorException("Layer #$i is a state but it is not a extreme layer"))
     end
 
-    interlayer = if layer_plug <: State
-        i == 1 ? [first(tn.interlayer)] : [last(tn.interlayer)]
-    elseif layer_plug <: Operator
+    plug = if S <: State
+        i == 1 ? [first(tn.plug)] : [last(tn.plug)]
+    elseif S <: Operator
         # shift if first layer is a state
-        tn.layermeta[1][:plug] <: State && (i = i - 1)
-        tn.interlayer[i:i+1]
+        socket(tn.ansatz[1]) <: State && (i = i - 1)
+        tn.plug[i:i+1]
     end
 
-    return TensorNetwork{A}(
-        # TODO revise this
-        #filter(tensor -> get(tensor.meta, :layer, nothing) == i, tensors(tn));
-        tensors(tn);
-        plug = layer_plug,
-        interlayer,
-        meta...,
+    TensorNetwork{Quantum}(
+        filter(tn.tensors) do tensor
+            !isdisjoint(inds(tensor), tn.layer[i])
+        end;
+        layer = [tn.layer[i]],
+        plug,
+        ansatz = [tn.ansatz[i]],
     )
 end
 
-Base.merge(::Type{State}, ::Type{State}) = Property
-Base.merge(::Type{State}, ::Type{Operator}) = State
-Base.merge(::Type{Operator}, ::Type{State}) = State
-Base.merge(::Type{Operator}, ::Type{Operator}) = Operator
-
-# TODO implement hcat when QA or QB <: Composite
 """
-    hcat(A::TensorNetwork{<:Quantum}, B::TensorNetwork{<:Quantum}...)::TensorNetwork{<:Composite}
+    merge!(self::TensorNetwork{Quantum}, other::TensorNetwork{Quantum})
 
-Join [`TensorNetwork`](@ref)s into one by matching sites.
+Fuse `other` into `self` by stacking layers.
 """
-function Base.hcat(A::TensorNetwork{QA}, B::TensorNetwork{QB}) where {QA<:Quantum,QB<:Quantum}
-    issetequal(sites(A), sites(B)) ||
-        throw(DimensionMismatch("A and B must contain the same set of sites in order to connect them"))
+function Base.merge!(self::TensorNetwork{Quantum}, other::TensorNetwork{Quantum})
+    # TODO check Socket combinations
 
-    # rename connector indices
-    newinds = Dict([s => Symbol(uuid4()) for s in sites(A)])
+    other = copy(other)
 
-    B = copy(B)
+    # reindex `other` to avoid accidental hyperindices with `self`
+    reindexvirtual!(other)
 
-    for site in sites(B)
-        a = inds(A, :plug, site)
-        b = inds(B, :plug, site)
-        if a != b && a ∉ inds(B)
-            replace!(B, b => a)
-        end
-    end
+    # TODO reindex `other` to connect to `self` socket
+    replace!(other, map(sites(other)) do site
+        first(other.plug)[site] => last(self.plug)[site]
+    end...)
 
-    # rename inner indices of B to avoid hyperindices
-    replace!(B, [i => Symbol(uuid4()) for i in inds(B, :inner)]...)
+    # merge attributes
+    append!(self.layer, other.layer)
+    append!(self.plug, other.plug)
+    append!(self.ansatz, other.ansatz)
 
-    combined_plug = merge(plug(A), plug(B))
-
-    # merge tensors and indices
-    interlayer = [A.interlayer..., collect(Iterators.drop(B.interlayer, 1))...]
-
-    # TODO merge metadata?
-    layermeta = Dict{Symbol,Any}[
-        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(A.metadata))),
-        Dict(Iterators.filter(((k, v),) -> k !== :interlayer, pairs(B.metadata))),
-    ]
-
-    return TensorNetwork{Composite(QA, QB)}([tensors(A)..., tensors(B)...]; plug = combined_plug, interlayer, layermeta)
+    @invoke merge!(self::TensorNetwork, other::TensorNetwork)
 end
 
-Base.hcat(tns::TensorNetwork...) = reduce(hcat, tns)
-
-"""
-    adjoint(tn::TensorNetwork{<:Quantum})
-
-Return the adjoint [`TensorNetwork`](@ref).
-
-# Implementation details
-
-The tensors are not transposed, just `conj!` is applied to them.
-"""
-function Base.adjoint(tn::TensorNetwork{<:Quantum})
-    tn = deepcopy(tn)
-
-    reverse!(tn.interlayer)
-    foreach(conj!, tensors(tn))
-
-    return tn
+function reindexvirtual!(tn::TensorNetwork{Quantum})
+    conflict = [i => Symbol(uuid4()) for i in inds(tn, :virtual)]
+    replace!(tn, conflict...)
 end
 
-contract(a::TensorNetwork{<:Quantum}, b::TensorNetwork{<:Quantum}; kwargs...) = contract(hcat(a, b); kwargs...)
+contract(a::TensorNetwork{Quantum}, b::TensorNetwork{Quantum}; kwargs...) = contract(merge(a, b); kwargs...)
 
-# TODO look for more stable ways
 """
-    norm(ψ::TensorNetwork{<:Quantum}, p::Real=2)
+    norm(ψ::TensorNetwork{Quantum})
 
-Compute the ``p``-norm of a [`Quantum`](@ref) [`TensorNetwork`](@ref).
+Compute the ``2``-norm of a [`Quantum`](@ref) [`TensorNetwork`](@ref).
 
 See also: [`normalize!`](@ref).
 """
-function LinearAlgebra.norm(ψ::TensorNetwork{<:Quantum}, p::Real = 2; kwargs...)
-    p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
-
-    return contract(hcat(ψ, ψ'); kwargs...) |> only |> sqrt |> abs
-end
+LinearAlgebra.norm(ψ::TensorNetwork{Quantum}, kwargs...) = contract(merge(ψ, ψ'); kwargs...) |> only |> sqrt |> abs
 
 """
-    normalize!(ψ::TensorNetwork{<:Quantum}, p::Real = 2; insert::Union{Nothing,Int} = nothing)
+    normalize!(ψ::TensorNetwork{Quantum}; insert::Union{Nothing,Int} = nothing)
 
-In-place normalize the [`TensorNetwork`](@ref).
+In-place normalize a [`TensorNetwork`](@ref).
 
 # Keyword Arguments
 
@@ -265,17 +264,13 @@ In-place normalize the [`TensorNetwork`](@ref).
 
 See also: [`norm`](@ref).
 """
-function LinearAlgebra.normalize!(
-    ψ::TensorNetwork{<:Quantum},
-    p::Real = 2;
-    insert::Union{Nothing,Int} = nothing,
-    kwargs...,
-)
+function LinearAlgebra.normalize!(ψ::TensorNetwork{Quantum}; insert::Union{Nothing,Int} = nothing, kwargs...)
+    # TODO what if `nlayers` > 1?
     norm = LinearAlgebra.norm(ψ; kwargs...)
 
     if isnothing(insert)
         # method 1: divide all tensors by (√v)^(1/n)
-        n = length(ψ)
+        n = length(tensors(ψ))
         norm ^= 1 / n
         for tensor in tensors(ψ)
             tensor ./= norm
@@ -304,6 +299,8 @@ function marginal(ψ, site)
     index = inds(ψ, :plug, site)
     sum(tensor, inds = setdiff(inds(tensor), [index]))
 end
+
+Base.rand(A::Type{<:Ansatz}; kwargs...) = rand(Random.default_rng(), A; kwargs)
 
 include("MP.jl")
 include("PEP.jl")

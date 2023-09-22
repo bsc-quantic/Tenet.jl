@@ -16,9 +16,9 @@ include("Transformations.jl")
 export transform, transform!
 
 include("Quantum/Quantum.jl")
-export Quantum
-export Boundary, boundary, Open, Periodic, Infinite
-export Plug, plug, Property, State, Operator
+export Quantum, Ansatz, ansatz
+export boundary, Open, Periodic, Infinite
+export socket, Property, State, Operator
 export sites, fidelity
 
 export MatrixProduct, MPS, MPO

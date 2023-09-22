@@ -229,6 +229,7 @@ See also: [`append!`](@ref)
 """
 Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(other))
 Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init = self)
+Base.merge(self::TensorNetwork, others::TensorNetwork...) = merge!(copy(self), others...)
 
 function Base.popat!(tn::TensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
@@ -324,6 +325,8 @@ end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
+    old == new && return tn
+
     new ∈ inds(tn) && throw(ArgumentError("new symbol $new is already present"))
 
     push!(tn.indices, new => pop!(tn.indices, old))

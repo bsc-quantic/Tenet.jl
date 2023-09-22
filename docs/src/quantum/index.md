@@ -15,7 +15,7 @@ sites
 ```
 
 ```@docs
-tensors(::TensorNetwork{<:Quantum}, ::Integer)
+tensors(::TensorNetwork{Quantum}, ::Integer)
 ```
 
 ```@docs
@@ -31,14 +31,14 @@ adjoint
 ## Concatenation
 
 ```@docs
-hcat(::TensorNetwork{<:Quantum}, ::TensorNetwork{<:Quantum})
+hcat(::TensorNetwork{Quantum}, ::TensorNetwork{Quantum})
 ```
 
 ## Norm
 
 ```@docs
-LinearAlgebra.norm(::TensorNetwork{<:Quantum}, p::Real)
-LinearAlgebra.normalize!(::TensorNetwork{<:Quantum}, ::Real)
+LinearAlgebra.norm(::TensorNetwork{Quantum}, p::Real)
+LinearAlgebra.normalize!(::TensorNetwork{Quantum}, ::Real)
 ```
 
 ## Fidelity

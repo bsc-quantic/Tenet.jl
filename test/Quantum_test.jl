@@ -1,5 +1,5 @@
 @testset "Quantum" begin
-    using Bijections
+    using Bijections: Bijection
 
     struct MockState <: Quantum end
     Tenet.plug(::Type{MockState}) = State
@@ -12,26 +12,26 @@
     state = TensorNetwork{MockState}(
         [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];
         plug = State,
-        interlayer = [Bijection(Dict([1 => :i, 2 => :j]))],
+        plug = [Bijection(Dict([1 => :i, 2 => :j]))],
     )
 
     operator = TensorNetwork{MockOperator}(
         [Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))];
         plug = Operator,
-        interlayer = [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))],
+        plug = [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))],
     )
 
     @testset "metadata" begin
         @testset "State" begin
             @test Tenet.checkmeta(state)
-            @test hasproperty(state, :interlayer)
-            @test only(state.interlayer) == Bijection(Dict([1 => :i, 2 => :j]))
+            @test hasproperty(state, :plug)
+            @test only(state.plug) == Bijection(Dict([1 => :i, 2 => :j]))
         end
 
         @testset "Operator" begin
             @test Tenet.checkmeta(operator)
-            @test hasproperty(operator, :interlayer)
-            @test operator.interlayer == [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))]
+            @test hasproperty(operator, :plug)
+            @test operator.plug == [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))]
         end
     end
 
@@ -84,8 +84,8 @@
 
             @test issetequal(sites(operator), sites(adj))
             @test_broken all(i -> inds(operator, :plug, i) == inds(adj, :plug, i), sites(operator))
-            @test all(i -> first(operator.interlayer)[i] == last(adj.interlayer)[i], sites(operator))
-            @test all(i -> last(operator.interlayer)[i] == first(adj.interlayer)[i], sites(operator))
+            @test all(i -> first(operator.plug)[i] == last(adj.plug)[i], sites(operator))
+            @test all(i -> last(operator.plug)[i] == first(adj.plug)[i], sites(operator))
         end
     end
 
