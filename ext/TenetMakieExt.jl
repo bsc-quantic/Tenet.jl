@@ -53,7 +53,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::TensorNetwork; lab
     graph = SimpleGraph([Edge(tensors...) for (_, tensors) in tn.indices if length(tensors) > 1])
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
-    copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), values(hypermap)), tensors(tn))
+    copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
     ghostnodes = map(inds(tn, :open)) do ind
         # create new ghost node
         add_vertex!(graph)
@@ -105,7 +105,9 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::TensorNetwork; lab
             # case: hyperedge
             if any(∈(copytensors), [src(edge), dst(edge)])
                 i = src(edge) ∈ copytensors ? src(edge) : dst(edge)
-                return tensors(tn)[i].meta[:dual] |> string
+                # hyperindex = filter(p -> isdisjoint(inds(tensors)[i], p[2]), hypermap) |> only |> first
+                hyperindex = hypermap[Tenet.inds(tensors(tn)[i])]
+                return hyperindex |> string
             end
 
             return join(Tenet.inds(tensors(tn)[src(edge)]) ∩ Tenet.inds(tensors(tn)[dst(edge)]), ',')

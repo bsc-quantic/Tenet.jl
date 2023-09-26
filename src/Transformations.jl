@@ -46,14 +46,14 @@ struct HyperindConverter <: Transformation end
 function hyperflatten(tn::TensorNetwork)
     map(inds(tn, :hyper)) do hyperindex
         n = select(tn, hyperindex) |> length
-        hyperindex => map(1:n) do i
+        map(1:n) do i
             Symbol("$hyperindex$i")
-        end
+        end => hyperindex
     end |> Dict
 end
 
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for (hyperindex, flatindices) in hyperflatten(tn)
+    for (flatindices, hyperindex) in hyperflatten(tn)
         # insert COPY tensor
         array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
         tensor = Tensor(array, flatindices)
