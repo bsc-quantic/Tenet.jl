@@ -4,18 +4,18 @@ using Tenet
 using ChainRulesCore
 
 function ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor}
-    ProjectTo{T}(; data = ProjectTo(tensor.data), inds = tensor.inds, meta = tensor.meta)
+    ProjectTo{T}(; data = ProjectTo(tensor.data), inds = tensor.inds)
 end
 
 function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:Tensor}
-    T(projector.data(dx.data), projector.inds; projector.meta...)
+    T(projector.data(dx.data), projector.inds)
 end
 
-ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), T(Δ, inds; meta...)
+ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds) = T(data, inds), T(Δ, inds)
 
 Tensor_pullback(Δ) = (NoTangent(), Δ.data, NoTangent())
 Tensor_pullback(Δ::AbstractThunk) = Tensor_pullback(unthunk(Δ))
-ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds; meta...) = T(data, inds; meta...), Tensor_pullback
+ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pullback
 
 # NOTE fix problem with vector generator in `contract`
 @non_differentiable Tenet.__omeinsum_sym2str(x)

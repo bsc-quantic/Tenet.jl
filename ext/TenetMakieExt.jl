@@ -19,7 +19,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
   -  The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
-function Makie.plot(tn::TensorNetwork; kwargs...)
+function Makie.plot(@nospecialize tn::TensorNetwork; kwargs...)
     f = Figure()
     ax, p = plot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
@@ -28,7 +28,7 @@ end
 # NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
 __networklayout_dim(x) = typeof(x).super.parameters |> first
 
-function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
+function Makie.plot!(f::Union{Figure,GridPosition}, @nospecialize tn::TensorNetwork; kwargs...)
     ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
         Axis3(f[1, 1])
     else
@@ -45,14 +45,15 @@ function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...
     return Makie.AxisPlot(ax, p)
 end
 
-function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
+function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::TensorNetwork; labels = false, kwargs...)
+    hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperindConverter)
 
     # TODO how to mark multiedges? (i.e. parallel edges)
     graph = SimpleGraph([Edge(tensors...) for (_, tensors) in tn.indices if length(tensors) > 1])
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
-    copytensors = findall(t -> haskey(t.meta, :dual), tensors(tn))
+    copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
     ghostnodes = map(inds(tn, :open)) do ind
         # create new ghost node
         add_vertex!(graph)
@@ -104,7 +105,9 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
             # case: hyperedge
             if any(∈(copytensors), [src(edge), dst(edge)])
                 i = src(edge) ∈ copytensors ? src(edge) : dst(edge)
-                return tensors(tn)[i].meta[:dual] |> string
+                # hyperindex = filter(p -> isdisjoint(inds(tensors)[i], p[2]), hypermap) |> only |> first
+                hyperindex = hypermap[Tenet.inds(tensors(tn)[i])]
+                return hyperindex |> string
             end
 
             return join(Tenet.inds(tensors(tn)[src(edge)]) ∩ Tenet.inds(tensors(tn)[dst(edge)]), ',')

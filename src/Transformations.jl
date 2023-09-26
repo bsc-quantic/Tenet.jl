@@ -43,29 +43,29 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 """
 struct HyperindConverter <: Transformation end
 
+function hyperflatten(tn::TensorNetwork)
+    map(inds(tn, :hyper)) do hyperindex
+        n = select(tn, hyperindex) |> length
+        map(1:n) do i
+            Symbol("$hyperindex$i")
+        end => hyperindex
+    end |> Dict
+end
+
 function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in inds(tn, :hyper)
-        # dimensionality of `index`
-        m = size(tn, index)
+    for (flatindices, hyperindex) in hyperflatten(tn)
+        # insert COPY tensor
+        array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
+        tensor = Tensor(array, flatindices)
+        push!(tn, tensor)
 
-        # unlink tensors
-        tensors = pop!(tn, index)
-
-        # replace hyperindex for new (non-hyper)index
-        new_indices = Symbol[]
-        for (i, tensor) in enumerate(tensors)
-            label = Symbol("$index$i")
-            push!(new_indices, label)
-
-            tensor = replace(tensor, index => label)
+        # replace hyperindex for new flat Indices
+        # TODO move this part to `replace!`?
+        tensors = pop!(tn, hyperindex)
+        for (flatindex, tensor) in zip(flatindices, tensors)
+            tensor = replace(tensor, hyperindex => flatindex)
             push!(tn, tensor)
         end
-
-        # insert COPY tensor
-        N = length(new_indices)
-        data = DeltaArray{N}(ones(m))
-        tensor = Tensor(data, new_indices; dual = index)
-        push!(tn, tensor)
     end
 end
 
@@ -93,7 +93,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # insert COPY tensor
             new_index = Symbol(uuid4())
             data = DeltaArray{N + 1}(ones(size(target, first(inds))))
-            push!(copies, Tensor(data, (new_index, inds...), dual = new_index))
+            push!(copies, Tensor(data, (new_index, inds...)))
 
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
@@ -106,7 +106,6 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             target = Tensor(
                 data,
                 map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
-                target.meta...,
             )
 
             return (; target = target, copies = copies)

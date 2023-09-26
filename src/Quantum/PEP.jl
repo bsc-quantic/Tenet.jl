@@ -107,9 +107,8 @@ function ProjectedEntangledPair{P,B}(
                 oinds[(i, j)]
             end
         end
-        alias = Dict(dir => label for (dir, label) in zip(dirs, inds))
 
-        Tensor(array, inds; alias = alias)
+        Tensor(array, inds)
     end |> vec
 
     return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
