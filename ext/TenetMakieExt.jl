@@ -17,7 +17,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
 # Keyword Arguments
 
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
-  -  The rest of `kwargs` are passed to `GraphMakie.graphplot`.
+  - The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
 function Makie.plot(@nospecialize tn::TensorNetwork; kwargs...)
     f = Figure()
