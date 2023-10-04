@@ -28,7 +28,15 @@ ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pull
 @non_differentiable symdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 
 function ChainRulesCore.ProjectTo(tn::T) where {T<:absclass(TensorNetwork)}
-    ProjectTo{T}(; tensors = ProjectTo(tn.tensors), metadata = tn.metadata)
+    # TODO create function to extract extra fields
+    fields = map(fieldnames(T)) do fieldname
+        if fieldname === :tensors
+            :tensors => ProjectTo(tn.tensors)
+        else
+            fieldname => getfield(tn, fieldname)
+        end
+    end
+    ProjectTo{T}(; fields...)
 end
 
 function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:absclass(TensorNetwork)}
