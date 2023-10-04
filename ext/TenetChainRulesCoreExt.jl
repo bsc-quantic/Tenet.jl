@@ -38,8 +38,16 @@ end
 
 function Base.:+(x::T, Δ::Tangent{TensorNetwork}) where {T<:absclass(TensorNetwork)}
     # TODO match tensors by indices
-    tensors = map(+, x.tensors, Δ.tensors)
-    T(tensors, ...) # TODO fix how to pass metadata
+    tensors = map(+, tensors(x), Δ.tensors)
+
+    # TODO create function fitted for this? or maybe standardize constructors?
+    T(map(fieldnames(T)) do fieldname
+        if fieldname === :tensors
+            tensors
+        else
+            getfield(x, fieldname)
+        end
+    end...)
 end
 
 function ChainRulesCore.frule((_, Δ), T::Type{<:absclass(TensorNetwork)}, tensors)
