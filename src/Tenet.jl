@@ -1,5 +1,7 @@
 module Tenet
 
+import EinExprs: inds
+
 include("Helpers.jl")
 
 include("Tensor.jl")

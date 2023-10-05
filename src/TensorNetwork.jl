@@ -63,16 +63,12 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-EinExprs.inds(tn::absclass(TensorNetwork); set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
-@valsplit 2 EinExprs.inds(tn::absclass(TensorNetwork), set::Symbol, args...) =
-    throw(MethodError(inds, "set=$set not recognized"))
-EinExprs.inds(tn::absclass(TensorNetwork), ::Val{:all}) = collect(keys(tn.indices))
-EinExprs.inds(tn::absclass(TensorNetwork), ::Val{:open}) =
-    map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
-EinExprs.inds(tn::absclass(TensorNetwork), ::Val{:inner}) =
-    map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
-EinExprs.inds(tn::absclass(TensorNetwork), ::Val{:hyper}) =
-    map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
+inds(tn::absclass(TensorNetwork); set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
+@valsplit 2 inds(tn::absclass(TensorNetwork), set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
+inds(tn::absclass(TensorNetwork), ::Val{:all}) = collect(keys(tn.indices))
+inds(tn::absclass(TensorNetwork), ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
+inds(tn::absclass(TensorNetwork), ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
+inds(tn::absclass(TensorNetwork), ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
 """
     size(tn::AbstractTensorNetwork)
