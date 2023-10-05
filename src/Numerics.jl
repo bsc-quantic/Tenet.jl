@@ -1,7 +1,6 @@
 using OMEinsum
 using LinearAlgebra
 using UUIDs: uuid4
-using EinExprs: inds
 
 # TODO test array container typevar on output
 for op in [
