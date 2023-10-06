@@ -106,19 +106,29 @@ end
 
 """
     append!(tn::AbstractTensorNetwork, tensors::AbstractVecOrTuple{<:Tensor})
-    append!(A::AbstractTensorNetwork, B::AbstractTensorNetwork)
 
-Add a list of tensors to the first `TensorNetwork`.
+Add a list of tensors to a `TensorNetwork`.
 
-See also: [`push!`](@ref)
+See also: [`push!`](@ref), [`merge!`](@ref).
 """
-Base.append!(tn::absclass(TensorNetwork), t::AbstractVecOrTuple{<:Tensor}) = (foreach(Base.Fix1(push!, tn), t); tn)
-function Base.append!(A::absclass(TensorNetwork), B::absclass(TensorNetwork))
-    append!(A, tensors(B))
-    # TODO define behaviour
-    # merge!(A.metadata, B.metadata)
-    return A
+function Base.append!(tn::absclass(TensorNetwork), ts::AbstractVecOrTuple{<:Tensor})
+    for tensor in ts
+        push!(tn, tensor)
+    end
+    tn
 end
+
+"""
+    merge!(self::AbstractTensorNetwork, others::AbstractTensorNetwork...)
+    merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...)
+
+Fuse various [`TensorNetwork`](@ref)s into one.
+
+See also: [`append!`](@ref).
+"""
+Base.merge!(self::absclass(TensorNetwork), other::absclass(TensorNetwork)) = append!(self, tensors(other))
+Base.merge!(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = foldl(merge!, others; init = self)
+Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(copy(self), others...)
 
 function Base.popat!(tn::absclass(TensorNetwork), i::Integer)
     tensor = popat!(tn.tensors, i)
@@ -232,7 +242,7 @@ function Base.replace!(tn::absclass(TensorNetwork), old_new::Pair{<:Tensor,<:Abs
     # rename internal indices so there is no accidental hyperedge
     replace!(new, [index => Symbol(uuid4()) for index in filter(∈(inds(tn)), inds(new, set = :inner))]...)
 
-    append!(tn, new)
+    merge!(tn, new)
     delete!(tn, old)
 
     return tn

@@ -52,8 +52,14 @@
 
         append!(B, [tensor])
         @test only(tensors(B)) === tensor
+    end
 
-        append!(A, B)
+    @testset "merge!" begin
+        tensor = Tensor(zeros(2, 3), (:i, :j))
+        A = TensorNetwork(Tensor[tensor])
+        B = TensorNetwork()
+
+        merge!(A, B)
         @test only(tensors(A)) === tensor
     end
 

@@ -42,6 +42,7 @@ ansatz
 ```@docs
 push!(::TensorNetwork, ::Tensor)
 append!(::TensorNetwork, ::Base.AbstractVecOrTuple{<:Tensor})
+merge!(::AbstractTensorNetwork, ::AbstractTensorNetwork)
 pop!(::TensorNetwork, ::Tensor)
 delete!(::TensorNetwork, ::Any)
 ```
