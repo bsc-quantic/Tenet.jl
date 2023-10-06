@@ -35,7 +35,7 @@ end
 # TensorNetwork{A}(tn::absclass(TensorNetwork){B}; metadata...) where {A,B} =
 #     TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
 
-Base.copy(tn::TensorNetwork) = TensorNetwork(copy(tensors(tn)))
+Base.copy(tn::T) where {T<:absclass(TensorNetwork)} = T(map(field -> copy(getfield(tn, field)), fieldnames(T))...)
 
 Base.summary(io::IO, x::absclass(TensorNetwork)) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::absclass(TensorNetwork)) =
