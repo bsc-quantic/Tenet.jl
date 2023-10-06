@@ -188,7 +188,7 @@ Return a copy of the [`TensorNetwork`](@ref) where `old` has been replaced by `n
 
 See also: [`replace!`](@ref).
 """
-Base.replace(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(copy(tn), old_new...)
+Base.replace(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(copy(tn), old_new)
 
 """
     replace!(tn::AbstractTensorNetwork, old => new...)
@@ -200,7 +200,8 @@ Replace the element in `old` with the one in `new`. Depending on the types of `o
 
 See also: [`replace`](@ref).
 """
-function Base.replace!(tn::absclass(TensorNetwork), old_new::Pair...)
+Base.replace!(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(tn, old_new)
+function Base.replace!(tn::absclass(TensorNetwork), old_new::Base.AbstractVecOrTuple{Pair})
     for pair in old_new
         replace!(tn, pair)
     end
