@@ -4,6 +4,7 @@ using Tenet
 using Combinatorics: combinations
 using Graphs
 using Makie
+using Classes
 
 using GraphMakie
 
