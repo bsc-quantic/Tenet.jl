@@ -12,19 +12,14 @@ include("Numerics.jl")
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, select, slice!
 export contract, contract!
-export Ansatz, ansatz, Arbitrary
 
 include("Transformations.jl")
 export transform, transform!
 
 include("Quantum/Quantum.jl")
-export Quantum
+export QuantumTensorNetwork, sites, fidelity
+export Plug, plug, Property, State, Dual, Operator
 export Boundary, boundary, Open, Periodic, Infinite
-export Plug, plug, Property, State, Operator
-export sites, fidelity
-
-export MatrixProduct, MPS, MPO
-export ProjectedEntangledPair, PEPS, PEPO
 
 # reexports from LinearAlgebra
 export norm, normalize!

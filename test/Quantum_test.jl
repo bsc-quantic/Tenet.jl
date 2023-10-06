@@ -1,49 +1,37 @@
 @testset "Quantum" begin
-    using Bijections
-
-    struct MockState <: Quantum end
-    Tenet.plug(::Type{MockState}) = State
-    Tenet.metadata(::Type{MockState}) = Tenet.metadata(Quantum)
-
-    struct MockOperator <: Quantum end
-    Tenet.plug(::Type{MockOperator}) = Operator
-    Tenet.metadata(::Type{MockOperator}) = Tenet.metadata(Quantum)
-
-    state = TensorNetwork{MockState}(
-        [Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))];
-        plug = State,
-        interlayer = [Bijection(Dict([1 => :i, 2 => :j]))],
+    state = QuantumTensorNetwork(
+        TensorNetwork(Tensor[Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))]),
+        Symbol[], # input
+        [:i, :j], # output
     )
 
-    operator = TensorNetwork{MockOperator}(
-        [Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))];
-        plug = Operator,
-        interlayer = [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))],
+    operator = QuantumTensorNetwork(
+        TensorNetwork(Tensor[Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))]),
+        [:a, :b], # input
+        [:d, :e], # output
     )
 
-    @testset "metadata" begin
+    @testset "adjoint" begin
         @testset "State" begin
-            @test Tenet.checkmeta(state)
-            @test hasproperty(state, :interlayer)
-            @test only(state.interlayer) == Bijection(Dict([1 => :i, 2 => :j]))
+            adj = adjoint(state)
+            @test adj.input == state.output
+            @test adj.output == state.input
+            @test all(((a, b),) -> a == conj(b), zip(tensors(state), tensors(adj)))
         end
 
         @testset "Operator" begin
-            @test Tenet.checkmeta(operator)
-            @test hasproperty(operator, :interlayer)
-            @test operator.interlayer == [Bijection(Dict([1 => :a, 2 => :b])), Bijection(Dict([1 => :d, 2 => :e]))]
+            adj = adjoint(operator)
+            @test adj.input == operator.output
+            @test adj.output == operator.input
+            @test all(((a, b),) -> a == conj(b), zip(tensors(operator), tensors(adj)))
         end
     end
 
     @testset "plug" begin
-        @test plug(state) === State
-
-        @test plug(operator) === Operator
+        @test plug(state) == State()
+        @test plug(state') == Dual()
+        @test plug(operator) == Operator()
     end
-
-    # TODO write tests for
-    # - boundary
-    # - tensors
 
     @testset "sites" begin
         @test issetequal(sites(state), [1, 2])
@@ -54,88 +42,111 @@
         @testset "State" begin
             @test issetequal(inds(state), [:i, :j, :k, :l])
             @test issetequal(inds(state, set = :open), [:i, :j, :l])
-            @test issetequal(inds(state, set = :plug), [:i, :j])
             @test issetequal(inds(state, set = :inner), [:k])
             @test isempty(inds(state, set = :hyper))
+            @test isempty(inds(state, set = :in))
+            @test issetequal(inds(state, set = :out), [:i, :j])
+            @test issetequal(inds(state, set = :physical), [:i, :j])
             @test issetequal(inds(state, set = :virtual), [:k, :l])
         end
 
-        # TODO change the indices
         @testset "Operator" begin
             @test issetequal(inds(operator), [:a, :b, :c, :d, :e, :f])
             @test issetequal(inds(operator, set = :open), [:a, :b, :d, :e, :f])
-            @test issetequal(inds(operator, set = :plug), [:a, :b, :d, :e])
             @test issetequal(inds(operator, set = :inner), [:c])
             @test isempty(inds(operator, set = :hyper))
-            @test_broken issetequal(inds(operator, set = :virtual), [:c])
+            @test issetequal(inds(operator, set = :in), [:a, :b])
+            @test issetequal(inds(operator, set = :out), [:d, :e])
+            @test issetequal(inds(operator, set = :physical), [:a, :b, :d, :e])
+            @test issetequal(inds(operator, set = :virtual), [:c, :f])
         end
     end
 
-    @testset "adjoint" begin
-        @testset "State" begin
-            adj = adjoint(state)
-
-            @test issetequal(sites(state), sites(adj))
-            @test all(i -> inds(state, :plug, i) == inds(adj, :plug, i), sites(state))
-        end
-
-        @testset "Operator" begin
-            adj = adjoint(operator)
-
-            @test issetequal(sites(operator), sites(adj))
-            @test_broken all(i -> inds(operator, :plug, i) == inds(adj, :plug, i), sites(operator))
-            @test all(i -> first(operator.interlayer)[i] == last(adj.interlayer)[i], sites(operator))
-            @test all(i -> last(operator.interlayer)[i] == first(adj.interlayer)[i], sites(operator))
-        end
-    end
-
-    @testset "hcat" begin
+    @testset "merge" begin
         @testset "(State, State)" begin
-            expectation = hcat(state, state)
-            @test issetequal(sites(expectation), sites(state))
-            @test issetequal(inds(expectation, set = :plug), inds(state, set = :plug))
-            @test isempty(inds(expectation, set = :open))
-            @test issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
+            tn = merge(state, state')
+
+            @test plug(tn) == Property()
+
+            @test isempty(sites(tn, :in))
+            @test isempty(sites(tn, :out))
+
+            @test isempty(inds(tn, set = :in))
+            @test isempty(inds(tn, set = :out))
+            @test isempty(inds(tn, set = :physical))
+            @test issetequal(inds(tn), inds(tn, set = :virtual))
         end
 
         @testset "(State, Operator)" begin
-            expectation = hcat(state, operator)
-            @test issetequal(sites(expectation), sites(state))
-            @test_broken issetequal(inds(expectation, set = :plug), inds(operator, set = :plug))
-            @test_broken isempty(inds(expectation, set = :open))
-            @test_broken issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
+            tn = merge(state, operator)
+
+            @test plug(tn) == State()
+
+            @test isempty(sites(tn, :in))
+            @test issetequal(sites(tn, :out), sites(operator, :out))
+
+            @test isempty(inds(tn, set = :in))
+            @test issetequal(inds(tn, set = :out), inds(operator, :out))
+            @test issetequal(inds(tn, set = :physical), inds(operator, :out))
+            @test issetequal(inds(tn, set = :virtual), inds(state) ∪ inds(operator, :virtual))
         end
 
         @testset "(Operator, State)" begin
-            expectation = hcat(operator, state)
-            @test issetequal(sites(expectation), sites(state))
-            @test_broken issetequal(inds(expectation, set = :plug), inds(state, set = :plug))
-            @test_broken isempty(inds(expectation, set = :open))
-            @test_broken issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
+            tn = merge(operator, state')
+
+            @test plug(tn) == Dual()
+
+            @test issetequal(sites(tn, :in), sites(operator, :in))
+            @test isempty(sites(tn, :out))
+
+            @test issetequal(inds(tn, set = :in), inds(operator, :in))
+            @test isempty(inds(tn, set = :out))
+            @test issetequal(inds(tn, set = :physical), inds(operator, :in))
+            @test issetequal(
+                inds(tn, set = :virtual),
+                inds(state, :virtual) ∪ inds(operator, :virtual) ∪ inds(operator, :out),
+            )
         end
 
         @testset "(Operator, Operator)" begin
-            expectation = hcat(operator, operator)
-            @test issetequal(sites(expectation), sites(state))
-            @test issetequal(inds(expectation, set = :plug), inds(operator, set = :plug))
-            @test isempty(inds(expectation, set = :open))
-            @test issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
+            tn = merge(operator, operator')
+
+            @test plug(tn) == Operator()
+
+            @test issetequal(sites(tn, :in), sites(operator, :in))
+            @test issetequal(sites(tn, :out), sites(operator, :in))
+
+            @test issetequal(inds(tn, set = :in), inds(operator, :in))
+            @test issetequal(inds(tn, set = :out), inds(operator, :in))
+            @test issetequal(inds(tn, set = :physical), inds(operator, :in))
+            @test inds(operator, :virtual) ⊆ inds(tn, set = :virtual)
         end
 
-        # @testset "(State, Operator, State)" begin
-        #     expectation = hcat(state, operator, state')
-        #     @test_broken issetequal(sites(expectation), sites(state))
-        #     @test_broken issetequal(inds(expectation, set = :plug), inds(operator, set = :plug))
-        #     @test_broken isempty(inds(expectation, set = :open))
-        #     @test_broken issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
-        # end
+        @testset "(Operator, Operator)" begin
+            tn = merge(operator', operator)
 
-        # @testset "(Operator, Operator, Operator)" begin
-        #     expectation = hcat(operator, operator, operator)
-        #     @test_broken issetequal(sites(expectation), sites(state))
-        #     @test_broken issetequal(inds(expectation, set = :plug), inds(operator, set = :plug))
-        #     @test_broken isempty(inds(expectation, set = :open))
-        #     @test_broken issetequal(inds(expectation, set = :inner), inds(expectation, set = :all))
-        # end
+            @test plug(tn) == Operator()
+
+            @test issetequal(sites(tn, :in), sites(operator, :out))
+            @test issetequal(sites(tn, :out), sites(operator, :out))
+
+            @test issetequal(inds(tn, set = :in), inds(operator, :out))
+            @test issetequal(inds(tn, set = :out), inds(operator, :out))
+            @test issetequal(inds(tn, set = :physical), inds(operator, :out))
+            @test inds(operator, :virtual) ⊆ inds(tn, set = :virtual)
+        end
+
+        @testset "(State, Operator, State)" begin
+            tn = merge(state, operator, state')
+
+            @test plug(tn) == Property()
+
+            @test isempty(sites(tn, :in))
+            @test isempty(sites(tn, :out))
+
+            @test isempty(inds(tn, set = :in))
+            @test isempty(inds(tn, set = :out))
+            @test isempty(inds(tn, set = :physical))
+        end
     end
 end
