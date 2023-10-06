@@ -128,7 +128,7 @@ See also: [`append!`](@ref).
 """
 Base.merge!(self::absclass(TensorNetwork), other::absclass(TensorNetwork)) = append!(self, tensors(other))
 Base.merge!(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = foldl(merge!, others; init = self)
-Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(copy(self), others...)
+Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(deepcopy(self), others...) # TODO deepcopy because `indices` are not correctly copied and it mutates
 
 function Base.popat!(tn::absclass(TensorNetwork), i::Integer)
     tensor = popat!(tn.tensors, i)
