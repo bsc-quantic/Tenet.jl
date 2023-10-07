@@ -21,6 +21,9 @@ export QuantumTensorNetwork, sites, fidelity
 export Plug, plug, Property, State, Dual, Operator
 export Boundary, boundary, Open, Periodic, Infinite
 
+include("Quantum/MP.jl")
+export MatrixProduct, MPS, MPO
+
 # reexports from LinearAlgebra
 export norm, normalize!
 

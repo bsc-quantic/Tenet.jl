@@ -12,10 +12,8 @@ end
 
 @testset "Quantum tests" verbose = true begin
     include("Quantum_test.jl")
-
-    # Ansatz Tensor Networks
-    # include("MatrixProductState_test.jl")
-    # include("MatrixProductOperator_test.jl")
+    include("MatrixProductState_test.jl")
+    include("MatrixProductOperator_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin
