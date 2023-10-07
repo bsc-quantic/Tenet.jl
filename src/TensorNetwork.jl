@@ -429,17 +429,16 @@ contract!(tn::absclass(TensorNetwork), t::Tensor; kwargs...) = (push!(tn, t); co
 contract(t::Tensor, tn::absclass(TensorNetwork); kwargs...) = contract(tn, t; kwargs...)
 contract(tn::absclass(TensorNetwork), t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
-# struct TNSampler{A<:Ansatz,NT<:NamedTuple} <: Random.Sampler{TensorNetwork{A}}
-#     parameters::NT
+struct TNSampler{T<:absclass(TensorNetwork)} <: Random.Sampler{T}
+    config::Dict{Symbol,Any}
 
-#     TNSampler{A}(; kwargs...) where {A} = new{A,typeof(values(kwargs))}(values(kwargs))
-# end
+    TNSampler{T}(; kwargs...) where {T} = new{T}(kwargs)
+end
 
-# Base.getproperty(obj::TNSampler{A,<:NamedTuple{K}}, name::Symbol) where {A,K} =
-#     name ∈ K ? getfield(obj, :parameters)[name] : getfield(obj, name)
-# Base.get(obj::TNSampler, name, default) = get(getfield(obj, :parameters), name, default)
+Base.eltype(::TNSampler{T}) where {T} = T
 
-# Base.eltype(::TNSampler{A}) where {A<:Ansatz} = TensorNetwork{A}
+Base.getproperty(obj::TNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
+Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
 
-# Base.rand(A::Type{<:Ansatz}; kwargs...) = rand(Random.default_rng(), A; kwargs...)
-# Base.rand(rng::AbstractRNG, ::Type{A}; kwargs...) where {A<:Ansatz} = rand(rng, TNSampler{A}(; kwargs...))
+Base.rand(T::Type{<:absclass(TensorNetwork)}; kwargs...) = rand(Random.default_rng(), T; kwargs...)
+Base.rand(rng::AbstractRNG, T::Type{<:absclass(TensorNetwork)}; kwargs...) = rand(rng, TNSampler{T}(; kwargs...))
