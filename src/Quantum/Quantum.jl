@@ -141,7 +141,9 @@ function LinearAlgebra.norm(ψ::absclass(QuantumTensorNetwork), p::Real = 2; kwa
     p == 2 || throw(ArgumentError("p=$p is not implemented yet"))
 
     tn = merge(ψ, ψ')
-    all(isempty, [tn.input, tn.output]) || throw("unimplemented if <ψ|ψ> is an operator")
+    if plug(tn) isa Operator
+        tn = tr(tn)
+    end
 
     return contract(tn; kwargs...) |> only |> sqrt |> abs
 end
@@ -182,6 +184,26 @@ function LinearAlgebra.normalize!(
         tensor = ψ.tensors[insert] # tensors(ψ, insert) # TODO fix this to match site?
         tensor ./= norm
     end
+end
+
+"""
+    LinearAlgebra.tr(U::AbstractQuantumTensorNetwork)
+
+Trace `U`: sum of diagonal elements if `U` is viewed as a matrix.
+
+Depending on the result of `plug(U)`, different actions can be taken:
+
+  - If `Property()`, the result of `contract(U)` will be a "scalar", for which the trace acts like the identity.
+  - If `State()`, the result of `contract(U)` will be a "vector", for which the trace is undefined and will fail.
+  - If `Operator()`, the input and output indices of `U` are connected.
+"""
+LinearAlgebra.tr(U::absclass(QuantumTensorNetwork)) = tr!(U)
+tr!(U::absclass(QuantumTensorNetwork)) = tr!(plug(U), U)
+tr!(::Property, scalar::absclass(QuantumTensorNetwork)) = scalar
+function tr!(::Operator, U::absclass(QuantumTensorNetwork))
+    sites(U, :in) == sites(U, :out) || throw(ArgumentError("input and output sites do not match"))
+    copyto!(U.output, U.input)
+    U
 end
 
 """
