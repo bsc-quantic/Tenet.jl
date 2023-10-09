@@ -31,10 +31,11 @@ function TensorNetwork(tensors)
     return TensorNetwork(indices, tensors)
 end
 
-# TODO maybe rename it as `convert` method?
-# TensorNetwork{A}(tn::absclass(TensorNetwork){B}; metadata...) where {A,B} =
-#     TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
+"""
+    copy(tn::TensorNetwork)
 
+Return a shallow copy of a [`TensorNetwork`](@ref).
+"""
 Base.copy(tn::T) where {T<:absclass(TensorNetwork)} = T(map(fieldnames(T)) do field
     (field === :indices ? deepcopy : copy)(getfield(tn, field))
 end...)
@@ -191,8 +192,6 @@ Replace the element in `old` with the one in `new`. Depending on the types of `o
 
   - If `Symbol`s, it will correspond to a index renaming.
   - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
-
-See also: [`replace`](@ref).
 """
 Base.replace!(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(tn, old_new)
 function Base.replace!(tn::absclass(TensorNetwork), old_new::Base.AbstractVecOrTuple{Pair})

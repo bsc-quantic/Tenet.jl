@@ -133,7 +133,7 @@ end
 """
     norm(ψ::AbstractQuantumTensorNetwork, p::Real=2)
 
-Compute the ``p``-norm of a [`Quantum`](@ref) [`TensorNetwork`](@ref).
+Compute the ``p``-norm of a [`QuantumTensorNetwork`](@ref).
 
 See also: [`normalize!`](@ref).
 """

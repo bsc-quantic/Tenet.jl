@@ -1,25 +1,11 @@
 # Introduction
 
-In `Tenet`, we define a [`Quantum`](@ref) Tensor Network as a [`TensorNetwork`](@ref) with a notion of sites and directionality.
+In `Tenet`, we define a [`QuantumTensorNetwork`](@ref) as a [`TensorNetwork`](@ref) with a notion of sites and directionality.
 
 ```@docs
-Quantum
-```
-
-```@docs
+QuantumTensorNetwork
 plug
-```
-
-```@docs
 sites
-```
-
-```@docs
-tensors(::TensorNetwork{<:Quantum}, ::Integer)
-```
-
-```@docs
-boundary
 ```
 
 ## Adjoint
@@ -28,17 +14,17 @@ boundary
 adjoint
 ```
 
-## Concatenation
-
-```@docs
-hcat(::TensorNetwork{<:Quantum}, ::TensorNetwork{<:Quantum})
-```
-
 ## Norm
 
 ```@docs
-LinearAlgebra.norm(::TensorNetwork{<:Quantum}, p::Real)
-LinearAlgebra.normalize!(::TensorNetwork{<:Quantum}, ::Real)
+LinearAlgebra.norm(::Tenet.AbstractQuantumTensorNetwork, ::Real)
+LinearAlgebra.normalize!(::Tenet.AbstractQuantumTensorNetwork, ::Real)
+```
+
+## Trace
+
+```@docs
+LinearAlgebra.tr(::Tenet.AbstractQuantumTensorNetwork)
 ```
 
 ## Fidelity

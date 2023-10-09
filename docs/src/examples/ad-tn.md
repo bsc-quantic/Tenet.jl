@@ -19,7 +19,7 @@ rng = seed!(4) # hide
 ψ = rand(rng, MPS{Open}, n = 4, p = 2, χ = 2) # hide
 ϕ = rand(rng, MPS{Open}, n = 4, p = 2, χ = 4) # hide
 
-tn = hcat(ψ, ϕ)
+tn = merge(ψ, ϕ')
 
 plot(tn) # hide
 ```

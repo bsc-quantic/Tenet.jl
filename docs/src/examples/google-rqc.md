@@ -42,7 +42,7 @@ _sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 
 
 # load circuit and convert to `TensorNetwork`
 circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format = QuacIO.Qflex(), sites = _sites);
-tn = TensorNetwork(circuit)
+tn = QuantumTensorNetwork(circuit)
 tn = view(tn, [i => 1 for i in inds(tn, set=:open)]...)
 plot(tn) # hide
 ```
