@@ -182,16 +182,8 @@ Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 Base.delete!(tn::absclass(TensorNetwork), x) = (_ = pop!(tn, x); tn)
 
 """
-    replace(tn::AbstractTensorNetwork, old => new...)
-
-Return a copy of the [`TensorNetwork`](@ref) where `old` has been replaced by `new`.
-
-See also: [`replace!`](@ref).
-"""
-Base.replace(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(copy(tn), old_new)
-
-"""
     replace!(tn::AbstractTensorNetwork, old => new...)
+    replace(tn::AbstractTensorNetwork, old => new...)
 
 Replace the element in `old` with the one in `new`. Depending on the types of `old` and `new`, the following behaviour is expected:
 
@@ -207,6 +199,8 @@ function Base.replace!(tn::absclass(TensorNetwork), old_new::Base.AbstractVecOrT
     end
     return tn
 end
+Base.replace(tn::absclass(TensorNetwork), old_new::Pair...) = replace(tn, old_new)
+Base.replace(tn::absclass(TensorNetwork), old_new) = replace!(copy(tn), old_new)
 
 function Base.replace!(tn::absclass(TensorNetwork), pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
