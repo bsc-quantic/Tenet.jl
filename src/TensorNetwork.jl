@@ -35,7 +35,9 @@ end
 # TensorNetwork{A}(tn::absclass(TensorNetwork){B}; metadata...) where {A,B} =
 #     TensorNetwork{A}(tensors(tn); merge(tn.metadata, metadata)...)
 
-Base.copy(tn::T) where {T<:absclass(TensorNetwork)} = T(map(field -> copy(getfield(tn, field)), fieldnames(T))...)
+Base.copy(tn::T) where {T<:absclass(TensorNetwork)} = T(map(fieldnames(T)) do field
+    (field === :indices ? deepcopy : copy)(getfield(tn, field))
+end...)
 
 Base.summary(io::IO, x::absclass(TensorNetwork)) = print(io, "$(length(x))-tensors $(typeof(x))")
 Base.show(io::IO, tn::absclass(TensorNetwork)) =
@@ -128,7 +130,7 @@ See also: [`append!`](@ref).
 """
 Base.merge!(self::absclass(TensorNetwork), other::absclass(TensorNetwork)) = append!(self, tensors(other))
 Base.merge!(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = foldl(merge!, others; init = self)
-Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(deepcopy(self), others...) # TODO deepcopy because `indices` are not correctly copied and it mutates
+Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(copy(self), others...)
 
 function Base.popat!(tn::absclass(TensorNetwork), i::Integer)
     tensor = popat!(tn.tensors, i)
