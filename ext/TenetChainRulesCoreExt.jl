@@ -64,7 +64,7 @@ end
 
 TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensors)
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
-function ChainRulesCore.rrule(T::Type{TensorNetwork}, tensors)
+function ChainRulesCore.rrule(T::Type{<:absclass(TensorNetwork)}, tensors)
     T(tensors), TensorNetwork_pullback
 end
 
