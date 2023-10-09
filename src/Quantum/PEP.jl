@@ -65,9 +65,9 @@ function ProjectedEntangledPair{P,B}(
     input, output = if P <: Property
         Symbol[], Symbol[]
     elseif P <: State
-        Symbol[], [oinds[i, j] for i in 1:m, j in 1:n]
+        Symbol[], vec([oinds[i, j] for i in 1:m, j in 1:n])
     elseif P <: Operator
-        [iinds[i, j] for i in 1:m, j in 1:n], [oinds[i, j] for i in 1:m, j in 1:n]
+        vec([iinds[i, j] for i in 1:m, j in 1:n]), vec([oinds[i, j] for i in 1:m, j in 1:n])
     else
         throw(ArgumentError("Plug $P is not valid"))
     end
