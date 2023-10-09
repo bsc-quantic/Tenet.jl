@@ -24,6 +24,9 @@ export Boundary, boundary, Open, Periodic, Infinite
 include("Quantum/MP.jl")
 export MatrixProduct, MPS, MPO
 
+include("Quantum/PEP.jl")
+export ProjectedEntangledPair, PEPS, PEPO
+
 # reexports from LinearAlgebra
 export norm, normalize!
 

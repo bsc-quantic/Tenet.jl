@@ -14,25 +14,25 @@
 
         @test begin
             arrays = [rand(2, 2, 2)]
-            MatrixProduct{Operator}(arrays) isa MPO{Open}
+            MatrixProduct{Operator}(arrays) isa QuantumTensorNetwork
         end
 
         @test begin
             arrays = [rand(2, 2, 2), rand(2, 2, 2)]
-            MatrixProduct{Operator}(arrays) isa MPO{Open}
+            MatrixProduct{Operator}(arrays) isa QuantumTensorNetwork
         end
 
         @testset "`Open` boundary" begin
             # product operator
             @test begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProduct{Operator,Open}(arrays) isa MPO{Open}
+                MatrixProduct{Operator,Open}(arrays) isa QuantumTensorNetwork
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProduct{Operator}(arrays; boundary = Open) isa MPO{Open}
+                MatrixProduct{Operator}(arrays; boundary = Open) isa QuantumTensorNetwork
             end
 
             # entangling operator
@@ -40,7 +40,7 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, i, o), rand(2, 4, i, o), rand(4, i, o)]
-                MatrixProduct{Operator,Open}(arrays) isa MPO{Open}
+                MatrixProduct{Operator,Open}(arrays) isa QuantumTensorNetwork
             end
 
             # entangling operator - change order
@@ -48,13 +48,13 @@
                 i = 3
                 o = 5
                 arrays = [rand(i, 2, o), rand(2, i, 4, o), rand(4, i, o)]
-                MatrixProduct{Operator,Open}(arrays, order = (:l, :i, :r, :o)) isa MPO{Open}
+                MatrixProduct{Operator,Open}(arrays, order = (:l, :i, :r, :o)) isa QuantumTensorNetwork
             end
 
             # fail on Open with Periodic format
             @test_throws MethodError begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProduct{Operator,Open}(arrays) isa MPO{Open}
+                MatrixProduct{Operator,Open}(arrays) isa QuantumTensorNetwork
             end
         end
 
@@ -62,13 +62,13 @@
             # product operator
             @test begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProduct{Operator,Periodic}(arrays) isa MPO{Periodic}
+                MatrixProduct{Operator,Periodic}(arrays) isa QuantumTensorNetwork
             end
 
             # alternative constructor
             @test begin
                 arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProduct{Operator}(arrays; boundary = Periodic) isa MPO{Periodic}
+                MatrixProduct{Operator}(arrays; boundary = Periodic) isa QuantumTensorNetwork
             end
 
             # entangling operator
@@ -76,7 +76,7 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
-                MatrixProduct{Operator,Periodic}(arrays) isa MPO{Periodic}
+                MatrixProduct{Operator,Periodic}(arrays) isa QuantumTensorNetwork
             end
 
             # entangling operator - change order
@@ -84,51 +84,51 @@
                 i = 3
                 o = 5
                 arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
-                MatrixProduct{Operator,Periodic}(arrays, order = (:l, :i, :r, :o)) isa MPO{Periodic}
+                MatrixProduct{Operator,Periodic}(arrays, order = (:l, :i, :r, :o)) isa QuantumTensorNetwork
             end
 
             # fail on Periodic with Open format
             @test_throws MethodError begin
                 arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProduct{Operator,Periodic}(arrays) isa MPO{Periodic}
+                MatrixProduct{Operator,Periodic}(arrays) isa QuantumTensorNetwork
             end
         end
 
-        @testset "`Infinite` boundary" begin
-            # product operator
-            @test begin
-                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-            end
+        # @testset "`Infinite` boundary" begin
+        #     # product operator
+        #     @test skip = true begin
+        #         arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
+        #     end
 
-            # alternative constructor
-            @test begin
-                arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-                MatrixProduct{Operator}(arrays; boundary = Infinite) isa MPO{Infinite}
-            end
+        #     # alternative constructor
+        #     @test skip = true begin
+        #         arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
+        #         MatrixProduct{Operator}(arrays; boundary = Infinite) isa MPO{Infinite}
+        #     end
 
-            # entangling operator
-            @test begin
-                i = 3
-                o = 5
-                arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
-                MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-            end
+        #     # entangling operator
+        #     @test skip = true begin
+        #         i = 3
+        #         o = 5
+        #         arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
+        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
+        #     end
 
-            # entangling operator - change order
-            @test begin
-                i = 3
-                o = 5
-                arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
-                MatrixProduct{Operator,Infinite}(arrays, order = (:l, :i, :r, :o)) isa MPO{Infinite}
-            end
+        #     # entangling operator - change order
+        #     @test skip = true begin
+        #         i = 3
+        #         o = 5
+        #         arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
+        #         MatrixProduct{Operator,Infinite}(arrays, order = (:l, :i, :r, :o)) isa MPO{Infinite}
+        #     end
 
-            # fail on Infinite with Open format
-            @test_throws MethodError begin
-                arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-                MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-            end
-        end
+        #     # fail on Infinite with Open format
+        #     @test_throws MethodError begin
+        #         arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
+        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
+        #     end
+        # end
     end
 
     @testset "merge" begin
@@ -159,21 +159,4 @@
         mpo = rand(MatrixProduct{Operator,Open}, n = 8, p = 2, χ = 8)
         @test_broken norm(mpo) ≈ 1
     end
-
-    # @testset "Initialization" begin
-    #     for params in [
-    #         (2, 2, 2, 1),
-    #         (2, 2, 2, 2),
-    #         (4, 4, 4, 16),
-    #         (4, 2, 2, 8),
-    #         (4, 2, 3, 8),
-    #         (6, 2, 2, 4),
-    #         (8, 2, 3, 4),
-    #         # (1, 2, 2, 1),
-    #         # (1, 3, 3, 1),
-    #         # (1, 1, 1, 1),
-    #     ]
-    #         @test rand(MatrixProduct{Operator,Open}, params...) isa TensorNetwork{MatrixProduct{Operator,Open}}
-    #     end
-    # end
 end

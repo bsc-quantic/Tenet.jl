@@ -1,40 +1,25 @@
 using UUIDs: uuid4
-using EinExprs: inds
+using Classes
 
 """
-    ProjectedEntangledPair{P<:Plug,B<:Boundary} <: Quantum
+    ProjectedEntangledPair{P<:Plug,B<:Boundary} <: Ansatz
 
 A generic ansatz representing Projected Entangled Pair States (PEPS) and Projected Entangled Pair Operators (PEPO).
 Type variable `P` represents the `Plug` type (`State` or `Operator`) and `B` represents the `Boundary` type (`Open` or `Periodic`).
-
-# Ansatz Fields
-
-  - `χ::Union{Nothing,Int}` Maximum virtual bond dimension.
 """
-abstract type ProjectedEntangledPair{P,B} <: Quantum where {P<:Plug,B<:Boundary} end
-
-boundary(::Type{<:ProjectedEntangledPair{P,B}}) where {P,B} = B
-plug(::Type{<:ProjectedEntangledPair{P}}) where {P} = P
+struct ProjectedEntangledPair{P<:Plug,B<:Boundary} <: Ansatz end
 
 function ProjectedEntangledPair{P}(arrays; boundary::Type{<:Boundary} = Open, kwargs...) where {P<:Plug}
     ProjectedEntangledPair{P,boundary}(arrays; kwargs...)
 end
 
-metadata(T::Type{<:ProjectedEntangledPair}) = merge(metadata(supertype(T)), @NamedTuple begin
-    χ::Union{Nothing,Int}
-end)
+const PEPS = ProjectedEntangledPair{State}
+const PEPO = ProjectedEntangledPair{Operator}
 
-function checkmeta(::Type{ProjectedEntangledPair{P,B}}, tn::TensorNetwork) where {P,B}
-    # meta has correct value
-    isnothing(tn.χ) || tn.χ > 0 || return false
+plug(::Type{<:ProjectedEntangledPair{P}}) where {P} = P()
+boundary(::Type{<:ProjectedEntangledPair{P,B}}) where {P,B} = B()
 
-    # no virtual index has dimensionality bigger than χ
-    all(i -> isnothing(tn.χ) || size(tn, i) <= tn.χ, inds(tn, :virtual)) || return false
-
-    return true
-end
-
-function _sitealias(::Type{ProjectedEntangledPair{P,Open}}, order, size, pos) where {P<:Plug}
+function sitealias(::Type{<:ProjectedEntangledPair{P,Open}}, order, size, pos) where {P<:Plug}
     m, n = size
     i, j = pos
 
@@ -44,11 +29,11 @@ function _sitealias(::Type{ProjectedEntangledPair{P,Open}}, order, size, pos) wh
         !(i == 1 && dir === :u || i == m && dir === :d || j == 1 && dir === :l || j == n && dir === :r)
     end
 end
-_sitealias(::Type{ProjectedEntangledPair{P,Periodic}}, order, _, _) where {P<:Plug} = tuple(order...)
-_sitealias(::Type{ProjectedEntangledPair{P,Infinite}}, order, _, _) where {P<:Plug} = tuple(order...)
+sitealias(::Type{<:ProjectedEntangledPair{P,Periodic}}, order, _, _) where {P<:Plug} = tuple(order...)
+sitealias(::Type{<:ProjectedEntangledPair{P,Infinite}}, order, _, _) where {P<:Plug} = tuple(order...)
 
-defaultorder(::Type{ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
-defaultorder(::Type{ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
+defaultorder(::Type{<:ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
+defaultorder(::Type{<:ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
 
 """
     ProjectedEntangledPair{P,B}(arrays::Matrix{AbstractArray}; χ::Union{Nothing,Int} = nothing, order = defaultorder(ProjectedEntangledPair{P}))
@@ -57,7 +42,6 @@ Construct a [`TensorNetwork`](@ref) with [`ProjectedEntangledPair`](@ref) ansatz
 
 # Keyword Arguments
 
-  - `χ` Maximum virtual bond dimension. Defaults to `nothing`.
   - `order` Order of the tensor indices on `arrays`. Defaults to `(:l, :r, :u, :d, :o)` if `P` is a `State`, `(:l, :r, :u, :d, :i, :o)` if `Operator`.
 """
 function ProjectedEntangledPair{P,B}(
@@ -89,41 +73,46 @@ function ProjectedEntangledPair{P,B}(
         throw(ErrorException("Plug $P is not valid"))
     end
 
-    tensors = map(zip(Iterators.map(Tuple, eachindex(IndexCartesian(), arrays)), arrays)) do ((i, j), array)
-        dirs = _sitealias(ProjectedEntangledPair{P,B}, order, (m, n), (i, j))
+    input, output = if P <: Property
+        Symbol[], Symbol[]
+    elseif P <: State
+        Symbol[], [oinds[i, j] for i in 1:m, j in 1:n]
+    elseif P <: Operator
+        [iinds[i, j] for i in 1:m, j in 1:n], [oinds[i, j] for i in 1:m, j in 1:n]
+    else
+        throw(ArgumentError("Plug $P is not valid"))
+    end
 
-        inds = map(dirs) do dir
-            if dir === :l
-                hinds[(i, (mod1(j - 1, n), j))]
-            elseif dir === :r
-                hinds[(i, (j, mod1(j + 1, n)))]
-            elseif dir === :u
-                vinds[((mod1(i - 1, m), i), j)]
-            elseif dir === :d
-                vinds[((i, mod1(i + 1, m)), j)]
-            elseif dir === :i
-                iinds[(i, j)]
-            elseif dir === :o
-                oinds[(i, j)]
+    tensors::Vector{Tensor} =
+        map(zip(Iterators.map(Tuple, eachindex(IndexCartesian(), arrays)), arrays)) do ((i, j), array)
+            dirs = sitealias(ProjectedEntangledPair{P,B}, order, (m, n), (i, j))
+
+            inds = map(dirs) do dir
+                if dir === :l
+                    hinds[(i, (mod1(j - 1, n), j))]
+                elseif dir === :r
+                    hinds[(i, (j, mod1(j + 1, n)))]
+                elseif dir === :u
+                    vinds[((mod1(i - 1, m), i), j)]
+                elseif dir === :d
+                    vinds[((i, mod1(i + 1, m)), j)]
+                elseif dir === :i
+                    iinds[(i, j)]
+                elseif dir === :o
+                    oinds[(i, j)]
+                end
             end
-        end
 
-        Tensor(array, inds)
-    end |> vec
+            Tensor(array, inds)
+        end |> vec
 
-    return TensorNetwork{ProjectedEntangledPair{P,B}}(tensors; χ, plug = P, interlayer, metadata...)
+    return QuantumTensorNetwork(TensorNetwork(tensors), input, output)
 end
-
-const PEPS = ProjectedEntangledPair{State}
-const PEPO = ProjectedEntangledPair{Operator}
-
-tensors(ψ::TensorNetwork{ProjectedEntangledPair{P,Infinite}}, site::Int, args...) where {P<:Plug} =
-    tensors(plug(ψ), ψ, mod1(site, length(ψ.tensors)), args...)
 
 # TODO normalize
 # TODO let choose the orthogonality center
 # TODO different input/output physical dims
-function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangledPair{P,Open}}) where {P<:Plug}
+function Base.rand(rng::Random.AbstractRNG, sampler::QTNSampler{ProjectedEntangledPair{P,Open}}) where {P<:Plug}
     rows = sampler.rows
     cols = sampler.cols
     χ = sampler.χ
@@ -159,13 +148,13 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangle
     # normalize state
     arrays[1, 1] ./= P <: State ? sqrt(p) : p
 
-    ProjectedEntangledPair{P,Open}(arrays; χ)
+    ProjectedEntangledPair{P,Open}(arrays)
 end
 
 # TODO normalize
 # TODO let choose the orthogonality center
 # TODO different input/output physical dims
-function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangledPair{P,Periodic}}) where {P<:Plug}
+function Base.rand(rng::Random.AbstractRNG, sampler::QTNSampler{ProjectedEntangledPair{P,Periodic}}) where {P<:Plug}
     rows = sampler.rows
     cols = sampler.cols
     χ = sampler.χ
@@ -192,5 +181,5 @@ function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{ProjectedEntangle
     # normalize state
     arrays[1, 1] ./= P <: State ? sqrt(p) : p
 
-    ProjectedEntangledPair{P,Periodic}(arrays; χ)
+    ProjectedEntangledPair{P,Periodic}(arrays)
 end

@@ -6,7 +6,7 @@ using Classes
 """
     QuantumTensorNetwork
 
-Tensor Network `Ansatz` that has a notion of sites and directionality (input/output).
+Tensor Network that has a notion of sites and directionality (input/output).
 """
 @class QuantumTensorNetwork <: TensorNetwork begin
     input::Vector{Symbol}
@@ -129,23 +129,6 @@ function plug(tn)
     end
 end
 
-# Boundary trait
-abstract type Boundary end
-struct Open <: Boundary end
-struct Periodic <: Boundary end
-struct Infinite <: Boundary end
-
-"""
-    boundary(::QuantumTensorNetwork)
-
-Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Boundary`s are defined in `Tenet`:
-
-  - `Open`
-  - `Periodic`
-  - `Infinite`
-"""
-function boundary end
-
 # TODO look for more stable ways
 """
     norm(ψ::AbstractQuantumTensorNetwork, p::Real=2)
@@ -220,3 +203,36 @@ function marginal(ψ, site)
     tensor = only(select(tn, siteindex))
     sum(tensor, inds = setdiff(inds(tensor), [siteindex]))
 end
+
+# Boundary trait
+abstract type Boundary end
+struct Open <: Boundary end
+struct Periodic <: Boundary end
+struct Infinite <: Boundary end
+
+"""
+    boundary(::QuantumTensorNetwork)
+
+Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Boundary`s are defined in `Tenet`:
+
+  - `Open`
+  - `Periodic`
+  - `Infinite`
+"""
+function boundary end
+
+abstract type Ansatz end
+
+struct QTNSampler{A<:Ansatz} <: Random.Sampler{QuantumTensorNetwork}
+    config::Dict{Symbol,Any}
+
+    QTNSampler{A}(; kwargs...) where {A} = new{A}(kwargs)
+end
+
+Base.eltype(::QTNSampler{A}) where {A} = A
+
+Base.getproperty(obj::QTNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
+Base.get(obj::QTNSampler, name, default) = get(obj.config, name, default)
+
+Base.rand(A::Type{<:Ansatz}; kwargs...) = rand(Random.default_rng(), A; kwargs...)
+Base.rand(rng::AbstractRNG, A::Type{<:Ansatz}; kwargs...) = rand(rng, QTNSampler{A}(; kwargs...))

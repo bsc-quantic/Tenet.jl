@@ -6,12 +6,12 @@ using EinExprs: inds
 using Classes
 
 """
-    MatrixProduct{P<:Plug,B<:Boundary} <: Quantum
+    MatrixProduct{P<:Plug,B<:Boundary} <: Ansatz
 
 A generic ansatz representing Matrix Product State (MPS) and Matrix Product Operator (MPO) topology, aka Tensor Train.
 Type variable `P` represents the `Plug` type (`State` or `Operator`) and `B` represents the `Boundary` type (`Open` or `Periodic`).
 """
-@class MatrixProduct{P<:Plug,B<:Boundary} <: QuantumTensorNetwork
+struct MatrixProduct{P<:Plug,B<:Boundary} <: Ansatz end
 
 function MatrixProduct{P}(arrays; boundary::Type{<:Boundary} = Open, kwargs...) where {P<:Plug}
     MatrixProduct{P,boundary}(arrays; kwargs...)
@@ -20,9 +20,7 @@ end
 const MPS = MatrixProduct{State}
 const MPO = MatrixProduct{Operator}
 
-plug(::T) where {T<:absclass(MatrixProduct)} = plug(T)
 plug(::Type{<:MatrixProduct{P}}) where {P} = P()
-boundary(::T) where {T<:absclass(MatrixProduct)} = boundary(T)
 boundary(::Type{<:MatrixProduct{P,B}}) where {P,B} = B()
 
 sitealias(::Type{MatrixProduct{P,Open}}, order, n, i) where {P<:Plug} =
@@ -89,7 +87,7 @@ function MatrixProduct{P,B}(arrays; order = defaultorder(MatrixProduct{P})) wher
         Tensor(array, inds)
     end
 
-    return MatrixProduct{P,B}(QuantumTensorNetwork(TensorNetwork(tensors), input, output))
+    return QuantumTensorNetwork(TensorNetwork(tensors), input, output)
 end
 
 # NOTE does not use optimal contraction path, but "parallel-optimal" which costs x2 more
@@ -106,7 +104,7 @@ end
 # end
 
 # TODO let choose the orthogonality center
-function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{State,Open}})
+function Base.rand(rng::Random.AbstractRNG, sampler::QTNSampler{MatrixProduct{State,Open}})
     n = sampler.n
     χ = sampler.χ
     p = get(sampler, :p, 2)
@@ -142,7 +140,7 @@ end
 
 # TODO let choose the orthogonality center
 # TODO different input/output physical dims
-function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{Operator,Open}})
+function Base.rand(rng::Random.AbstractRNG, sampler::QTNSampler{MatrixProduct{Operator,Open}})
     n = sampler.n
     χ = sampler.χ
     p = get(sampler, :p, 2)
@@ -182,7 +180,7 @@ end
 
 # TODO stable renormalization
 # TODO different input/output physical dims for Operator
-function Base.rand(rng::Random.AbstractRNG, sampler::TNSampler{MatrixProduct{P,Periodic}}) where {P<:Plug}
+function Base.rand(rng::Random.AbstractRNG, sampler::QTNSampler{MatrixProduct{P,Periodic}}) where {P<:Plug}
     n = sampler.n
     χ = sampler.χ
     p = get(sampler, :p, 2)
