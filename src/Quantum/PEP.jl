@@ -62,17 +62,6 @@ function ProjectedEntangledPair{P,B}(
     oinds = Dict((i, j) => Symbol(uuid4()) for i in 1:m, j in 1:n)
     iinds = Dict((i, j) => Symbol(uuid4()) for i in 1:m, j in 1:n)
 
-    interlayer = if P <: State
-        [Bijection(Dict(i + j * m => index for ((i, j), index) in oinds))]
-    elseif P <: Operator
-        [
-            Bijection(Dict(i + j * m => index for ((i, j), index) in iinds)),
-            Bijection(Dict(i + j * m => index for ((i, j), index) in oinds)),
-        ]
-    else
-        throw(ErrorException("Plug $P is not valid"))
-    end
-
     input, output = if P <: Property
         Symbol[], Symbol[]
     elseif P <: State
