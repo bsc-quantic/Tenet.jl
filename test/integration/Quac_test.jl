@@ -1,29 +1,25 @@
 @testset "Quac" begin
-    using Tenet: TensorNetwork, ansatz, Quantum, sites
     using Quac
-    n = 2
-    qft = Quac.Algorithms.QFT(n)
+    using UUIDs: uuid4
 
     @testset "Constructor" begin
-        tn = TensorNetwork(qft)
+        n = 2
+        qft = Quac.Algorithms.QFT(n)
+        tn = QuantumTensorNetwork(qft)
 
-        @test ansatz(tn) == Quantum
-        @test tn isa TensorNetwork{Quantum}
-
+        @test tn isa QuantumTensorNetwork
         @test issetequal(sites(tn), 1:n)
     end
 
     # TODO currently broken
-    # @testset "hcat" begin
-    #     n = 2
-    #     qft = Quac.Algorithms.QFT(n)
-    #     tn = TensorNetwork(qft)
+    @testset "merge" begin
+        n = 2
+        qft = QuantumTensorNetwork(Quac.Algorithms.QFT(n))
+        iqft = replace(qft, [index => Symbol(uuid4()) for index in inds(qft)]...)
 
-    #     newtn = hcat(tn, tn)
+        tn = merge(qft, iqft)
 
-    #     @test ansatz(newtn) <: Composite(Quantum, Quantum)
-    #     @test issetequal(sites(newtn), 1:2)
-
-    #     # TODO @test_throws ErrorException ...
-    # end
+        @test tn isa QuantumTensorNetwork
+        @test issetequal(sites(tn), 1:2)
+    end
 end

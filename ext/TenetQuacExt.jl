@@ -2,12 +2,11 @@ module TenetQuacExt
 
 using Tenet
 using Quac: Circuit, lanes, arraytype, Swap
-using Bijections
 
-function Tenet.TensorNetwork(circuit::Circuit)
+function Tenet.QuantumTensorNetwork(circuit::Circuit)
     n = lanes(circuit)
     wire = [[Tenet.letter(i)] for i in 1:n]
-    tensors = Tensor[]
+    tn = TensorNetwork()
 
     i = n + 1
 
@@ -29,15 +28,13 @@ function Tenet.TensorNetwork(circuit::Circuit)
         end |> x -> zip(x...) |> Iterators.flatten |> collect
 
         tensor = Tensor(array, inds)
-        push!(tensors, tensor)
+        push!(tn, tensor)
     end
 
-    interlayer = [
-        Bijection(Dict([site => first(index) for (site, index) in enumerate(wire)])),
-        Bijection(Dict([site => last(index) for (site, index) in enumerate(wire)])),
-    ]
+    input = first.(wire)
+    output = last.(wire)
 
-    return TensorNetwork{Quantum}(tensors; plug = Tenet.Operator, interlayer)
+    return QuantumTensorNetwork(tn, input, output)
 end
 
 end
