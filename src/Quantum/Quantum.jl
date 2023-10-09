@@ -172,7 +172,7 @@ function LinearAlgebra.normalize!(
 
     if isnothing(insert)
         # method 1: divide all tensors by (√v)^(1/n)
-        n = length(ψ)
+        n = length(tensors(ψ))
         norm ^= 1 / n
         for tensor in tensors(ψ)
             tensor ./= norm
