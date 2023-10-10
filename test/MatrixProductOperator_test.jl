@@ -93,42 +93,6 @@
                 MatrixProduct{Operator,Periodic}(arrays) isa QuantumTensorNetwork
             end
         end
-
-        # @testset "`Infinite` boundary" begin
-        #     # product operator
-        #     @test skip = true begin
-        #         arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-        #     end
-
-        #     # alternative constructor
-        #     @test skip = true begin
-        #         arrays = [rand(1, 1, 2, 2), rand(1, 1, 2, 2), rand(1, 1, 2, 2)]
-        #         MatrixProduct{Operator}(arrays; boundary = Infinite) isa MPO{Infinite}
-        #     end
-
-        #     # entangling operator
-        #     @test skip = true begin
-        #         i = 3
-        #         o = 5
-        #         arrays = [rand(2, 4, i, o), rand(4, 8, i, o), rand(8, 2, i, o)]
-        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-        #     end
-
-        #     # entangling operator - change order
-        #     @test skip = true begin
-        #         i = 3
-        #         o = 5
-        #         arrays = [rand(2, i, 4, o), rand(4, i, 8, o), rand(8, i, 2, o)]
-        #         MatrixProduct{Operator,Infinite}(arrays, order = (:l, :i, :r, :o)) isa MPO{Infinite}
-        #     end
-
-        #     # fail on Infinite with Open format
-        #     @test_throws MethodError begin
-        #         arrays = [rand(1, 2, 2), rand(1, 1, 2, 2), rand(1, 2, 2)]
-        #         MatrixProduct{Operator,Infinite}(arrays) isa MPO{Infinite}
-        #     end
-        # end
     end
 
     @testset "merge" begin

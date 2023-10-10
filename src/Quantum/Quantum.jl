@@ -230,7 +230,6 @@ end
 abstract type Boundary end
 struct Open <: Boundary end
 struct Periodic <: Boundary end
-struct Infinite <: Boundary end
 
 """
     boundary(::QuantumTensorNetwork)
@@ -239,7 +238,6 @@ Return the `Boundary` type of the [`TensorNetwork`](@ref). The following `Bounda
 
   - `Open`
   - `Periodic`
-  - `Infinite`
 """
 function boundary end
 

@@ -19,7 +19,7 @@ export transform, transform!
 include("Quantum/Quantum.jl")
 export QuantumTensorNetwork, sites, fidelity
 export Plug, plug, Property, State, Dual, Operator
-export Boundary, boundary, Open, Periodic, Infinite
+export Boundary, boundary, Open, Periodic
 
 include("Quantum/MP.jl")
 export MatrixProduct, MPS, MPO

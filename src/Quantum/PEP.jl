@@ -30,7 +30,6 @@ function sitealias(::Type{<:ProjectedEntangledPair{P,Open}}, order, size, pos) w
     end
 end
 sitealias(::Type{<:ProjectedEntangledPair{P,Periodic}}, order, _, _) where {P<:Plug} = tuple(order...)
-sitealias(::Type{<:ProjectedEntangledPair{P,Infinite}}, order, _, _) where {P<:Plug} = tuple(order...)
 
 defaultorder(::Type{<:ProjectedEntangledPair{State}}) = (:l, :r, :u, :d, :o)
 defaultorder(::Type{<:ProjectedEntangledPair{Operator}}) = (:l, :r, :u, :d, :i, :o)
