@@ -28,6 +28,8 @@ function TensorNetwork(tensors)
             throw(DimensionMismatch("Different sizes specified for index $index"))
     end
 
+    tensors = convert(Vector{Tensor}, tensors)
+
     return TensorNetwork(indices, tensors)
 end
 
