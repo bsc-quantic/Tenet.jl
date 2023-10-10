@@ -1,12 +1,12 @@
 @testset "Quantum" begin
     state = QuantumTensorNetwork(
-        TensorNetwork(Tensor[Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))]),
+        TensorNetwork([Tensor(rand(2, 2), (:i, :k)), Tensor(rand(3, 2, 4), (:j, :k, :l))]),
         Symbol[], # input
         [:i, :j], # output
     )
 
     operator = QuantumTensorNetwork(
-        TensorNetwork(Tensor[Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))]),
+        TensorNetwork([Tensor(rand(2, 4, 2), (:a, :c, :d)), Tensor(rand(3, 4, 3, 5), (:b, :c, :e, :f))]),
         [:a, :b], # input
         [:d, :e], # output
     )

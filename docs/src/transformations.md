@@ -81,7 +81,7 @@ A = Tensor(data, (:i, :j, :k, :l)) #hide
 B = Tensor(rand(2, 2), (:i, :m)) #hide
 C = Tensor(rand(2, 2), (:j, :n)) #hide
 
-tn = TensorNetwork(Tensor[A, B, C]) #hide
+tn = TensorNetwork([A, B, C]) #hide
 reduced = transform(tn, Tenet.DiagonalReduction) #hide
 
 smooth_annotation!( #hide
@@ -139,7 +139,7 @@ B = Tensor(rand(2, 2), (:i, :m)) #hide
 C = Tensor(rand(2, 2, 2), (:m, :n, :o)) #hide
 E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j)) #hide
 
-tn = TensorNetwork(Tensor[A, B, C, E]) #hide
+tn = TensorNetwork([A, B, C, E]) #hide
 reduced = transform(tn, Tenet.RankSimplification) #hide
 
 smooth_annotation!( #hide
@@ -193,7 +193,7 @@ A = Tensor(data, (:i, :j, :k)) #hide
 B = Tensor(rand(3, 3), (:j, :l)) #hide
 C = Tensor(rand(3, 3), (:l, :m)) #hide
 
-tn = TensorNetwork(Tensor[A, B, C]) #hide
+tn = TensorNetwork([A, B, C]) #hide
 reduced = transform(tn, Tenet.ColumnReduction) #hide
 
 smooth_annotation!( #hide
@@ -247,7 +247,7 @@ m1 = Tensor(rand(3, 3), (:k, :l)) #hide
 t1 = contract(v1, v2) #hide
 tensor = contract(t1, m1)  #hide
 
-tn = TensorNetwork(Tensor[tensor, Tensor(rand(3, 3, 3), (:k, :m, :n)), Tensor(rand(3, 3, 3), (:l, :n, :o))]) #hide
+tn = TensorNetwork([tensor, Tensor(rand(3, 3, 3), (:k, :m, :n)), Tensor(rand(3, 3, 3), (:l, :n, :o))]) #hide
 reduced = transform(tn, Tenet.SplitSimplification) #hide
 
 smooth_annotation!( #hide

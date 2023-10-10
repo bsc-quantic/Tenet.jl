@@ -9,7 +9,7 @@
 
         @testset "list" begin
             tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork(Tensor[tensor])
+            tn = TensorNetwork([tensor])
 
             @test only(tensors(tn)) === tensor
 
@@ -56,7 +56,7 @@
 
     @testset "merge!" begin
         tensor = Tensor(zeros(2, 3), (:i, :j))
-        A = TensorNetwork(Tensor[tensor])
+        A = TensorNetwork([tensor])
         B = TensorNetwork()
 
         merge!(A, B)
@@ -66,7 +66,7 @@
     @testset "pop!" begin
         @testset "by reference" begin
             tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork(Tensor[tensor])
+            tn = TensorNetwork([tensor])
 
             @test pop!(tn, tensor) === tensor
             @test length(tn.tensors) == 0
@@ -76,7 +76,7 @@
 
         @testset "by symbol" begin
             tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork(Tensor[tensor])
+            tn = TensorNetwork([tensor])
 
             @test only(pop!(tn, :i)) === tensor
             @test length(tn.tensors) == 0
@@ -86,7 +86,7 @@
 
         @testset "by symbols" begin
             tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork(Tensor[tensor])
+            tn = TensorNetwork([tensor])
 
             @test only(pop!(tn, (:i, :j))) === tensor
             @test length(tn.tensors) == 0
@@ -98,7 +98,7 @@
     # TODO by simbols
     @testset "delete!" begin
         tensor = Tensor(zeros(2, 3), (:i, :j))
-        tn = TensorNetwork(Tensor[tensor])
+        tn = TensorNetwork([tensor])
 
         @test delete!(tn, tensor) === tn
         @test length(tn.tensors) == 0
@@ -126,7 +126,7 @@
 
     @testset "copy" begin
         tensor = Tensor(zeros(2, 2), (:i, :j))
-        tn = TensorNetwork(Tensor[tensor])
+        tn = TensorNetwork([tensor])
         tn_copy = copy(tn)
 
         @test tensors(tn_copy) !== tensors(tn) && all(tensors(tn_copy) .=== tensors(tn))
@@ -134,14 +134,12 @@
     end
 
     @testset "inds" begin
-        tn = TensorNetwork(
-            Tensor[
-                Tensor(zeros(2, 2), (:i, :j)),
-                Tensor(zeros(2, 2), (:i, :k)),
-                Tensor(zeros(2, 2, 2), (:i, :l, :m)),
-                Tensor(zeros(2, 2), (:l, :m)),
-            ],
-        )
+        tn = TensorNetwork([
+            Tensor(zeros(2, 2), (:i, :j)),
+            Tensor(zeros(2, 2), (:i, :k)),
+            Tensor(zeros(2, 2, 2), (:i, :l, :m)),
+            Tensor(zeros(2, 2), (:l, :m)),
+        ],)
 
         @test issetequal(inds(tn), (:i, :j, :k, :l, :m))
         @test issetequal(inds(tn, :open), (:j, :k))
@@ -150,14 +148,12 @@
     end
 
     @testset "size" begin
-        tn = TensorNetwork(
-            Tensor[
-                Tensor(zeros(2, 3), (:i, :j)),
-                Tensor(zeros(2, 4), (:i, :k)),
-                Tensor(zeros(2, 5, 6), (:i, :l, :m)),
-                Tensor(zeros(5, 6), (:l, :m)),
-            ],
-        )
+        tn = TensorNetwork([
+            Tensor(zeros(2, 3), (:i, :j)),
+            Tensor(zeros(2, 4), (:i, :k)),
+            Tensor(zeros(2, 5, 6), (:i, :l, :m)),
+            Tensor(zeros(5, 6), (:l, :m)),
+        ],)
 
         @test size(tn) == Dict((:i => 2, :j => 3, :k => 4, :l => 5, :m => 6))
         @test all([size(tn, :i) == 2, size(tn, :j) == 3, size(tn, :k) == 4, size(tn, :l) == 5, size(tn, :m) == 6])
@@ -170,7 +166,7 @@
         t_ik = Tensor(zeros(2, 2), (:i, :k))
         t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
         t_lm = Tensor(zeros(2, 2), (:l, :m))
-        tn = TensorNetwork(Tensor[t_ij, t_ik, t_ilm, t_lm])
+        tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         @test issetequal(select(tn, :i), (t_ij, t_ik, t_ilm))
         @test issetequal(select(tn, :j), (t_ij,))
@@ -211,7 +207,7 @@
 
         A = Tensor(rand(2, 2, 2), (:i, :j, :k))
         B = Tensor(rand(2, 2, 2), (:k, :l, :m))
-        tn = TensorNetwork(Tensor[A, B])
+        tn = TensorNetwork([A, B])
         @test contract(tn) isa Tensor
     end
 
@@ -220,7 +216,7 @@
         t_ik = Tensor(zeros(2, 2), (:i, :k))
         t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
         t_lm = Tensor(zeros(2, 2), (:l, :m))
-        tn = TensorNetwork(Tensor[t_ij, t_ik, t_ilm, t_lm])
+        tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         @testset "replace inds" begin
             mapping = (:i => :u, :j => :v, :k => :w, :l => :x, :m => :y)
@@ -261,7 +257,7 @@
             # New tensor network with two tensors with the same inds
             A = Tensor(rand(2, 2), (:u, :w))
             B = Tensor(rand(2, 2), (:u, :w))
-            tn = TensorNetwork(Tensor[A, B])
+            tn = TensorNetwork([A, B])
 
             new_tensor = Tensor(rand(2, 2), (:u, :w))
 
@@ -269,7 +265,7 @@
             @test A === tn.tensors[1]
             @test new_tensor === tn.tensors[2]
 
-            tn = TensorNetwork(Tensor[A, B])
+            tn = TensorNetwork([A, B])
             replace!(tn, A => new_tensor)
 
             @test issetequal(tensors(tn), [new_tensor, B])
@@ -278,7 +274,7 @@
             A = Tensor(zeros(2, 2), (:i, :j))
             B = Tensor(zeros(2, 2), (:j, :k))
             C = Tensor(zeros(2, 2), (:k, :l))
-            tn = TensorNetwork(Tensor[A, B, C])
+            tn = TensorNetwork([A, B, C])
 
             @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
 

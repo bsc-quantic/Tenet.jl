@@ -25,7 +25,7 @@
         t_ik = Tensor(zeros(2, 2), (:i, :k))
         t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
         t_lm = Tensor(zeros(2, 2), (:l, :m))
-        tn = TensorNetwork(Tensor[t_ij, t_ik, t_ilm, t_lm])
+        tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         transform!(tn, HyperindConverter)
         @test isempty(inds(tn, :hyper))
@@ -66,7 +66,7 @@
 
             @test issetequal(find_diag_axes(A), [[:i, :j]])
 
-            tn = TensorNetwork(Tensor[A, B, C])
+            tn = TensorNetwork([A, B, C])
             reduced = transform(tn, DiagonalReduction)
 
             @test all(
@@ -100,7 +100,7 @@
             @test issetequal(find_diag_axes(A), [[:i, :l], [:j, :m]])
             @test issetequal(find_diag_axes(B), [[:j, :n, :o]])
 
-            tn = TensorNetwork(Tensor[A, B, C])
+            tn = TensorNetwork([A, B, C])
             reduced = transform(tn, DiagonalReduction)
 
             # Test that all tensors (that are no COPY tensors) in reduced have no
@@ -124,7 +124,7 @@
         D = Tensor(rand(2), (:p,))
         E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j))
 
-        tn = TensorNetwork(Tensor[A, B, C, D, E])
+        tn = TensorNetwork([A, B, C, D, E])
         reduced = transform(tn, RankSimplification)
 
         # Test that the resulting tn contains no tensors with larger rank than the original
@@ -175,7 +175,7 @@
         @test issetequal(find_anti_diag_axes(parent(A)), [(1, 4), (2, 5)])
         @test issetequal(find_anti_diag_axes(parent(B)), [(1, 2)])
 
-        tn = TensorNetwork(Tensor[A, B, C])
+        tn = TensorNetwork([A, B, C])
         gauged = transform(tn, AntiDiagonalGauging)
 
         # Test that all tensors in gauged have no antidiagonals
@@ -201,7 +201,7 @@
 
             @test issetequal(find_zero_columns(parent(A)), [(2, 1), (2, 2)])
 
-            tn = TensorNetwork(Tensor[A, B, C])
+            tn = TensorNetwork([A, B, C])
             reduced = transform(tn, ColumnReduction)
 
             # Test that all the tensors in reduced have no columns and they do not have the 2nd :j index
@@ -226,7 +226,7 @@
 
             @test issetequal(find_zero_columns(parent(A)), [(2, 2)])
 
-            tn = TensorNetwork(Tensor[A, B, C])
+            tn = TensorNetwork([A, B, C])
             reduced = transform(tn, ColumnReduction)
 
             # Test that all the tensors in reduced have no columns and they have smaller dimensions in the 2nd :j index
@@ -252,7 +252,7 @@
         t1 = contract(v1, v2)
         tensor = contract(t1, m1) # Define a tensor which can be splitted in three
 
-        tn = TensorNetwork(Tensor[tensor, Tensor(rand(3, 3, 3), (:k, :m, :n)), Tensor(rand(3, 3, 3), (:l, :n, :o))])
+        tn = TensorNetwork([tensor, Tensor(rand(3, 3, 3), (:k, :m, :n)), Tensor(rand(3, 3, 3), (:l, :n, :o))])
         reduced = transform(tn, SplitSimplification)
 
         # Test that the new tensors in reduced are smaller than the deleted ones

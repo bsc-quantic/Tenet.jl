@@ -2,7 +2,7 @@
     using CairoMakie
     using NetworkLayout: Spring
 
-    tensors = Tensor[Tensor(rand(2, 2, 2, 2), (:x, :y, :z, :t)), Tensor(rand(2, 2), (:x, :y)), Tensor(rand(2), (:x,))]
+    tensors = [Tensor(rand(2, 2, 2, 2), (:x, :y, :z, :t)), Tensor(rand(2, 2), (:x, :y)), Tensor(rand(2), (:x,))]
     tn = TensorNetwork(tensors)
 
     @testset "plot!" begin
