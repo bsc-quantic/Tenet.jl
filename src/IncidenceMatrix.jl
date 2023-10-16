@@ -51,9 +51,9 @@ Base.size(arr::IncidenceMatrix) = (length(arr.rows), length(arr.cols))
 
 SparseArrays.nnz(arr::IncidenceMatrix) = mapreduce(length, +, arr.rows)
 function SparseArrays.findnz(arr::IncidenceMatrix)
-    I = Iterators.flatmap(enumerate(values(arr.rows)) do (i, row)
+    I = Iterators.flatmap(enumerate(values(arr.rows))) do (i, row)
         Iterators.repeated(i, length(row))
-    end) |> collect
+    end |> collect
     J = collect(Iterators.flatten(values(arr.rows)))
     V = trues(length(I))
     return (I, J, V)
