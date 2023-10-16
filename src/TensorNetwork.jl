@@ -13,25 +13,33 @@ Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
 struct TensorNetwork <: AbstractTensorNetwork
-    indices::Dict{Symbol,Vector{Int}}
-    tensors::Vector{Tensor}
+    incidence::IncidenceMatrix{Int}
+    indexmap::Bijection{Int,Symbol}
+    tensormap::Bijection{Int,Tensor}
 end
 
-TensorNetwork() = TensorNetwork(Tensor[])
+TensorNetwork() = TensorNetwork(IncidenceMatrix{Int}(), Bijection{Int,Symbol}(), Bijection{Int,Tensor}())
 function TensorNetwork(tensors)
-    indices = reduce(enumerate(tensors); init = Dict{Symbol,Vector{Int}}([])) do dict, (i, tensor)
-        mergewith(vcat, dict, Dict([index => [i] for index in inds(tensor)]))
+    indices::Vector{Symbol} = mapreduce(inds, ∪, tensors)
+    indexmap = Bijection(map(splat(Pair{Int,Symbol}), enumerate(indices)))
+    tensormap = Bijection(map(splat(Pair{Int,Tensor}), enumerate(tensors)))
+
+    incidence = IncidenceMatrix{Int}()
+
+    for (i, tensor) in enumerate(tensors), j in Iterators.map(indexmap, inds(tensor))
+        incidence[i, j] = true
     end
 
     # check for inconsistent dimensions
-    for (index, idxs) in indices
-        allequal(Iterators.map(i -> size(tensors[i], index), idxs)) ||
+    for (j, index) in indexmap
+        is = incidence[:, j]
+        allequal(Iterators.map(i -> size(tensormap[i], index), is)) ||
             throw(DimensionMismatch("Different sizes specified for index $index"))
     end
 
     tensors = convert(Vector{Tensor}, tensors)
 
-    return TensorNetwork(indices, tensors)
+    return TensorNetwork(incidence, indexmap, tensormap)
 end
 
 """

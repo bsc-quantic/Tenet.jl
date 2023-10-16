@@ -9,6 +9,7 @@ export Tensor, contract, dim, expand
 
 include("Numerics.jl")
 
+include("IncidenceMatrix.jl")
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, select, slice!
 export contract, contract!
