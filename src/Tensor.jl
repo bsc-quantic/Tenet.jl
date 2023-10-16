@@ -4,7 +4,7 @@ using ImmutableArrays
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    inds::ImmutableVector{Symbol}
+    inds::ImmutableVector{Symbol,Vector{Symbol}}
 
     function Tensor{T,N,A}(data::A, inds::AbstractVector) where {T,N,A<:AbstractArray{T,N}}
         length(inds) == N ||
