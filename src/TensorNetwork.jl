@@ -20,12 +20,19 @@ end
 
 TensorNetwork() = TensorNetwork(IncidenceMatrix{Int}(), Bijection{Int,Symbol}(), Bijection{Int,Tensor}())
 function TensorNetwork(tensors)
-    indices::Vector{Symbol} = mapreduce(inds, ∪, tensors)
-    indexmap = Bijection(map(splat(Pair{Int,Symbol}), enumerate(indices)))
-    tensormap = Bijection(map(splat(Pair{Int,Tensor}), enumerate(tensors)))
+    indices = unique(Iterators.flatmap(inds, tensors))
+    indexmap = Bijection{Int,Symbol}()
+    for (j, index) in enumerate(indices)
+        indexmap[j] = index
+    end
+
+    # TODO use `IdSet` in `Bijection.range` and related for ×3-4 speedup
+    tensormap = Bijection{Int,Tensor}()
+    for (i, tensor) in enumerate(tensors)
+        tensormap[i] = tensor
+    end
 
     incidence = IncidenceMatrix{Int}()
-
     for (i, tensor) in enumerate(tensors), j in Iterators.map(indexmap, inds(tensor))
         incidence[i, j] = true
     end
@@ -36,8 +43,6 @@ function TensorNetwork(tensors)
         allequal(Iterators.map(i -> size(tensormap[i], index), is)) ||
             throw(DimensionMismatch("Different sizes specified for index $index"))
     end
-
-    tensors = convert(Vector{Tensor}, tensors)
 
     return TensorNetwork(incidence, indexmap, tensormap)
 end
