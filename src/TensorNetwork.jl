@@ -14,20 +14,19 @@ Graph vertices represent tensors and graph edges, tensor indices.
 """
 struct TensorNetwork <: AbstractTensorNetwork
     incidence::IncidenceMatrix{Int}
-    indexmap::Bijection{Int,Symbol}
-    tensormap::Bijection{Int,Tensor}
+    indexmap::IndexBijection
+    tensormap::TensorBijection
 end
 
-TensorNetwork() = TensorNetwork(IncidenceMatrix{Int}(), Bijection{Int,Symbol}(), Bijection{Int,Tensor}())
+TensorNetwork() = TensorNetwork(IncidenceMatrix{Int}(), IndexBijection(), TensorBijection())
 function TensorNetwork(tensors)
     indices = unique(Iterators.flatmap(inds, tensors))
-    indexmap = Bijection{Int,Symbol}()
+    indexmap = IndexBijection()
     for (j, index) in enumerate(indices)
         indexmap[j] = index
     end
 
-    # TODO use `IdSet` in `Bijection.range` and related for ×3-4 speedup
-    tensormap = Bijection{Int,Tensor}()
+    tensormap = TensorBijection()
     for (i, tensor) in enumerate(tensors)
         tensormap[i] = tensor
     end
