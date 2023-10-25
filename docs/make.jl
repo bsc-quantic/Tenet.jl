@@ -47,4 +47,4 @@ makedocs(
     warnonly = true,
 )
 
-deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "master", push_preview = true)
+deploydocs(repo = "github.com/bsc-quantic/Tenet.jl.git", devbranch = "develop", push_preview = true)
