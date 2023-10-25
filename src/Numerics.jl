@@ -1,7 +1,6 @@
 using OMEinsum
 using LinearAlgebra
 using UUIDs: uuid4
-using EinExprs: inds
 
 # TODO test array container typevar on output
 for op in [
@@ -34,7 +33,7 @@ end
 __omeinsum_sym2str(x) = String[string(i) for i in x]
 
 """
-    contract(a::Tensor[, b::Tensor, dims=nonunique([inds(a)..., inds(b)...])])
+    contract(a::Tensor[, b::Tensor]; dims=nonunique([inds(a)..., inds(b)...]))
 
 Perform tensor contraction operation.
 """

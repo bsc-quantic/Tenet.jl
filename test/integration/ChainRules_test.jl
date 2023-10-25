@@ -18,13 +18,13 @@
 
     @testset "TensorNetwork" begin
         # TODO it crashes
-        # test_frule(TensorNetwork, Tensor[])
-        # test_rrule(TensorNetwork, Tensor[])
+        # test_frule(TensorNetwork, [])
+        # test_rrule(TensorNetwork, [])
 
         a = Tensor(rand(4, 2), (:i, :j))
         b = Tensor(rand(2, 3), (:j, :k))
 
-        test_frule(TensorNetwork, Tensor[a, b])
-        test_rrule(TensorNetwork, Tensor[a, b])
+        test_frule(TensorNetwork, [a, b])
+        test_rrule(TensorNetwork, [a, b])
     end
 end

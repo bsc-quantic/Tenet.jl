@@ -2,15 +2,16 @@ using Test
 using Tenet
 using OMEinsum
 
-@testset "Unit tests" verbose = true begin
+@testset "Core tests" verbose = true begin
     include("Helpers_test.jl")
     include("Tensor_test.jl")
     include("Numerics_test.jl")
     include("TensorNetwork_test.jl")
-    include("Quantum_test.jl")
     include("Transformations_test.jl")
+end
 
-    # Ansatz Tensor Networks
+@testset "Quantum tests" verbose = true begin
+    include("Quantum_test.jl")
     include("MatrixProductState_test.jl")
     include("MatrixProductOperator_test.jl")
 end

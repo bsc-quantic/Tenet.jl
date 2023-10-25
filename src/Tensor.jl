@@ -1,6 +1,5 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
-using EinExprs
 using ImmutableArrays
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
@@ -22,6 +21,8 @@ Tensor(data::A, inds::NTuple{N,Symbol}) where {T,N,A<:AbstractArray{T,N}} = Tens
 
 Tensor(data::AbstractArray{T,0}) where {T} = Tensor(data, Symbol[])
 Tensor(data::Number) = Tensor(fill(data))
+
+inds(t::Tensor) = t.inds
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     data = copy(t.data)
@@ -77,8 +78,6 @@ function Base.isapprox(a::Tensor, b::Tensor)
         isapprox(a[i], b[j])
     end
 end
-
-EinExprs.inds(t::Tensor) = t.inds
 
 # NOTE: `replace` does not currenly support cyclic replacements
 Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...) = Tensor(parent(t), replace(inds(t), old_new...))

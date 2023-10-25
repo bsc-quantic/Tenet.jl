@@ -1,6 +1,7 @@
 module TenetChainRulesCoreExt
 
 using Tenet
+using Classes
 using ChainRulesCore
 
 function ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor}
@@ -26,29 +27,45 @@ ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pull
 @non_differentiable intersect(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 @non_differentiable symdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 
-function ChainRulesCore.ProjectTo(tn::T) where {T<:TensorNetwork}
-    ProjectTo{T}(; tensors = ProjectTo(tn.tensors), metadata = tn.metadata)
+function ChainRulesCore.ProjectTo(tn::T) where {T<:absclass(TensorNetwork)}
+    # TODO create function to extract extra fields
+    fields = map(fieldnames(T)) do fieldname
+        if fieldname === :tensors
+            :tensors => ProjectTo(tn.tensors)
+        else
+            fieldname => getfield(tn, fieldname)
+        end
+    end
+    ProjectTo{T}(; fields...)
 end
 
-function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:TensorNetwork}
+function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:absclass(TensorNetwork)}
     dx.tensors isa NoTangent && return NoTangent()
     Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
 end
 
-function Base.:+(x::TensorNetwork{A}, Δ::Tangent{TensorNetwork}) where {A<:Ansatz}
+function Base.:+(x::T, Δ::Tangent{TensorNetwork}) where {T<:absclass(TensorNetwork)}
     # TODO match tensors by indices
-    tensors = map(+, x.tensors, Δ.tensors)
-    TensorNetwork{A}(tensors; x.metadata...)
+    tensors = map(+, tensors(x), Δ.tensors)
+
+    # TODO create function fitted for this? or maybe standardize constructors?
+    T(map(fieldnames(T)) do fieldname
+        if fieldname === :tensors
+            tensors
+        else
+            getfield(x, fieldname)
+        end
+    end...)
 end
 
-function ChainRulesCore.frule((_, Δ), T::Type{<:TensorNetwork}, tensors; metadata...)
-    T(tensors; metadata...), Tangent{TensorNetwork}(tensors = Δ)
+function ChainRulesCore.frule((_, Δ), T::Type{<:absclass(TensorNetwork)}, tensors)
+    T(tensors), Tangent{TensorNetwork}(tensors = Δ)
 end
 
 TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensors)
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
-function ChainRulesCore.rrule(T::Type{<:TensorNetwork}, tensors; metadata...)
-    T(tensors; metadata...), TensorNetwork_pullback
+function ChainRulesCore.rrule(T::Type{<:absclass(TensorNetwork)}, tensors)
+    T(tensors), TensorNetwork_pullback
 end
 
 end
