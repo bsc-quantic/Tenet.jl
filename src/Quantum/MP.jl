@@ -32,7 +32,6 @@ sitealias(::Type{MatrixProduct{P,Open}}, order, n, i) where {P<:Plug} =
         order
     end
 sitealias(::Type{MatrixProduct{P,Periodic}}, order, n, i) where {P<:Plug} = tuple(order...)
-sitealias(::Type{MatrixProduct{P,Infinite}}, order, n, i) where {P<:Plug} = tuple(order...)
 
 defaultorder(::Type{<:MatrixProduct{Property}}) = (:l, :r)
 defaultorder(::Type{<:MatrixProduct{State}}) = (:l, :r, :o)

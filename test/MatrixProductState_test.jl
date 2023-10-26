@@ -99,48 +99,6 @@
                 MatrixProduct{State,Periodic}(arrays) isa QuantumTensorNetwork
             end
         end
-
-        # @testset "`Infinite` boundary" begin
-        #     # product state
-        #     @test skip = true begin
-        #         arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-        #         MatrixProduct{State,Infinite}(arrays) isa MPS{Infinite}
-        #     end
-
-        #     # entangled state
-        #     @test skip = true begin
-        #         arrays = [rand(3, 4, 2), rand(4, 8, 2), rand(8, 3, 2)]
-        #         MatrixProduct{State,Infinite}(arrays) isa MPS{Infinite}
-        #     end
-
-        #     @testset "custom order" begin
-        #         arrays = [rand(3, 1, 3), rand(3, 1, 3), rand(3, 1, 3)]
-        #         ψ = MatrixProduct{State,Infinite}(arrays, order = (:r, :o, :l))
-
-        #         @test skip = true ψ isa MPS{Infinite}
-        #     end
-
-        #     # alternative constructor
-        #     @test skip = true begin
-        #         arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-        #         MatrixProduct{State}(arrays; boundary = Infinite) isa MPS{Infinite}
-        #     end
-
-        #     # fail on Infinite with Open format
-        #     @test_throws skip = true Exception begin
-        #         arrays = [rand(1, 2), rand(1, 1, 2), rand(1, 2)]
-        #         MatrixProduct{State,Infinite}(arrays) isa MPS{Infinite}
-        #     end
-
-        #     # @testset "tensors" begin
-        #     #     arrays = [rand(1, 1, 2), rand(1, 1, 2), rand(1, 1, 2)]
-        #     #     ψ = MatrixProduct{State,Infinite}(arrays, order = (:l, :r, :o))
-
-        #     #     @test tensors(ψ, 1) isa Tensor
-        #     #     @test tensors(ψ, 4) == tensors(ψ, 1)
-        #     #     @test tensors(ψ, 0) == tensors(ψ, 3)
-        #     # end
-        # end
     end
 
     @testset "merge" begin
