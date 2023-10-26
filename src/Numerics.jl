@@ -122,7 +122,22 @@ end
 
 LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
-function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)
+"""
+    LinearAlgebra.qr(t::Tensor, mode::Symbol = :reduced; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...
+
+Perform QR factorization on a tensor.
+
+# Arguments
+    - `t::Tensor`: tensor to be factorized
+    - `mode::Symbol`: either `:reduced` or `:full`. Defaults to `:reduced`, which will ensure that the dimension of the virtual bond is the minimum of the dimensions of the original tensor.
+
+# Keyword Arguments
+    - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
+    - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
+    - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+
+"""
+function LinearAlgebra.qr(t::Tensor, mode::Symbol = :reduced; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)
     isdisjoint(left_inds, right_inds) ||
         throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
 
@@ -141,7 +156,8 @@ function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind
     data = reshape(parent(tensor), prod(i -> size(t, i), left_inds), prod(i -> size(t, i), right_inds))
 
     # compute QR
-    Q, R = qr(data; kwargs...)
+    F = qr(data; kwargs...)
+    (mode == :reduced && (Q, R = Matrix(F.Q), Matrix(F.R))) || (mode == :full && (Q, R = F.Q, F.R)) || throw(ArgumentError("mode ($mode) must be either :reduced or :full"))
 
     # tensorify results
     Q = reshape(Q, ([size(t, ind) for ind in left_inds]..., size(Q, 2)))
