@@ -124,7 +124,6 @@ LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; lef
 Perform QR factorization on a tensor.
 # Arguments
     - `t::Tensor`: tensor to be factorized
-    - `mode::Symbol`: either `:reduced` or `:full`. Defaults to `:reduced`, which will ensure that the dimension of the virtual bond is the minimum of the dimensions of the original tensor.
 # Keyword Arguments
     - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
     - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
@@ -149,7 +148,7 @@ function LinearAlgebra.qr(t::Tensor, mode::Symbol = :reduced; left_inds = (), ri
 
     # compute QR
     F = qr(data; kwargs...)
-    (mode == :reduced && (Q, R = Matrix(F.Q), Matrix(F.R))) || (mode == :full && (Q, R = F.Q, F.R)) || throw(ArgumentError("mode ($mode) must be either :reduced or :full"))
+    Q, R = Matrix(F.Q), Matrix(F.R)
 
     # tensorify results
     Q = reshape(Q, ([size(t, ind) for ind in left_inds]..., size(Q, 2)))
