@@ -196,7 +196,7 @@
         @testset "size" begin
             Q, R = qr(tensor, left_inds = (:i, :j))
             # Q's new index size = min(prod(left_inds), prod(right_inds)).
-            @test size(Q) == (2, 2, 4)
+            @test size(Q) == (2, 2, 2)
             @test size(R) == (2, 2)
 
             # Additional test with different dimensions
