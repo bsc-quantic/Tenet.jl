@@ -39,11 +39,12 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Format .jl files
-          title: 'Format code'
-          branch: auto-juliaformatter-pr
+          commit-message: Format code
+          title: 'Format code of branch "${{ matrix.branch }}"'
+          branch: format-${{ matrix.branch }}
           delete-branch: true
           labels: format
+          reviewers: mofeing
 
       - name: Check outputs
         run: |
