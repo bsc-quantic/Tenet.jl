@@ -121,15 +121,21 @@ LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; lef
 
 """
     LinearAlgebra.qr(t::Tensor, mode::Symbol = :reduced; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...
+
 Perform QR factorization on a tensor.
+
 # Arguments
+
     - `t::Tensor`: tensor to be factorized
+
 # Keyword Arguments
+
     - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
     - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
     - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)    isdisjoint(left_inds, right_inds) ||
+function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)
+    isdisjoint(left_inds, right_inds) ||
         throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
 
     left_inds, right_inds =
