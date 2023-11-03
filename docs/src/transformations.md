@@ -283,35 +283,3 @@ plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_
 
 fig #hide
 ```
-
-## Example: RQC simplification
-
-Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on the Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
-
-```@example plot
-using QuacIO
-set_theme!(resolution=(800,400)) # hide
-
-sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 72, 73, 74, 75, 76, 83, 84, 85, 94]
-circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format=QuacIO.Qflex(), sites=sites)
-tn = QuantumTensorNetwork(circuit)
-
-# Apply transformations to the tensor network
-transformed_tn = transform(tn, [Tenet.AntiDiagonalGauging, Tenet.DiagonalReduction, Tenet.ColumnReduction, Tenet.RankSimplification])
-
-fig = Figure() # hide
-ax1 = Axis(fig[1, 1]) # hide
-p1 = plot!(ax1, tn; edge_width=0.75, node_size=8., node_attr=(strokecolor=:black, strokewidth=0.5)) # hide
-ax2 = Axis(fig[1, 2]) # hide
-p2 = plot!(ax2, transformed_tn; edge_width=0.75, node_size=8., node_attr=(strokecolor=:black, strokewidth=0.5)) # hide
-ax1.titlesize, ax2.titlesize = 20, 20 # hide
-hidedecorations!(ax1) # hide
-hidespines!(ax1) # hide
-hidedecorations!(ax2) # hide
-hidespines!(ax2) # hide
-
-Label(fig[1, 1, Bottom()], "Original") # hide
-Label(fig[1, 2, Bottom()], "Transformed") # hide
-
-fig # hide
-```

@@ -20,21 +20,10 @@ makedocs(
     pages = Any[
         "Home"=>"index.md",
         "Tensors"=>"tensors.md",
-        "Tensor Networks"=>[
-            "Introduction" => "tensor-network.md",
-            "Contraction" => "contraction.md",
-            "Transformations" => "transformations.md",
-            "Visualization" => "visualization.md",
-        ],
-        "Quantum Tensor Networks"=>[
-            "Introduction" => "quantum/index.md",
-            "Matrix Product States (MPS)" => "quantum/mps.md",
-            "Projected Entangled Pair States (PEPS)" => "quantum/peps.md",
-        ],
-        "Examples"=>[
-            "Google's Quantum Advantage experiment" => "examples/google-rqc.md",
-            "Automatic Differentiation on Tensor Network contraction" => "examples/ad-tn.md",
-        ],
+        "Tensor Networks"=>"tensor-network.md",
+        "Contraction"=>"contraction.md",
+        "Transformations"=>"transformations.md",
+        "Visualization"=>"visualization.md",
         "Alternatives"=>"alternatives.md",
         "References"=>"references.md",
     ],

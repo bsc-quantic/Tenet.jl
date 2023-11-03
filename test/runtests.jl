@@ -2,7 +2,7 @@ using Test
 using Tenet
 using OMEinsum
 
-@testset "Core tests" verbose = true begin
+@testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
     include("Tensor_test.jl")
     include("Numerics_test.jl")
@@ -10,16 +10,9 @@ using OMEinsum
     include("Transformations_test.jl")
 end
 
-@testset "Quantum tests" verbose = true begin
-    include("Quantum_test.jl")
-    include("MatrixProductState_test.jl")
-    include("MatrixProductOperator_test.jl")
-end
-
 @testset "Integration tests" verbose = true begin
     include("integration/ChainRules_test.jl")
     include("integration/BlockArray_test.jl")
-    include("integration/Quac_test.jl")
     include("integration/Makie_test.jl")
 end
 

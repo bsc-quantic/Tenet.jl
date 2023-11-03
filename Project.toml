@@ -23,14 +23,12 @@ ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 
 [extensions]
 TenetChainRulesCoreExt = "ChainRulesCore"
 TenetChainRulesTestUtilsExt = ["ChainRulesCore", "ChainRulesTestUtils"]
 TenetFiniteDifferencesExt = "FiniteDifferences"
 TenetMakieExt = "Makie"
-TenetQuacExt = "Quac"
 
 [compat]
 ChainRulesCore = "1.0"
@@ -42,6 +40,5 @@ Graphs = "1.7"
 Makie = "0.18, 0.19"
 Muscle = "0.1"
 OMEinsum = "0.7"
-Quac = "0.2"
 ValSplit = "0.1"
 julia = "1.9"
