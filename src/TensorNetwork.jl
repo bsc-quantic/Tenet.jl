@@ -3,7 +3,8 @@ using Random
 using EinExprs
 using OMEinsum
 using ValSplit
-using Classes
+
+abstract type AbstractTensorNetwork end
 
 """
     TensorNetwork
@@ -11,7 +12,7 @@ using Classes
 Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
-@class TensorNetwork begin
+struct TensorNetwork <: AbstractTensorNetwork
     indices::Dict{Symbol,Vector{Int}}
     tensors::Vector{Tensor}
 end
@@ -38,12 +39,12 @@ end
 
 Return a shallow copy of a [`TensorNetwork`](@ref).
 """
-Base.copy(tn::T) where {T<:absclass(TensorNetwork)} = T(map(fieldnames(T)) do field
+Base.copy(tn::T) where {T<:AbstractTensorNetwork} = T(map(fieldnames(T)) do field
     (field === :indices ? deepcopy : copy)(getfield(tn, field))
 end...)
 
-Base.summary(io::IO, x::absclass(TensorNetwork)) = print(io, "$(length(x))-tensors $(typeof(x))")
-Base.show(io::IO, tn::absclass(TensorNetwork)) =
+Base.summary(io::IO, x::AbstractTensorNetwork) = print(io, "$(length(x))-tensors $(typeof(x))")
+Base.show(io::IO, tn::AbstractTensorNetwork) =
     print(io, "$(typeof(tn))(#tensors=$(length(tn.tensors)), #inds=$(length(tn.indices)))")
 
 """
@@ -51,8 +52,8 @@ Base.show(io::IO, tn::absclass(TensorNetwork)) =
 
 Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
 """
-tensors(tn::absclass(TensorNetwork)) = tn.tensors
-arrays(tn::absclass(TensorNetwork)) = parent.(tensors(tn))
+tensors(tn::AbstractTensorNetwork) = tn.tensors
+arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
 
 """
     inds(tn::AbstractTensorNetwork, set = :all)
@@ -68,12 +69,12 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-inds(tn::absclass(TensorNetwork); set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
-@valsplit 2 inds(tn::absclass(TensorNetwork), set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
-inds(tn::absclass(TensorNetwork), ::Val{:all}) = collect(keys(tn.indices))
-inds(tn::absclass(TensorNetwork), ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
-inds(tn::absclass(TensorNetwork), ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
-inds(tn::absclass(TensorNetwork), ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
+inds(tn::AbstractTensorNetwork; set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
+@valsplit 2 inds(tn::AbstractTensorNetwork, set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
+inds(tn::AbstractTensorNetwork, ::Val{:all}) = collect(keys(tn.indices))
+inds(tn::AbstractTensorNetwork, ::Val{:open}) = map(first, Iterators.filter(==(1) ∘ length ∘ last, tn.indices))
+inds(tn::AbstractTensorNetwork, ::Val{:inner}) = map(first, Iterators.filter(>=(2) ∘ length ∘ last, tn.indices))
+inds(tn::AbstractTensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter(>=(3) ∘ length ∘ last, tn.indices))
 
 """
     size(tn::AbstractTensorNetwork)
@@ -83,10 +84,10 @@ Return a mapping from indices to their dimensionalities.
 
 If `index` is set, return the dimensionality of `index`. This is equivalent to `size(tn)[index]`.
 """
-Base.size(tn::absclass(TensorNetwork)) = Dict(i => size(tn, i) for (i, x) in tn.indices)
-Base.size(tn::absclass(TensorNetwork), i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
+Base.size(tn::AbstractTensorNetwork) = Dict(i => size(tn, i) for (i, x) in tn.indices)
+Base.size(tn::AbstractTensorNetwork, i::Symbol) = size(tn.tensors[first(tn.indices[i])], i)
 
-Base.eltype(tn::absclass(TensorNetwork)) = promote_type(eltype.(tensors(tn))...)
+Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 """
     push!(tn::AbstractTensorNetwork, tensor::Tensor)
@@ -95,7 +96,7 @@ Add a new `tensor` to the Tensor Network.
 
 See also: [`append!`](@ref), [`pop!`](@ref).
 """
-function Base.push!(tn::absclass(TensorNetwork), tensor::Tensor)
+function Base.push!(tn::AbstractTensorNetwork, tensor::Tensor)
     for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
         throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
     end
@@ -116,7 +117,7 @@ Add a list of tensors to a `TensorNetwork`.
 
 See also: [`push!`](@ref), [`merge!`](@ref).
 """
-function Base.append!(tn::absclass(TensorNetwork), ts::AbstractVecOrTuple{<:Tensor})
+function Base.append!(tn::AbstractTensorNetwork, ts::AbstractVecOrTuple{<:Tensor})
     for tensor in ts
         push!(tn, tensor)
     end
@@ -131,11 +132,11 @@ Fuse various [`TensorNetwork`](@ref)s into one.
 
 See also: [`append!`](@ref).
 """
-Base.merge!(self::absclass(TensorNetwork), other::absclass(TensorNetwork)) = append!(self, tensors(other))
-Base.merge!(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = foldl(merge!, others; init = self)
-Base.merge(self::absclass(TensorNetwork), others::absclass(TensorNetwork)...) = merge!(copy(self), others...)
+Base.merge!(self::AbstractTensorNetwork, other::AbstractTensorNetwork) = append!(self, tensors(other))
+Base.merge!(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = foldl(merge!, others; init = self)
+Base.merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = merge!(copy(self), others...)
 
-function Base.popat!(tn::absclass(TensorNetwork), i::Integer)
+function Base.popat!(tn::AbstractTensorNetwork, i::Integer)
     tensor = popat!(tn.tensors, i)
 
     # unlink indices
@@ -163,14 +164,14 @@ If a `Symbol` or a list of `Symbol`s is passed, then remove and return the tenso
 
 See also: [`push!`](@ref), [`delete!`](@ref).
 """
-function Base.pop!(tn::absclass(TensorNetwork), tensor::Tensor)
+function Base.pop!(tn::AbstractTensorNetwork, tensor::Tensor)
     i = findfirst(t -> t === tensor, tn.tensors)
     popat!(tn, i)
 end
 
-Base.pop!(tn::absclass(TensorNetwork), i::Symbol) = pop!(tn, (i,))
+Base.pop!(tn::AbstractTensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::absclass(TensorNetwork), i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
+function Base.pop!(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensors = select(tn, i)
     for tensor in tensors
         _ = pop!(tn, tensor)
@@ -184,7 +185,7 @@ end
 
 Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
-Base.delete!(tn::absclass(TensorNetwork), x) = (_ = pop!(tn, x); tn)
+Base.delete!(tn::AbstractTensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 """
     replace!(tn::AbstractTensorNetwork, old => new...)
@@ -195,17 +196,17 @@ Replace the element in `old` with the one in `new`. Depending on the types of `o
   - If `Symbol`s, it will correspond to a index renaming.
   - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
 """
-Base.replace!(tn::absclass(TensorNetwork), old_new::Pair...) = replace!(tn, old_new)
-function Base.replace!(tn::absclass(TensorNetwork), old_new::Base.AbstractVecOrTuple{Pair})
+Base.replace!(tn::AbstractTensorNetwork, old_new::Pair...) = replace!(tn, old_new)
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTuple{Pair})
     for pair in old_new
         replace!(tn, pair)
     end
     return tn
 end
-Base.replace(tn::absclass(TensorNetwork), old_new::Pair...) = replace(tn, old_new)
-Base.replace(tn::absclass(TensorNetwork), old_new) = replace!(copy(tn), old_new)
+Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
+Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
-function Base.replace!(tn::absclass(TensorNetwork), pair::Pair{<:Tensor,<:Tensor})
+function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
 
     # check if old and new tensors are compatible
@@ -220,7 +221,7 @@ function Base.replace!(tn::absclass(TensorNetwork), pair::Pair{<:Tensor,<:Tensor
     return tn
 end
 
-function Base.replace!(tn::absclass(TensorNetwork), old_new::Pair{Symbol,Symbol})
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
     new ∈ inds(tn) && throw(ArgumentError("new symbol $new is already present"))
 
@@ -233,7 +234,7 @@ function Base.replace!(tn::absclass(TensorNetwork), old_new::Pair{Symbol,Symbol}
     return tn
 end
 
-function Base.replace!(tn::absclass(TensorNetwork), old_new::Pair{<:Tensor,<:AbstractTensorNetwork})
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:AbstractTensorNetwork})
     old, new = old_new
     issetequal(inds(new, set = :open), inds(old)) || throw(ArgumentError("indices must match"))
 
@@ -251,8 +252,8 @@ end
 
 Return tensors whose indices match with the list of indices `i`.
 """
-select(tn::absclass(TensorNetwork), i::AbstractVecOrTuple{Symbol}) = filter(Base.Fix1(⊆, i) ∘ inds, tensors(tn))
-select(tn::absclass(TensorNetwork), i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
+select(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol}) = filter(Base.Fix1(⊆, i) ∘ inds, tensors(tn))
+select(tn::AbstractTensorNetwork, i::Symbol) = map(x -> tn.tensors[x], unique(tn.indices[i]))
 
 """
     in(tensor::Tensor, tn::AbstractTensorNetwork)
@@ -260,7 +261,7 @@ select(tn::absclass(TensorNetwork), i::Symbol) = map(x -> tn.tensors[x], unique(
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
 This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
 """
-Base.in(tensor::Tensor, tn::absclass(TensorNetwork)) = in(tensor, select(tn, inds(tensor)))
+Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = in(tensor, select(tn, inds(tensor)))
 
 """
     slice!(tn::AbstractTensorNetwork, index::Symbol, i)
@@ -269,7 +270,7 @@ In-place projection of `index` on dimension `i`.
 
 See also: [`selectdim`](@ref), [`view`](@ref).
 """
-function slice!(tn::absclass(TensorNetwork), label::Symbol, i)
+function slice!(tn::AbstractTensorNetwork, label::Symbol, i)
     for tensor in select(tn, label)
         pos = findfirst(t -> t === tensor, tn.tensors)
         tn.tensors[pos] = selectdim(tensor, label, i)
@@ -287,7 +288,7 @@ Return a copy of the [`TensorNetwork`](@ref) where `index` has been projected to
 
 See also: [`view`](@ref), [`slice!`](@ref).
 """
-Base.selectdim(tn::absclass(TensorNetwork), label::Symbol, i) = @view tn[label=>i]
+Base.selectdim(tn::AbstractTensorNetwork, label::Symbol, i) = @view tn[label=>i]
 
 """
     view(tn::AbstractTensorNetwork, index => i...)
@@ -297,7 +298,7 @@ It is equivalent to a recursive call of [`selectdim`](@ref).
 
 See also: [`selectdim`](@ref), [`slice!`](@ref).
 """
-function Base.view(tn::absclass(TensorNetwork), slices::Pair{Symbol,<:Any}...)
+function Base.view(tn::AbstractTensorNetwork, slices::Pair{Symbol,<:Any}...)
     tn = copy(tn)
 
     for (label, i) in slices
@@ -377,7 +378,7 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-EinExprs.einexpr(tn::absclass(TensorNetwork); optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
+EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
     optimizer,
     EinExpr(
         outputs,
@@ -395,7 +396,7 @@ In-place contraction of tensors connected to `index`.
 
 See also: [`contract`](@ref).
 """
-function contract!(tn::absclass(TensorNetwork), i)
+function contract!(tn::AbstractTensorNetwork, i)
     tensor = reduce(pop!(tn, i)) do acc, tensor
         contract(acc, tensor, dims = i)
     end
@@ -413,7 +414,7 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-function contract(tn::absclass(TensorNetwork); path = einexpr(tn))
+function contract(tn::AbstractTensorNetwork; path = einexpr(tn))
     # TODO does `first` work always?
     length(path.args) == 0 && return select(tn, inds(path)) |> first
 
@@ -421,12 +422,12 @@ function contract(tn::absclass(TensorNetwork); path = einexpr(tn))
     contract(intermediates...; dims = suminds(path))
 end
 
-contract!(t::Tensor, tn::absclass(TensorNetwork); kwargs...) = contract!(tn, t; kwargs...)
-contract!(tn::absclass(TensorNetwork), t::Tensor; kwargs...) = (push!(tn, t); contract(tn; kwargs...))
-contract(t::Tensor, tn::absclass(TensorNetwork); kwargs...) = contract(tn, t; kwargs...)
-contract(tn::absclass(TensorNetwork), t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
+contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
+contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn; kwargs...))
+contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
+contract(tn::AbstractTensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
-struct TNSampler{T<:absclass(TensorNetwork)} <: Random.Sampler{T}
+struct TNSampler{T<:AbstractTensorNetwork} <: Random.Sampler{T}
     config::Dict{Symbol,Any}
 
     TNSampler{T}(; kwargs...) where {T} = new{T}(kwargs)
@@ -437,5 +438,5 @@ Base.eltype(::TNSampler{T}) where {T} = T
 Base.getproperty(obj::TNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
 Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
 
-Base.rand(T::Type{<:absclass(TensorNetwork)}; kwargs...) = rand(Random.default_rng(), T; kwargs...)
-Base.rand(rng::AbstractRNG, T::Type{<:absclass(TensorNetwork)}; kwargs...) = rand(rng, TNSampler{T}(; kwargs...))
+Base.rand(T::Type{<:AbstractTensorNetwork}; kwargs...) = rand(Random.default_rng(), T; kwargs...)
+Base.rand(rng::AbstractRNG, T::Type{<:AbstractTensorNetwork}; kwargs...) = rand(rng, TNSampler{T}(; kwargs...))

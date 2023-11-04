@@ -1,10 +1,10 @@
 module TenetFiniteDifferencesExt
 
 using Tenet
-using Classes
+using Tenet: AbstractTensorNetwork
 using FiniteDifferences
 
-function FiniteDifferences.to_vec(x::T) where {T<:absclass(TensorNetwork)}
+function FiniteDifferences.to_vec(x::T) where {T<:AbstractTensorNetwork}
     x_vec, back = to_vec(x.tensors)
     function TensorNetwork_from_vec(v)
         tensors = back(v)
