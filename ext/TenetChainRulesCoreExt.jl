@@ -32,27 +32,27 @@ function ChainRulesCore.ProjectTo(tn::T) where {T<:AbstractTensorNetwork}
 end
 
 function (projector::ProjectTo{T})(dx::T) where {T<:AbstractTensorNetwork}
-    Tangent{TensorNetwork}(tensors = projector.tensors(tensors(tn)))
+    Tangent{TensorNetwork}(tensormap = projector.tensors(tensors(dx)), indexmap = NoTangent())
 end
 
 function (projector::ProjectTo{T})(dx::Tangent{T}) where {T<:AbstractTensorNetwork}
-    dx.tensors isa NoTangent && return NoTangent()
-    Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
+    dx.tensormap isa NoTangent && return NoTangent()
+    Tangent{TensorNetwork}(tensormap = projector.tensors(dx.tensors), indexmap = NoTangent())
 end
 
 function Base.:+(x::T, Δ::Tangent{TensorNetwork}) where {T<:AbstractTensorNetwork}
     # TODO match tensors by indices
-    tensors = map(+, tensors(x), Δ.tensors)
+    tensors = map(+, tensors(x), Δ.tensormap)
 
     # TODO create function fitted for this? or maybe standardize constructors?
     T(tensors)
 end
 
 function ChainRulesCore.frule((_, Δ), T::Type{<:AbstractTensorNetwork}, tensors)
-    T(tensors), Tangent{TensorNetwork}(tensors = Δ)
+    T(tensors), Tangent{TensorNetwork}(tensormap = Δ, indexmap = NoTangent())
 end
 
-TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensors)
+TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensormap)
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
 function ChainRulesCore.rrule(T::Type{<:AbstractTensorNetwork}, tensors)
     T(tensors), TensorNetwork_pullback
