@@ -39,7 +39,7 @@ TensorNetwork() = TensorNetwork(Tensor[])
 
 Return a shallow copy of a [`TensorNetwork`](@ref).
 """
-Base.copy(tn::T) where {T<:AbstractTensorNetwork} = TensorNetwork(copy(tn.indexmap), copy(tn.tensormap))
+Base.copy(tn::T) where {T<:AbstractTensorNetwork} = TensorNetwork(tensors(tn))
 
 Base.summary(io::IO, tn::AbstractTensorNetwork) = print(io, "$(length(tn.tensormap))-tensors $(typeof(tn))")
 Base.show(io::IO, tn::AbstractTensorNetwork) =
@@ -115,7 +115,7 @@ function Base.push!(tn::AbstractTensorNetwork, tensor::Tensor)
     end
 
     tn.tensormap[tensor] = collect(inds(tensor))
-    for index in inds(tensor)
+    for index in unique(inds(tensor))
         push!(get!(tn.indexmap, index, Tensor[]), tensor)
     end
 
@@ -174,7 +174,7 @@ Base.delete!(tn::AbstractTensorNetwork, x) = (_ = pop!(tn, x); tn)
 tryprune!(tn::AbstractTensorNetwork, i::Symbol) = (x = isempty(tn.indexmap[i]) && delete!(tn.indexmap, i); x)
 
 function Base.delete!(tn::AbstractTensorNetwork, tensor::Tensor)
-    for index in inds(tensor)
+    for index in unique(inds(tensor))
         filter!(Base.Fix1(!==, tensor), tn.indexmap[index])
         tryprune!(tn, index)
     end
@@ -212,15 +212,30 @@ function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     return tn
 end
 
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol}...)
+    first.(old_new) ⊆ keys(tn.indexmap) ||
+        throw(ArgumentError("set of old indices must be a subset of current indices"))
+    isdisjoint(last.(old_new), keys(tn.indexmap)) ||
+        throw(ArgumentError("set of new indices must be disjoint to current indices"))
+    for pair in old_new
+        replace!(tn, pair)
+    end
+    return tn
+end
+
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
     old ∈ keys(tn.indexmap) || throw(ArgumentError("index $old does not exist"))
     new ∉ keys(tn.indexmap) || throw(ArgumentError("index $new is already present"))
 
-    for tensor in tn.indexmap[old]
-        delete!(tn, tensor)
+    # NOTE `copy` because collection underneath is mutated
+    for tensor in copy(tn.indexmap[old])
+        # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
         push!(tn, replace(tensor, old_new))
+        delete!(tn, tensor)
     end
+
+    delete!(tn.indexmap, old)
 
     return tn
 end
@@ -246,7 +261,7 @@ Return tensors whose indices match with the list of indices `i`.
 select(tn::AbstractTensorNetwork, i::Symbol) = copy(tn.indexmap[i])
 select(tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol}) =
     filter(tn.indexmap[first(is)]) do tensor
-        issetequal(inds(tensor), is)
+        is ⊆ inds(tensor)
     end
 
 """

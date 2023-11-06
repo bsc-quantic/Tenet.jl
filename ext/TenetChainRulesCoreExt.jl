@@ -28,18 +28,14 @@ ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pull
 @non_differentiable symdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 
 function ChainRulesCore.ProjectTo(tn::T) where {T<:AbstractTensorNetwork}
-    # TODO create function to extract extra fields
-    fields = map(fieldnames(T)) do fieldname
-        if fieldname === :tensors
-            :tensors => ProjectTo(tn.tensors)
-        else
-            fieldname => getfield(tn, fieldname)
-        end
-    end
-    ProjectTo{T}(; fields...)
+    ProjectTo{T}(; tensors = ProjectTo(tensors(tn)))
 end
 
-function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:AbstractTensorNetwork}
+function (projector::ProjectTo{T})(dx::T) where {T<:AbstractTensorNetwork}
+    Tangent{TensorNetwork}(tensors = projector.tensors(tensors(tn)))
+end
+
+function (projector::ProjectTo{T})(dx::Tangent{T}) where {T<:AbstractTensorNetwork}
     dx.tensors isa NoTangent && return NoTangent()
     Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
 end
@@ -49,13 +45,7 @@ function Base.:+(x::T, Δ::Tangent{TensorNetwork}) where {T<:AbstractTensorNetwo
     tensors = map(+, tensors(x), Δ.tensors)
 
     # TODO create function fitted for this? or maybe standardize constructors?
-    T(map(fieldnames(T)) do fieldname
-        if fieldname === :tensors
-            tensors
-        else
-            getfield(x, fieldname)
-        end
-    end...)
+    T(tensors)
 end
 
 function ChainRulesCore.frule((_, Δ), T::Type{<:AbstractTensorNetwork}, tensors)
