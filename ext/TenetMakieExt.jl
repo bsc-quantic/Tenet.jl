@@ -50,8 +50,12 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperindConverter)
 
+    tensormap = IdDict(tensor => i for (i, tensor) in enumerate(keys(tn.tensormap)))
+
     # TODO how to mark multiedges? (i.e. parallel edges)
-    graph = SimpleGraph([Edge(tensors...) for (_, tensors) in tn.indexmap if length(tensors) > 1])
+    graph = SimpleGraph([
+        Edge(map(Base.Fix1(getindex, tensormap), tensors)...) for (_, tensors) in tn.indexmap if length(tensors) > 1
+    ])
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
@@ -62,7 +66,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
 
         # connect ghost node
         tensor = only(tn.indexmap[index])
-        add_edge!(graph, node, tensor)
+        add_edge!(graph, node, tensormap[tensor])
 
         return node
     end
