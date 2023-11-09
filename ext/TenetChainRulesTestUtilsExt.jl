@@ -8,7 +8,7 @@ using Random
 
 function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, x::T) where {T<:AbstractTensorNetwork}
     return Tangent{T}(
-        tensormap = [ProjectTo(tensor)(rand_tangent.(Ref(rng), tensor)) for tensor in tensors(x)],
+        tensormap = Tensor[ProjectTo(tensor)(rand_tangent.(Ref(rng), tensor)) for tensor in tensors(x)],
         indexmap = NoTangent(),
     )
 end
