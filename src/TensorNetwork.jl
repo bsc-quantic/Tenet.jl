@@ -49,9 +49,15 @@ Base.show(io::IO, tn::AbstractTensorNetwork) =
     tensors(tn::AbstractTensorNetwork)
 
 Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
+
+# Implementation details
+
+  - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
-tensors(tn::AbstractTensorNetwork) = collect(keys(tn.tensormap))
+tensors(tn::AbstractTensorNetwork) = sort!(collect(keys(tn.tensormap)), by = inds)
 arrays(tn::AbstractTensorNetwork) = parent.(keys(tn.tensormap))
+
+Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
 """
     inds(tn::AbstractTensorNetwork, set = :all)
