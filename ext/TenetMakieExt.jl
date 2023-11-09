@@ -50,7 +50,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperindConverter)
 
-    tensormap = IdDict(tensor => i for (i, tensor) in enumerate(keys(tn.tensormap)))
+    tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
 
     # TODO how to mark multiedges? (i.e. parallel edges)
     graph = SimpleGraph([
