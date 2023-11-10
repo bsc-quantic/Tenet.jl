@@ -28,41 +28,31 @@ ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pull
 @non_differentiable symdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 
 function ChainRulesCore.ProjectTo(tn::T) where {T<:AbstractTensorNetwork}
-    # TODO create function to extract extra fields
-    fields = map(fieldnames(T)) do fieldname
-        if fieldname === :tensors
-            :tensors => ProjectTo(tn.tensors)
-        else
-            fieldname => getfield(tn, fieldname)
-        end
-    end
-    ProjectTo{T}(; fields...)
+    ProjectTo{T}(; tensors = ProjectTo(tensors(tn)))
 end
 
-function (projector::ProjectTo{T})(dx::Union{T,Tangent{T}}) where {T<:AbstractTensorNetwork}
-    dx.tensors isa NoTangent && return NoTangent()
-    Tangent{TensorNetwork}(tensors = projector.tensors(dx.tensors))
+function (projector::ProjectTo{T})(dx::T) where {T<:AbstractTensorNetwork}
+    Tangent{TensorNetwork}(tensormap = projector.tensors(tensors(dx)), indexmap = NoTangent())
+end
+
+function (projector::ProjectTo{T})(dx::Tangent{T}) where {T<:AbstractTensorNetwork}
+    dx.tensormap isa NoTangent && return NoTangent()
+    Tangent{TensorNetwork}(tensormap = projector.tensors(dx.tensors), indexmap = NoTangent())
 end
 
 function Base.:+(x::T, Δ::Tangent{TensorNetwork}) where {T<:AbstractTensorNetwork}
     # TODO match tensors by indices
-    tensors = map(+, tensors(x), Δ.tensors)
+    tensors = map(+, tensors(x), Δ.tensormap)
 
     # TODO create function fitted for this? or maybe standardize constructors?
-    T(map(fieldnames(T)) do fieldname
-        if fieldname === :tensors
-            tensors
-        else
-            getfield(x, fieldname)
-        end
-    end...)
+    T(tensors)
 end
 
 function ChainRulesCore.frule((_, Δ), T::Type{<:AbstractTensorNetwork}, tensors)
-    T(tensors), Tangent{TensorNetwork}(tensors = Δ)
+    T(tensors), Tangent{TensorNetwork}(tensormap = Δ, indexmap = NoTangent())
 end
 
-TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensors)
+TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), Δ.tensormap)
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
 function ChainRulesCore.rrule(T::Type{<:AbstractTensorNetwork}, tensors)
     T(tensors), TensorNetwork_pullback
