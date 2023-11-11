@@ -27,7 +27,7 @@ function smooth_annotation!(f; color=Makie.RGBAf(110 // 256, 170 // 256, 250 // 
     perturbed_radius_y = radius_y .+ fluctuations
 
     circle_points = [Point2f((perturbed_radius_x[i]) * cos(theta[i]) + offset_x,
-                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in 1:length(theta)]
+                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in eachindex(theta)]
 
     poly!(ax, circle_points, color=color, closed=true)
 end
@@ -50,7 +50,7 @@ transform
 transform!
 ```
 
-## Transformations
+## Available transformations
 
 ### Hyperindex converter
 
