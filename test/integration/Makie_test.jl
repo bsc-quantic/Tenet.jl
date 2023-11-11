@@ -9,6 +9,8 @@
         f = Figure()
         @testset "(default)" plot!(f[1, 1], tn)
         @testset "with labels" plot!(f[1, 1], tn; labels = true)
+        @testset "with sizes" plot!(f[1, 1], tn; node_size = [5, 10, 15])
+        @testset "with colors" plot!(f[1, 1], tn; node_color = [:red, :green, :blue])
         @testset "3D" plot!(f[1, 1], tn; layout = Spring(dim = 3))
     end
 
