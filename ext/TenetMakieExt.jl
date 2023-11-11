@@ -75,21 +75,27 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     # TODO refactor hardcoded values into constants
     kwargs = Dict{Symbol,Any}(kwargs)
 
-    get!(kwargs, :node_size) do
-        map(1:nv(graph)) do i
-            if i ∈ ghostnodes
-                0
-            else
-                max(15, log2(length(tensors(tn)[i])))
-            end
+    if haskey(kwargs, :node_size)
+        append!(kwargs[:node_size], zero(ghostnodes))
+    else
+        kwargs[:node_size] = map(1:nv(graph)) do i
+            i ∈ ghostnodes ? 0 : max(15, log2(length(tensors(tn)[i])))
         end
     end
-    get!(() -> map(i -> i ∈ copytensors ? :diamond : :circle, 1:nv(graph)), kwargs, :node_marker)
-    get!(
-        () -> map(i -> i ∈ copytensors ? :black : Makie.RGBf(240 // 256, 180 // 256, 100 // 256), 1:nv(graph)),
-        kwargs,
-        :node_color,
-    )
+
+    if haskey(kwargs, :node_marker)
+        append!(kwargs[:node_marker], fill(:circle, length(ghostnodes)))
+    else
+        kwargs[:node_marker] = map(i -> i ∈ copytensors ? :diamond : :circle, 1:nv(graph))
+    end
+
+    if haskey(kwargs, :node_color)
+        append!(kwargs[:node_color], fill(:black, length(ghostnodes)))
+    else
+        kwargs[:node_color] = map(1:nv(graph)) do v
+            v ∈ copytensors ? :black : Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
+        end
+    end
 
     get!(kwargs, :node_attr, (colormap = :viridis, strokewidth = 2.0, strokecolor = :black))
 
