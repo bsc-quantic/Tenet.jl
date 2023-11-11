@@ -96,7 +96,7 @@ smooth_annotation!( #hide
     num_waves = 6, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=100); node_color=[red, orange, orange, :black, :black,:black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=100); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -110,7 +110,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 1.9) #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=100),  node_color=[orange, orange, red, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=100),  node_color=[orange, orange, red, :black]) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -154,7 +154,7 @@ smooth_annotation!( #hide
     num_waves = 6, #hide
     fluctuation_amplitude = 0.01, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=20); node_color=[orange, red, orange, orange, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=20); node_color=[orange, red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -168,7 +168,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.01, #hide
     phase_shift = 0) #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=1); node_color=[red, orange, orange, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=1); node_color=[red, orange, orange]) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -208,7 +208,7 @@ smooth_annotation!( #hide
     num_waves = 4, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=6); node_color=[red, orange, orange, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=6); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -225,7 +225,7 @@ smooth_annotation!( #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_color=[red, orange, orange, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_color=[red, orange, orange]) #hide
 
 fig #hide
 ```
@@ -262,7 +262,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.015, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=10000, C=0.5, seed=12); node_color=[red, orange,  orange, :black, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=10000, C=0.5, seed=12); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -279,7 +279,7 @@ smooth_annotation!( #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_color=[orange, orange, red, red, red, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_color=[orange, orange, red, red, red]) #hide
 
 fig #hide
 ```

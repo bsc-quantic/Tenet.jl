@@ -90,10 +90,10 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     end
 
     if haskey(kwargs, :node_color)
-        append!(kwargs[:node_color], fill(:black, length(ghostnodes)))
+        append!(kwargs[:node_color], fill(Makie.to_color(:black), length(ghostnodes)))
     else
         kwargs[:node_color] = map(1:nv(graph)) do v
-            v ∈ copytensors ? :black : Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
+            v ∈ copytensors ? Makie.to_color(:black) : Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
         end
     end
 
