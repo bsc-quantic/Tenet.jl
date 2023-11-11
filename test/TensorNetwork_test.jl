@@ -193,6 +193,23 @@
         @test isempty(select(tn, (:j, :l)))
     end
 
+    @testset "getindex" begin
+        t_ij = Tensor(zeros(2, 2), (:i, :j))
+        t_ik = Tensor(zeros(2, 2), (:i, :k))
+        t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
+        t_lm = Tensor(zeros(2, 2), (:l, :m))
+        tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
+
+        @test t_ij === tn[:i, :j]
+        @test t_ik === tn[:i, :k]
+        @test t_ilm === tn[:i, :l, :m]
+        @test t_lm === tn[:l, :m]
+
+        # NOTE although it should throw `KeyError`, it throws `ArgumentError` due to implementation 
+        @test_throws ArgumentError tn[:i, :x]
+        @test_throws ArgumentError tn[:i, :j, :k]
+    end
+
     # @testset "selectdim" begin
     #     tn = rand(TensorNetwork, 10, 3)
     #     label = first(inds(tn))

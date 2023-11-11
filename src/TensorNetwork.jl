@@ -265,10 +265,15 @@ end
 Return tensors whose indices match with the list of indices `i`.
 """
 select(tn::AbstractTensorNetwork, i::Symbol) = copy(tn.indexmap[i])
-select(tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol}) =
-    filter(tn.indexmap[first(is)]) do tensor
-        is ⊆ inds(tensor)
-    end
+select(tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
+
+function select(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+    filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+end
+
+function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int = 1)
+    first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
+end
 
 """
     in(tensor::Tensor, tn::AbstractTensorNetwork)
