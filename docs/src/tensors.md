@@ -63,3 +63,11 @@ length(Tᵢⱼₖ)
 ```@docs
 Tenet.contract(::Tensor, ::Tensor)
 ```
+
+### Factorizations
+
+```@docs
+LinearAlgebra.svd(::Tensor)
+LinearAlgebra.qr(::Tensor)
+LinearAlgebra.lu(::Tensor)
+```
