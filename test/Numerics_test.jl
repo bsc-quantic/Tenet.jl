@@ -222,53 +222,31 @@
     end
 
     @testset "lu" begin
-        using LinearAlgebra: lu
+        data = rand(2, 4, 6, 8)
+        tensor = Tensor(data, (:i, :j, :k, :l))
+        vidx = [:x, :y]
 
-        data = rand(2, 2, 2)
-        tensor = Tensor(data, (:i, :j, :k))
+        # Throw exception if left_inds is not provided
+        @test_throws UndefVarError lu(tensor)
 
-        @testset "[exceptions]" begin
-            # Throw exception if left_inds is not provided
-            @test_throws ErrorException lu(tensor)
-            # Throw exception if left_inds ∉ inds(tensor)
-            @test_throws ErrorException lu(tensor, (:l,))
-            # throw exception if no right-inds
-            @test_throws ErrorException lu(tensor, (:i,:j,:k))
-        end
+        # Throw exception if left_inds ∉ inds(tensor)
+        @test_throws ArgumentError lu(tensor, left_inds = (:z,))
 
-        @testset "inds" begin
-            P, L, U = lu(tensor, inds(tensor)[1:2])
-            @test inds(P)[1:2] == inds(tensor)[1:2]
-            @test inds(P)[3:4] == inds(L)[1:2]
-            @test inds(L)[3] == inds(U)[1]
-            @test inds(U)[2] == inds(tensor)[3]
-        end
+        # throw exception if no right-inds
+        @test_throws ArgumentError lu(tensor, left_inds = (:i, :j, :k, :l))
 
-        @testset "size" begin
-            P, L, U = lu(tensor, inds(tensor)[1:2])
-            @test size(P) == (2, 2, 2, 2)
-            @test size(L) == (2, 2, 2)
-            @test size(U) == (2, 2)
+        # throw if chosen virtual index already present
+        @test_throws ArgumentError qr(tensor, left_inds = (:i,), virtualind = :j)
 
-            # Additional test with different dimensions
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            P2, L2, U2 = lu(tensor2, inds(tensor2)[1:2])
-            @test size(P2) == (2, 4, 2, 4)
-            @test size(L2) == (2, 4, 8)
-            @test size(U2) == (8, 6, 8)
-        end
+        L, U, P = lu(tensor, left_inds = [:i, :j], virtualind = vidx)
+        @test inds(L) == [:x, :y]
+        @test inds(U) == [:y, :k, :l]
+        @test inds(P) == [:i, :j, :x]
 
-        @testset "[accuracy]" begin
-            P, L, U = lu(tensor, inds(tensor)[1:2])
-            tensor_recovered = contract(P, L, U)
-            @test tensor_recovered ≈ tensor
+        @test size(L) == (8, 8)
+        @test size(U) == (8, 6, 8)
+        @test size(P) == (2, 4, 8)
 
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            P2, L2, U2 = lu(tensor2, inds(tensor2)[1:2])
-            tensor2_recovered = contract(P2, L2, U2)
-            @test tensor2_recovered ≈ tensor2
-        end
+        @test isapprox(contract(L, U, P), tensor)
     end
 end

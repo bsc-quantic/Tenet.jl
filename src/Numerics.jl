@@ -1,6 +1,7 @@
 using OMEinsum
 using LinearAlgebra
 using UUIDs: uuid4
+using SparseArrays
 
 # TODO test array container typevar on output
 for op in [
@@ -78,6 +79,21 @@ Alias for [`contract`](@ref).
 Base.:*(a::Tensor, b::Tensor) = contract(a, b)
 Base.:*(a::T, b::Number) where {T<:Tensor} = T(parent(a) * b, inds(a))
 Base.:*(a::Number, b::T) where {T<:Tensor} = T(a * parent(b), inds(b))
+
+function factorinds(tensor, left_inds, right_inds)
+    isdisjoint(left_inds, right_inds) ||
+        throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
+
+    left_inds, right_inds =
+        isempty(left_inds) ? (setdiff(inds(t), right_inds), right_inds) :
+        isempty(right_inds) ? (left_inds, setdiff(inds(tensor), left_inds)) :
+        throw(ArgumentError("cannot set both left and right indices"))
+
+    all(!isempty, (left_inds, right_inds)) || throw(ArgumentError("no right-indices left in factorization"))
+    all(∈(inds(tensor)), left_inds ∪ right_inds) || throw(ArgumentError("indices must be in $(inds(tensor))"))
+
+    return left_inds, right_inds
+end
 
 LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
@@ -166,38 +182,49 @@ function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind
     return Q, R
 end
 
-LinearAlgebra.lu(t::Tensor; left_inds=(), kwargs...) = lu(t, left_inds; kwargs...)
+LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
-function LinearAlgebra.lu(t::Tensor, left_inds; kwargs...)
-   # TODO better error exception and checks
-   isempty(left_inds) && throw(ErrorException("no left-indices in LU factorization"))
-   left_inds ⊆ inds(t) || throw(ErrorException("all left-indices must be in $(inds(t))"))
+"""
+    LinearAlgebra.lu(t::Tensor, ...)
 
-   right_inds = setdiff(inds(t), left_inds)
-   isempty(right_inds) && throw(ErrorException("no right-indices in LU factorization"))
+Perform LU factorization on a tensor.
 
-   # permute array
-   tensor = permutedims(t, (left_inds..., right_inds...))
-   data = reshape(parent(tensor), prod(i -> size(t, i), left_inds), prod(i -> size(t, i), right_inds))
+# Keyword Arguments
 
-   # compute LU
-   L, U, p = lu(data; kwargs...)
+    - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
+    - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
+    - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+"""
+function LinearAlgebra.lu(
+    tensor::Tensor;
+    left_inds = (),
+    right_inds = (),
+    virtualind = [Symbol(uuid4()), Symbol(uuid4())],
+    kwargs...,
+)
+    left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
-   # build permutation matrix
-   P = Matrix{eltype(data)}(I, size(L, 1), size(L, 1))
-   P = P[invperm(p), :]
+    i_pl, i_lu = virtualind
+    i_pl ∉ inds(tensor) || throw(ArgumentError("new virtual bond name ($i_pl) cannot be already be present"))
+    i_lu ∉ inds(tensor) || throw(ArgumentError("new virtual bond name ($i_lu) cannot be already be present"))
 
-   # tensorify results
-   L = reshape(L, ([size(t, ind) for ind in left_inds]..., size(L, 2)))
-   U = reshape(U, (size(U, 1), [size(t, ind) for ind in right_inds]...))
-   P = reshape(P, (append!([size(t, ind) for ind in left_inds], [size(t, ind) for ind in left_inds])...))
+    # permute array
+    left_sizes = map(Base.Fix1(size, tensor), left_inds)
+    right_sizes = map(Base.Fix1(size, tensor), right_inds)
+    tensor = permutedims(tensor, [left_inds..., right_inds...])
+    data = reshape(parent(tensor), prod(left_sizes), prod(right_sizes))
 
-   shared_inds_PL = (Symbol(uuid4()), Symbol(uuid4()))
-   shared_inds_LU = Symbol(uuid4())
+    # compute LU
+    info = lu(data; kwargs...)
+    L = info.L
+    U = info.U
 
-   P = Tensor(P, (left_inds..., shared_inds_PL...))
-   L = Tensor(L, (shared_inds_PL..., shared_inds_LU))
-   U = Tensor(U, (shared_inds_LU, right_inds...))
+    permutator = info.p
+    P = sparse(permutator, 1:length(permutator), fill(true, length(permutator)))
 
-   return P, L, U
+    L = Tensor(L, [i_pl, i_lu])
+    U = Tensor(reshape(U, size(U, 1), right_sizes...), [i_lu, right_inds...])
+    P = Tensor(reshape(P, left_sizes..., size(L, 1)), [left_inds..., i_pl])
+
+    return L, U, P
 end

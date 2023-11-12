@@ -157,7 +157,7 @@ Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
 Base.permutedims(t::Tensor, perm) = Tensor(permutedims(parent(t), perm), getindex.((inds(t),), perm))
 Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), parent(src), perm)
 
-function Base.permutedims(t::Tensor{T,N}, perm::NTuple{N,Symbol}) where {T,N}
+function Base.permutedims(t::Tensor{T}, perm::Base.AbstractVecOrTuple{Symbol}) where {T}
     perm = map(i -> findfirst(==(i), inds(t)), perm)
     permutedims(t, perm)
 end
