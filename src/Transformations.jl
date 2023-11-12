@@ -255,7 +255,7 @@ function transform!(tn::AbstractTensorNetwork, config::SplitSimplification)
             rank_s = sum(s .> config.atol)
 
             if rank_s < length(s)
-                hyperindex = only(inds(s))
+                hyperindex = only(Tenet.inds(s))
 
                 # truncate data
                 u = view(u, hyperindex => 1:rank_s)
