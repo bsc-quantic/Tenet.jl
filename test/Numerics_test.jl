@@ -169,56 +169,33 @@
     end
 
     @testset "qr" begin
-        data = rand(2, 2, 2)
-        tensor = Tensor(data, (:i, :j, :k))
+        data = rand(2, 4, 6, 8)
+        tensor = Tensor(data, (:i, :j, :k, :l))
+        vidx = :x
 
-        @testset "[exceptions]" begin
-            # Throw exception if left_inds is not provided
-            @test_throws ArgumentError qr(tensor)
+        # throw if left_inds is not provided
+        @test_throws ArgumentError qr(tensor)
 
-            # Throw exception if left_inds ∉ inds(tensor)
-            @test_throws ArgumentError qr(tensor, left_inds = (:l,))
-            @test_throws ArgumentError qr(tensor, right_inds = (:l,))
+        # throw if index is not present
+        @test_throws ArgumentError qr(tensor, left_inds = [:z])
+        @test_throws ArgumentError qr(tensor, right_inds = [:z])
 
-            # throw exception if no right-inds
-            @test_throws ArgumentError qr(tensor, left_inds = (:i, :j, :k))
-            @test_throws ArgumentError qr(tensor, right_inds = (:i, :j, :k))
+        # throw if no inds left
+        @test_throws ArgumentError qr(tensor, left_inds = (:i, :j, :k, :l))
+        @test_throws ArgumentError qr(tensor, right_inds = (:i, :j, :k, :l))
 
-            @test_throws ArgumentError qr(tensor, left_inds = (:i,), virtualind = :j)
-        end
+        # throw if chosen virtual index already present
+        @test_throws ArgumentError qr(tensor, left_inds = (:i,), virtualind = :j)
 
-        @testset "inds" begin
-            Q, R = qr(tensor, left_inds = (:i, :j), virtualind = :l)
-            @test issetequal(inds(Q), (:i, :j, :l))
-            @test issetequal(inds(R), (:l, :k))
-        end
+        Q, R = qr(tensor, left_inds = (:i, :j), virtualind = vidx)
 
-        @testset "size" begin
-            Q, R = qr(tensor, left_inds = (:i, :j))
-            # Q's new index size = min(prod(left_inds), prod(right_inds)).
-            @test size(Q) == (2, 2, 2)
-            @test size(R) == (2, 2)
+        @test inds(Q) == [:i, :j, :x]
+        @test inds(R) == [:x, :k, :l]
 
-            # Additional test with different dimensions
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            Q2, R2 = qr(tensor2, left_inds = (:i, :j))
-            @test size(Q2) == (2, 4, 8)
-            @test size(R2) == (8, 6, 8)
-        end
+        @test size(Q) == (2, 4, 8)
+        @test size(R) == (8, 6, 8)
 
-        @testset "[accuracy]" begin
-            Q, R = qr(tensor, left_inds = (:i, :j))
-            Q_truncated = view(Q, inds(Q)[end] => 1:2)
-            tensor_recovered = ein"ijk, kl -> ijl"(Q_truncated, R)
-            @test tensor_recovered ≈ parent(tensor)
-
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            Q2, R2 = qr(tensor2, left_inds = (:i, :j))
-            tensor2_recovered = ein"ijk, klm -> ijlm"(Q2, R2)
-            @test tensor2_recovered ≈ parent(tensor2)
-        end
+        @test isapprox(contract(Q, R), tensor)
     end
 
     @testset "lu" begin

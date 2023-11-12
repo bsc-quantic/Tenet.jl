@@ -140,44 +140,37 @@ LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; lef
 
 Perform QR factorization on a tensor.
 
-# Arguments
-
-    - `t::Tensor`: tensor to be factorized
-
 # Keyword Arguments
 
     - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
     - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
     - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.qr(t::Tensor; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...)
-    isdisjoint(left_inds, right_inds) ||
-        throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
+function LinearAlgebra.qr(
+    tensor::Tensor;
+    left_inds = (),
+    right_inds = (),
+    virtualind::Symbol = Symbol(uuid4()),
+    kwargs...,
+)
+    left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
-    left_inds, right_inds =
-        isempty(left_inds) ? (setdiff(inds(t), right_inds), right_inds) :
-        isempty(right_inds) ? (left_inds, setdiff(inds(t), left_inds)) :
-        throw(ArgumentError("cannot set both left and right indices"))
-
-    all(!isempty, (left_inds, right_inds)) || throw(ArgumentError("no right-indices left in QR factorization"))
-    all(∈(inds(t)), left_inds ∪ right_inds) || throw(ArgumentError("indices must be in $(inds(t))"))
-
-    virtualind ∉ inds(t) || throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
+    virtualind ∉ inds(tensor) ||
+        throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
 
     # permute array
-    tensor = permutedims(t, (left_inds..., right_inds...))
-    data = reshape(parent(tensor), prod(i -> size(t, i), left_inds), prod(i -> size(t, i), right_inds))
+    left_sizes = map(Base.Fix1(size, tensor), left_inds)
+    right_sizes = map(Base.Fix1(size, tensor), right_inds)
+    tensor = permutedims(tensor, [left_inds..., right_inds...])
+    data = reshape(parent(tensor), prod(left_sizes), prod(right_sizes))
 
     # compute QR
     F = qr(data; kwargs...)
     Q, R = Matrix(F.Q), Matrix(F.R)
 
     # tensorify results
-    Q = reshape(Q, ([size(t, ind) for ind in left_inds]..., size(Q, 2)))
-    R = reshape(R, (size(R, 1), [size(t, ind) for ind in right_inds]...))
-
-    Q = Tensor(Q, (left_inds..., virtualind))
-    R = Tensor(R, (virtualind, right_inds...))
+    Q = Tensor(reshape(Q, left_sizes..., size(Q, 2)), [left_inds..., virtualind])
+    R = Tensor(reshape(R, size(R, 1), right_sizes...), [virtualind, right_inds...])
 
     return Q, R
 end
