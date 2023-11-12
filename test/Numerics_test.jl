@@ -226,14 +226,16 @@
         tensor = Tensor(data, (:i, :j, :k, :l))
         vidx = [:x, :y]
 
-        # Throw exception if left_inds is not provided
-        @test_throws UndefVarError lu(tensor)
+        # throw if no index is provided
+        @test_throws ArgumentError lu(tensor)
 
-        # Throw exception if left_inds ∉ inds(tensor)
+        # throw if index is not present
         @test_throws ArgumentError lu(tensor, left_inds = (:z,))
+        @test_throws ArgumentError lu(tensor, right_inds = (:z,))
 
-        # throw exception if no right-inds
+        # throw if no inds left
         @test_throws ArgumentError lu(tensor, left_inds = (:i, :j, :k, :l))
+        @test_throws ArgumentError lu(tensor, right_inds = (:i, :j, :k, :l))
 
         # throw if chosen virtual index already present
         @test_throws ArgumentError qr(tensor, left_inds = (:i,), virtualind = :j)

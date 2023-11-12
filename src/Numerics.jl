@@ -85,7 +85,7 @@ function factorinds(tensor, left_inds, right_inds)
         throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
 
     left_inds, right_inds =
-        isempty(left_inds) ? (setdiff(inds(t), right_inds), right_inds) :
+        isempty(left_inds) ? (setdiff(inds(tensor), right_inds), right_inds) :
         isempty(right_inds) ? (left_inds, setdiff(inds(tensor), left_inds)) :
         throw(ArgumentError("cannot set both left and right indices"))
 
