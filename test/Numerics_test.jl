@@ -1,51 +1,6 @@
 @testset "Numerics" begin
     using LinearAlgebra
 
-    @testset "svd" begin
-        data = rand(2, 2, 2)
-        tensor = Tensor(data, (:i, :j, :k))
-
-        @testset "Error Handling Test" begin
-            # Throw exception if left_inds is not provided
-            @test_throws UndefKeywordError svd(tensor)
-            # Throw exception if left_inds ∉ inds(tensor)
-            @test_throws ErrorException svd(tensor, left_inds = (:l,))
-        end
-
-        @testset "inds Test" begin
-            U, s, V = svd(tensor, left_inds = inds(tensor)[1:2])
-            @test inds(U)[1:2] == inds(tensor)[1:2]
-            @test inds(U)[3] == inds(s)[1]
-            @test inds(V)[1] == inds(s)[2]
-            @test inds(V)[2] == inds(tensor)[3]
-        end
-
-        @testset "Size Test" begin
-            U, s, V = svd(tensor, left_inds = inds(tensor)[1:2])
-            @test size(U) == (2, 2, 2)
-            @test size(s) == (2, 2)
-            @test size(V) == (2, 2)
-
-            # Additional test with different dimensions
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            U2, s2, V2 = svd(tensor2, left_inds = inds(tensor2)[1:2])
-            @test size(U2) == (2, 4, 8)
-            @test size(s2) == (8, 8)
-            @test size(V2) == (8, 6, 8)
-        end
-
-        @testset "Accuracy Test" begin
-            U, s, V = svd(tensor, left_inds = inds(tensor)[1:2])
-            @test U * s * V ≈ tensor
-
-            data2 = rand(2, 4, 6, 8)
-            tensor2 = Tensor(data2, (:i, :j, :k, :l))
-            U2, s2, V2 = svd(tensor2, left_inds = inds(tensor2)[1:2])
-            @test U2 * s2 * V2 ≈ tensor2
-        end
-    end
-
     @testset "contract" begin
         @testset "axis sum" begin
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
@@ -166,6 +121,37 @@
             @test issetequal(size(contracted), (7, 2))
             @test contracted ≈ contract(contract(contract(A, B), C), D)
         end
+    end
+
+    @testset "svd" begin
+        data = rand(2, 4, 6, 8)
+        tensor = Tensor(data, (:i, :j, :k, :l))
+
+        # throw if left_inds is not provided
+        @test_throws ArgumentError svd(tensor)
+
+        # throw if index is not present
+        @test_throws ArgumentError svd(tensor, left_inds = [:z])
+        @test_throws ArgumentError svd(tensor, right_inds = [:z])
+
+        # throw if no inds left
+        @test_throws ArgumentError svd(tensor, left_inds = (:i, :j, :k, :l))
+        @test_throws ArgumentError svd(tensor, right_inds = (:i, :j, :k, :l))
+
+        # throw if chosen virtual index already present
+        @test_throws ArgumentError svd(tensor, left_inds = (:i,), virtualind = :j)
+
+        U, s, V = svd(tensor, left_inds = [:i, :j], virtualind = :x)
+
+        @test inds(U) == [:i, :j, :x]
+        @test inds(s) == [:x]
+        @test inds(V) == [:k, :l, :x]
+
+        @test size(U) == (2, 4, 8)
+        @test size(s) == (8,)
+        @test size(V) == (6, 8, 8)
+
+        @test isapprox(contract(contract(U, s, dims = Symbol[]), V), tensor)
     end
 
     @testset "qr" begin

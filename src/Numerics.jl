@@ -97,38 +97,36 @@ end
 
 LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
-function LinearAlgebra.svd(t::Tensor; left_inds, kwargs...)
-    if isempty(left_inds)
-        throw(ErrorException("no left-indices in SVD factorization"))
-    elseif any(∉(inds(t)), left_inds)
-        # TODO better error exception and checks
-        throw(ErrorException("all left-indices must be in $(inds(t))"))
-    end
+"""
+    LinearAlgebra.svd(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
-    right_inds = setdiff(inds(t), left_inds)
-    if isempty(right_inds)
-        # TODO better error exception and checks
-        throw(ErrorException("no right-indices in SVD factorization"))
-    end
+Perform SVD factorization on a tensor.
+
+# Keyword arguments
+
+  - `left_inds`: left indices to be used in the SVD factorization. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the SVD factorization. Defaults to all indices of `t` except `left_inds`.
+  - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+"""
+function LinearAlgebra.svd(tensor::Tensor; left_inds = (), right_inds = (), virtualind = Symbol(uuid4()), kwargs...)
+    left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
+
+    virtualind ∉ inds(tensor) ||
+        throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
 
     # permute array
-    tensor = permutedims(t, (left_inds..., right_inds...))
-    data = reshape(parent(tensor), prod(i -> size(t, i), left_inds), prod(i -> size(t, i), right_inds))
+    left_sizes = map(Base.Fix1(size, tensor), left_inds)
+    right_sizes = map(Base.Fix1(size, tensor), right_inds)
+    tensor = permutedims(tensor, [left_inds..., right_inds...])
+    data = reshape(parent(tensor), prod(left_sizes), prod(right_sizes))
 
     # compute SVD
     U, s, V = svd(data; kwargs...)
 
     # tensorify results
-    U = reshape(U, ([size(t, ind) for ind in left_inds]..., size(U, 2)))
-    s = Diagonal(s)
-    Vt = reshape(V', (size(V', 1), [size(t, ind) for ind in right_inds]...))
-
-    vlind = Symbol(uuid4())
-    vrind = Symbol(uuid4())
-
-    U = Tensor(U, (left_inds..., vlind))
-    s = Tensor(s, (vlind, vrind))
-    Vt = Tensor(Vt, (vrind, right_inds...))
+    U = Tensor(reshape(U, left_sizes..., size(U, 2)), [left_inds..., virtualind])
+    s = Tensor(s, [virtualind])
+    Vt = Tensor(reshape(V, right_sizes..., size(V, 2)), [right_inds..., virtualind])
 
     return U, s, Vt
 end
