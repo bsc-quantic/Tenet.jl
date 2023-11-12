@@ -136,15 +136,15 @@ end
 LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
 """
-    LinearAlgebra.qr(t::Tensor, mode::Symbol = :reduced; left_inds = (), right_inds = (), virtualind::Symbol = Symbol(uuid4()), kwargs...
+    LinearAlgebra.qr(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform QR factorization on a tensor.
 
-# Keyword Arguments
+# Keyword arguments
 
-    - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
-    - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
-    - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+  - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
+  - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
 function LinearAlgebra.qr(
     tensor::Tensor;
@@ -178,15 +178,15 @@ end
 LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
 
 """
-    LinearAlgebra.lu(t::Tensor, ...)
+    LinearAlgebra.lu(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform LU factorization on a tensor.
 
-# Keyword Arguments
+# Keyword arguments
 
-    - `left_inds`: left indices to be used in the QR factorization. Defaults to all indices of `t` except `right_inds`.
-    - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
-    - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+  - `left_inds`: left indices to be used in the LU factorization. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the LU factorization. Defaults to all indices of `t` except `left_inds`.
+  - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
 function LinearAlgebra.lu(
     tensor::Tensor;
