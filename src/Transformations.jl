@@ -8,27 +8,27 @@ using Combinatorics: combinations
 abstract type Transformation end
 
 """
-    transform(tn::TensorNetwork, config::Transformation)
-    transform(tn::TensorNetwork, configs)
+    transform(tn::AbstractTensorNetwork, config::Transformation)
+    transform(tn::AbstractTensorNetwork, configs)
 
 Return a new [`TensorNetwork`](@ref) where some `Transformation` has been performed into it.
 
 See also: [`transform!`](@ref).
 """
-transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
+transform(tn::AbstractTensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
 
 """
-    transform!(tn::TensorNetwork, config::Transformation)
-    transform!(tn::TensorNetwork, configs)
+    transform!(tn::AbstractTensorNetwork, config::Transformation)
+    transform!(tn::AbstractTensorNetwork, configs)
 
 In-place version of [`transform`](@ref).
 """
 function transform! end
 
-transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
+transform!(tn::AbstractTensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
     transform!(tn, transformation(kwargs...))
 
-function transform!(tn::TensorNetwork, transformations)
+function transform!(tn::AbstractTensorNetwork, transformations)
     for transformation in transformations
         transform!(tn, transformation)
     end
@@ -43,29 +43,29 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 """
 struct HyperindConverter <: Transformation end
 
-function transform!(tn::TensorNetwork, ::HyperindConverter)
-    for index in inds(tn, :hyper)
-        # dimensionality of `index`
-        m = size(tn, index)
+function hyperflatten(tn::AbstractTensorNetwork)
+    map(inds(tn, :hyper)) do hyperindex
+        n = select(tn, hyperindex) |> length
+        map(1:n) do i
+            Symbol("$hyperindex$i")
+        end => hyperindex
+    end |> Dict
+end
 
-        # unlink tensors
-        tensors = pop!(tn, index)
+function transform!(tn::AbstractTensorNetwork, ::HyperindConverter)
+    for (flatindices, hyperindex) in hyperflatten(tn)
+        # insert COPY tensor
+        array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
+        tensor = Tensor(array, flatindices)
+        push!(tn, tensor)
 
-        # replace hyperindex for new (non-hyper)index
-        new_indices = Symbol[]
-        for (i, tensor) in enumerate(tensors)
-            label = Symbol("$index$i")
-            push!(new_indices, label)
-
-            tensor = replace(tensor, index => label)
+        # replace hyperindex for new flat Indices
+        # TODO move this part to `replace!`?
+        tensors = pop!(tn, hyperindex)
+        for (flatindex, tensor) in zip(flatindices, tensors)
+            tensor = replace(tensor, hyperindex => flatindex)
             push!(tn, tensor)
         end
-
-        # insert COPY tensor
-        N = length(new_indices)
-        data = DeltaArray{N}(ones(m))
-        tensor = Tensor(data, new_indices; dual = index)
-        push!(tn, tensor)
     end
 end
 
@@ -82,7 +82,7 @@ Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
 end
 
-function transform!(tn::TensorNetwork, config::DiagonalReduction)
+function transform!(tn::AbstractTensorNetwork, config::DiagonalReduction)
     for tensor in filter(tensor -> !(parenttype(typeof(tensor)) <: DeltaArray), tensors(tn))
         diaginds = find_diag_axes(tensor, atol = config.atol)
         isempty(diaginds) && continue
@@ -93,7 +93,7 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             # insert COPY tensor
             new_index = Symbol(uuid4())
             data = DeltaArray{N + 1}(ones(size(target, first(inds))))
-            push!(copies, Tensor(data, (new_index, inds...), dual = new_index))
+            push!(copies, Tensor(data, (new_index, inds...)))
 
             # extract diagonal of target tensor
             # TODO rewrite using `einsum!` when implemented in Tensors
@@ -106,13 +106,12 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
             target = Tensor(
                 data,
                 map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
-                target.meta...,
             )
 
             return (; target = target, copies = copies)
         end
 
-        transformed_tn = TensorNetwork([transformed_tensor.target, transformed_tensor.copies...])
+        transformed_tn = TensorNetwork(Tensor[transformed_tensor.target, transformed_tensor.copies...])
         replace!(tn, tensor => transformed_tn)
     end
 
@@ -126,7 +125,7 @@ Preemptively contract tensors whose result doesn't increase in size.
 """
 struct RankSimplification <: Transformation end
 
-function transform!(tn::TensorNetwork, ::RankSimplification)
+function transform!(tn::AbstractTensorNetwork, ::RankSimplification)
     @label rank_transformation_start
     for tensor in tensors(tn)
         # TODO replace this code for `neighbours` method
@@ -174,12 +173,10 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
     skip::Vector{Symbol} = Symbol[]
 end
 
-function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
+function transform!(tn::AbstractTensorNetwork, config::AntiDiagonalGauging)
     skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
-    for idx in keys(tn.tensors)
-        tensor = tn.tensors[idx]
-
+    for tensor in keys(tn.tensormap)
         anti_diag_axes = find_anti_diag_axes(parent(tensor), atol = config.atol)
 
         for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
@@ -213,59 +210,17 @@ Base.@kwdef struct ColumnReduction <: Transformation
     skip::Vector{Symbol} = Symbol[]
 end
 
-function transform!(tn::TensorNetwork, config::ColumnReduction)
+function transform!(tn::AbstractTensorNetwork, config::ColumnReduction)
     skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
-    for tensor in tn.tensors
-        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
-        zero_columns_by_axis = [filter(x -> x[1] == d, zero_columns) for d in 1:length(size(tensor))]
+    for tensor in tensors(tn)
+        for (dim, index) in enumerate(inds(tensor))
+            index ∈ skip_inds && continue
 
-        # find non-zero column for each axis
-        non_zero_columns =
-            [(d, setdiff(1:size(tensor, d), [x[2] for x in zero_columns_by_axis[d]])) for d in 1:length(size(tensor))]
+            zeroslices = iszero.(eachslice(tensor, dims = dim))
+            any(zeroslices) || continue
 
-        # remove axes that have more than one non-zero column
-        axes_to_reduce = [(d, c[1]) for (d, c) in filter(x -> length(x[2]) == 1, non_zero_columns)]
-
-        # First try to reduce the whole index if only one column is non-zeros
-        for (d, c) in axes_to_reduce # loop over all column axes
-            ix_i = inds(tensor)[d]
-
-            # do not reduce output indices
-            if ix_i ∈ skip_inds
-                continue
-            end
-
-            # reduce all tensors where ix_i appears
-            for (ind, t) in enumerate(tensors(tn))
-                if ix_i ∈ inds(t)
-                    # Replace the tensor with the reduced one
-                    new_tensor = selectdim(parent(t), findfirst(l -> l == ix_i, inds(t)), c)
-                    new_inds = filter(l -> l != ix_i, inds(t))
-
-                    tn.tensors[ind] = Tensor(new_tensor, new_inds)
-                end
-            end
-            delete!(tn.indices, ix_i)
-        end
-
-        # Then try to reduce the dimensionality of the index in the other tensors
-        zero_columns = find_zero_columns(parent(tensor), atol = config.atol)
-        for (d, c) in zero_columns # loop over all column axes
-            ix_i = inds(tensor)[d]
-
-            # do not reduce output indices
-            if ix_i ∈ skip_inds
-                continue
-            end
-
-            # reduce all tensors where ix_i appears
-            for (ind, t) in enumerate(tensors(tn))
-                if ix_i ∈ inds(t)
-                    reduced_dims = [i == ix_i ? filter(j -> j != c, 1:size(t, i)) : (1:size(t, i)) for i in inds(t)]
-                    tn.tensors[ind] = Tensor(view(parent(t), reduced_dims...), inds(t))
-                end
-            end
+            slice!(tn, index, count(!, zeroslices) == 1 ? findfirst(!, zeroslices) : findall(!, zeroslices))
         end
     end
 
@@ -285,7 +240,7 @@ Base.@kwdef struct SplitSimplification <: Transformation
     atol::Float64 = 1e-10  # A threshold for SVD rank determination
 end
 
-function transform!(tn::TensorNetwork, config::SplitSimplification)
+function transform!(tn::AbstractTensorNetwork, config::SplitSimplification)
     @label split_simplification_start
     for tensor in tensors(tn)
         inds = Tenet.inds(tensor)
@@ -294,20 +249,21 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
         bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
         for bipartition in bipartitions
             left_inds = collect(bipartition)
-            right_inds = setdiff(inds, left_inds)
 
             # perform an SVD across the bipartition
             u, s, v = svd(tensor; left_inds = left_inds)
-            rank_s = sum(diag(s) .> config.atol)
+            rank_s = sum(s .> config.atol)
 
-            if rank_s < size(s, 1)
+            if rank_s < length(s)
+                hyperindex = only(Tenet.inds(s))
+
                 # truncate data
-                u = view(u, Tenet.inds(s)[1] => 1:rank_s)
-                s = view(s, (idx -> idx => 1:rank_s).(Tenet.inds(s))...)
-                v = view(v, Tenet.inds(s)[2] => 1:rank_s)
+                u = view(u, hyperindex => 1:rank_s)
+                s = view(s, hyperindex => 1:rank_s)
+                v = view(v, hyperindex => 1:rank_s)
 
                 # replace the original tensor with factorization
-                tensor_l = u * s
+                tensor_l = contract(u, s, dims = Symbol[])
                 tensor_r = v
 
                 push!(tn, dropdims(tensor_l))
@@ -320,29 +276,6 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
         end
     end
     return tn
-end
-
-function find_zero_columns(x; atol = 1e-12)
-    dims = size(x)
-
-    # Create an initial set of all possible column pairs
-    zero_columns = Set((d, c) for d in 1:length(dims) for c in 1:dims[d])
-
-    # Iterate over each element in tensor
-    for index in CartesianIndices(x)
-        val = x[index]
-
-        # For each non-zero element, eliminate the corresponding column from the zero_columns set
-        if abs(val) > atol
-            for d in 1:length(dims)
-                c = index[d]
-                delete!(zero_columns, (d, c))
-            end
-        end
-    end
-
-    # Now the zero_columns set only contains column pairs where all elements are zero
-    return collect(zero_columns)
 end
 
 function find_diag_axes(x; atol = 1e-12)

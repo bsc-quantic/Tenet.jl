@@ -7,18 +7,12 @@ using OMEinsum
     include("Tensor_test.jl")
     include("Numerics_test.jl")
     include("TensorNetwork_test.jl")
-    include("Quantum_test.jl")
     include("Transformations_test.jl")
-
-    # Ansatz Tensor Networks
-    include("MatrixProductState_test.jl")
-    include("MatrixProductOperator_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin
     include("integration/ChainRules_test.jl")
     include("integration/BlockArray_test.jl")
-    include("integration/Quac_test.jl")
     include("integration/Makie_test.jl")
 end
 

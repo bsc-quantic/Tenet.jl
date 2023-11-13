@@ -27,7 +27,7 @@ function smooth_annotation!(f; color=Makie.RGBAf(110 // 256, 170 // 256, 250 // 
     perturbed_radius_y = radius_y .+ fluctuations
 
     circle_points = [Point2f((perturbed_radius_x[i]) * cos(theta[i]) + offset_x,
-                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in 1:length(theta)]
+                              (perturbed_radius_y[i]) * sin(theta[i]) + offset_y) for i in eachindex(theta)]
 
     poly!(ax, circle_points, color=color, closed=true)
 end
@@ -50,7 +50,7 @@ transform
 transform!
 ```
 
-## Transformations
+## Available transformations
 
 ### Hyperindex converter
 
@@ -96,7 +96,7 @@ smooth_annotation!( #hide
     num_waves = 6, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=100); node_color=[red, orange, orange, :black, :black,:black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=100); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -110,7 +110,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 1.9) #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=100),  node_color=[orange, orange, red, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=100),  node_color=[orange, orange, red, :black]) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -154,7 +154,7 @@ smooth_annotation!( #hide
     num_waves = 6, #hide
     fluctuation_amplitude = 0.01, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=20); node_color=[orange, red, orange, orange, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=20); node_color=[orange, red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -168,7 +168,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.01, #hide
     phase_shift = 0) #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=1); node_color=[red, orange, orange, :black, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=1000, C=0.5, seed=1); node_color=[red, orange, orange]) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -208,7 +208,7 @@ smooth_annotation!( #hide
     num_waves = 4, #hide
     fluctuation_amplitude = 0.02, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=6); node_color=[red, orange, orange, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=1000, C=0.5, seed=6); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -225,7 +225,7 @@ smooth_annotation!( #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_color=[red, orange, orange, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=2000, C=40, seed=8); node_color=[red, orange, orange]) #hide
 
 fig #hide
 ```
@@ -262,7 +262,7 @@ smooth_annotation!( #hide
     num_waves = 5, #hide
     fluctuation_amplitude = 0.015, #hide
     phase_shift = 0.0) #hide
-plot!(fig[1, 1], tn, layout=Spring(iterations=10000, C=0.5, seed=12); node_color=[red, orange,  orange, :black, :black, :black, :black]) #hide
+plot!(fig[1, 1], tn, layout=Spring(iterations=10000, C=0.5, seed=12); node_color=[red, orange, orange]) #hide
 
 smooth_annotation!( #hide
     fig[1, 2]; #hide
@@ -279,39 +279,7 @@ smooth_annotation!( #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
-plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_color=[orange, orange, red, red, red, :black, :black, :black, :black]) #hide
+plot!(fig[1, 2], reduced, layout=Spring(iterations=10000, C=13, seed=151); node_color=[orange, orange, red, red, red]) #hide
 
 fig #hide
-```
-
-## Example: RQC simplification
-
-Local transformations can dramatically reduce the complexity of tensor networks. Take as an example the Random Quantum Circuit circuit on the Sycamore chip from Google's quantum advantage experiment [arute2019quantum](@cite).
-
-```@example plot
-using QuacIO
-set_theme!(resolution=(800,400)) # hide
-
-sites = [5, 6, 14, 15, 16, 17, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 72, 73, 74, 75, 76, 83, 84, 85, 94]
-circuit = QuacIO.parse(joinpath(@__DIR__, "sycamore_53_10_0.qasm"), format=QuacIO.Qflex(), sites=sites)
-tn = TensorNetwork(circuit)
-
-# Apply transformations to the tensor network
-transformed_tn = transform(tn, [Tenet.AntiDiagonalGauging, Tenet.DiagonalReduction, Tenet.ColumnReduction, Tenet.RankSimplification])
-
-fig = Figure() # hide
-ax1 = Axis(fig[1, 1]) # hide
-p1 = plot!(ax1, tn; edge_width=0.75, node_size=8., node_attr=(strokecolor=:black, strokewidth=0.5)) # hide
-ax2 = Axis(fig[1, 2]) # hide
-p2 = plot!(ax2, transformed_tn; edge_width=0.75, node_size=8., node_attr=(strokecolor=:black, strokewidth=0.5)) # hide
-ax1.titlesize, ax2.titlesize = 20, 20 # hide
-hidedecorations!(ax1) # hide
-hidespines!(ax1) # hide
-hidedecorations!(ax2) # hide
-hidespines!(ax2) # hide
-
-Label(fig[1, 1, Bottom()], "Original") # hide
-Label(fig[1, 2, Bottom()], "Transformed") # hide
-
-fig # hide
 ```

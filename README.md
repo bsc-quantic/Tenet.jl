@@ -7,37 +7,32 @@
 [![Documentation: stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/)
 [![Documentation: dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/dev/)
 
+> [!IMPORTANT]
+> The code for quantum tensor networks has been moved to the new [`Qrochet`](https://github.com/bsc-quantic/Qrochet.jl) library.
+
 A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
 
 - **Expressiveness** _Simple to use._ 👶
 - **Flexibility** _Extend it to your needs._ 🔧
 - **Performance** _Goes brr... fast._ 🏎️
 
+## Features
+
+- Optimized Tensor Network contraction order, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
+- Tensor Network slicing/cuttings
+- Automatic Differentiation of TN contraction
+- Distributed contraction
+- Local Tensor Network transformations
+  - Hyperindex converter
+  - Rank simplification
+  - Diagonal reduction
+  - Anti-diagonal gauging
+  - Column reduction
+  - Split simplification
+- 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+
+## Preview
+
 A video of its presentation at JuliaCon 2023 can be seen here:
 
 [![Watch the video](https://img.youtube.com/vi/8BHGtm6FRMk/maxresdefault.jpg)](https://youtu.be/8BHGtm6FRMk)
-
-## Features
-
-- [x] Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
-- [x] Tensor Network slicing/cuttings
-- [x] Automatic Differentiation of TN contraction
-- [ ] Distributed contraction
-- [ ] Quantum Tensor Networks
-  - [x] Matrix Product States (MPS)
-  - [x] Matrix Product Operators (MPO)
-  - [ ] Tree Tensor Networks (TTN)
-  - [x] Projected Entangled Pair States (PEPS)
-  - [ ] Multiscale Entanglement Renormalization Ansatz (MERA)
-- [ ] Numerical Tensor Network algorithms
-  - [ ] Tensor Renormalization Group (TRG)
-  - [ ] Density Matrix Renormalization Group (DMRG)
-- [x] Local Tensor Network transformations
-  - [x] Hyperindex converter
-  - [x] Rank simplification
-  - [x] Diagonal reduction
-  - [x] Anti-diagonal gauging
-  - [x] Column reduction
-  - [x] Split simplification
-- [x] 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
-- [x] Translation from quantum circuits, powered by [`Quac`](https://github.com/bsc-quantic/Quac.jl)
