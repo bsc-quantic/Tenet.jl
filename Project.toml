@@ -14,6 +14,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Muscle = "21fe5c4b-a943-414d-bf3e-516f24900631"
 OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 

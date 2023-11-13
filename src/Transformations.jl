@@ -249,20 +249,21 @@ function transform!(tn::AbstractTensorNetwork, config::SplitSimplification)
         bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
         for bipartition in bipartitions
             left_inds = collect(bipartition)
-            right_inds = setdiff(inds, left_inds)
 
             # perform an SVD across the bipartition
             u, s, v = svd(tensor; left_inds = left_inds)
-            rank_s = sum(diag(s) .> config.atol)
+            rank_s = sum(s .> config.atol)
 
-            if rank_s < size(s, 1)
+            if rank_s < length(s)
+                hyperindex = only(Tenet.inds(s))
+
                 # truncate data
-                u = view(u, Tenet.inds(s)[1] => 1:rank_s)
-                s = view(s, (idx -> idx => 1:rank_s).(Tenet.inds(s))...)
-                v = view(v, Tenet.inds(s)[2] => 1:rank_s)
+                u = view(u, hyperindex => 1:rank_s)
+                s = view(s, hyperindex => 1:rank_s)
+                v = view(v, hyperindex => 1:rank_s)
 
                 # replace the original tensor with factorization
-                tensor_l = u * s
+                tensor_l = contract(u, s, dims = Symbol[])
                 tensor_r = v
 
                 push!(tn, dropdims(tensor_l))
