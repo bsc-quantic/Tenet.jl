@@ -7,18 +7,14 @@
 [![Documentation: stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/)
 [![Documentation: dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/dev/)
 
+> [!IMPORTANT]
+> The code for quantum tensor networks has been moved to the new [`Qrochet`](https://github.com/bsc-quantic/Qrochet.jl) library.
+
 A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
 
 - **Expressiveness** _Simple to use._ 👶
 - **Flexibility** _Extend it to your needs._ 🔧
 - **Performance** _Goes brr... fast._ 🏎️
-
-A video of its presentation at JuliaCon 2023 can be seen here:
-
-[![Watch the video](https://img.youtube.com/vi/8BHGtm6FRMk/maxresdefault.jpg)](https://youtu.be/8BHGtm6FRMk)
-
-> [!IMPORTANT]
-> The code for quantum tensor networks has been moved to the new [`Qrochet`](https://github.com/bsc-quantic/Qrochet.jl) library.
 
 ## Features
 
@@ -34,3 +30,9 @@ A video of its presentation at JuliaCon 2023 can be seen here:
   - Column reduction
   - Split simplification
 - 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+
+## Preview
+
+A video of its presentation at JuliaCon 2023 can be seen here:
+
+[![Watch the video](https://img.youtube.com/vi/8BHGtm6FRMk/maxresdefault.jpg)](https://youtu.be/8BHGtm6FRMk)
