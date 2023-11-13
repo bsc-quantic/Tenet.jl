@@ -22,15 +22,15 @@ A video of its presentation at JuliaCon 2023 can be seen here:
 
 ## Features
 
-- [x] Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
-- [x] Tensor Network slicing/cuttings
-- [x] Automatic Differentiation of TN contraction
-- [ ] Distributed contraction
-- [x] Local Tensor Network transformations
-  - [x] Hyperindex converter
-  - [x] Rank simplification
-  - [x] Diagonal reduction
-  - [x] Anti-diagonal gauging
-  - [x] Column reduction
-  - [x] Split simplification
-- [x] 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- Optimized Tensor Network contraction order, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
+- Tensor Network slicing/cuttings
+- Automatic Differentiation of TN contraction
+- Distributed contraction
+- Local Tensor Network transformations
+  - Hyperindex converter
+  - Rank simplification
+  - Diagonal reduction
+  - Anti-diagonal gauging
+  - Column reduction
+  - Split simplification
+- 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
