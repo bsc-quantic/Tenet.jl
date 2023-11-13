@@ -17,6 +17,9 @@ A video of its presentation at JuliaCon 2023 can be seen here:
 
 [![Watch the video](https://img.youtube.com/vi/8BHGtm6FRMk/maxresdefault.jpg)](https://youtu.be/8BHGtm6FRMk)
 
+> [!IMPORTANT]
+> The code for quantum tensor networks has been moved to the new [`Qrochet`](https://github.com/bsc-quantic/Qrochet.jl) library.
+
 ## Features
 
 - [x] Optimized Tensor Network contraction, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
