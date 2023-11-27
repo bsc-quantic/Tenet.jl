@@ -21,18 +21,21 @@ ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 [weakdeps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
+Dagger = "d58978e5-989f-55fb-8d15-ea34adc7bf54"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [extensions]
 TenetChainRulesCoreExt = "ChainRulesCore"
 TenetChainRulesTestUtilsExt = ["ChainRulesCore", "ChainRulesTestUtils"]
+TenetDaggerExt = "Dagger"
 TenetFiniteDifferencesExt = "FiniteDifferences"
 TenetMakieExt = "Makie"
 
 [compat]
 ChainRulesCore = "1.0"
 Combinatorics = "1.0"
+Dagger = "0.18"
 DeltaArrays = "0.1.1"
 EinExprs = "0.5.5"
 GraphMakie = "0.4,0.5"
