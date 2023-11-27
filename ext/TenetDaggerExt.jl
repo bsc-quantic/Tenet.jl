@@ -96,7 +96,7 @@ function Tenet.contract(
 
     ic = setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
 
-    data = Dagger._to_darray(Contract(a, ia, b, ib, ic))
+    data = Dagger._to_darray(Contract(parent(a), ia, parent(b), ib, ic))
 
     return Tensor(data, ic)
 end
