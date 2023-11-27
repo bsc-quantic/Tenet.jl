@@ -26,10 +26,10 @@ end |> splat(tuple)
 
 Dagger.Blocks(x::Contract) = map(x.ic) do i
     j = findfirst(==(i), x.ia)
-    isnothing(j) || return x.a.partitioning[j]
+    isnothing(j) || return x.a.partitioning.blocksize[j]
 
-    j = findfirst(==(i), x.ia)
-    isnothing(j) || return x.b.partitioning[j]
+    j = findfirst(==(i), x.ib)
+    isnothing(j) || return x.b.partitioning.blocksize[j]
 
     throw(ErrorException("index $i not found in a nor b"))
 end |> splat(Dagger.Blocks)
