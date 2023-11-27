@@ -63,7 +63,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     outer_perm_a = map(i -> findfirst(==(i), op.ia), op.ic[mask_a])
     outer_perm_b = map(i -> findfirst(==(i), op.ib), op.ic[mask_b])
 
-    chunks = similar(subdomains, EagerThunk)
+    chunks = similar(subdomains, Dagger.EagerThunk)
     for indices in eachindex(IndexCartesian(), chunks)
         outer_indices_a = Tuple(indices)[mask_a]
         chunks_a = reduce(zip(outer_perm_a, outer_indices_a); init = Dagger.chunks(op.a)) do acc, (d, i)
