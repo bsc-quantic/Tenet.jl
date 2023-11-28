@@ -73,7 +73,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         end
         chunks_b = permutedims(chunks_b, vcat(inner_perm_b, outer_perm_b))
 
-        chunks[indices...] = Dagger.treereduce(Dagger.AddComputeOp, map(chunks_a, chunks_b) do chunk_a, chunk_b
+        chunks[indices] = Dagger.treereduce(Dagger.AddComputeOp, map(chunks_a, chunks_b) do chunk_a, chunk_b
             Dagger.@spawn contractor(chunk_a, chunk_b)
         end)
     end
