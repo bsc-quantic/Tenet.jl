@@ -43,13 +43,9 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     domain = Dagger.ArrayDomain([1:l for l in size(op)])
     partitioning = Dagger.Blocks(op)
 
-    # NOTE careful with ÷ for dividing into partitions
-    subdomains = Array{ArrayDomain{N}}(undef, map(÷, size(op), partitioning.blocksize))
-    for indices in eachindex(IndexCartesian(), subdomains)
-        subdomains[indices...] = map(Tuple(indices), partitioning.blocksize) do i, step
-            (i - 1) * step .+ (1:step)
-        end |> ArrayDomain
-    end
+    subdoms_start = tuple([1 for _ in 1:length(partitioning.blocksize)]...)
+    subdoms_cumlength = tuple([collect(dim:2) for dim in partitioning.blocksize]...)
+    subdomains = Dagger.DomainBlocks{length(partitioning.blocksize)}(subdoms_start, subdoms_cumlength)
 
     contractor =
         EinCode((Tenet.__omeinsum_sym2str(op.ia), Tenet.__omeinsum_sym2str(op.ib)), Tenet.__omeinsum_sym2str(op.ic))
