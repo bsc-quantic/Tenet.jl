@@ -78,7 +78,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         end)
     end
 
-    DArray(T, domain, subdomains, chunks, partitioning)
+    Dagger.DArray(T, domain, subdomains, chunks, partitioning)
 end
 
 function Tenet.contract(
