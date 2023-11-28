@@ -65,13 +65,13 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         chunks_a = reduce(zip(outer_perm_a, outer_indices_a); init = Dagger.chunks(op.a)) do acc, (d, i)
             selectdim(acc, d, i:i)
         end
-        chunks_a = permutedims(chunks_a, inner_perm_a)
+        chunks_a = permutedims(chunks_a, vcat(outer_perm_a, inner_perm_a))
 
         outer_indices_b = Tuple(indices)[mask_b]
         chunks_b = reduce(zip(outer_perm_b, outer_indices_b); init = Dagger.chunks(op.b)) do acc, (d, i)
             selectdim(acc, d, i:i)
         end
-        chunks_b = permutedims(chunks_b, inner_perm_b)
+        chunks_b = permutedims(chunks_b, vcat(inner_perm_b, outer_perm_b))
 
         chunks[indices...] = Dagger.treereduce(Dagger.AddComputeOp, map(chunks_a, chunks_b) do chunk_a, chunk_b
             Dagger.@spawn contractor(chunk_a, chunk_b)
