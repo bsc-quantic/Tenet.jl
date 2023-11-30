@@ -44,7 +44,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     partitioning = isempty(size(op)) ? Dagger.Blocks(1,1) : Dagger.Blocks(op)
 
     subdoms_start = tuple([1 for _ in 1:length(partitioning.blocksize)]...)
-    subdoms_cumlength = tuple([collect(dim:2) for dim in partitioning.blocksize]...)
+    subdoms_cumlength = tuple([collect(partitioning.blocksize[i]:domain.indexes[i].stop) for i in 1:length(partitioning.blocksize)]...)
     subdomains = Dagger.DomainBlocks{length(partitioning.blocksize)}(subdoms_start, subdoms_cumlength)
 
     contractor =
