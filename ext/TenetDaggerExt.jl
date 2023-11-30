@@ -61,15 +61,23 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
 
     chunks = similar(subdomains, Dagger.EagerThunk)
     for indices in eachindex(IndexCartesian(), chunks)
-        outer_indices_a = Tuple(indices)[mask_a]
-        chunks_a = reduce(zip(outer_perm_a, outer_indices_a); init = Dagger.chunks(op.a)) do acc, (d, i)
-            selectdim(acc, d, i:i)
+        if (!isempty(outer_perm_a))
+            outer_indices_a = Tuple(indices)[mask_a]
+            chunks_a = reduce(zip(outer_perm_a, outer_indices_a); init = Dagger.chunks(op.a)) do acc, (d, i)
+                selectdim(acc, d, i:i)
+            end
+        else 
+            chunks_a = Dagger.chunks(op.a)
         end
         chunks_a = permutedims(chunks_a, vcat(outer_perm_a, inner_perm_a))
 
-        outer_indices_b = Tuple(indices)[mask_b]
-        chunks_b = reduce(zip(outer_perm_b, outer_indices_b); init = Dagger.chunks(op.b)) do acc, (d, i)
-            selectdim(acc, d, i:i)
+        if (!isempty(outer_perm_b))
+            outer_indices_b = Tuple(indices)[mask_b]
+            chunks_b = reduce(zip(outer_perm_b, outer_indices_b); init = Dagger.chunks(op.b)) do acc, (d, i)
+                selectdim(acc, d, i:i)
+            end
+        else
+            chunks_b = Dagger.chunks(op.b)
         end
         chunks_b = permutedims(chunks_b, vcat(inner_perm_b, outer_perm_b))
 
@@ -94,7 +102,7 @@ function Tenet.contract(
 
     data = Dagger._to_darray(Contract(parent(a), ia, parent(b), ib, ic))
 
-    return Tensor(data, ic)
+    return isempty(ic) ? Tensor(first(fetch.(data.chunks))) : Tensor(data, ic)
 end
 
 end
