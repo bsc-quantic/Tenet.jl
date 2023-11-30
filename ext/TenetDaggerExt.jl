@@ -40,8 +40,8 @@ selectdims(a, proj::Pair...) =
     end
 
 function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
-    domain = Dagger.ArrayDomain([1:l for l in size(op)])
-    partitioning = Dagger.Blocks(op)
+    domain = isempty(size(op)) ? Dagger.ArrayDomain((1:1, 1:1)) : Dagger.ArrayDomain([1:l for l in size(op)])
+    partitioning = isempty(size(op)) ? Dagger.Blocks(1,1) : Dagger.Blocks(op)
 
     subdoms_start = tuple([1 for _ in 1:length(partitioning.blocksize)]...)
     subdoms_cumlength = tuple([collect(dim:2) for dim in partitioning.blocksize]...)
