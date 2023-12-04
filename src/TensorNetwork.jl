@@ -434,8 +434,7 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
 function contract(tn::AbstractTensorNetwork; path = einexpr(tn))
-    # TODO does `first` work always?
-    length(path.args) == 0 && return select(tn, inds(path)) |> first
+    length(path.args) == 0 && return tn[inds(path)...]
 
     intermediates = map(subpath -> contract(tn; path = subpath), path.args)
     contract(intermediates...; dims = suminds(path))
