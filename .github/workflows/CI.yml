@@ -44,7 +44,6 @@ jobs:
       - uses: julia-actions/cache@v1
         with:
           cache-name: CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-          cache-compiled: false
       - name: Add Julia registries
         run: |
           using Pkg
@@ -79,7 +78,6 @@ jobs:
       - uses: julia-actions/cache@v1
         with:
           cache-name: CI - Docs - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-          cache-compiled: false
       - name: Add Julia registries
         run: |
           using Pkg
