@@ -1,10 +1,9 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
-using ImmutableArrays
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
-    inds::ImmutableVector{Symbol,Vector{Symbol}}
+    inds::Vector{Symbol}
 
     function Tensor{T,N,A}(data::A, inds::AbstractVector) where {T,N,A<:AbstractArray{T,N}}
         length(inds) == N ||
@@ -12,7 +11,7 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
         all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(collect(inds))) ||
             throw(DimensionMismatch("nonuniform size of repeated indices"))
 
-        new{T,N,A}(data, ImmutableArray(inds))
+        new{T,N,A}(data, inds)
     end
 end
 
