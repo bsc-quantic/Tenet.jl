@@ -403,9 +403,9 @@ See also: [`contract`](@ref).
 """
 EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
     optimizer,
-    EinExpr(
-        outputs,
+    sum(
         [EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for tensor in tensors(tn)],
+        skip = outputs,
     );
     kwargs...,
 )
