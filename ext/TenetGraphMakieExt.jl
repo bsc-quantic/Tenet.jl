@@ -1,22 +1,11 @@
 module TenetGraphMakieExt
 
-function __init__()
-    try
-        Base.require(Main, :Graphs)
-    catch
-        @warn """Package Graphs or Graphs not found in current path. It is needed to plot `Tenet`s with `GraphMakie`.
-        - Run `import Pkg; Pkg.add(\"Graphs\")` or `]add Graphs` to install the Graphs package, then restart julia.
-        """
-    end
-end
-
+using GraphMakie
+using Makie
+const Graphs = GraphMakie.Graphs
 using Tenet
 using Tenet: AbstractTensorNetwork
 using Combinatorics: combinations
-using Graphs
-using Makie
-
-using GraphMakie
 
 """
     plot(tn::TensorNetwork; kwargs...)
@@ -63,20 +52,21 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
 
     # TODO how to mark multiedges? (i.e. parallel edges)
-    graph = SimpleGraph([
-        Edge(map(Base.Fix1(getindex, tensormap), tensors)...) for (_, tensors) in tn.indexmap if length(tensors) > 1
+    graph = Graphs.SimpleGraph([
+        Graphs.Edge(map(Base.Fix1(getindex, tensormap), tensors)...) for
+        (_, tensors) in tn.indexmap if length(tensors) > 1
     ])
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
     ghostnodes = map(inds(tn, :open)) do index
         # create new ghost node
-        add_vertex!(graph)
-        node = nv(graph)
+        Graphs.add_vertex!(graph)
+        node = Graphs.nv(graph)
 
         # connect ghost node
         tensor = only(tn.indexmap[index])
-        add_edge!(graph, node, tensormap[tensor])
+        Graphs.add_edge!(graph, node, tensormap[tensor])
 
         return node
     end
@@ -88,7 +78,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     if haskey(kwargs, :node_size)
         append!(kwargs[:node_size], zero(ghostnodes))
     else
-        kwargs[:node_size] = map(1:nv(graph)) do i
+        kwargs[:node_size] = map(1:Graphs.nv(graph)) do i
             i ∈ ghostnodes ? 0 : max(15, log2(length(tensors(tn)[i])))
         end
     end
@@ -96,13 +86,13 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
     if haskey(kwargs, :node_marker)
         append!(kwargs[:node_marker], fill(:circle, length(ghostnodes)))
     else
-        kwargs[:node_marker] = map(i -> i ∈ copytensors ? :diamond : :circle, 1:nv(graph))
+        kwargs[:node_marker] = map(i -> i ∈ copytensors ? :diamond : :circle, 1:Graphs.nv(graph))
     end
 
     if haskey(kwargs, :node_color)
         kwargs[:node_color] = vcat(kwargs[:node_color], fill(:black, length(ghostnodes)))
     else
-        kwargs[:node_color] = map(1:nv(graph)) do v
+        kwargs[:node_color] = map(1:Graphs.nv(graph)) do v
             v ∈ copytensors ? Makie.to_color(:black) : Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
         end
     end
@@ -114,28 +104,28 @@ function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetw
         opentensors = findall(t -> !isdisjoint(inds(t), inds(tn, :open)), tensors(tn))
         opencounter = IdDict(tensor => 0 for tensor in opentensors)
 
-        map(edges(graph)) do edge
+        map(Graphs.edges(graph)) do edge
             # case: open edge
-            if any(∈(ghostnodes), [src(edge), dst(edge)])
-                notghost = src(edge) ∈ ghostnodes ? dst(edge) : src(edge)
+            if any(∈(ghostnodes), [Graphs.src(edge), Graphs.dst(edge)])
+                notghost = Graphs.src(edge) ∈ ghostnodes ? Graphs.dst(edge) : Graphs.src(edge)
                 inds = Tenet.inds(tn, :open) ∩ Tenet.inds(tensors(tn)[notghost])
                 opencounter[notghost] += 1
                 return inds[opencounter[notghost]] |> string
             end
 
             # case: hyperedge
-            if any(∈(copytensors), [src(edge), dst(edge)])
-                i = src(edge) ∈ copytensors ? src(edge) : dst(edge)
+            if any(∈(copytensors), [Graphs.src(edge), Graphs.dst(edge)])
+                i = Graphs.src(edge) ∈ copytensors ? Graphs.src(edge) : Graphs.dst(edge)
                 # hyperindex = filter(p -> isdisjoint(inds(tensors)[i], p[2]), hypermap) |> only |> first
                 hyperindex = hypermap[Tenet.inds(tensors(tn)[i])]
                 return hyperindex |> string
             end
 
-            return join(Tenet.inds(tensors(tn)[src(edge)]) ∩ Tenet.inds(tensors(tn)[dst(edge)]), ',')
+            return join(Tenet.inds(tensors(tn)[Graphs.src(edge)]) ∩ Tenet.inds(tensors(tn)[Graphs.dst(edge)]), ',')
         end
     end
-    get!(() -> repeat([:black], ne(graph)), kwargs, :elabels_color)
-    get!(() -> repeat([17], ne(graph)), kwargs, :elabels_textsize)
+    get!(() -> repeat([:black], Graphs.ne(graph)), kwargs, :elabels_color)
+    get!(() -> repeat([17], Graphs.ne(graph)), kwargs, :elabels_textsize)
 
     # plot graph
     graphplot!(ax, graph; kwargs...)

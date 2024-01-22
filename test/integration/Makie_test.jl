@@ -1,4 +1,5 @@
 @testset "Visualization" begin
+    using GraphMakie
     using CairoMakie
     using NetworkLayout: Spring
 
