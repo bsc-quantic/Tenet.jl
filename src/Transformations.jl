@@ -140,7 +140,7 @@ function transform!(tn::AbstractTensorNetwork, ::RankSimplification)
             ])
 
             # Check if contraction does not increase the rank
-            EinExprs.removedrank(path) < 0 && continue
+            EinExprs.removedsize(path) < 0 && continue
 
             new_tensor = contract(tensor, c_tensor)
 
