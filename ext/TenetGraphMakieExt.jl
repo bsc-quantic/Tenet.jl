@@ -4,7 +4,6 @@ using GraphMakie
 using Makie
 const Graphs = GraphMakie.Graphs
 using Tenet
-using Tenet: AbstractTensorNetwork
 using Combinatorics: combinations
 
 """
@@ -19,7 +18,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
   - The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
-function Makie.plot(@nospecialize tn::AbstractTensorNetwork; kwargs...)
+function Makie.plot(tn::TensorNetwork; kwargs...)
     f = Figure()
     ax, p = plot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
@@ -28,7 +27,7 @@ end
 # NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
 __networklayout_dim(x) = typeof(x).super.parameters |> first
 
-function Makie.plot!(f::Union{Figure,GridPosition}, @nospecialize tn::AbstractTensorNetwork; kwargs...)
+function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
     ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
         Axis3(f[1, 1])
     else
@@ -45,7 +44,7 @@ function Makie.plot!(f::Union{Figure,GridPosition}, @nospecialize tn::AbstractTe
     return Makie.AxisPlot(ax, p)
 end
 
-function Makie.plot!(ax::Union{Axis,Axis3}, @nospecialize tn::AbstractTensorNetwork; labels = false, kwargs...)
+function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperindConverter)
 

@@ -8,27 +8,27 @@ using Combinatorics: combinations
 abstract type Transformation end
 
 """
-    transform(tn::AbstractTensorNetwork, config::Transformation)
-    transform(tn::AbstractTensorNetwork, configs)
+    transform(tn::TensorNetwork, config::Transformation)
+    transform(tn::TensorNetwork, configs)
 
 Return a new [`TensorNetwork`](@ref) where some `Transformation` has been performed into it.
 
 See also: [`transform!`](@ref).
 """
-transform(tn::AbstractTensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
+transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
 
 """
-    transform!(tn::AbstractTensorNetwork, config::Transformation)
-    transform!(tn::AbstractTensorNetwork, configs)
+    transform!(tn::TensorNetwork, config::Transformation)
+    transform!(tn::TensorNetwork, configs)
 
 In-place version of [`transform`](@ref).
 """
 function transform! end
 
-transform!(tn::AbstractTensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
+transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
     transform!(tn, transformation(kwargs...))
 
-function transform!(tn::AbstractTensorNetwork, transformations)
+function transform!(tn::TensorNetwork, transformations)
     for transformation in transformations
         transform!(tn, transformation)
     end
@@ -43,7 +43,7 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 """
 struct HyperindConverter <: Transformation end
 
-function hyperflatten(tn::AbstractTensorNetwork)
+function hyperflatten(tn::TensorNetwork)
     map(inds(tn, :hyper)) do hyperindex
         n = select(tn, hyperindex) |> length
         map(1:n) do i
@@ -52,7 +52,7 @@ function hyperflatten(tn::AbstractTensorNetwork)
     end |> Dict
 end
 
-function transform!(tn::AbstractTensorNetwork, ::HyperindConverter)
+function transform!(tn::TensorNetwork, ::HyperindConverter)
     for (flatindices, hyperindex) in hyperflatten(tn)
         # insert COPY tensor
         array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
@@ -82,7 +82,7 @@ Base.@kwdef struct DiagonalReduction <: Transformation
     atol::Float64 = 1e-12
 end
 
-function transform!(tn::AbstractTensorNetwork, config::DiagonalReduction)
+function transform!(tn::TensorNetwork, config::DiagonalReduction)
     for tensor in filter(tensor -> !(parenttype(typeof(tensor)) <: DeltaArray), tensors(tn))
         diaginds = find_diag_axes(tensor, atol = config.atol)
         isempty(diaginds) && continue
@@ -125,7 +125,7 @@ Preemptively contract tensors whose result doesn't increase in size.
 """
 struct RankSimplification <: Transformation end
 
-function transform!(tn::AbstractTensorNetwork, ::RankSimplification)
+function transform!(tn::TensorNetwork, ::RankSimplification)
     @label rank_transformation_start
     for tensor in tensors(tn)
         # TODO replace this code for `neighbours` method
@@ -173,7 +173,7 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
     skip::Vector{Symbol} = Symbol[]
 end
 
-function transform!(tn::AbstractTensorNetwork, config::AntiDiagonalGauging)
+function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
     skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
     for tensor in keys(tn.tensormap)
@@ -210,7 +210,7 @@ Base.@kwdef struct ColumnReduction <: Transformation
     skip::Vector{Symbol} = Symbol[]
 end
 
-function transform!(tn::AbstractTensorNetwork, config::ColumnReduction)
+function transform!(tn::TensorNetwork, config::ColumnReduction)
     skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
 
     for tensor in tensors(tn)
@@ -240,7 +240,7 @@ Base.@kwdef struct SplitSimplification <: Transformation
     atol::Float64 = 1e-10  # A threshold for SVD rank determination
 end
 
-function transform!(tn::AbstractTensorNetwork, config::SplitSimplification)
+function transform!(tn::TensorNetwork, config::SplitSimplification)
     @label split_simplification_start
     for tensor in tensors(tn)
         inds = Tenet.inds(tensor)

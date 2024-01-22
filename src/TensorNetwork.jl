@@ -4,15 +4,13 @@ using EinExprs
 using OMEinsum
 using ValSplit
 
-abstract type AbstractTensorNetwork end
-
 """
     TensorNetwork
 
 Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
-struct TensorNetwork <: AbstractTensorNetwork
+struct TensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
     tensormap::IdDict{Tensor,Vector{Symbol}}
 
@@ -41,13 +39,9 @@ Return a shallow copy of a [`TensorNetwork`](@ref).
 """
 Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
 
-Base.summary(io::IO, tn::T) where {T<:AbstractTensorNetwork} = print(io, "$(length(tensors(tn)))-tensors $(typeof(tn))")
 Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
-
-Base.show(io::IO, tn::T) where {T<:AbstractTensorNetwork} =
-    print(io, "$T(#tensors=$(length(tensors(tn))), #inds=$(length(inds(tn))))")
 Base.show(io::IO, tn::TensorNetwork) =
-    print(io, "$(typeof(tn))(#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
+    print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
 
 """
     tensors(tn::TensorNetwork)
@@ -59,9 +53,9 @@ Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
   - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
 tensors(tn::TensorNetwork) = sort!(collect(keys(tn.tensormap)), by = inds)
-arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
+arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
-Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
+Base.collect(tn::TensorNetwork) = tensors(tn)
 
 """
     inds(tn::TensorNetwork, set = :all)
@@ -107,7 +101,7 @@ If `index` is set, return the dimensionality of `index`. This is equivalent to `
 Base.size(tn::TensorNetwork) = Dict{Symbol,Int}(index => size(tn, index) for index in keys(tn.indexmap))
 Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
 
-Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
+Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 """
     push!(tn::TensorNetwork, tensor::Tensor)
@@ -389,7 +383,7 @@ function Base.rand(
 end
 
 """
-    einexpr(tn::AbstractTensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
+    einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
 
 Search a contraction path for the given [`TensorNetwork`](@ref) and return it as a `EinExpr`.
 
@@ -401,7 +395,7 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
+EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
     optimizer,
     sum(
         [EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for tensor in tensors(tn)],
@@ -449,16 +443,16 @@ contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn;
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
-struct TNSampler{T<:AbstractTensorNetwork} <: Random.Sampler{T}
+struct TNSampler <: Random.Sampler{TensorNetwork}
     config::Dict{Symbol,Any}
 
-    TNSampler{T}(; kwargs...) where {T} = new{T}(kwargs)
+    TNSampler(; kwargs...) = new(kwargs)
 end
 
-Base.eltype(::TNSampler{T}) where {T} = T
+Base.eltype(::TNSampler) = TensorNetwork
 
 Base.getproperty(obj::TNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
 Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
 
-Base.rand(T::Type{<:AbstractTensorNetwork}; kwargs...) = rand(Random.default_rng(), T; kwargs...)
-Base.rand(rng::AbstractRNG, T::Type{<:AbstractTensorNetwork}; kwargs...) = rand(rng, TNSampler{T}(; kwargs...))
+Base.rand(::Type{TensorNetwork}; kwargs...) = rand(Random.default_rng(), TensorNetwork; kwargs...)
+Base.rand(rng::AbstractRNG, ::Type{TensorNetwork}; kwargs...) = rand(rng, TNSampler(; kwargs...))

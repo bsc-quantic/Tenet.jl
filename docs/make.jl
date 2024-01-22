@@ -26,7 +26,6 @@ makedocs(
         "Visualization"=>"visualization.md",
         "Alternatives"=>"alternatives.md",
         "References"=>"references.md",
-        "Developer Notes"=>Any["`AbstractTensorNetwork` interface"=>"interface.md"],
     ],
     format = Documenter.HTML(
         prettyurls = false,

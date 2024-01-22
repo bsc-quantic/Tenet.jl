@@ -28,9 +28,9 @@ Information about a `TensorNetwork` can be queried with the following functions.
 ## Query information
 
 ```@docs
-inds(::Tenet.AbstractTensorNetwork)
-size(::Tenet.AbstractTensorNetwork)
-tensors(::Tenet.AbstractTensorNetwork)
+inds(::Tenet.TensorNetwork)
+size(::Tenet.TensorNetwork)
+tensors(::Tenet.TensorNetwork)
 ```
 
 ## Modification
@@ -38,11 +38,11 @@ tensors(::Tenet.AbstractTensorNetwork)
 ### Add/Remove tensors
 
 ```@docs
-push!(::Tenet.AbstractTensorNetwork, ::Tensor)
-append!(::Tenet.AbstractTensorNetwork, ::Base.AbstractVecOrTuple{<:Tensor})
-merge!(::Tenet.AbstractTensorNetwork, ::Tenet.AbstractTensorNetwork)
-pop!(::Tenet.AbstractTensorNetwork, ::Tensor)
-delete!(::Tenet.AbstractTensorNetwork, ::Any)
+push!(::Tenet.TensorNetwork, ::Tensor)
+append!(::Tenet.TensorNetwork, ::Base.AbstractVecOrTuple{<:Tensor})
+merge!(::Tenet.TensorNetwork, ::Tenet.TensorNetwork)
+pop!(::Tenet.TensorNetwork, ::Tensor)
+delete!(::Tenet.TensorNetwork, ::Any)
 ```
 
 ### Replace existing elements
@@ -57,12 +57,12 @@ replace!
 select
 selectdim
 slice!
-view(::Tenet.AbstractTensorNetwork)
+view(::Tenet.TensorNetwork)
 ```
 
 ## Miscelaneous
 
 ```@docs
-Base.copy(::Tenet.AbstractTensorNetwork)
+Base.copy(::Tenet.TensorNetwork)
 Base.rand(::Type{TensorNetwork}, n::Integer, regularity::Integer)
 ```
