@@ -180,16 +180,16 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        @test issetequal(select(tn, :i), (t_ij, t_ik, t_ilm))
-        @test issetequal(select(tn, :j), (t_ij,))
-        @test issetequal(select(tn, :k), (t_ik,))
-        @test issetequal(select(tn, :l), (t_ilm, t_lm))
-        @test issetequal(select(tn, :m), (t_ilm, t_lm))
+        @test issetequal(select(tn, :any, :i), (t_ij, t_ik, t_ilm))
+        @test issetequal(select(tn, :any, :j), (t_ij,))
+        @test issetequal(select(tn, :any, :k), (t_ik,))
+        @test issetequal(select(tn, :any, :l), (t_ilm, t_lm))
+        @test issetequal(select(tn, :any, :m), (t_ilm, t_lm))
         @test issetequal(select(tn, :all, (:i, :j)), (t_ij,))
         @test issetequal(select(tn, :all, (:i, :k)), (t_ik,))
         @test issetequal(select(tn, :all, (:i, :l)), (t_ilm,))
         @test issetequal(select(tn, :all, (:l, :m)), (t_ilm, t_lm))
-        @test_throws KeyError select(tn, :_)
+        @test_throws KeyError select(tn, :any, :_)
         @test isempty(select(tn, :all, (:j, :l)))
     end
 

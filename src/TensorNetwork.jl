@@ -206,7 +206,7 @@ Base.pop!(tn::TensorNetwork, tensor::Tensor) = (delete!(tn, tensor); tensor)
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
 function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
-    tensors = select(tn, i)
+    tensors = select(tn, :any, i)
     for tensor in tensors
         _ = pop!(tn, tensor)
     end

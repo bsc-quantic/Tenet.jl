@@ -45,7 +45,7 @@ struct HyperindConverter <: Transformation end
 
 function hyperflatten(tn::TensorNetwork)
     map(inds(tn, :hyper)) do hyperindex
-        n = select(tn, hyperindex) |> length
+        n = select(tn, :any, hyperindex) |> length
         map(1:n) do i
             Symbol("$hyperindex$i")
         end => hyperindex
@@ -129,7 +129,7 @@ function transform!(tn::TensorNetwork, ::RankSimplification)
     @label rank_transformation_start
     for tensor in tensors(tn)
         # TODO replace this code for `neighbours` method
-        connected_tensors = mapreduce(label -> select(tn, label), ∪, inds(tensor))
+        connected_tensors = mapreduce(label -> select(tn, :any, label), ∪, inds(tensor))
         filter!(!=(tensor), connected_tensors)
 
         for c_tensor in connected_tensors
