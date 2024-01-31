@@ -13,9 +13,6 @@
         test_rrule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
     end
 
-    # NOTE fixes some problems on testing, not sure why
-    Base.collect(tn::TensorNetwork) = tensors(tn)
-
     @testset "TensorNetwork" begin
         # TODO it crashes
         # test_frule(TensorNetwork, [])
