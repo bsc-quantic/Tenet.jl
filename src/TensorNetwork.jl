@@ -104,6 +104,52 @@ Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), in
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 """
+    select(tn::TensorNetwork, :containing, i)
+    select(tn::TensorNetwork, :any, i)
+    select(tn::TensorNetwork, :all, i)
+
+Return tensors whose indices match with the list of indices `i`.
+"""
+@valsplit 2 function select(tn::TensorNetwork, query::Symbol, args...)
+    error("Query ':$query' not defined for TensorNetwork")
+end
+
+function select(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+    filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+end
+
+# TODO better naming?
+select(tn::TensorNetwork, ::Val{:containing}, i::Symbol) = copy(tn.indexmap[i])
+select(tn::TensorNetwork, ::Val{:containing}, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
+
+select(tn::TensorNetwork, ::Val{:any}, i::Symbol) = select(!isdisjoint, tn, [i])
+select(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = select(!isdisjoint, tn, is)
+
+# TODO `:all` is an alias for `:containing`. maybe change?
+select(tn::TensorNetwork, ::Val{:all}, i::Symbol) = copy(tn.indexmap[i])
+select(tn::TensorNetwork, ::Val{:all}, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
+
+function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int = 1)
+    first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
+end
+
+function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool = true)
+    @assert tensor ∈ tn "Tensor not found in TensorNetwork"
+    tensors = mapreduce(∪, inds(tensor)) do index
+        select(tn, :any, index)
+    end
+    open && filter!(x -> x !== tensor, tensors)
+    tensors
+end
+
+function neighbors(tn::TensorNetwork, i::Symbol; open::Bool = true)
+    @assert i ∈ tn "Index $i not found in TensorNetwork"
+    tensors = mapreduce(inds, ∪, select(tn, :any, i))
+    # open && filter!(x -> x !== i, tensors)
+    tensors
+end
+
+"""
     push!(tn::TensorNetwork, tensor::Tensor)
 
 Add a new `tensor` to the Tensor Network.
@@ -255,22 +301,6 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork
     delete!(tn, old)
 
     return tn
-end
-
-"""
-    select(tn::TensorNetwork, i)
-
-Return tensors whose indices match with the list of indices `i`.
-"""
-select(tn::TensorNetwork, i::Symbol) = copy(tn.indexmap[i])
-select(tn::TensorNetwork, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
-
-function select(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
-    filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
-end
-
-function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int = 1)
-    first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
 """

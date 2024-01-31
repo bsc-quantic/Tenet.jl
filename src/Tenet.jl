@@ -10,7 +10,7 @@ export Tensor, contract, dim, expand
 include("Numerics.jl")
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, select, slice!
+export TensorNetwork, tensors, arrays, select, neighbors, slice!
 export contract, contract!
 
 include("Transformations.jl")

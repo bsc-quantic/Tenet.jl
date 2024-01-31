@@ -185,12 +185,12 @@
         @test issetequal(select(tn, :k), (t_ik,))
         @test issetequal(select(tn, :l), (t_ilm, t_lm))
         @test issetequal(select(tn, :m), (t_ilm, t_lm))
-        @test issetequal(select(tn, (:i, :j)), (t_ij,))
-        @test issetequal(select(tn, (:i, :k)), (t_ik,))
-        @test issetequal(select(tn, (:i, :l)), (t_ilm,))
-        @test issetequal(select(tn, (:l, :m)), (t_ilm, t_lm))
+        @test issetequal(select(tn, :all, (:i, :j)), (t_ij,))
+        @test issetequal(select(tn, :all, (:i, :k)), (t_ik,))
+        @test issetequal(select(tn, :all, (:i, :l)), (t_ilm,))
+        @test issetequal(select(tn, :all, (:l, :m)), (t_ilm, t_lm))
         @test_throws KeyError select(tn, :_)
-        @test isempty(select(tn, (:j, :l)))
+        @test isempty(select(tn, :all, (:j, :l)))
     end
 
     @testset "getindex" begin
@@ -258,9 +258,9 @@
             @test issetequal(inds(tn, :inner), (:u, :x, :y))
             @test issetequal(inds(tn, :hyper), (:u,))
 
-            @test only(select(tn, (:u, :v))) == replace(t_ij, mapping...)
-            @test only(select(tn, (:u, :w))) == replace(t_ik, mapping...)
-            @test only(select(tn, (:u, :x, :y))) == replace(t_ilm, mapping...)
+            @test only(select(tn, :all, (:u, :v))) == replace(t_ij, mapping...)
+            @test only(select(tn, :all, (:u, :w))) == replace(t_ik, mapping...)
+            @test only(select(tn, :all, (:u, :x, :y))) == replace(t_ilm, mapping...)
         end
 
         @testset "replace tensors" begin
