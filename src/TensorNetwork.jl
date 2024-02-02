@@ -412,6 +412,20 @@ function Base.rand(
     TensorNetwork(tensors)
 end
 
+struct TNSampler <: Random.Sampler{TensorNetwork}
+    config::Dict{Symbol,Any}
+
+    TNSampler(; kwargs...) = new(kwargs)
+end
+
+Base.eltype(::TNSampler) = TensorNetwork
+
+Base.getproperty(obj::TNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
+Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
+
+Base.rand(::Type{TensorNetwork}; kwargs...) = rand(Random.default_rng(), TensorNetwork; kwargs...)
+Base.rand(rng::AbstractRNG, ::Type{TensorNetwork}; kwargs...) = rand(rng, TNSampler(; kwargs...))
+
 """
     einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
 
@@ -472,17 +486,3 @@ contract!(t::Tensor, tn::TensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
 contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn; kwargs...))
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
-
-struct TNSampler <: Random.Sampler{TensorNetwork}
-    config::Dict{Symbol,Any}
-
-    TNSampler(; kwargs...) = new(kwargs)
-end
-
-Base.eltype(::TNSampler) = TensorNetwork
-
-Base.getproperty(obj::TNSampler, name::Symbol) = name === :config ? getfield(obj, :config) : obj.config[name]
-Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
-
-Base.rand(::Type{TensorNetwork}; kwargs...) = rand(Random.default_rng(), TensorNetwork; kwargs...)
-Base.rand(rng::AbstractRNG, ::Type{TensorNetwork}; kwargs...) = rand(rng, TNSampler(; kwargs...))
