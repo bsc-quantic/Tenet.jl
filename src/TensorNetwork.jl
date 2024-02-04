@@ -489,21 +489,21 @@ contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
 function LinearAlgebra.svd!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
-    tensor = tn[left_inds∪right_inds]
+    tensor = tn[left_inds ∪ right_inds...]
     U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([U, s, Vt]))
     return tn
 end
 
 function LinearAlgebra.qr!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
-    tensor = tn[left_inds∪right_inds]
+    tensor = tn[left_inds ∪ right_inds...]
     Q, R = qr(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([Q, R]))
     return tn
 end
 
 function LinearAlgebra.lu!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
-    tensor = tn[left_inds∪right_inds]
+    tensor = tn[left_inds ∪ right_inds...]
     L, U = lu(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([L, U]))
     return tn
