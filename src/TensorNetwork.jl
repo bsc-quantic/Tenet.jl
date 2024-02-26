@@ -449,6 +449,13 @@ EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open
     kwargs...,
 )
 
+function Base.conj!(tn::TensorNetwork)
+    foreach(conj!, tensors(tn))
+    return tn
+end
+
+Base.conj(tn::TensorNetwork) = TensorNetwork(map(conj, tensors(tn)))
+
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
 """
