@@ -320,4 +320,13 @@
             # @test issetequal(tensors(tn), [new_tensor2, B, C])
         end
     end
+
+    @testset "contract" begin
+        @testset "hyperindex" begin
+            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
+            result = contract!(tn, :i)
+
+            @test issetequal(inds(result), [:a, :b])
+        end
+    end
 end
