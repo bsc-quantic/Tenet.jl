@@ -323,13 +323,30 @@
 
     @testset "contract" begin
         @testset "hyperindex" begin
-            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
-            tn_transformed = transform(tn, Tenet.HyperindConverter())
+            let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
+                tn_transformed = transform(tn, Tenet.HyperindConverter())
 
-            result = contract!(tn, :i)
-            @test issetequal(inds(result), [:a, :b])
+                result = contract!(tn, :i)
+                @test issetequal(inds(result), [:a, :b])
 
-            @test contract(tn_transformed) ≈ only(tensors(result))
+                @test contract(tn_transformed) ≈ only(tensors(result))
+            end
+
+            let tn = TensorNetwork([
+                    Tensor(ones(2, 2), [:a, :X]),
+                    Tensor(ones(2), [:X]),
+                    Tensor(ones(2, 2, 2), [:X, :c, :Y]),
+                    Tensor(ones(2), [:Y]),
+                    Tensor(ones(2, 2, 2), [:Y, :d, :Z]),
+                    Tensor(ones(2), [:Z]),
+                    Tensor(ones(2, 2, 2), [:Z, :e, :T]),
+                    Tensor(ones(2), [:T]),
+                    Tensor(ones(2, 2), [:b, :T]),
+                ])
+                tn_transformed = transform(tn, Tenet.HyperindConverter())
+
+                @test contract(tn) ≈ contract(tn_transformed)
+            end
         end
     end
 end
