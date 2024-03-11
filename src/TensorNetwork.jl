@@ -466,14 +466,15 @@ In-place contraction of tensors connected to `index`.
 See also: [`contract`](@ref).
 """
 function contract!(tn::TensorNetwork, i)
-    tensor = contract(tn, i)
+    _tensors = sort!(select(tn, :any, i), by = length)
+    tensor = contract(TensorNetwork(_tensors))
     delete!(tn, i)
     push!(tn, tensor)
     return tn
 end
 function contract(tn::TensorNetwork, i)
-    _tensors = sort!(select(tn, :any, i), by = length)
-    return contract(TensorNetwork(_tensors))
+    tn = copy(tn)
+    contract!(tn, i)
 end
 contract!(tn::TensorNetwork, i::Symbol) = contract!(tn, [i])
 contract(tn::TensorNetwork, i::Symbol) = contract(tn, [i])
