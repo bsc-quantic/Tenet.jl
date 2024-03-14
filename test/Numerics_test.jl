@@ -124,7 +124,7 @@
     end
 
     @testset "svd" begin
-        data = rand(2, 4, 6, 8)
+        data = rand(ComplexF64, 2, 4, 6, 8)
         tensor = Tensor(data, (:i, :j, :k, :l))
 
         # throw if left_inds is not provided

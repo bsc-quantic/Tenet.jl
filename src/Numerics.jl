@@ -125,7 +125,7 @@ function LinearAlgebra.svd(tensor::Tensor; left_inds = (), right_inds = (), virt
     # tensorify results
     U = Tensor(reshape(U, left_sizes..., size(U, 2)), [left_inds..., virtualind])
     s = Tensor(s, [virtualind])
-    Vt = Tensor(reshape(V, right_sizes..., size(V, 2)), [right_inds..., virtualind])
+    Vt = Tensor(reshape(conj(V), right_sizes..., size(V, 2)), [right_inds..., virtualind])
 
     return U, s, Vt
 end
