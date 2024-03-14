@@ -50,11 +50,15 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
 
     tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
 
-    # TODO how to mark multiedges? (i.e. parallel edges)
-    graph = Graphs.SimpleGraph([
-        Graphs.Edge(map(Base.Fix1(getindex, tensormap), tensors)...) for
-        (_, tensors) in tn.indexmap if length(tensors) > 1
-    ])
+    graph = Graphs.SimpleGraph(length(tensors(tn)))
+    for i in setdiff(inds(tn, :inner), inds(tn, :hyper))
+        edge_tensors = select(tn, :any, i)
+
+        @assert length(edge_tensors) == 2
+        a, b = edge_tensors
+
+        Graphs.add_edge!(graph, tensormap[a], tensormap[b])
+    end
 
     # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
     copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
