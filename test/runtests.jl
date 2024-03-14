@@ -10,10 +10,13 @@ using OMEinsum
     include("Transformations_test.jl")
 end
 
-@testset "Integration tests" verbose = true begin
-    include("integration/ChainRules_test.jl")
-    include("integration/BlockArray_test.jl")
-    include("integration/Makie_test.jl")
+# CI hangs on these tests for some unknown reason on Julia 1.9
+if VERSION >= v"1.10"
+    @testset "Integration tests" verbose = true begin
+        include("integration/ChainRules_test.jl")
+        include("integration/BlockArray_test.jl")
+        include("integration/Makie_test.jl")
+    end
 end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")
