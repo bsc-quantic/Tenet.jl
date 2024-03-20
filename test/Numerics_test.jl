@@ -1,6 +1,19 @@
 @testset "Numerics" begin
     using LinearAlgebra
 
+    @testset "basic arithmetic" begin
+        A = Tensor(rand(2, 3, 2), (:i, :j, :k))
+        B = Tensor(rand(3, 2, 2), (:j, :i, :k))
+
+        C = A + B
+        @test issetequal(inds(C), (:i, :j, :k))
+        @test issetequal(size(C), (2, 3, 2))
+
+        D = A - B
+        @test issetequal(inds(D), (:i, :j, :k))
+        @test issetequal(size(D), (2, 3, 2))
+    end
+
     @testset "contract" begin
         @testset "axis sum" begin
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
