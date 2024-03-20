@@ -42,7 +42,7 @@ end
 function Base.:(-)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || return false
     perm = __find_index_permutation(inds(a), inds(b))
-    return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
+    return Tensor(parent(a) - PermutedDimsArray(parent(b), perm), inds(a))
 end
 
 """
