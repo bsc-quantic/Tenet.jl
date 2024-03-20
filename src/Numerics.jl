@@ -36,13 +36,13 @@ __omeinsum_sym2str(x) = String[string(i) for i in x]
 function Base.:(+)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || return false
     perm = __find_index_permutation(inds(a), inds(b))
-    return Tensor(parent(a) + PermuteDimsArray(parent(b), perm), inds(a))
+    return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
 end
 
 function Base.:(-)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || return false
     perm = __find_index_permutation(inds(a), inds(b))
-    return Tensor(parent(a) + PermuteDimsArray(parent(b), perm), inds(a))
+    return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
 end
 
 """
