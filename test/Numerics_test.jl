@@ -8,10 +8,12 @@
         C = A + B
         @test issetequal(inds(C), (:i, :j, :k))
         @test issetequal(size(C), (2, 3, 2))
+        @test parent(C) ≈ parent(A) + permutedims(parent(B), (2, 1, 3))
 
         D = A - B
         @test issetequal(inds(D), (:i, :j, :k))
         @test issetequal(size(D), (2, 3, 2))
+        @test parent(D) ≈ parent(A) - permutedims(parent(B), (2, 1, 3))
     end
 
     @testset "contract" begin
