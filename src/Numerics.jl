@@ -33,6 +33,18 @@ end
 # NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
 __omeinsum_sym2str(x) = String[string(i) for i in x]
 
+function Base.:(+)(a::Tensor, b::Tensor)
+    issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
+    perm = __find_index_permutation(inds(a), inds(b))
+    return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
+end
+
+function Base.:(-)(a::Tensor, b::Tensor)
+    issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
+    perm = __find_index_permutation(inds(a), inds(b))
+    return Tensor(parent(a) - PermutedDimsArray(parent(b), perm), inds(a))
+end
+
 """
     contract(a::Tensor[, b::Tensor]; dims=nonunique([inds(a)..., inds(b)...]))
 

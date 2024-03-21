@@ -1,6 +1,21 @@
 @testset "Numerics" begin
     using LinearAlgebra
 
+    @testset "basic arithmetic" begin
+        A = Tensor(rand(2, 3, 2, 4), (:i, :j, :k, :l))
+        B = Tensor(rand(3, 4, 2, 2), (:j, :l, :i, :k))
+
+        C = A + B
+        @test issetequal(inds(C), (:i, :j, :k, :l))
+        @test issetequal(size(C), (2, 3, 2, 4))
+        @test parent(C) ≈ parent(A) + permutedims(parent(B), (3, 1, 4, 2))
+
+        D = A - B
+        @test issetequal(inds(D), (:i, :j, :k, :l))
+        @test issetequal(size(D), (2, 3, 2, 4))
+        @test parent(D) ≈ parent(A) - permutedims(parent(B), (3, 1, 4, 2))
+    end
+
     @testset "contract" begin
         @testset "axis sum" begin
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
