@@ -277,6 +277,7 @@ end
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
     old ∈ keys(tn.indexmap) || throw(ArgumentError("index $old does not exist"))
+    old == new && return tn
     new ∉ keys(tn.indexmap) || throw(ArgumentError("index $new is already present"))
 
     # NOTE `copy` because collection underneath is mutated
