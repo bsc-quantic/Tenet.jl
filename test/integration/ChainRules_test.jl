@@ -24,4 +24,21 @@
         test_frule(TensorNetwork, [a, b])
         test_rrule(TensorNetwork, [a, b])
     end
+
+    @testset "conj" begin
+        a = Tensor(rand(4, 2), (:i, :j))
+        b = Tensor(rand(2, 3), (:j, :k))
+
+        tn = TensorNetwork([a, b])
+
+        @testset "Tensor" begin
+            test_frule(Base.conj, a)
+            test_rrule(Base.conj, a)
+        end
+
+        @testset "TensorNetwork" begin
+            test_frule(Base.conj, tn)
+            test_rrule(Base.conj, tn)
+        end
+    end
 end
