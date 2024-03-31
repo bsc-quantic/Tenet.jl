@@ -16,6 +16,8 @@ export contract, contract!
 include("Transformations.jl")
 export transform, transform!
 
+include("Compiler.jl")
+
 # reexports from EinExprs
 export einexpr, inds
 
