@@ -67,16 +67,22 @@ function Base.isequal(a::Tensor, b::Tensor)
     end
 end
 
+Base.isequal(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = isequal(only(a), only(b))
+
 Base.isapprox(a::AbstractArray, b::Tensor) = false
 Base.isapprox(a::Tensor, b::AbstractArray) = false
-function Base.isapprox(a::Tensor, b::Tensor)
+function Base.isapprox(a::Tensor, b::Tensor; kwargs...)
     issetequal(inds(a), inds(b)) || return false
     perm = __find_index_permutation(inds(a), inds(b))
     return all(eachindex(IndexCartesian(), a)) do i
         j = CartesianIndex(Tuple(permute!(collect(Tuple(i)), invperm(perm))))
-        isapprox(a[i], b[j])
+        isapprox(a[i], b[j]; kwargs...)
     end
 end
+
+Base.isapprox(a::Tensor{T,0}, b::T; kwargs...) where {T} = isapprox(only(a), b; kwargs...)
+Base.isapprox(a::T, b::Tensor{T,0}; kwargs...) where {T} = isapprox(b, a; kwargs...)
+Base.isapprox(a::Tensor{A,0}, b::Tensor{B,0}; kwargs...) where {A,B} = isapprox(only(a), only(b); kwargs...)
 
 # NOTE: `replace` does not currenly support cyclic replacements
 Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...) = Tensor(parent(t), replace(inds(t), old_new...))

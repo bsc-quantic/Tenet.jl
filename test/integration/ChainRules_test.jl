@@ -21,8 +21,8 @@
         a = Tensor(rand(4, 2), (:i, :j))
         b = Tensor(rand(2, 3), (:j, :k))
 
-        test_frule(TensorNetwork, [a, b])
-        test_rrule(TensorNetwork, [a, b])
+        test_frule(TensorNetwork, Tensor[a, b])
+        test_rrule(TensorNetwork, Tensor[a, b])
     end
 
     @testset "conj" begin
