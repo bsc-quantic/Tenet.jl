@@ -47,3 +47,17 @@ end
 
 # TODO multiplicity
 ∇getindex!(x::TensorNetwork, dy, is...; mul) = push!(x, dy)
+
+# `Base.merge` methods
+function ChainRulesCore.rrule(::typeof(Base.merge), a::TensorNetwork, b::TensorNetwork)
+    c = merge(a, b)
+
+    function merge_pullback(c̄)
+        c̄ = unthunk(c̄)
+        ā = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(a)])
+        b̄ = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(b)])
+        return NoTangent(), ā, b̄
+    end
+
+    c, merge_pullback
+end

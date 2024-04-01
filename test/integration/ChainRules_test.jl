@@ -41,4 +41,12 @@
             test_rrule(Base.conj, tn)
         end
     end
+
+    @testset "merge" begin
+        a = Tensor(rand(4, 2), (:i, :j))
+        b = Tensor(rand(2, 3), (:j, :k))
+
+        test_frule(merge, TensorNetwork([a]), TensorNetwork([b]))
+        test_rrule(merge, TensorNetwork([a]), TensorNetwork([b]))
+    end
 end

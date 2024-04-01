@@ -43,5 +43,7 @@ Base.eltype(::TensorNetworkTangent) = Tensor
 
 Base.iterate(Δ::TensorNetworkTangent, state = 1) = iterate(values(Δ.tensors), state)
 
+Base.merge(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent) = Δa + Δb
+
 Base.conj(Δ::Tangent{<:Tensor}) = Tangent{Tensor}(data = conj(Δ.data), inds = NoTangent())
 Base.conj(Δ::TensorNetworkTangent) = TensorNetworkTangent(Dict(inds => conj(t) for (inds, t) in Δ.tensors))
