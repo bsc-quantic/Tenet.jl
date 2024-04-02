@@ -22,4 +22,10 @@ end
 
 # `TensorNetwork` projector
 ChainRulesCore.ProjectTo(tn::TensorNetwork) = ProjectTo{TensorNetwork}(; tensors = ProjectTo(tensors(tn)))
-(projector::ProjectTo{TensorNetwork})(dx) = TensorNetworkTangent(projector.tensors(tensors(dx)))
+
+function (projector::ProjectTo{TensorNetwork})(dx)
+    projmap = Dict(proj.inds => proj for proj in projector.tensors.elements)
+    TensorNetworkTangent(map(tensors(dx)) do tensor
+        projmap[inds(tensor)](tensor)
+    end)
+end
