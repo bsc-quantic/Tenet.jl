@@ -21,10 +21,5 @@ function (projector::ProjectTo{Tensor{T,N,A}})(dx::A) where {T,N,A<:AbstractArra
 end
 
 # `TensorNetwork` projector
-function ChainRulesCore.ProjectTo(tn::TensorNetwork)
-    ProjectTo{TensorNetwork}(; tensors = Dict(inds(tensor) => ProjectTo(tensor) for tensor in tensors(tn)))
-end
-
-function (projector::ProjectTo{TensorNetwork})(dx::Union{TensorNetwork,Tangent{TensorNetwork}})
-    TensorNetwork([projector.tensors[inds(tensor)](tensor) for tensor in tensors(dx)])
-end
+ChainRulesCore.ProjectTo(tn::TensorNetwork) = ProjectTo{TensorNetwork}(; tensors = ProjectTo(tensors(tn)))
+(projector::ProjectTo{TensorNetwork})(dx) = TensorNetworkTangent(projector.tensors(tensors(dx)))

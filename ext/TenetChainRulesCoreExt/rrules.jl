@@ -5,7 +5,7 @@ Tensor_pullback(Δ::AbstractThunk) = Tensor_pullback(unthunk(Δ))
 ChainRulesCore.rrule(T::Type{<:Tensor}, data, inds) = T(data, inds), Tensor_pullback
 
 # `TensorNetwork` constructor
-TensorNetwork_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), tensors(Δ))
+TensorNetwork_pullback(Δ::TensorNetworkTangent) = (NoTangent(), tensors(Δ))
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
 function ChainRulesCore.rrule(::Type{TensorNetwork}, tensors)
     TensorNetwork(tensors), TensorNetwork_pullback
@@ -14,7 +14,7 @@ end
 # `Base.conj` methods
 conj_pullback(Δ::Tensor) = (NoTangent(), conj(Δ))
 conj_pullback(Δ::Tangent{Tensor}) = (NoTangent(), conj(Δ))
-conj_pullback(Δ::Tangent{TensorNetwork}) = (NoTangent(), conj(Δ))
+conj_pullback(Δ::TensorNetworkTangent) = (NoTangent(), conj(Δ))
 conj_pullback(Δ::AbstractThunk) = conj_pullback(unthunk(Δ))
 
 function ChainRulesCore.rrule(::typeof(Base.conj), tn::Tensor)
@@ -43,7 +43,7 @@ function ChainRulesCore.rrule(::typeof(Base.getindex), x::TensorNetwork, is::Sym
 end
 
 # TODO multiplicity
-∇getindex(x::TensorNetwork, dy, is...; mul) = Tangent{TensorNetwork}(Tensor[dy])
+∇getindex(x::TensorNetwork, dy, is...; mul) = TensorNetworkTangent(Tensor[dy])
 
 # TODO multiplicity
 ∇getindex!(x::TensorNetwork, dy, is...; mul) = push!(x, dy)
@@ -54,8 +54,8 @@ function ChainRulesCore.rrule(::typeof(Base.merge), a::TensorNetwork, b::TensorN
 
     function merge_pullback(c̄)
         c̄ = unthunk(c̄)
-        ā = Tangent{TensorNetwork}([c̄.tensormap[inds(tensor)] for tensor in tensors(a)])
-        b̄ = Tangent{TensorNetwork}([c̄.tensormap[inds(tensor)] for tensor in tensors(b)])
+        ā = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(a)])
+        b̄ = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(b)])
         return NoTangent(), ā, b̄
     end
 

@@ -1,52 +1,49 @@
 using ChainRulesCore: AbstractTangent
 
-function Tangent{TensorNetwork}(tensors::Vector{<:Tensor})
-    Tangent{TensorNetwork}(Dict{Vector{Symbol},Tensor}(inds(tensor) => tensor for tensor in tensors))
+struct TensorNetworkTangent <: AbstractTangent
+    tensors::Dict{Vector{Symbol},Tensor} # `Tensor` is its own `Tangent` type
 end
 
-function Tangent{TensorNetwork}(tensors::Dict{Vector{Symbol},Tensor})
-    Tangent{TensorNetwork}(; tensormap = tensors, indexmap = NoTangent())
+function TensorNetworkTangent(tensors::Vector{<:Tensor})
+    TensorNetworkTangent(Dict(inds(tensor) => tensor for tensor in tensors))
 end
 
-Tenet.tensors(tn::Tangent{TensorNetwork}) = collect(values(tn.tensormap))
+Tenet.tensors(tn::TensorNetworkTangent) = collect(values(tn.tensors))
 
 # additive identity for `TensorNetwork` tangent
-Base.zero(::Type{<:Tangent{TensorNetwork}}) = Tangent{TensorNetwork}(Tensor[])
+Base.zero(::Type{<:TensorNetworkTangent}) = TensorNetworkTangent(Tensor[])
 
 # gradient accumulation
-function Base.:(+)(Δa::Tangent{TensorNetwork}, Δb::Tangent{TensorNetwork})
-    Tangent{TensorNetwork}(mergewith(+, Δa.tensormap, Δb.tensormap))
+function Base.:(+)(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent)
+    TensorNetworkTangent(mergewith(+, Δa.tensors, Δb.tensors))
 end
 
 # scalar multiplication
-Base.:(*)(α::Number, Δ::Tangent{TensorNetwork}) =
-    Tangent{TensorNetwork}(Dict(inds(t) => α * t for (inds, t) in tensors(Δ)))
-Base.:(*)(Δ::Tangent{TensorNetwork}, α::Number) = α * Δ
+Base.:(*)(α::Number, Δ::TensorNetworkTangent) = TensorNetworkTangent(Dict(inds(t) => α * t for (inds, t) in tensors(Δ)))
+Base.:(*)(Δ::TensorNetworkTangent, α::Number) = α * Δ
 
 # primal-gradient addition
-function Base.:(+)(primal::TensorNetwork, Δ::Tangent{TensorNetwork})
-    @assert all(inds(t) in keys(Δ.tensormap) for t in tensors(primal))
+function Base.:(+)(primal::TensorNetwork, Δ::TensorNetworkTangent)
+    @assert all(inds(t) in keys(Δ.tensors) for t in tensors(primal))
     # TODO iterate through `Δ`
     TensorNetwork(map(tensors(primal)) do t
         # TODO what if multiplicity > 1?
-        Δt = get(Δ.tensormap, inds(t), ZeroTangent())
+        Δt = get(Δ.tensors, inds(t), ZeroTangent())
         t + Δt
     end)
 end
 
 # iteration interface
-Base.IteratorSize(::Type{Tangent{TensorNetwork}}) = Base.HasLength()
-Base.length(Δ::Tangent{TensorNetwork}) = length(tensors(Δ))
+Base.IteratorSize(::Type{TensorNetworkTangent}) = Base.HasLength()
+Base.length(Δ::TensorNetworkTangent) = length(tensors(Δ))
 
-Base.IteratorEltype(::Type{Tangent{TensorNetwork}}) = Base.HasEltype()
-Base.eltype(::Type{Tangent{TensorNetwork}}) = Tensor
-Base.eltype(::Tangent{TensorNetwork}) = Tensor
+Base.IteratorEltype(::Type{TensorNetworkTangent}) = Base.HasEltype()
+Base.eltype(::Type{TensorNetworkTangent}) = Tensor
+Base.eltype(::TensorNetworkTangent) = Tensor
 
-Base.iterate(Δ::Tangent{TensorNetwork}, state = 1) = iterate(values(Δ.tensormap), state)
+Base.iterate(Δ::TensorNetworkTangent, state = 1) = iterate(values(Δ.tensors), state)
 
-Base.merge(Δa::Tangent{TensorNetwork}, Δb::Tangent{TensorNetwork}) = Δa + Δb
+Base.merge(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent) = Δa + Δb
 
 Base.conj(Δ::Tangent{<:Tensor}) = Tangent{Tensor}(data = conj(Δ.data), inds = NoTangent())
-function Base.conj(Δ::Tangent{TensorNetwork})
-    Tangent{TensorNetwork}(Dict{Vector{Symbol},Tensor}(inds => conj(t) for (inds, t) in Δ.tensormap))
-end
+Base.conj(Δ::TensorNetworkTangent) = TensorNetworkTangent(Dict(inds => conj(t) for (inds, t) in Δ.tensors))
