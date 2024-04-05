@@ -44,6 +44,18 @@ Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-ten
 Base.show(io::IO, tn::TensorNetwork) =
     print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
 
+Base.:(==)(a::TensorNetwork, b::TensorNetwork) =
+    all(tensors(a)) do ta
+        tb = b[inds(ta)...]
+        ta == tb
+    end
+
+Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...) =
+    all(tensors(a)) do ta
+        tb = b[inds(ta)...]
+        isapprox(ta, tb; kwargs...)
+    end
+
 """
     tensors(tn::TensorNetwork)
 
