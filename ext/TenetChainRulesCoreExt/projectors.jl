@@ -25,7 +25,7 @@ ChainRulesCore.ProjectTo(tn::TensorNetwork) = ProjectTo{TensorNetwork}(; tensors
 
 function (projector::ProjectTo{TensorNetwork})(dx)
     projmap = Dict(proj.inds => proj for proj in projector.tensors.elements)
-    TensorNetworkTangent(map(tensors(dx)) do tensor
+    TensorNetwork(map(tensors(dx)) do tensor
         projmap[inds(tensor)](tensor)
     end)
 end
