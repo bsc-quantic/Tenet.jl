@@ -8,7 +8,8 @@ function TensorNetworkTangent(tensors::Vector{<:Tensor})
     TensorNetworkTangent(Dict(inds(tensor) => tensor for tensor in tensors))
 end
 
-Tenet.tensors(tn::TensorNetworkTangent) = collect(values(tn.tensors))
+Tenet.tensors(tn::TensorNetworkTangent) = sort!(collect(values(tn.tensors)), by = inds)
+Base.collect(tn::TensorNetworkTangent) = tensors(tn)
 
 # additive identity for `TensorNetwork` tangent
 Base.zero(::Type{<:TensorNetworkTangent}) = TensorNetworkTangent(Tensor[])
