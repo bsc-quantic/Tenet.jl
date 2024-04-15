@@ -9,7 +9,7 @@ function (projector::ProjectTo{T})(dx::T) where {T<:Tensor}
 end
 
 function (projector::ProjectTo{T})(dx::Tangent{T}) where {T<:Tensor}
-    T(projector.data(dx.data), projector.inds)
+    Tensor(projector.data(dx.data), projector.inds)
 end
 
 function (projector::ProjectTo{Tensor{T,0}})(dx::T) where {T}
