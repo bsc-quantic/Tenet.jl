@@ -3,26 +3,42 @@
     using ChainRulesTestUtils
 
     @testset "Tensor" begin
-        test_frule(Tensor, fill(1.0), Symbol[])
-        test_rrule(Tensor, fill(1.0), Symbol[])
+        test_frule(Tensor, ones(), Symbol[])
+        test_rrule(Tensor, ones(), Symbol[])
 
-        test_frule(Tensor, fill(1.0, 2), Symbol[:i])
-        test_rrule(Tensor, fill(1.0, 2), Symbol[:i])
+        test_frule(Tensor, ones(2), Symbol[:i])
+        test_rrule(Tensor, ones(2), Symbol[:i])
 
-        test_frule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
-        test_rrule(Tensor, fill(1.0, 2, 3), Symbol[:i, :j])
+        test_frule(Tensor, ones(2, 3), Symbol[:i, :j])
+        test_rrule(Tensor, ones(2, 3), Symbol[:i, :j])
     end
 
     @testset "TensorNetwork" begin
         # TODO it crashes
-        # test_frule(TensorNetwork, [])
-        # test_rrule(TensorNetwork, [])
+        # test_frule(TensorNetwork, Tensor[])
+        # test_rrule(TensorNetwork, Tensor[])
 
-        a = Tensor(rand(4, 2), (:i, :j))
-        b = Tensor(rand(2, 3), (:j, :k))
+        @testset "equal ndims" begin
+            a = Tensor(ones(4, 2), (:i, :j))
+            b = Tensor(ones(2, 3), (:j, :k))
 
-        test_frule(TensorNetwork, Tensor[a, b])
-        test_rrule(TensorNetwork, Tensor[a, b])
+            test_frule(TensorNetwork, Tensor[a, b])
+            test_rrule(TensorNetwork, Tensor[a, b])
+        end
+
+        @testset "different ndims" begin
+            a = Tensor(ones(4, 2), (:i, :j))
+            b = Tensor(ones(2, 3, 5), (:s, :k, :l))
+
+            test_frule(TensorNetwork, Tensor[a, b])
+            test_rrule(TensorNetwork, Tensor[a, b])
+
+            a = Tensor(ones(4, 2), (:i, :j))
+            b = Tensor(ones(2, 3, 5), (:j, :k, :l))
+
+            test_frule(TensorNetwork, Tensor[a, b])
+            test_rrule(TensorNetwork, Tensor[a, b])
+        end
     end
 
     @testset "conj" begin
