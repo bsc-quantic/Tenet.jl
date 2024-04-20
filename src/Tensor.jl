@@ -29,16 +29,14 @@ function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     return Tensor(data, inds)
 end
 
-# TODO pass new inds
-function Base.similar(t::Tensor{_,N}, ::Type{T}) where {_,T,N}
-    if N == 0
-        return Tensor(similar(parent(t), T), Symbol[])
-    else
-        similar(t, T, size(t)...)
-    end
+Base.similar(t::Tensor; inds = inds(t)) = Tensor(similar(parent(t)), inds)
+Base.similar(t::Tensor, S::Type; inds = inds(t)) = Tensor(similar(parent(t), S), inds)
+function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds = inds(t)) where {T,N}
+    Tensor(similar(parent(t), S, dims), inds)
 end
+Base.similar(t::Tensor{T,N}, dims::Base.Dims{N}; inds = inds(t)) where {T,N} = Tensor(similar(parent(t), dims), inds)
 
-Base.similar(t::Tensor, T::Type, dims::Int64...; inds = inds(t)) = Tensor(similar(parent(t), T, dims), inds)
+Base.zero(t::Tensor) = Tensor(zero(parent(t)), inds(t))
 
 function __find_index_permutation(a, b)
     inds_b = collect(Union{Missing,Symbol}, b)

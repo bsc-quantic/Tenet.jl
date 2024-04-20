@@ -40,6 +40,9 @@ Return a shallow copy of a [`TensorNetwork`](@ref).
 """
 Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
 
+Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
+Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
+
 Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
 Base.show(io::IO, tn::TensorNetwork) =
     print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
