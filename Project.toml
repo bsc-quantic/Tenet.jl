@@ -17,6 +17,7 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 
 [weakdeps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
@@ -26,6 +27,7 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [extensions]
+TenetAdaptExt = "Adapt"
 TenetChainRulesCoreExt = "ChainRulesCore"
 TenetChainRulesExt = "ChainRules"
 TenetChainRulesTestUtilsExt = ["ChainRulesCore", "ChainRulesTestUtils"]
@@ -35,6 +37,7 @@ TenetMakieExt = "Makie"
 
 [compat]
 AbstractTrees = "0.4"
+Adapt = "4"
 ChainRules = "1.0"
 ChainRulesCore = "1.0"
 Combinatorics = "1.0"
