@@ -147,6 +147,38 @@ function transform!(tn::TensorNetwork, config::ContractSimplification)
 end
 
 """
+    Truncate <: Transformation
+
+Truncate the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
+
+# Keyword Arguments
+
+  - `atol` Absolute tolerance. Defaults to `1e-12`.
+  - `skip` List of indices to skip. Defaults to `[]`.
+"""
+Base.@kwdef struct Truncate <: Transformation
+    atol::Float64 = 1e-12
+    skip::Vector{Symbol} = Symbol[]
+end
+
+function transform!(tn::TensorNetwork, config::Truncate)
+    skip_inds = isempty(config.skip) ? inds(tn; set=:open) : config.skip
+
+    for tensor in tensors(tn)
+        for (dim, index) in enumerate(inds(tensor))
+            index ∈ skip_inds && continue
+
+            zeroslices = iszero.(eachslice(tensor; dims=dim))
+            any(zeroslices) || continue
+
+            slice!(tn, index, count(!, zeroslices) == 1 ? findfirst(!, zeroslices) : findall(!, zeroslices))
+        end
+    end
+
+    return tn
+end
+
+"""
     DiagonalReduction <: Transformation
 
 Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it has a pair of indices that fulfil a diagonal structure.
@@ -227,38 +259,6 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
             for t in tensors(tn)
                 ix_to_gauge in inds(t) && reverse!(parent(t); dims=findfirst(l -> l == ix_to_gauge, inds(t)))
             end
-        end
-    end
-
-    return tn
-end
-
-"""
-    ColumnReduction <: Transformation
-
-Truncate the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it contains columns with all elements smaller than `atol`.
-
-# Keyword Arguments
-
-  - `atol` Absolute tolerance. Defaults to `1e-12`.
-  - `skip` List of indices to skip. Defaults to `[]`.
-"""
-Base.@kwdef struct ColumnReduction <: Transformation
-    atol::Float64 = 1e-12
-    skip::Vector{Symbol} = Symbol[]
-end
-
-function transform!(tn::TensorNetwork, config::ColumnReduction)
-    skip_inds = isempty(config.skip) ? inds(tn; set=:open) : config.skip
-
-    for tensor in tensors(tn)
-        for (dim, index) in enumerate(inds(tensor))
-            index ∈ skip_inds && continue
-
-            zeroslices = iszero.(eachslice(tensor; dims=dim))
-            any(zeroslices) || continue
-
-            slice!(tn, index, count(!, zeroslices) == 1 ? findfirst(!, zeroslices) : findall(!, zeroslices))
         end
     end
 

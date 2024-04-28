@@ -179,7 +179,7 @@ fig #hide
 ### Column reduction
 
 ```@docs
-Tenet.ColumnReduction
+Tenet.Truncate
 ```
 
 ```@example plot
@@ -194,7 +194,7 @@ B = Tensor(rand(3, 3), (:j, :l)) #hide
 C = Tensor(rand(3, 3), (:l, :m)) #hide
 
 tn = TensorNetwork([A, B, C]) #hide
-reduced = transform(tn, Tenet.ColumnReduction) #hide
+reduced = transform(tn, Tenet.Truncate) #hide
 
 smooth_annotation!( #hide
     fig[1, 1]; #hide

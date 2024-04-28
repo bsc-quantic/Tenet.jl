@@ -187,8 +187,8 @@
         @test contract(gauged) ≈ contract(tn)
     end
 
-    @testset "ColumnReduction" begin
-        using Tenet: ColumnReduction
+    @testset "Truncate" begin
+        using Tenet: Truncate
 
         @testset "range" begin
             data = rand(3, 3, 3)
@@ -199,7 +199,7 @@
             C = Tensor(rand(3, 3), (:j, :m))
 
             tn = TensorNetwork([A, B, C])
-            reduced = transform(tn, ColumnReduction)
+            reduced = transform(tn, Truncate)
 
             @test :j ∉ inds(reduced)
             @test contract(reduced) ≈ contract(tn)
@@ -214,7 +214,7 @@
             C = Tensor(rand(3, 3), (:j, :m))
 
             tn = TensorNetwork([A, B, C])
-            reduced = transform(tn, ColumnReduction)
+            reduced = transform(tn, Truncate)
 
             @test size(reduced, :j) == 2
             @test contract(reduced) ≈ contract(tn)
