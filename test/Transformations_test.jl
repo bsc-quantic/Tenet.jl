@@ -114,8 +114,8 @@
         end
     end
 
-    @testset "RankSimplification" begin
-        using Tenet: RankSimplification
+    @testset "ContractSimplification" begin
+        using Tenet: ContractSimplification
 
         # create a tensor network where tensors B and D can be absorbed
         A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l))
@@ -125,7 +125,7 @@
         E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j))
 
         tn = TensorNetwork([A, B, C, D, E])
-        reduced = transform(tn, RankSimplification)
+        reduced = transform(tn, ContractSimplification)
 
         # Test that the resulting tn contains no tensors with larger rank than the original
         rank = length ∘ size ∘ parent

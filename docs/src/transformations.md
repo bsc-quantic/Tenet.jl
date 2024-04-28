@@ -127,7 +127,7 @@ Tenet.AntiDiagonalGauging
 ### Rank simplification
 
 ```@docs
-Tenet.RankSimplification
+Tenet.ContractSimplification
 ```
 
 ```@example plot
@@ -140,7 +140,7 @@ C = Tensor(rand(2, 2, 2), (:m, :n, :o)) #hide
 E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j)) #hide
 
 tn = TensorNetwork([A, B, C, E]) #hide
-reduced = transform(tn, Tenet.RankSimplification) #hide
+reduced = transform(tn, Tenet.ContractSimplification) #hide
 
 smooth_annotation!( #hide
     fig[1, 1]; #hide

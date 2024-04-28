@@ -104,20 +104,20 @@ function transform!(tn::TensorNetwork, ::HyperGroup)
 end
 
 """
-    RankSimplification <: Transformation
+    ContractSimplification <: Transformation
 
 Preemptively contract tensors whose result doesn't increase in size.
 """
-@kwdef struct RankSimplification <: Transformation
+@kwdef struct ContractSimplification <: Transformation
     minimize::Symbol = :length
 
-    function RankSimplification(minimize::Symbol)
+    function ContractSimplification(minimize::Symbol)
         @assert minimize in (:length, :rank)
         return new(minimize)
     end
 end
 
-function transform!(tn::TensorNetwork, config::RankSimplification)
+function transform!(tn::TensorNetwork, config::ContractSimplification)
     # select indices that benefit from contraction
     targets = filter(inds(tn; set=:inner)) do index
         candidate_tensors = select(tn, :containing, index)
