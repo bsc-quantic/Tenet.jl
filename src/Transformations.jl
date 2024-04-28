@@ -104,6 +104,49 @@ function transform!(tn::TensorNetwork, ::HyperGroup)
 end
 
 """
+    RankSimplification <: Transformation
+
+Preemptively contract tensors whose result doesn't increase in size.
+"""
+@kwdef struct RankSimplification <: Transformation
+    minimize::Symbol = :length
+
+    function RankSimplification(minimize::Symbol)
+        @assert minimize in (:length, :rank)
+        return new(minimize)
+    end
+end
+
+function transform!(tn::TensorNetwork, config::RankSimplification)
+    # select indices that benefit from contraction
+    targets = filter(inds(tn; set=:inner)) do index
+        candidate_tensors = select(tn, :containing, index)
+
+        # check that the contraction minimizes the size/rank
+        result = sum([
+            EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
+            tensor in candidate_tensors
+        ])
+
+        if config.minimize == :rank
+            return ndims(result) <= minimum(ndims, candidate_tensors)
+        end
+
+        return length(result) <= minimum(length, candidate_tensors)
+    end
+
+    # group parallel indices
+    targets = unique(Iterators.map(x -> inds(tn, :parallel, x), targets))
+
+    # contract target indices
+    for target in targets
+        contract!(tn, target)
+    end
+
+    return tn
+end
+
+"""
     DiagonalReduction <: Transformation
 
 Reduce the dimension of a `Tensor` in a [`TensorNetwork`](@ref) when it has a pair of indices that fulfil a diagonal structure.
@@ -147,45 +190,6 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
 
         transformed_tn = TensorNetwork(Tensor[transformed_tensor.target, transformed_tensor.copies...])
         replace!(tn, tensor => transformed_tn)
-    end
-
-    return tn
-end
-
-"""
-    RankSimplification <: Transformation
-
-Preemptively contract tensors whose result doesn't increase in size.
-"""
-struct RankSimplification <: Transformation end
-
-function transform!(tn::TensorNetwork, ::RankSimplification)
-    @label rank_transformation_start
-    for tensor in tensors(tn)
-        # TODO replace this code for `neighbours` method
-        connected_tensors = mapreduce(label -> select(tn, :any, label), ∪, inds(tensor))
-        filter!(!=(tensor), connected_tensors)
-
-        for c_tensor in connected_tensors
-            # TODO keep output inds?
-            path = sum([
-                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
-                tensor in [tensor, c_tensor]
-            ])
-
-            # Check if contraction does not increase the rank
-            EinExprs.removedsize(path) < 0 && continue
-
-            new_tensor = contract(tensor, c_tensor)
-
-            # Update tensor network
-            push!(tn, new_tensor)
-            delete!(tn, tensor)
-            delete!(tn, c_tensor)
-
-            # Break the loop since we modified the network and need to recheck connections
-            @goto rank_transformation_start
-        end
     end
 
     return tn

@@ -91,6 +91,7 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:open` Indices only mentioned in one tensor.
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
+      + `:parallel` Indices parallel to `i` in the graph (`i` included).
 """
 Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...) = inds(tn, set; kwargs...)
 @valsplit 2 Tenet.inds(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
@@ -109,6 +110,10 @@ end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:hyper})
     return map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
+end
+
+function Tenet.inds(tn::TensorNetwork, ::Val{:parallel}, i::Symbol)
+    return mapreduce(inds, ∩, select(tn, :containing, i))
 end
 
 """
