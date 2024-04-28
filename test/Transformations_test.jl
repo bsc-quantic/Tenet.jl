@@ -33,6 +33,29 @@
         # TODO @test issetequal(neighbours())
     end
 
+    @testset "HyperGroup" begin
+        using Tenet: HyperGroup
+
+        @testset "open indices" begin
+            tn = TensorNetwork([Tensor(DeltaArray{3}(ones(2)), [:i, :j, :k])])
+            transform!(tn, HyperGroup)
+
+            @test isempty(inds(tn, :hyper))
+        end
+
+        @testset "closed indices" begin
+            tn = TensorNetwork([
+                Tensor(rand(2), [:i]),
+                Tensor(rand(2), [:j]),
+                Tensor(rand(2), [:k]),
+                Tensor(DeltaArray{3}(ones(2)), [:i, :j, :k]),
+            ])
+            transform!(tn, HyperGroup)
+
+            @test length(inds(tn, :hyper)) == 1
+        end
+    end
+
     @testset "DiagonalReduction" begin
         using Tenet: DiagonalReduction, find_diag_axes
 

@@ -84,13 +84,17 @@ See also: [`HyperFlatten`](@ref).
 struct HyperGroup <: Transformation end
 
 function transform!(tn::TensorNetwork, ::HyperGroup)
-    targets = Iterators.filter(x -> parenttype(x) isa DeltaArray, tensors(tn))
+    targets = Iterators.filter(x -> parenttype(x) <: DeltaArray, tensors(tn))
+
+    open_indices = inds(tn; set=:open)
+    targets = Iterators.filter(t -> isdisjoint(inds(t), open_indices), targets)
+
     for tensor in targets
         # remove COPY tensor
-        delete!(tn, target)
+        delete!(tn, tensor)
 
         # insert hyperindex
-        hyperindex = uuid4()
+        hyperindex = Symbol(uuid4())
 
         # insert weights vector
         if !all(isone, delta(parent(tensor)))
@@ -98,9 +102,13 @@ function transform!(tn::TensorNetwork, ::HyperGroup)
         end
 
         for flatindex in inds(tensor)
-            replace!(tn, flatindex => hyperindex)
+            tensor = pop!(tn, only(select(tn, :containing, flatindex)))
+            tensor = replace(tensor, flatindex => hyperindex)
+            push!(tn, tensor)
         end
     end
+
+    return tn
 end
 
 """
