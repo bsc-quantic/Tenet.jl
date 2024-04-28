@@ -25,7 +25,7 @@ function Makie.plot(tn::TensorNetwork; kwargs...)
 end
 
 # NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
-__networklayout_dim(x) = typeof(x).super.parameters |> first
+__networklayout_dim(x) = first(typeof(x).super.parameters)
 
 function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
     ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
@@ -44,7 +44,7 @@ function Makie.plot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...
     return Makie.AxisPlot(ax, p)
 end
 
-function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
+function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels=false, kwargs...)
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperFlatten)
 
@@ -96,11 +96,11 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
         kwargs[:node_color] = vcat(kwargs[:node_color], fill(:black, length(ghostnodes)))
     else
         kwargs[:node_color] = map(1:Graphs.nv(graph)) do v
-            v ∈ copytensors ? Makie.to_color(:black) : Makie.RGBf(240 // 256, 180 // 256, 100 // 256)
+            v ∈ copytensors ? Makie.to_color(:black) : Makie.RGBf(240//256, 180//256, 100//256)
         end
     end
 
-    get!(kwargs, :node_attr, (colormap = :viridis, strokewidth = 2.0, strokecolor = :black))
+    get!(kwargs, :node_attr, (colormap=:viridis, strokewidth=2.0, strokecolor=:black))
 
     # configure labels
     labels == true && get!(kwargs, :elabels) do
@@ -113,7 +113,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
                 notghost = Graphs.src(edge) ∈ ghostnodes ? Graphs.dst(edge) : Graphs.src(edge)
                 inds = Tenet.inds(tn, :open) ∩ Tenet.inds(tensors(tn)[notghost])
                 opencounter[notghost] += 1
-                return inds[opencounter[notghost]] |> string
+                return string(inds[opencounter[notghost]])
             end
 
             # case: hyperedge
@@ -121,7 +121,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
                 i = Graphs.src(edge) ∈ copytensors ? Graphs.src(edge) : Graphs.dst(edge)
                 # hyperindex = filter(p -> isdisjoint(inds(tensors)[i], p[2]), hypermap) |> only |> first
                 hyperindex = hypermap[Tenet.inds(tensors(tn)[i])]
-                return hyperindex |> string
+                return string(hyperindex)
             end
 
             return join(Tenet.inds(tensors(tn)[Graphs.src(edge)]) ∩ Tenet.inds(tensors(tn)[Graphs.dst(edge)]), ',')
@@ -131,7 +131,7 @@ function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, k
     get!(() -> repeat([17], Graphs.ne(graph)), kwargs, :elabels_textsize)
 
     # plot graph
-    graphplot!(ax, graph; kwargs...)
+    return graphplot!(ax, graph; kwargs...)
 end
 
 end

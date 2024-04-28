@@ -5,26 +5,7 @@ using SparseArrays
 
 # TODO test array container typevar on output
 for op in [
-    :+,
-    :-,
-    :*,
-    :/,
-    :\,
-    :^,
-    :÷,
-    :fld,
-    :cld,
-    :mod,
-    :%,
-    :fldmod,
-    :fld1,
-    :mod1,
-    :fldmod1,
-    ://,
-    :gcd,
-    :lcm,
-    :gcdx,
-    :widemul,
+    :+, :-, :*, :/, :\, :^, :÷, :fld, :cld, :mod, :%, :fldmod, :fld1, :mod1, :fldmod1, ://, :gcd, :lcm, :gcdx, :widemul
 ]
     @eval Base.$op(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = broadcast($op, a, b)
 end
@@ -50,9 +31,9 @@ end
 
 Perform tensor contraction operation.
 """
-function contract(a::Tensor, b::Tensor; dims = (∩(inds(a), inds(b))))
-    ia = inds(a) |> collect
-    ib = inds(b) |> collect
+function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))))
+    ia = collect(inds(a))
+    ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
     ic = setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
@@ -66,7 +47,7 @@ function contract(a::Tensor, b::Tensor; dims = (∩(inds(a), inds(b))))
     return Tensor(data, ic)
 end
 
-function contract(a::Tensor; dims = nonunique(inds(a)))
+function contract(a::Tensor; dims=nonunique(inds(a)))
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -79,7 +60,7 @@ end
 
 contract(a::Union{T,AbstractArray{T,0}}, b::Tensor{T}) where {T} = contract(Tensor(a), b)
 contract(a::Tensor{T}, b::Union{T,AbstractArray{T,0}}) where {T} = contract(a, Tensor(b))
-contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = contract(Tensor(a), Tensor(b)) |> only
+contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = only(contract(Tensor(a), Tensor(b)))
 contract(a::Number, b::Number) = contract(fill(a), fill(b))
 contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs...), tensors)
 
@@ -96,9 +77,13 @@ function factorinds(tensor, left_inds, right_inds)
     isdisjoint(left_inds, right_inds) ||
         throw(ArgumentError("left ($left_inds) and right $(right_inds) indices must be disjoint"))
 
-    left_inds, right_inds =
-        isempty(left_inds) ? (setdiff(inds(tensor), right_inds), right_inds) :
-        isempty(right_inds) ? (left_inds, setdiff(inds(tensor), left_inds)) : (left_inds, right_inds)
+    left_inds, right_inds = if isempty(left_inds)
+        (setdiff(inds(tensor), right_inds), right_inds)
+    elseif isempty(right_inds)
+        (left_inds, setdiff(inds(tensor), left_inds))
+    else
+        (left_inds, right_inds)
+    end
 
     all(!isempty, (left_inds, right_inds)) || throw(ArgumentError("no right-indices left in factorization"))
     all(∈(inds(tensor)), left_inds ∪ right_inds) || throw(ArgumentError("indices must be in $(inds(tensor))"))
@@ -106,7 +91,7 @@ function factorinds(tensor, left_inds, right_inds)
     return left_inds, right_inds
 end
 
-LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
+LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
 
 """
     LinearAlgebra.svd(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
@@ -119,7 +104,7 @@ Perform SVD factorization on a tensor.
   - `right_inds`: right indices to be used in the SVD factorization. Defaults to all indices of `t` except `left_inds`.
   - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.svd(tensor::Tensor; left_inds = (), right_inds = (), virtualind = Symbol(uuid4()), kwargs...)
+function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), kwargs...)
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
     virtualind ∉ inds(tensor) ||
@@ -142,7 +127,7 @@ function LinearAlgebra.svd(tensor::Tensor; left_inds = (), right_inds = (), virt
     return U, s, Vt
 end
 
-LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
+LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
 
 """
     LinearAlgebra.qr(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
@@ -155,13 +140,7 @@ Perform QR factorization on a tensor.
   - `right_inds`: right indices to be used in the QR factorization. Defaults to all indices of `t` except `left_inds`.
   - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.qr(
-    tensor::Tensor;
-    left_inds = (),
-    right_inds = (),
-    virtualind::Symbol = Symbol(uuid4()),
-    kwargs...,
-)
+function LinearAlgebra.qr(tensor::Tensor; left_inds=(), right_inds=(), virtualind::Symbol=Symbol(uuid4()), kwargs...)
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
     virtualind ∉ inds(tensor) ||
@@ -184,7 +163,7 @@ function LinearAlgebra.qr(
     return Q, R
 end
 
-LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; left_inds = (first(inds(t)),), kwargs...)
+LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
 
 """
     LinearAlgebra.lu(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
@@ -198,11 +177,7 @@ Perform LU factorization on a tensor.
   - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
 function LinearAlgebra.lu(
-    tensor::Tensor;
-    left_inds = (),
-    right_inds = (),
-    virtualind = [Symbol(uuid4()), Symbol(uuid4())],
-    kwargs...,
+    tensor::Tensor; left_inds=(), right_inds=(), virtualind=[Symbol(uuid4()), Symbol(uuid4())], kwargs...
 )
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 

@@ -106,7 +106,7 @@
             # Test that all tensors (that are no COPY tensors) in reduced have no
             #  diagonals in the that are in innerinds
             for tensor in filter(t -> !(parent(t) isa DeltaArray), tensors(reduced))
-                @test has_diagonal_in_innerinds(tensor, inds(reduced, set = :inner)) == false
+                @test has_diagonal_in_innerinds(tensor, inds(reduced; set=:inner)) == false
             end
 
             # Test that the resulting contraction returns the same as the original
@@ -160,10 +160,10 @@
             for j in 1:d
                 for k in 1:d
                     # In data_anti the 1st-4th and 2nd-5th indices are antidiagonal
-                    data[i, j, k, d-i+1, d-j+1] = k
-                    data[j, i, k, d-j+1, d-i+1] = k + 2
+                    data[i, j, k, d - i + 1, d - j + 1] = k
+                    data[j, i, k, d - j + 1, d - i + 1] = k + 2
 
-                    data2[i, d-i+1, k] = 1  # 1st-2nd indices are antidiagonal in data2_anti
+                    data2[i, d - i + 1, k] = 1  # 1st-2nd indices are antidiagonal in data2_anti
                 end
             end
         end
@@ -180,7 +180,7 @@
 
         # Test that all tensors in gauged have no antidiagonals
         for tensor in tensors(gauged)
-            @test has_antidiagonal_in_innerinds(tensor, inds(gauged, set = :inner)) == false
+            @test has_antidiagonal_in_innerinds(tensor, inds(gauged; set=:inner)) == false
         end
 
         # Test that the resulting contraction is the same as the original

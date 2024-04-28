@@ -25,8 +25,9 @@ In-place version of [`transform`](@ref).
 """
 function transform! end
 
-transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...) =
-    transform!(tn, transformation(kwargs...))
+function transform!(tn::TensorNetwork, transformation::Type{<:Transformation}; kwargs...)
+    return transform!(tn, transformation(kwargs...))
+end
 
 function transform!(tn::TensorNetwork, transformations)
     for transformation in transformations
@@ -44,12 +45,14 @@ This transformation is always used by default when visualizing a `TensorNetwork`
 struct HyperFlatten <: Transformation end
 
 function hyperflatten(tn::TensorNetwork)
-    map(inds(tn, :hyper)) do hyperindex
-        n = select(tn, :any, hyperindex) |> length
-        map(1:n) do i
-            Symbol("$hyperindex$i")
-        end => hyperindex
-    end |> Dict
+    return Dict(
+        map(inds(tn, :hyper)) do hyperindex
+            n = length(select(tn, :any, hyperindex))
+            map(1:n) do i
+                Symbol("$hyperindex$i")
+            end => hyperindex
+        end,
+    )
 end
 
 function transform!(tn::TensorNetwork, ::HyperFlatten)
@@ -84,10 +87,10 @@ end
 
 function transform!(tn::TensorNetwork, config::DiagonalReduction)
     for tensor in filter(tensor -> !(parenttype(typeof(tensor)) <: DeltaArray), tensors(tn))
-        diaginds = find_diag_axes(tensor, atol = config.atol)
+        diaginds = find_diag_axes(tensor; atol=config.atol)
         isempty(diaginds) && continue
 
-        transformed_tensor = reduce(diaginds; init = (; target = tensor, copies = Tensor[])) do (target, copies), inds
+        transformed_tensor = reduce(diaginds; init=(; target=tensor, copies=Tensor[])) do (target, copies), inds
             N = length(inds)
 
             # insert COPY tensor
@@ -101,14 +104,14 @@ function transform!(tn::TensorNetwork, config::DiagonalReduction)
                 (String.(replace(Tenet.inds(target), [i => first(inds) for i in inds[2:end]]...)),),
                 String.(filter(∉(inds[2:end]), Tenet.inds(target))),
             )(
-                target,
+                target
             )
             target = Tensor(
                 data,
                 map(index -> index === first(inds) ? new_index : index, filter(∉(inds[2:end]), Tenet.inds(target)));
             )
 
-            return (; target = target, copies = copies)
+            return (; target=target, copies=copies)
         end
 
         transformed_tn = TensorNetwork(Tensor[transformed_tensor.target, transformed_tensor.copies...])
@@ -174,10 +177,10 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
-    skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
+    skip_inds = isempty(config.skip) ? inds(tn; set=:open) : config.skip
 
     for tensor in keys(tn.tensormap)
-        anti_diag_axes = find_anti_diag_axes(parent(tensor), atol = config.atol)
+        anti_diag_axes = find_anti_diag_axes(parent(tensor); atol=config.atol)
 
         for (i, j) in anti_diag_axes # loop over all anti-diagonal axes
             ix_i, ix_j = inds(tensor)[i], inds(tensor)[j]
@@ -187,7 +190,7 @@ function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
 
             # reverse the order of ix_to_gauge in all tensors where it appears
             for t in tensors(tn)
-                ix_to_gauge in inds(t) && reverse!(parent(t), dims = findfirst(l -> l == ix_to_gauge, inds(t)))
+                ix_to_gauge in inds(t) && reverse!(parent(t); dims=findfirst(l -> l == ix_to_gauge, inds(t)))
             end
         end
     end
@@ -211,13 +214,13 @@ Base.@kwdef struct ColumnReduction <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::ColumnReduction)
-    skip_inds = isempty(config.skip) ? inds(tn, set = :open) : config.skip
+    skip_inds = isempty(config.skip) ? inds(tn; set=:open) : config.skip
 
     for tensor in tensors(tn)
         for (dim, index) in enumerate(inds(tensor))
             index ∈ skip_inds && continue
 
-            zeroslices = iszero.(eachslice(tensor, dims = dim))
+            zeroslices = iszero.(eachslice(tensor; dims=dim))
             any(zeroslices) || continue
 
             slice!(tn, index, count(!, zeroslices) == 1 ? findfirst(!, zeroslices) : findall(!, zeroslices))
@@ -247,12 +250,12 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
         inds = Tenet.inds(tensor)
 
         # iterate all bipartitions of the tensor's indices
-        bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds)-1))
+        bipartitions = Iterators.flatten(combinations(inds, r) for r in 1:(length(inds) - 1))
         for bipartition in bipartitions
             left_inds = collect(bipartition)
 
             # perform an SVD across the bipartition
-            u, s, v = svd(tensor; left_inds = left_inds)
+            u, s, v = svd(tensor; left_inds=left_inds)
             rank_s = sum(s .> config.atol)
 
             if rank_s < length(s)
@@ -264,7 +267,7 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
                 v = view(v, hyperindex => 1:rank_s)
 
                 # replace the original tensor with factorization
-                tensor_l = contract(u, s, dims = Symbol[])
+                tensor_l = contract(u, s; dims=Symbol[])
                 tensor_r = v
 
                 push!(tn, dropdims(tensor_l))
@@ -279,12 +282,12 @@ function transform!(tn::TensorNetwork, config::SplitSimplification)
     return tn
 end
 
-function find_diag_axes(x; atol = 1e-12)
+function find_diag_axes(x; atol=1e-12)
     # skip 1D tensors
     ndims(parent(x)) == 1 && return []
 
     # find all the potential diagonals
-    potential_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
+    potential_diag_axes = [(i, j) for i in 1:ndims(x) for j in (i + 1):ndims(x) if size(x, i) == size(x, j)]
 
     # check what elements satisfy the condition
     diag_pairs = filter(potential_diag_axes) do (d1, d2)
@@ -294,22 +297,22 @@ function find_diag_axes(x; atol = 1e-12)
     end
 
     # if overlap between pairs of diagonal axes, then all involved axes are diagonal
-    diag_sets = reduce(diag_pairs; init = Vector{Int}[]) do acc, pair
+    diag_sets = reduce(diag_pairs; init=Vector{Int}[]) do acc, pair
         i = findfirst(set -> !isdisjoint(set, pair), acc)
         !isnothing(i) ? union!(acc[i], pair) : push!(acc, collect(pair))
         return acc
     end
 
     # map to index symbols
-    map(set -> map(i -> inds(x)[i], set), diag_sets)
+    return map(set -> map(i -> inds(x)[i], set), diag_sets)
 end
 
-function find_anti_diag_axes(x; atol = 1e-12)
+function find_anti_diag_axes(x; atol=1e-12)
     # skip 1D tensors
     ndims(parent(x)) == 1 && return []
 
     # Find all the potential anti-diagonals
-    potential_anti_diag_axes = [(i, j) for i in 1:ndims(x) for j in i+1:ndims(x) if size(x, i) == size(x, j)]
+    potential_anti_diag_axes = [(i, j) for i in 1:ndims(x) for j in (i + 1):ndims(x) if size(x, i) == size(x, j)]
 
     # Check what elements satisfy the condition
     return filter(potential_anti_diag_axes) do (d1, d2)

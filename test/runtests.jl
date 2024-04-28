@@ -22,7 +22,7 @@ end
 if haskey(ENV, "ENABLE_AQUA_TESTS")
     @testset "Aqua" verbose = true begin
         using Aqua
-        @testset "Method ambiguity (manual)" Aqua.test_ambiguities(Tenet, recursive = false, exclude = [==])
-        Aqua.test_all(Tenet, ambiguities = false, stale_deps = false)
+        @testset "Method ambiguity (manual)" Aqua.test_ambiguities(Tenet, recursive=false, exclude=[==])
+        Aqua.test_all(Tenet; ambiguities=false, stale_deps=false)
     end
 end

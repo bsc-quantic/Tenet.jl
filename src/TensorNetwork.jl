@@ -18,7 +18,7 @@ struct TensorNetwork
     function TensorNetwork(tensors)
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
 
-        indexmap = reduce(tensors; init = Dict{Symbol,Vector{Tensor}}()) do dict, tensor
+        indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
             # TODO check for inconsistent dimensions?
             for index in inds(tensor)
                 # TODO use lambda? `Tensor[]` might be reused
@@ -27,7 +27,7 @@ struct TensorNetwork
             dict
         end
 
-        new(indexmap, tensormap)
+        return new(indexmap, tensormap)
     end
 end
 
@@ -44,8 +44,9 @@ Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
 
 Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
-Base.show(io::IO, tn::TensorNetwork) =
-    print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
+function Base.show(io::IO, tn::TensorNetwork)
+    return print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
+end
 
 function Base.:(==)(a::TensorNetwork, b::TensorNetwork)
     issetequal(inds(a), inds(b)) || return false
@@ -72,7 +73,7 @@ Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
 
   - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
-tensors(tn::TensorNetwork) = sort!(collect(keys(tn.tensormap)), by = inds)
+tensors(tn::TensorNetwork) = sort!(collect(keys(tn.tensormap)); by=inds)
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 Base.collect(tn::TensorNetwork) = tensors(tn)
@@ -91,23 +92,23 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-Tenet.inds(tn::TensorNetwork; set::Symbol = :all, kwargs...) = inds(tn, set; kwargs...)
+Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...) = inds(tn, set; kwargs...)
 @valsplit 2 Tenet.inds(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:all})
-    collect(keys(tn.indexmap))
+    return collect(keys(tn.indexmap))
 end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:open})
-    map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
+    return map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
 end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:inner})
-    map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
+    return map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
 end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:hyper})
-    map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
+    return map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
 end
 
 """
@@ -131,11 +132,11 @@ Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 Return tensors whose indices match with the list of indices `i`.
 """
 @valsplit 2 function select(tn::TensorNetwork, query::Symbol, args...)
-    error("Query ':$query' not defined for TensorNetwork")
+    return error("Query ':$query' not defined for TensorNetwork")
 end
 
 function select(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
-    filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+    return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
 end
 
 # TODO better naming?
@@ -149,24 +150,24 @@ select(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = select(
 select(tn::TensorNetwork, ::Val{:all}, i::Symbol) = copy(tn.indexmap[i])
 select(tn::TensorNetwork, ::Val{:all}, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
 
-function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int = 1)
-    first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
+function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int=1)
+    return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
-function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool = true)
+function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
         select(tn, :any, index)
     end
     open && filter!(x -> x !== tensor, tensors)
-    tensors
+    return tensors
 end
 
-function neighbors(tn::TensorNetwork, i::Symbol; open::Bool = true)
+function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
     tensors = mapreduce(inds, ∪, select(tn, :any, i))
     # open && filter!(x -> x !== i, tensors)
-    tensors
+    return tensors
 end
 
 """
@@ -210,7 +211,7 @@ Fuse various [`TensorNetwork`](@ref)s into one.
 See also: [`append!`](@ref).
 """
 Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(other))
-Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init = self)
+Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init=self)
 Base.merge(self::TensorNetwork, others::TensorNetwork...) = merge!(copy(self), others...)
 
 """
@@ -313,10 +314,10 @@ end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
     old, new = old_new
-    issetequal(inds(new, set = :open), inds(old)) || throw(ArgumentError("indices don't match match"))
+    issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match match"))
 
     # rename internal indices so there is no accidental hyperedge
-    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(inds(tn)), inds(new, set = :inner))]...)
+    replace!(new, [index => Symbol(uuid4()) for index in filter(∈(inds(tn)), inds(new; set=:inner))]...)
 
     merge!(tn, new)
     delete!(tn, old)
@@ -356,7 +357,7 @@ Return a copy of the [`TensorNetwork`](@ref) where `index` has been projected to
 
 See also: [`view`](@ref), [`slice!`](@ref).
 """
-Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label=>i]
+Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label => i]
 
 """
     view(tn::TensorNetwork, index => i...)
@@ -391,24 +392,19 @@ Generate a random tensor network.
   - `globalind` Add a global 'broadcast' dimension to every tensor.
 """
 function Base.rand(
-    ::Type{TensorNetwork},
-    n::Integer,
-    regularity::Integer;
-    out = 0,
-    dim = 2:9,
-    seed = nothing,
-    globalind = false,
+    ::Type{TensorNetwork}, n::Integer, regularity::Integer; out=0, dim=2:9, seed=nothing, globalind=false
 )
     !isnothing(seed) && Random.seed!(seed)
 
     inds = letter.(randperm(n * regularity ÷ 2 + out))
     size_dict = Dict(ind => rand(dim) for ind in inds)
 
-    outer_inds = Iterators.take(inds, out) |> collect
-    inner_inds = Iterators.drop(inds, out) |> collect
+    outer_inds = collect(Iterators.take(inds, out))
+    inner_inds = collect(Iterators.drop(inds, out))
 
-    candidate_inds =
-        [outer_inds, Iterators.flatten(Iterators.repeated(inner_inds, 2))] |> Iterators.flatten |> collect |> shuffle
+    candidate_inds = shuffle(
+        collect(Iterators.flatten([outer_inds, Iterators.flatten(Iterators.repeated(inner_inds, 2))]))
+    )
 
     inputs = map(x -> [x], Iterators.take(candidate_inds, n))
 
@@ -430,7 +426,7 @@ function Base.rand(
     end
 
     tensors = Tensor[Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
-    TensorNetwork(tensors)
+    return TensorNetwork(tensors)
 end
 
 struct TNSampler <: Random.Sampler{TensorNetwork}
@@ -460,14 +456,19 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-EinExprs.einexpr(tn::TensorNetwork; optimizer = Greedy, outputs = inds(tn, :open), kwargs...) = einexpr(
-    optimizer,
-    sum(
-        [EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for tensor in tensors(tn)],
-        skip = outputs,
-    );
-    kwargs...,
-)
+function EinExprs.einexpr(tn::TensorNetwork; optimizer=Greedy, outputs=inds(tn, :open), kwargs...)
+    return einexpr(
+        optimizer,
+        sum(
+            [
+                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
+                tensor in tensors(tn)
+            ];
+            skip=outputs,
+        );
+        kwargs...,
+    )
+end
 
 function Base.conj!(tn::TensorNetwork)
     foreach(conj!, tensors(tn))
@@ -486,7 +487,7 @@ In-place contraction of tensors connected to `index`.
 See also: [`contract`](@ref).
 """
 function contract!(tn::TensorNetwork, i)
-    _tensors = sort!(select(tn, :any, i), by = length)
+    _tensors = sort!(select(tn, :any, i); by=length)
     tensor = contract(TensorNetwork(_tensors))
     delete!(tn, i)
     push!(tn, tensor)
@@ -494,7 +495,7 @@ function contract!(tn::TensorNetwork, i)
 end
 function contract(tn::TensorNetwork, i)
     tn = copy(tn)
-    contract!(tn, i)
+    return contract!(tn, i)
 end
 contract!(tn::TensorNetwork, i::Symbol) = contract!(tn, [i])
 contract(tn::TensorNetwork, i::Symbol) = contract(tn, [i])
@@ -508,11 +509,11 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-function contract(tn::TensorNetwork; path = einexpr(tn))
+function contract(tn::TensorNetwork; path=einexpr(tn))
     length(path.args) == 0 && return tn[inds(path)...]
 
-    intermediates = map(subpath -> contract(tn; path = subpath), path.args)
-    contract(intermediates...; dims = suminds(path))
+    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
+    return contract(intermediates...; dims=suminds(path))
 end
 
 contract!(t::Tensor, tn::TensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
@@ -520,21 +521,21 @@ contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn;
 contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
-function LinearAlgebra.svd!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
+function LinearAlgebra.svd!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
     U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([U, s, Vt]))
     return tn
 end
 
-function LinearAlgebra.qr!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
+function LinearAlgebra.qr!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
     Q, R = qr(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([Q, R]))
     return tn
 end
 
-function LinearAlgebra.lu!(tn::TensorNetwork; left_inds = Symbol[], right_inds = Symbol[], kwargs...)
+function LinearAlgebra.lu!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
     L, U = lu(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([L, U]))

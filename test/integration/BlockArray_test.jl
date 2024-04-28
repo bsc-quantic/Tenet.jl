@@ -30,7 +30,7 @@
         permuted_block_tensor = permutedims(block_tensor, perm)
 
         @test parent(permuted_block_tensor) isa BlockArray
-        @test parent(permuted_block_tensor) |> blocksizes == ([1, 3], [2, 2], [2, 2])
+        @test blocksizes(parent(permuted_block_tensor)) == ([1, 3], [2, 2], [2, 2])
         @test inds(permuted_block_tensor) == inds(permuted_tensor)
         @test Array(parent(permuted_block_tensor)) ≈ parent(permuted_tensor)
     end
@@ -51,8 +51,8 @@
             contracted_block_tensor = contract(block_tensor1, block_tensor2)
 
             @test parent(contracted_block_tensor) isa BlockArray
-            @test contracted_block_tensor |> inds == [:i, :k]
-            @test contracted_block_tensor |> blocksizes == ([3, 1], [2, 2])
+            @test inds(contracted_block_tensor) == [:i, :k]
+            @test blocksizes(contracted_block_tensor) == ([3, 1], [2, 2])
             @test Array(parent(contracted_block_tensor)) ≈ parent(contracted_tensor)
         end
 
@@ -66,8 +66,8 @@
 
             contracted_tensor = contract(tensor, block_tensor)
 
-            @test contracted_tensor |> inds == [:i, :k]
-            @test (contracted_tensor|>parent|>blocksizes)[2] == [2, 2]
+            @test inds(contracted_tensor) == [:i, :k]
+            @test (blocksizes(parent(contracted_tensor)))[2] == [2, 2]
             @test Array(parent(contracted_tensor)) ≈ parent(contract(tensor, Tensor(data2, [:j, :k])))
         end
     end

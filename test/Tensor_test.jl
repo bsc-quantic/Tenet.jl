@@ -122,8 +122,8 @@
         tensor = Tensor(data, (:i, :j, :k))
         perm = (3, 1, 2)
 
-        @test permutedims(tensor, perm) |> inds == [:k, :i, :j]
-        @test permutedims(tensor, perm) |> parent == permutedims(data, perm)
+        @test inds(permutedims(tensor, perm)) == [:k, :i, :j]
+        @test parent(permutedims(tensor, perm)) == permutedims(data, perm)
 
         newtensor = Tensor(similar(data), (:a, :b, :c))
         permutedims!(newtensor, tensor, perm)
@@ -138,7 +138,7 @@
         @test first(tensor) == first(data)
         @test last(tensor) == last(data)
         @test tensor[1, :, 2] == data[1, :, 2]
-        @test tensor[i = 1, k = 2] == data[1, :, 2]
+        @test tensor[i=1, k=2] == data[1, :, 2]
 
         tensor[1] = 0
         @test tensor[1] == data[1]
@@ -159,8 +159,8 @@
             data = rand(Complex{Float64}, 2)
             tensor = Tensor(data, (:i,))
 
-            @test adjoint(tensor) |> inds == inds(tensor)
-            @test adjoint(tensor) |> ndims == 1
+            @test inds(adjoint(tensor)) == inds(tensor)
+            @test ndims(adjoint(tensor)) == 1
 
             @test isapprox(only(tensor' * tensor), data' * data)
         end
@@ -171,8 +171,8 @@
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j))
 
-            @test adjoint(tensor) |> inds == inds(tensor)
-            @test adjoint(tensor) |> ndims == 2
+            @test inds(adjoint(tensor)) == inds(tensor)
+            @test ndims(adjoint(tensor)) == 2
 
             @test isapprox(only(tensor' * tensor), tr(data' * data))
         end
@@ -183,8 +183,8 @@
             data = rand(Complex{Float64}, 2)
             tensor = Tensor(data, (:i,))
 
-            @test transpose(tensor) |> inds == inds(tensor)
-            @test transpose(tensor) |> ndims == 1
+            @test inds(transpose(tensor)) == inds(tensor)
+            @test ndims(transpose(tensor)) == 1
 
             @test isapprox(only(transpose(tensor) * tensor), transpose(data) * data)
         end
@@ -195,8 +195,8 @@
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j))
 
-            @test transpose(tensor) |> inds == [:j, :i]
-            @test transpose(tensor) |> ndims == 2
+            @test inds(transpose(tensor)) == [:j, :i]
+            @test ndims(transpose(tensor)) == 2
 
             @test isapprox(only(transpose(tensor) * tensor), tr(transpose(data) * data))
         end
@@ -206,26 +206,26 @@
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
 
-        let new = expand(tensor, label = :x, axis = 1)
+        let new = expand(tensor; label=:x, axis=1)
             @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
-        let new = expand(tensor, label = :x, axis = 3)
+        let new = expand(tensor; label=:x, axis=3)
             @test inds(new) == [:i, :j, :x, :k]
             @test size(new, :x) == 1
             @test selectdim(new, :x, 1) == tensor
         end
 
-        let new = expand(tensor, label = :x, axis = 1, size = 2, method = :zeros)
+        let new = expand(tensor; label=:x, axis=1, size=2, method=:zeros)
             @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor
             @test selectdim(new, :x, 2) == Tensor(zeros(size(data)...), inds(tensor))
         end
 
-        let new = expand(tensor, label = :x, axis = 1, size = 2, method = :repeat)
+        let new = expand(tensor; label=:x, axis=1, size=2, method=:repeat)
             @test inds(new) == [:x, :i, :j, :k]
             @test size(new, :x) == 2
             @test selectdim(new, :x, 1) == tensor

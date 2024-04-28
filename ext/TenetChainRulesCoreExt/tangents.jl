@@ -5,10 +5,10 @@ struct TensorNetworkTangent <: AbstractTangent
 end
 
 function TensorNetworkTangent(tensors::Vector{<:Tensor})
-    TensorNetworkTangent(Dict(inds(tensor) => tensor for tensor in tensors))
+    return TensorNetworkTangent(Dict(inds(tensor) => tensor for tensor in tensors))
 end
 
-Tenet.tensors(tn::TensorNetworkTangent) = sort!(collect(values(tn.tensors)), by = inds)
+Tenet.tensors(tn::TensorNetworkTangent) = sort!(collect(values(tn.tensors)); by=inds)
 Base.collect(tn::TensorNetworkTangent) = tensors(tn)
 
 # additive identity for `TensorNetwork` tangent
@@ -16,7 +16,7 @@ Base.zero(::Type{<:TensorNetworkTangent}) = TensorNetworkTangent(Tensor[])
 
 # gradient accumulation
 function Base.:(+)(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent)
-    TensorNetworkTangent(mergewith(+, Δa.tensors, Δb.tensors))
+    return TensorNetworkTangent(mergewith(+, Δa.tensors, Δb.tensors))
 end
 
 # scalar multiplication
@@ -27,11 +27,13 @@ Base.:(*)(Δ::TensorNetworkTangent, α::Number) = α * Δ
 function Base.:(+)(primal::TensorNetwork, Δ::TensorNetworkTangent)
     @assert all(inds(t) in keys(Δ.tensors) for t in tensors(primal))
     # TODO iterate through `Δ`
-    TensorNetwork(map(tensors(primal)) do t
-        # TODO what if multiplicity > 1?
-        Δt = get(Δ.tensors, inds(t), ZeroTangent())
-        t + Δt
-    end)
+    return TensorNetwork(
+        map(tensors(primal)) do t
+            # TODO what if multiplicity > 1?
+            Δt = get(Δ.tensors, inds(t), ZeroTangent())
+            t + Δt
+        end,
+    )
 end
 
 # iteration interface
@@ -42,9 +44,9 @@ Base.IteratorEltype(::Type{TensorNetworkTangent}) = Base.HasEltype()
 Base.eltype(::Type{TensorNetworkTangent}) = Tensor
 Base.eltype(::TensorNetworkTangent) = Tensor
 
-Base.iterate(Δ::TensorNetworkTangent, state = 1) = iterate(values(Δ.tensors), state)
+Base.iterate(Δ::TensorNetworkTangent, state=1) = iterate(values(Δ.tensors), state)
 
 Base.merge(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent) = Δa + Δb
 
-Base.conj(Δ::Tangent{<:Tensor}) = Tangent{Tensor}(data = conj(Δ.data), inds = NoTangent())
+Base.conj(Δ::Tangent{<:Tensor}) = Tangent{Tensor}(; data=conj(Δ.data), inds=NoTangent())
 Base.conj(Δ::TensorNetworkTangent) = TensorNetworkTangent(Dict(inds => conj(t) for (inds, t) in Δ.tensors))

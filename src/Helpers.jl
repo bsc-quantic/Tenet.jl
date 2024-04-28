@@ -21,7 +21,7 @@ function Base.iterate(it::RingPeek{Itr}) where {Itr}
     x, state = iterate(it.it)
     peeked, nextstate = iterate(it.it, state)
     it.base = state
-    ((x, peeked), state)
+    return ((x, peeked), state)
 end
 
 function Base.iterate(it::RingPeek{Itr}, state) where {Itr}
@@ -30,7 +30,7 @@ function Base.iterate(it::RingPeek{Itr}, state) where {Itr}
 
     newstate == it.base && return nothing
 
-    ((x, peeked), newstate)
+    return ((x, peeked), newstate)
 end
 
 const NUM_UNICODE_LETTERS = VERSION >= v"1.9" ? 136104 : 131756
@@ -56,12 +56,11 @@ julia> letter(20204)
 :櫛
 ```
 """
-letter(i) =
-    Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:2^21-1)), i - 1) |> iterate |> first |> Symbol
+letter(i) = Symbol(first(iterate(Iterators.drop(Iterators.filter(isletter, Iterators.map(Char, 1:(2^21 - 1))), i - 1))))
 
 # NOTE from https://stackoverflow.com/q/54652787
 function nonunique(x)
     uniqueindexes = indexin(unique(x), x)
     nonuniqueindexes = setdiff(1:length(x), uniqueindexes)
-    unique(x[nonuniqueindexes])
+    return unique(x[nonuniqueindexes])
 end

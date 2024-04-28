@@ -220,7 +220,7 @@
     # end
 
     @testset "view" begin
-        tn = rand(TensorNetwork, 10, 3, seed = 1)
+        tn = rand(TensorNetwork, 10, 3; seed=1)
         targets = inds(tn)[1:3]
 
         slice = @view tn[[label => 1 for label in targets]...]

@@ -11,7 +11,7 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
         all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(collect(inds))) ||
             throw(DimensionMismatch("nonuniform size of repeated indices"))
 
-        new{T,N,A}(data, inds)
+        return new{T,N,A}(data, inds)
     end
 end
 
@@ -29,26 +29,28 @@ function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     return Tensor(data, inds)
 end
 
-Base.similar(t::Tensor; inds = inds(t)) = Tensor(similar(parent(t)), inds)
-Base.similar(t::Tensor, S::Type; inds = inds(t)) = Tensor(similar(parent(t), S), inds)
-function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds = inds(t)) where {T,N}
-    Tensor(similar(parent(t), S, dims), inds)
+Base.similar(t::Tensor; inds=inds(t)) = Tensor(similar(parent(t)), inds)
+Base.similar(t::Tensor, S::Type; inds=inds(t)) = Tensor(similar(parent(t), S), inds)
+function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds=inds(t)) where {T,N}
+    return Tensor(similar(parent(t), S, dims), inds)
 end
-Base.similar(t::Tensor{T,N}, dims::Base.Dims{N}; inds = inds(t)) where {T,N} = Tensor(similar(parent(t), dims), inds)
+Base.similar(t::Tensor{T,N}, dims::Base.Dims{N}; inds=inds(t)) where {T,N} = Tensor(similar(parent(t), dims), inds)
 
 Base.zero(t::Tensor) = Tensor(zero(parent(t)), inds(t))
 
 function __find_index_permutation(a, b)
     inds_b = collect(Union{Missing,Symbol}, b)
 
-    Iterators.map(a) do label
-        i = findfirst(isequal(label), inds_b)
+    return collect(
+        Iterators.map(a) do label
+            i = findfirst(isequal(label), inds_b)
 
-        # mark element as used
-        inds_b[i] = missing
+            # mark element as used
+            inds_b[i] = missing
 
-        i
-    end |> collect
+            i
+        end,
+    )
 end
 
 Base.:(==)(a::AbstractArray, b::Tensor) = isequal(b, a)
@@ -88,8 +90,8 @@ Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...) = Tensor(parent(t), rep
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
 
-dim(t::Tensor, i::Number) = i
-dim(t::Tensor, i::Symbol) = findall(==(i), inds(t)) |> first
+dim(::Tensor, i::Number) = i
+dim(t::Tensor, i::Symbol) = first(findall(==(i), inds(t)))
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))
@@ -145,14 +147,14 @@ function Base.similar(bc::Broadcasted{ArrayStyle{Tensor{T,N,A}}}, ::Type{ElType}
     # NOTE already checked if dimension mismatch
     # TODO throw on label mismatch?
     tensor = first(arg for arg in bc.args if arg isa Tensor{T,N,A})
-    similar(tensor, ElType)
+    return similar(tensor, ElType)
 end
 
 Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), inds(t))
 function Base.selectdim(t::Tensor, d::Integer, i::Integer)
     data = selectdim(parent(t), d, i)
     indices = [label for (i, label) in enumerate(inds(t)) if i != d]
-    Tensor(data, indices)
+    return Tensor(data, indices)
 end
 
 Base.selectdim(t::Tensor, d::Symbol, i) = selectdim(t, dim(t, d), i)
@@ -162,14 +164,16 @@ Base.permutedims!(dest::Tensor, src::Tensor, perm) = permutedims!(parent(dest), 
 
 function Base.permutedims(t::Tensor{T}, perm::Base.AbstractVecOrTuple{Symbol}) where {T}
     perm = map(i -> findfirst(==(i), inds(t)), perm)
-    permutedims(t, perm)
+    return permutedims(t, perm)
 end
 
-Base.dropdims(t::Tensor; dims = tuple(findall(==(1), size(t))...)) =
-    Tensor(dropdims(parent(t); dims), inds(t)[setdiff(1:ndims(t), dims)])
+function Base.dropdims(t::Tensor; dims=tuple(findall(==(1), size(t))...))
+    return Tensor(dropdims(parent(t); dims), inds(t)[setdiff(1:ndims(t), dims)])
+end
 
-Base.view(t::Tensor, i...) =
-    Tensor(view(parent(t), i...), [label for (label, j) in zip(inds(t), i) if !(j isa Integer)])
+function Base.view(t::Tensor, i...)
+    return Tensor(view(parent(t), i...), [label for (label, j) in zip(inds(t), i) if !(j isa Integer)])
+end
 
 function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
     indices = map(Tenet.inds(t)) do ind
@@ -190,22 +194,26 @@ Base.adjoint(t::Tensor) = Tensor(conj(parent(t)), inds(t))
 Base.transpose(t::Tensor{T,1,A}) where {T,A<:AbstractArray{T,1}} = permutedims(t, (1,))
 Base.transpose(t::Tensor{T,2,A}) where {T,A<:AbstractArray{T,2}} = Tensor(transpose(parent(t)), reverse(inds(t)))
 
-function expand(tensor::Tensor; label, axis = 1, size = 1, method = :zeros)
+function expand(tensor::Tensor; label, axis=1, size=1, method=:zeros)
     array = parent(tensor)
-    data =
-        size == 1 ? reshape(array, Base.size(array)[1:axis-1]..., 1, Base.size(array)[axis:end]...) :
-        method === :zeros ? __expand_zeros(array, axis, size) :
-        method === :repeat ? __expand_repeat(array, axis, size) :
+    data = if size == 1
+        reshape(array, Base.size(array)[1:(axis - 1)]..., 1, Base.size(array)[axis:end]...)
+    elseif method === :zeros
+        __expand_zeros(array, axis, size)
+    elseif method === :repeat
+        __expand_repeat(array, axis, size)
+    else
         # method === :identity ? __expand_identity(array, axis, size) :
         throw(ArgumentError("method \"$method\" is not valid"))
+    end
 
-    inds = (Tenet.inds(tensor)[1:axis-1]..., label, Tenet.inds(tensor)[axis:end]...)
+    inds = (Tenet.inds(tensor)[1:(axis - 1)]..., label, Tenet.inds(tensor)[axis:end]...)
 
     return Tensor(data, inds)
 end
 
 function __expand_zeros(array, axis, size)
-    new = zeros(eltype(array), Base.size(array)[1:axis-1]..., size, Base.size(array)[axis:end]...)
+    new = zeros(eltype(array), Base.size(array)[1:(axis - 1)]..., size, Base.size(array)[axis:end]...)
 
     view = selectdim(new, axis, 1)
     copy!(view, array)
@@ -213,7 +221,9 @@ function __expand_zeros(array, axis, size)
     return new
 end
 
-__expand_repeat(array, axis, size) = repeat(
-    reshape(array, Base.size(array)[1:axis-1]..., 1, Base.size(array)[axis:end]...),
-    outer = (fill(1, axis - 1)..., size, fill(1, ndims(array) - axis + 1)...),
-)
+function __expand_repeat(array, axis, size)
+    return repeat(
+        reshape(array, Base.size(array)[1:(axis - 1)]..., 1, Base.size(array)[axis:end]...);
+        outer=(fill(1, axis - 1)..., size, fill(1, ndims(array) - axis + 1)...),
+    )
+end
