@@ -41,6 +41,8 @@ end
 
 Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
 This transformation is always used by default when visualizing a `TensorNetwork` with `plot`.
+
+See also: [`HyperGroup`](@ref).
 """
 struct HyperFlatten <: Transformation end
 
@@ -68,6 +70,35 @@ function transform!(tn::TensorNetwork, ::HyperFlatten)
         for (flatindex, tensor) in zip(flatindices, tensors)
             tensor = replace(tensor, hyperindex => flatindex)
             push!(tn, tensor)
+        end
+    end
+end
+
+"""
+    HyperGroup <: Transformation
+
+Convert COPY-tensors, represented by `DeltaArray`s, to hyperindices.
+
+See also: [`HyperFlatten`](@ref).
+"""
+struct HyperGroup <: Transformation end
+
+function transform!(tn::TensorNetwork, ::HyperGroup)
+    targets = Iterators.filter(x -> parenttype(x) isa DeltaArray, tensors(tn))
+    for tensor in targets
+        # remove COPY tensor
+        delete!(tn, target)
+
+        # insert hyperindex
+        hyperindex = uuid4()
+
+        # insert weights vector
+        if !all(isone, delta(parent(tensor)))
+            push!(tn, Tensor(delta(parent(tensor)), [hyperindex]))
+        end
+
+        for flatindex in inds(tensor)
+            replace!(tn, flatindex => hyperindex)
         end
     end
 end

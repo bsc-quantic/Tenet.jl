@@ -89,6 +89,7 @@ Base.replace(t::Tensor, old_new::Pair{Symbol,Symbol}...) = Tensor(parent(t), rep
 
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
+parenttype(::T) where {T<:Tensor} = parenttype(T)
 
 dim(::Tensor, i::Number) = i
 dim(t::Tensor, i::Symbol) = first(findall(==(i), inds(t)))
