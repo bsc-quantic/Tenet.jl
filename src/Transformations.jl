@@ -36,12 +36,12 @@ function transform!(tn::TensorNetwork, transformations)
 end
 
 """
-    HyperindConverter <: Transformation
+    HyperFlatten <: Transformation
 
 Convert hyperindices to COPY-tensors, represented by `DeltaArray`s.
 This transformation is always used by default when visualizing a `TensorNetwork` with `plot`.
 """
-struct HyperindConverter <: Transformation end
+struct HyperFlatten <: Transformation end
 
 function hyperflatten(tn::TensorNetwork)
     map(inds(tn, :hyper)) do hyperindex
@@ -52,7 +52,7 @@ function hyperflatten(tn::TensorNetwork)
     end |> Dict
 end
 
-function transform!(tn::TensorNetwork, ::HyperindConverter)
+function transform!(tn::TensorNetwork, ::HyperFlatten)
     for (flatindices, hyperindex) in hyperflatten(tn)
         # insert COPY tensor
         array = DeltaArray{length(flatindices)}(ones(size(tn, hyperindex)))
@@ -230,7 +230,8 @@ end
 """
     SplitSimplification <: Transformation
 
-Reduce the rank of tensors in the [`TensorNetwork`](@ref) by decomposing them using the Singular Value Decomposition (SVD). Tensors whose factorization do not increase the maximum rank of the network are left decomposed.
+Reduce the rank of tensors in the [`TensorNetwork`](@ref) by decomposing them using the Singular Value Decomposition (SVD).
+Tensors whose factorization do not increase the maximum rank of the network are left decomposed.
 
 # Keyword Arguments
 

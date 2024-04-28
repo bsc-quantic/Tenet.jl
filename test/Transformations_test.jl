@@ -18,8 +18,8 @@
         @test transform(tn, [MockTransformation()]) isa TensorNetwork
     end
 
-    @testset "HyperindConverter" begin
-        using Tenet: HyperindConverter
+    @testset "HyperFlatten" begin
+        using Tenet: HyperFlatten
 
         t_ij = Tensor(zeros(2, 2), (:i, :j))
         t_ik = Tensor(zeros(2, 2), (:i, :k))
@@ -27,7 +27,7 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        transform!(tn, HyperindConverter)
+        transform!(tn, HyperFlatten)
         @test isempty(inds(tn, :hyper))
 
         # TODO @test issetequal(neighbours())

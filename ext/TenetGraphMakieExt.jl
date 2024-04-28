@@ -46,7 +46,7 @@ end
 
 function Makie.plot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels = false, kwargs...)
     hypermap = Tenet.hyperflatten(tn)
-    tn = transform(tn, Tenet.HyperindConverter)
+    tn = transform(tn, Tenet.HyperFlatten)
 
     tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
 

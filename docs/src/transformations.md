@@ -55,7 +55,7 @@ transform!
 ### Hyperindex converter
 
 ```@docs
-Tenet.HyperindConverter
+Tenet.HyperFlatten
 ```
 
 ### Diagonal reduction
