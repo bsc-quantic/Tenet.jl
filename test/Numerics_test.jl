@@ -21,7 +21,7 @@
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
 
             C = contract(A; dims=(:i,))
-            C_ein = ein"ijk -> jk"(A)
+            C_ein = ein"ijk -> jk"(parent(A))
             @test inds(C) == [:j, :k]
             @test size(C) == size(C_ein) == (3, 4)
             @test parent(C) ≈ C_ein
@@ -31,7 +31,7 @@
             A = Tensor(rand(2, 3, 2), (:i, :j, :i))
 
             C = contract(A; dims=())
-            C_ein = ein"iji -> ij"(A)
+            C_ein = ein"iji -> ij"(parent(A))
             @test inds(C) == [:i, :j]
             @test size(C) == size(C_ein) == (2, 3)
             @test parent(C) ≈ C_ein
@@ -41,7 +41,7 @@
             A = Tensor(rand(2, 3, 2), (:i, :j, :i))
 
             C = contract(A; dims=(:i,))
-            C_ein = ein"iji -> j"(A)
+            C_ein = ein"iji -> j"(parent(A))
             @test inds(C) == [:j]
             @test size(C) == size(C_ein) == (3,)
             @test parent(C) ≈ C_ein
@@ -74,7 +74,7 @@
             B = Tensor(rand(2, 2), (:k, :l))
 
             C = contract(A, B)
-            C_ein = ein"ij, kl -> ijkl"(A, B)
+            C_ein = ein"ij, kl -> ijkl"(parent(A), parent(B))
             @test size(C) == (2, 2, 2, 2) == size(C_ein)
             @test inds(C) == [:i, :j, :k, :l]
             @test parent(C) ≈ C_ein
@@ -101,14 +101,14 @@
 
             # Contraction of all common indices
             C = contract(A, B; dims=(:j, :k))
-            C_ein = ein"ijk, klj -> il"(A, B)
+            C_ein = ein"ijk, klj -> il"(parent(A), parent(B))
             @test inds(C) == [:i, :l]
             @test size(C) == (2, 5) == size(C_ein)
             @test parent(C) ≈ C_ein
 
             # Contraction of not all common indices
             C = contract(A, B; dims=(:j,))
-            C_ein = ein"ijk, klj -> ikl"(A, B)
+            C_ein = ein"ijk, klj -> ikl"(parent(A), parent(B))
             @test inds(C) == [:i, :k, :l]
             @test size(C) == (2, 4, 5) == size(C_ein)
             @test parent(C) ≈ C_ein
@@ -118,7 +118,7 @@
                 B = Tensor(rand(Complex{Float64}, 4, 5, 3), (:k, :l, :j))
 
                 C = contract(A, B; dims=(:j, :k))
-                C_ein = ein"ijk, klj -> il"(A, B)
+                C_ein = ein"ijk, klj -> il"(parent(A), parent(B))
                 @test inds(C) == [:i, :l]
                 @test size(C) == (2, 5) == size(C_ein)
                 @test parent(C) ≈ C_ein
