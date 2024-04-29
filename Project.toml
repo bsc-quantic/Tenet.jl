@@ -33,7 +33,6 @@ TenetChainRulesExt = "ChainRules"
 TenetChainRulesTestUtilsExt = ["ChainRulesCore", "ChainRulesTestUtils"]
 TenetFiniteDifferencesExt = "FiniteDifferences"
 TenetGraphMakieExt = ["GraphMakie", "Makie"]
-TenetMakieExt = "Makie"
 
 [compat]
 AbstractTrees = "0.4"
