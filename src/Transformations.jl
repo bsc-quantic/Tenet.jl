@@ -48,8 +48,8 @@ struct HyperFlatten <: Transformation end
 
 function hyperflatten(tn::TensorNetwork)
     return Dict(
-        map(inds(tn, :hyper)) do hyperindex
-            n = length(select(tn, :any, hyperindex))
+        map(inds(tn; set=:hyper)) do hyperindex
+            n = length(tensors(tn, :any, hyperindex))
             map(1:n) do i
                 Symbol("$hyperindex$i")
             end => hyperindex
@@ -102,7 +102,7 @@ function transform!(tn::TensorNetwork, ::HyperGroup)
         end
 
         for flatindex in inds(tensor)
-            tensor = pop!(tn, only(select(tn, :containing, flatindex)))
+            tensor = pop!(tn, only(tensors(tn, :containing, flatindex)))
             tensor = replace(tensor, flatindex => hyperindex)
             push!(tn, tensor)
         end
@@ -128,7 +128,7 @@ end
 function transform!(tn::TensorNetwork, config::ContractSimplification)
     # select indices that benefit from contraction
     targets = filter(inds(tn; set=:inner)) do index
-        candidate_tensors = select(tn, :containing, index)
+        candidate_tensors = tensors(tn, :containing, index)
 
         # check that the contraction minimizes the size/rank
         result = sum([

@@ -2,7 +2,6 @@ using Base: AbstractVecOrTuple
 using Random
 using EinExprs
 using OMEinsum
-using ValSplit
 using LinearAlgebra
 
 """
@@ -73,7 +72,30 @@ Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
 
   - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
-tensors(tn::TensorNetwork) = sort!(collect(keys(tn.tensormap)); by=inds)
+function tensors(tn::TensorNetwork, query::Symbol=:all, args...; kwargs...)
+    if query === :all
+        tensors(tn, Val(:all))
+    elseif query === :containing
+        tensors(tn, Val(:containing), args...)
+    elseif query === :any
+        tensors(tn, Val(:any), args...)
+    else
+        throw(MethodError(tensors, "unknown query=$query"))
+    end
+end
+
+tensors(tn::TensorNetwork, ::Val{:all}) = sort!(collect(keys(tn.tensormap)); by=inds)
+
+tensors(tn::TensorNetwork, ::Val{:containing}, i::Symbol) = copy(tn.indexmap[i])
+tensors(tn::TensorNetwork, ::Val{:containing}, is::AbstractVecOrTuple{Symbol}) = tensors(⊆, tn, is)
+
+tensors(tn::TensorNetwork, ::Val{:any}, i::Symbol) = tensors(!isdisjoint, tn, [i])
+tensors(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = tensors(!isdisjoint, tn, is)
+
+function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+    return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+end
+
 arrays(tn::TensorNetwork) = parent.(tensors(tn))
 
 Base.collect(tn::TensorNetwork) = tensors(tn)
@@ -93,8 +115,21 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:hyper` Indices mentioned at least in three tensors.
       + `:parallel` Indices parallel to `i` in the graph (`i` included).
 """
-Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...) = inds(tn, set; kwargs...)
-@valsplit 2 Tenet.inds(tn::TensorNetwork, set::Symbol, args...) = throw(MethodError(inds, "unknown set=$set"))
+function Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...)
+    if set === :all
+        inds(tn, Val(:all))
+    elseif set === :open
+        inds(tn, Val(:open))
+    elseif set === :inner
+        inds(tn, Val(:inner))
+    elseif set === :hyper
+        inds(tn, Val(:hyper))
+    elseif set === :parallel
+        inds(tn, Val(:parallel), first(inds(tn)))
+    else
+        throw(MethodError(inds, "unknown set=$set"))
+    end
+end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:all})
     return collect(keys(tn.indexmap))
@@ -113,7 +148,7 @@ function Tenet.inds(tn::TensorNetwork, ::Val{:hyper})
 end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:parallel}, i::Symbol)
-    return mapreduce(inds, ∩, select(tn, :containing, i))
+    return mapreduce(inds, ∩, tensors(tn, :containing, i))
 end
 
 """
@@ -129,32 +164,6 @@ Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), in
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
-"""
-    select(tn::TensorNetwork, :containing, i)
-    select(tn::TensorNetwork, :any, i)
-    select(tn::TensorNetwork, :all, i)
-
-Return tensors whose indices match with the list of indices `i`.
-"""
-@valsplit 2 function select(tn::TensorNetwork, query::Symbol, args...)
-    return error("Query ':$query' not defined for TensorNetwork")
-end
-
-function select(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
-    return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
-end
-
-# TODO better naming?
-select(tn::TensorNetwork, ::Val{:containing}, i::Symbol) = copy(tn.indexmap[i])
-select(tn::TensorNetwork, ::Val{:containing}, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
-
-select(tn::TensorNetwork, ::Val{:any}, i::Symbol) = select(!isdisjoint, tn, [i])
-select(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = select(!isdisjoint, tn, is)
-
-# TODO `:all` is an alias for `:containing`. maybe change?
-select(tn::TensorNetwork, ::Val{:all}, i::Symbol) = copy(tn.indexmap[i])
-select(tn::TensorNetwork, ::Val{:all}, is::AbstractVecOrTuple{Symbol}) = select(⊆, tn, is)
-
 function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int=1)
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
@@ -162,7 +171,7 @@ end
 function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
-        select(tn, :any, index)
+        tensors(tn, :any, index)
     end
     open && filter!(x -> x !== tensor, tensors)
     return tensors
@@ -170,7 +179,7 @@ end
 
 function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
-    tensors = mapreduce(inds, ∪, select(tn, :any, i))
+    tensors = mapreduce(inds, ∪, tensors(tn, :any, i))
     # open && filter!(x -> x !== i, tensors)
     return tensors
 end
@@ -232,12 +241,12 @@ Base.pop!(tn::TensorNetwork, tensor::Tensor) = (delete!(tn, tensor); tensor)
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
 function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
-    tensors = select(tn, :any, i)
-    for tensor in tensors
+    tensorlist = tensors(tn, :any, i)
+    for tensor in tensorlist
         _ = pop!(tn, tensor)
     end
 
-    return tensors
+    return tensorlist
 end
 
 """
@@ -461,7 +470,7 @@ Search a contraction path for the given [`TensorNetwork`](@ref) and return it as
 
 See also: [`contract`](@ref).
 """
-function EinExprs.einexpr(tn::TensorNetwork; optimizer=Greedy, outputs=inds(tn, :open), kwargs...)
+function EinExprs.einexpr(tn::TensorNetwork; optimizer=Greedy, outputs=inds(tn; set=:open), kwargs...)
     return einexpr(
         optimizer,
         sum(
@@ -492,7 +501,7 @@ In-place contraction of tensors connected to `index`.
 See also: [`contract`](@ref).
 """
 function contract!(tn::TensorNetwork, i)
-    _tensors = sort!(select(tn, :any, i); by=length)
+    _tensors = sort!(tensors(tn, :any, i); by=length)
     tensor = contract(TensorNetwork(_tensors))
     delete!(tn, i)
     push!(tn, tensor)

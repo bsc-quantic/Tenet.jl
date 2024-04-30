@@ -28,7 +28,7 @@
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
         transform!(tn, HyperFlatten)
-        @test isempty(inds(tn, :hyper))
+        @test isempty(inds(tn; set=:hyper))
 
         # TODO @test issetequal(neighbours())
     end
@@ -40,7 +40,7 @@
             tn = TensorNetwork([Tensor(DeltaArray{3}(ones(2)), [:i, :j, :k])])
             transform!(tn, HyperGroup)
 
-            @test isempty(inds(tn, :hyper))
+            @test isempty(inds(tn; set=:hyper))
         end
 
         @testset "closed indices" begin
@@ -52,7 +52,7 @@
             ])
             transform!(tn, HyperGroup)
 
-            @test length(inds(tn, :hyper)) == 1
+            @test length(inds(tn; set=:hyper)) == 1
         end
     end
 

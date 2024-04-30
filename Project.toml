@@ -14,7 +14,6 @@ OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
-ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 
 [weakdeps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -51,5 +50,4 @@ OMEinsum = "0.7, 0.8"
 Random = "1.9"
 SparseArrays = "1.9"
 UUIDs = "1.9"
-ValSplit = "0.1"
 julia = "1.9"

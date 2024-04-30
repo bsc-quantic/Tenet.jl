@@ -14,8 +14,8 @@
             @test only(tensors(tn)) === tensor
             @test issetequal(inds(tn), [:i, :j])
             @test size(tn) == Dict(:i => 2, :j => 3)
-            @test issetequal(inds(tn, :open), [:i, :j])
-            @test isempty(inds(tn, :hyper))
+            @test issetequal(inds(tn; set=:open), [:i, :j])
+            @test isempty(inds(tn; set=:hyper))
         end
 
         @testset "TensorNetwork with tensors of different dimensions" begin
@@ -34,8 +34,8 @@
         @test length(tensors(tn)) == 1
         @test issetequal(inds(tn), [:i, :j, :k])
         @test size(tn) == Dict(:i => 2, :j => 2, :k => 2)
-        @test issetequal(inds(tn, :open), [:i, :j, :k])
-        @test isempty(inds(tn, :hyper))
+        @test issetequal(inds(tn; set=:open), [:i, :j, :k])
+        @test isempty(inds(tn; set=:hyper))
 
         @test_throws DimensionMismatch push!(tn, Tensor(zeros(3, 3), (:i, :j)))
 
@@ -111,14 +111,14 @@
         @test begin
             tn = TensorNetwork([Tensor(zeros(2), (:i,)), Tensor(zeros(2), (:i,)), Tensor(zeros(2), (:i,))])
 
-            issetequal(inds(tn, :hyper), [:i])
+            issetequal(inds(tn; set=:hyper), [:i])
         end
 
         @test begin
             tensor = Tensor(zeros(2, 2, 2), (:i, :i, :i))
             tn = TensorNetwork([tensor])
 
-            issetequal(inds(tn, :hyper), [:i])
+            issetequal(inds(tn; set=:hyper), [:i])
         end
 
         @test_broken begin
@@ -126,7 +126,7 @@
             tn = TensorNetwork()
             push!(tn, tensor)
 
-            issetequal(inds(tn, :hyper), [:i])
+            issetequal(inds(tn; set=:hyper), [:i])
         end
     end
 
@@ -154,9 +154,9 @@
         ],)
 
         @test issetequal(inds(tn), [:i, :j, :k, :l, :m])
-        @test issetequal(inds(tn, :open), [:j, :k])
-        @test issetequal(inds(tn, :inner), [:i, :l, :m])
-        @test issetequal(inds(tn, :hyper), [:i])
+        @test issetequal(inds(tn; set=:open), [:j, :k])
+        @test issetequal(inds(tn; set=:inner), [:i, :l, :m])
+        @test issetequal(inds(tn; set=:hyper), [:i])
     end
 
     @testset "size" begin
@@ -180,17 +180,17 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        @test issetequal(select(tn, :any, :i), (t_ij, t_ik, t_ilm))
-        @test issetequal(select(tn, :any, :j), (t_ij,))
-        @test issetequal(select(tn, :any, :k), (t_ik,))
-        @test issetequal(select(tn, :any, :l), (t_ilm, t_lm))
-        @test issetequal(select(tn, :any, :m), (t_ilm, t_lm))
-        @test issetequal(select(tn, :all, (:i, :j)), (t_ij,))
-        @test issetequal(select(tn, :all, (:i, :k)), (t_ik,))
-        @test issetequal(select(tn, :all, (:i, :l)), (t_ilm,))
-        @test issetequal(select(tn, :all, (:l, :m)), (t_ilm, t_lm))
-        @test_throws KeyError select(tn, :any, :_)
-        @test isempty(select(tn, :all, (:j, :l)))
+        @test issetequal(tensors(tn, :any, :i), (t_ij, t_ik, t_ilm))
+        @test issetequal(tensors(tn, :any, :j), (t_ij,))
+        @test issetequal(tensors(tn, :any, :k), (t_ik,))
+        @test issetequal(tensors(tn, :any, :l), (t_ilm, t_lm))
+        @test issetequal(tensors(tn, :any, :m), (t_ilm, t_lm))
+        @test issetequal(tensors(tn, :containing, (:i, :j)), (t_ij,))
+        @test issetequal(tensors(tn, :containing, (:i, :k)), (t_ik,))
+        @test issetequal(tensors(tn, :containing, (:i, :l)), (t_ilm,))
+        @test issetequal(tensors(tn, :containing, (:l, :m)), (t_ilm, t_lm))
+        @test_throws KeyError tensors(tn, :any, :_)
+        @test isempty(tensors(tn, :containing, (:j, :l)))
     end
 
     @testset "getindex" begin
@@ -254,13 +254,13 @@
             replace!(tn, mapping...)
 
             @test issetequal(inds(tn), (:u, :v, :w, :x, :y))
-            @test issetequal(inds(tn, :open), (:v, :w))
-            @test issetequal(inds(tn, :inner), (:u, :x, :y))
-            @test issetequal(inds(tn, :hyper), (:u,))
+            @test issetequal(inds(tn; set=:open), (:v, :w))
+            @test issetequal(inds(tn; set=:inner), (:u, :x, :y))
+            @test issetequal(inds(tn; set=:hyper), (:u,))
 
-            @test only(select(tn, :all, (:u, :v))) == replace(t_ij, mapping...)
-            @test only(select(tn, :all, (:u, :w))) == replace(t_ik, mapping...)
-            @test only(select(tn, :all, (:u, :x, :y))) == replace(t_ilm, mapping...)
+            @test only(tensors(tn, :containing, (:u, :v))) == replace(t_ij, mapping...)
+            @test only(tensors(tn, :containing, (:u, :w))) == replace(t_ik, mapping...)
+            @test only(tensors(tn, :containing, (:u, :x, :y))) == replace(t_ilm, mapping...)
         end
 
         @testset "replace tensors" begin

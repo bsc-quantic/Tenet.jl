@@ -52,7 +52,7 @@ function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels=
 
     graph = Graphs.SimpleGraph(length(tensors(tn)))
     for i in setdiff(inds(tn, :inner), inds(tn, :hyper))
-        edge_tensors = select(tn, :any, i)
+        edge_tensors = tensors(tn, :any, i)
 
         @assert length(edge_tensors) == 2
         a, b = edge_tensors
