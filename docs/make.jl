@@ -7,6 +7,7 @@ using Documenter
 using DocumenterCitations
 using Tenet
 using CairoMakie
+using GraphMakie
 using LinearAlgebra
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive=true)
@@ -14,7 +15,7 @@ DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive=true)
 bib = CitationBibliography(joinpath(@__DIR__, "refs.bib"); style=:authoryear)
 
 makedocs(;
-    modules=[Tenet, Base.get_extension(Tenet, :TenetMakieExt)],
+    modules=[Tenet, Base.get_extension(Tenet, :TenetGraphMakieExt)],
     sitename="Tenet.jl",
     authors="Sergio Sánchez Ramírez and contributors",
     pages=Any[

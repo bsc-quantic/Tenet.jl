@@ -51,10 +51,9 @@ delete!(::Tenet.TensorNetwork, ::Any)
 replace!
 ```
 
-## Selection
+## Slicing
 
 ```@docs
-select
 selectdim
 slice!
 view(::Tenet.TensorNetwork)
