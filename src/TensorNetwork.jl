@@ -3,6 +3,7 @@ using Random
 using EinExprs
 using OMEinsum
 using LinearAlgebra
+using Albacea
 
 """
     TensorNetwork
@@ -10,24 +11,24 @@ using LinearAlgebra
 Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
-struct TensorNetwork
+@testate struct TensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
     tensormap::IdDict{Tensor,Vector{Symbol}}
+end
 
-    function TensorNetwork(tensors)
-        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
+function TensorNetwork(tensors::Vector{<:Tensor})
+    tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
 
-        indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
-            # TODO check for inconsistent dimensions?
-            for index in inds(tensor)
-                # TODO use lambda? `Tensor[]` might be reused
-                push!(get!(dict, index, Tensor[]), tensor)
-            end
-            dict
+    indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
+        # TODO check for inconsistent dimensions?
+        for index in inds(tensor)
+            # TODO use lambda? `Tensor[]` might be reused
+            push!(get!(dict, index, Tensor[]), tensor)
         end
-
-        return new(indexmap, tensormap)
+        dict
     end
+
+    return TensorNetwork(indexmap, tensormap)
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
@@ -42,8 +43,17 @@ Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
 Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
 
-Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
+function Base.summary(io::IO, tn::TensorNetwork)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
+    return print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
+end
+
 function Base.show(io::IO, tn::TensorNetwork)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     return print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
 end
 
@@ -73,6 +83,9 @@ Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
   - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
 function tensors(tn::TensorNetwork, query::Symbol=:all, args...; kwargs...)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     if query === :all
         tensors(tn, Val(:all))
     elseif query === :containing
@@ -93,6 +106,9 @@ tensors(tn::TensorNetwork, ::Val{:any}, i::Symbol) = tensors(!isdisjoint, tn, [i
 tensors(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = tensors(!isdisjoint, tn, is)
 
 function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
 end
 
@@ -116,6 +132,9 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:parallel` Indices parallel to `i` in the graph (`i` included).
 """
 function Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     if set === :all
         inds(tn, Val(:all))
     elseif set === :open
@@ -159,12 +178,26 @@ Return a mapping from indices to their dimensionalities.
 
 If `index` is set, return the dimensionality of `index`. This is equivalent to `size(tn)[index]`.
 """
-Base.size(tn::TensorNetwork) = Dict{Symbol,Int}(index => size(tn, index) for index in keys(tn.indexmap))
-Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
+function Base.size(tn::TensorNetwork)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
+    return Dict{Symbol,Int}(index => size(tn, index) for index in keys(tn.indexmap))
+end
+
+function Base.size(tn::TensorNetwork, index::Symbol)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
+    return size(first(tn.indexmap[index]), index)
+end
 
 Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int=1)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
@@ -192,6 +225,9 @@ Add a new `tensor` to the Tensor Network.
 See also: [`append!`](@ref), [`pop!`](@ref).
 """
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     tensor ∈ keys(tn.tensormap) && return tn
 
     # check index sizes
@@ -256,9 +292,18 @@ Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
-tryprune!(tn::TensorNetwork, i::Symbol) = (x = isempty(tn.indexmap[i]) && delete!(tn.indexmap, i); x)
+function tryprune!(tn::TensorNetwork, i::Symbol)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
+    x = isempty(tn.indexmap[i]) && delete!(tn.indexmap, i)
+    return x
+end
 
 function Base.delete!(tn::TensorNetwork, tensor::Tensor)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     for index in unique(inds(tensor))
         filter!(Base.Fix1(!==, tensor), tn.indexmap[index])
         tryprune!(tn, index)
@@ -298,6 +343,9 @@ function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
 end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     first.(old_new) ⊆ keys(tn.indexmap) ||
         throw(ArgumentError("set of old indices must be a subset of current indices"))
     isdisjoint(last.(old_new), keys(tn.indexmap)) ||
@@ -309,6 +357,9 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
 end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     old, new = old_new
     old ∈ keys(tn.indexmap) || throw(ArgumentError("index $old does not exist"))
     old == new && return tn
@@ -346,8 +397,17 @@ end
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
 This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
 """
-Base.in(tensor::Tensor, tn::TensorNetwork) = tensor ∈ keys(tn.tensormap)
-Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
+function Base.in(tensor::Tensor, tn::TensorNetwork)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+    return tensor ∈ keys(tn.tensormap)
+end
+
+function Base.in(index::Symbol, tn::TensorNetwork)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+    return index ∈ keys(tn.indexmap)
+end
 
 """
     slice!(tn::TensorNetwork, index::Symbol, i)

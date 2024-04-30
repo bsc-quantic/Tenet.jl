@@ -252,6 +252,9 @@ Base.@kwdef struct AntiDiagonalGauging <: Transformation
 end
 
 function transform!(tn::TensorNetwork, config::AntiDiagonalGauging)
+    # access `TensorNetwork` supertype if child class
+    tn = TensorNetwork(tn)
+
     skip_inds = isempty(config.skip) ? inds(tn; set=:open) : config.skip
 
     for tensor in keys(tn.tensormap)
