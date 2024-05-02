@@ -72,25 +72,25 @@ Return a list of the `Tensor`s in the [`TensorNetwork`](@ref).
 
   - As the tensors of a [`TensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
-function tensors(tn::TensorNetwork, query::Symbol=:all, args...; kwargs...)
-    if query === :all
+function tensors(tn::TensorNetwork; kwargs...)
+    if isempty(kwargs)
         tensors(tn, Val(:all))
-    elseif query === :containing
-        tensors(tn, Val(:containing), args...)
-    elseif query === :any
-        tensors(tn, Val(:any), args...)
+    elseif only(keys(kwargs)) === :contains
+        tensors(tn, Val(:contains), kwargs[:contains])
+    elseif only(keys(kwargs)) === :intersects
+        tensors(tn, Val(:intersects), kwargs[:intersects])
     else
-        throw(MethodError(tensors, "unknown query=$query"))
+        throw(MethodError(tensors, "unknown query: $(keys(kwargs))"))
     end
 end
 
 tensors(tn::TensorNetwork, ::Val{:all}) = sort!(collect(keys(tn.tensormap)); by=inds)
 
-tensors(tn::TensorNetwork, ::Val{:containing}, i::Symbol) = copy(tn.indexmap[i])
-tensors(tn::TensorNetwork, ::Val{:containing}, is::AbstractVecOrTuple{Symbol}) = tensors(⊆, tn, is)
+tensors(tn::TensorNetwork, ::Val{:contains}, i::Symbol) = copy(tn.indexmap[i])
+tensors(tn::TensorNetwork, ::Val{:contains}, is::AbstractVecOrTuple{Symbol}) = tensors(⊆, tn, is)
 
-tensors(tn::TensorNetwork, ::Val{:any}, i::Symbol) = tensors(!isdisjoint, tn, [i])
-tensors(tn::TensorNetwork, ::Val{:any}, is::AbstractVecOrTuple{Symbol}) = tensors(!isdisjoint, tn, is)
+tensors(tn::TensorNetwork, ::Val{:intersects}, i::Symbol) = tensors(!isdisjoint, tn, [i])
+tensors(tn::TensorNetwork, ::Val{:intersects}, is::AbstractVecOrTuple{Symbol}) = tensors(!isdisjoint, tn, is)
 
 function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
     return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
@@ -113,21 +113,25 @@ Return the names of the indices in the [`TensorNetwork`](@ref).
       + `:open` Indices only mentioned in one tensor.
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
-      + `:parallel` Indices parallel to `i` in the graph (`i` included).
+      + `:parallelto` Indices parallel to `i` in the graph (`i` included).
 """
 function Tenet.inds(tn::TensorNetwork; set::Symbol=:all, kwargs...)
-    if set === :all
-        inds(tn, Val(:all))
-    elseif set === :open
-        inds(tn, Val(:open))
-    elseif set === :inner
-        inds(tn, Val(:inner))
-    elseif set === :hyper
-        inds(tn, Val(:hyper))
-    elseif set === :parallel
-        inds(tn, Val(:parallel), first(inds(tn)))
+    if isempty(kwargs)
+        if set === :all
+            inds(tn, Val(:all))
+        elseif set === :open
+            inds(tn, Val(:open))
+        elseif set === :inner
+            inds(tn, Val(:inner))
+        elseif set === :hyper
+            inds(tn, Val(:hyper))
+        else
+            throw(ArgumentError("unknown set: $(set)"))
+        end
+    elseif only(keys(kwargs)) === :parallelto
+        inds(tn, Val(:parallelto), kwargs[:parallelto])
     else
-        throw(MethodError(inds, "unknown set=$set"))
+        throw(MethodError(inds, "unknown query: $(keys(kwargs))"))
     end
 end
 
@@ -147,7 +151,7 @@ function Tenet.inds(tn::TensorNetwork, ::Val{:hyper})
     return map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
 end
 
-function Tenet.inds(tn::TensorNetwork, ::Val{:parallel}, i::Symbol)
+function Tenet.inds(tn::TensorNetwork, ::Val{:parallelto}, i::Symbol)
     return mapreduce(inds, ∩, tensors(tn, :containing, i))
 end
 
@@ -171,7 +175,7 @@ end
 function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
-        tensors(tn, :any, index)
+        tensors(tn; intersects=index)
     end
     open && filter!(x -> x !== tensor, tensors)
     return tensors
@@ -179,7 +183,7 @@ end
 
 function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
-    tensors = mapreduce(inds, ∪, tensors(tn, :any, i))
+    tensors = mapreduce(inds, ∪, tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
     return tensors
 end
@@ -241,7 +245,7 @@ Base.pop!(tn::TensorNetwork, tensor::Tensor) = (delete!(tn, tensor); tensor)
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
 function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
-    tensorlist = tensors(tn, :any, i)
+    tensorlist = tensors(tn; intersects=i)
     for tensor in tensorlist
         _ = pop!(tn, tensor)
     end
@@ -501,7 +505,7 @@ In-place contraction of tensors connected to `index`.
 See also: [`contract`](@ref).
 """
 function contract!(tn::TensorNetwork, i)
-    _tensors = sort!(tensors(tn, :any, i); by=length)
+    _tensors = sort!(tensors(tn; intersects=i); by=length)
     tensor = contract(TensorNetwork(_tensors))
     delete!(tn, i)
     push!(tn, tensor)

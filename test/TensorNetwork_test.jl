@@ -178,17 +178,17 @@
         t_lm = Tensor(zeros(2, 2), (:l, :m))
         tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-        @test issetequal(tensors(tn, :any, :i), (t_ij, t_ik, t_ilm))
-        @test issetequal(tensors(tn, :any, :j), (t_ij,))
-        @test issetequal(tensors(tn, :any, :k), (t_ik,))
-        @test issetequal(tensors(tn, :any, :l), (t_ilm, t_lm))
-        @test issetequal(tensors(tn, :any, :m), (t_ilm, t_lm))
-        @test issetequal(tensors(tn, :containing, (:i, :j)), (t_ij,))
-        @test issetequal(tensors(tn, :containing, (:i, :k)), (t_ik,))
-        @test issetequal(tensors(tn, :containing, (:i, :l)), (t_ilm,))
-        @test issetequal(tensors(tn, :containing, (:l, :m)), (t_ilm, t_lm))
-        @test_throws KeyError tensors(tn, :any, :_)
-        @test isempty(tensors(tn, :containing, (:j, :l)))
+        @test issetequal(tensors(tn; intersects=:i), (t_ij, t_ik, t_ilm))
+        @test issetequal(tensors(tn; intersects=:j), (t_ij,))
+        @test issetequal(tensors(tn; intersects=:k), (t_ik,))
+        @test issetequal(tensors(tn; intersects=:l), (t_ilm, t_lm))
+        @test issetequal(tensors(tn; intersects=:m), (t_ilm, t_lm))
+        @test issetequal(tensors(tn; contains=(:i, :j)), (t_ij,))
+        @test issetequal(tensors(tn; contains=(:i, :k)), (t_ik,))
+        @test issetequal(tensors(tn; contains=(:i, :l)), (t_ilm,))
+        @test issetequal(tensors(tn; contains=(:l, :m)), (t_ilm, t_lm))
+        @test_throws KeyError tensors(tn, intersects=:_)
+        @test isempty(tensors(tn; contains=(:j, :l)))
     end
 
     @testset "getindex" begin
@@ -256,9 +256,9 @@
             @test issetequal(inds(tn; set=:inner), (:u, :x, :y))
             @test issetequal(inds(tn; set=:hyper), (:u,))
 
-            @test only(tensors(tn, :containing, (:u, :v))) == replace(t_ij, mapping...)
-            @test only(tensors(tn, :containing, (:u, :w))) == replace(t_ik, mapping...)
-            @test only(tensors(tn, :containing, (:u, :x, :y))) == replace(t_ilm, mapping...)
+            @test only(tensors(tn; contains=(:u, :v))) == replace(t_ij, mapping...)
+            @test only(tensors(tn; contains=(:u, :w))) == replace(t_ik, mapping...)
+            @test only(tensors(tn; contains=(:u, :x, :y))) == replace(t_ilm, mapping...)
         end
 
         @testset "replace tensors" begin
