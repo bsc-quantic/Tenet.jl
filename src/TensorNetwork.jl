@@ -152,7 +152,7 @@ function Tenet.inds(tn::TensorNetwork, ::Val{:hyper})
 end
 
 function Tenet.inds(tn::TensorNetwork, ::Val{:parallelto}, i::Symbol)
-    return mapreduce(inds, ∩, tensors(tn, :containing, i))
+    return mapreduce(inds, ∩, tensors(tn; contains=i))
 end
 
 """

@@ -137,10 +137,10 @@ function transform!(tn::TensorNetwork, config::ContractSimplification)
         ])
 
         if config.minimize == :rank
-            return ndims(result) <= minimum(ndims, candidate_tensors)
+            return ndims(result) <= maximum(ndims, candidate_tensors)
         end
 
-        return length(result) <= minimum(length, candidate_tensors)
+        return removedsize(result) >= 0
     end
 
     # group parallel indices

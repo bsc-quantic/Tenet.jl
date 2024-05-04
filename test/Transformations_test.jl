@@ -152,10 +152,10 @@
 
         # Test that the resulting tn contains no tensors with larger rank than the original
         rank = length ∘ size ∘ parent
-        @test max(rank(tensors(reduced)) ≤ max(rank(tensors(tn))))
+        @test max(rank(tensors(reduced)) == max(rank(tensors(tn))))
 
         # Test that the resulting tn contains <= tensors than the original
-        @test length(tensors(reduced)) ≤ length(tensors(tn))
+        @test length(tensors(reduced)) == length(tensors(tn)) - 3
 
         # Test that the resulting contraction contains the same as the original
         @test contract(reduced) ≈ contract(tn)
