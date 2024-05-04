@@ -28,6 +28,7 @@ makedocs(;
         "Alternatives" => "alternatives.md",
         "References" => "references.md",
     ],
+    pagesonly=true,
     format=Documenter.HTML(;
         prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"]
     ),
