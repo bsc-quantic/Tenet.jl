@@ -11,3 +11,12 @@ ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::TensorNetwork) = conj(tn)
 
 # `Base.merge` methods
 ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(Base.merge), a::TensorNetwork, b::TensorNetwork) = merge(a, b), merge(ȧ, ḃ)
+
+# `contract` methods
+function ChainRulesCore.frule((_, ẋ), ::typeof(contract), x::Tensor; kwargs...)
+    return contract(x; kwargs...), contract(ẋ; kwargs...)
+end
+
+function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(contract), a::Tensor, b::Tensor; kwargs...)
+    return contract(a, b; kwargs...), contract(ȧ, ḃ; kwargs...)
+end

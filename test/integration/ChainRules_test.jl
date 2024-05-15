@@ -65,4 +65,62 @@
         test_frule(merge, TensorNetwork([a]), TensorNetwork([b]))
         test_rrule(merge, TensorNetwork([a]), TensorNetwork([b]))
     end
+
+    @testset "contract" begin
+        @testset "unary" begin
+            x = Tensor(fill(1.0), Symbol[])
+            test_frule(contract, x)
+            # test_rrule(contract, x; check_inferred=false)
+
+            x = Tensor(ones(2), Symbol[:i])
+            test_frule(contract, x)
+            # test_rrule(contract, x; check_inferred=false)
+
+            x = Tensor(ones(2, 3), Symbol[:i, :j])
+            test_frule(contract, x)
+            # test_rrule(contract, x; check_inferred=false)
+
+            x = Tensor(ones(2, 3), Symbol[:i, :j])
+            test_frule(contract, x; fkwargs=(dims=[:i],))
+            # test_rrule(contract, x; fkwargs=(dims=[:i],), check_inferred=false)
+        end
+
+        @testset "binary" begin
+            # scalar-scalar product
+            a = Tensor(ones(), Symbol[])
+            b = Tensor(2.0 * ones(), Symbol[])
+            # test_frule(contract, a, b; check_inferred=false, testset_name="scalar-scalar product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="scalar-scalar product")
+
+            # vector-vector inner product
+            a = Tensor(ones(2), (:i,))
+            b = Tensor(2.0 .* ones(2), (:i,))
+            # test_frule(contract, a, b; check_inferred=false, testset_name="vector-vector inner product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="vector-vector inner product")
+
+            # vector-vector outer product
+            a = Tensor(ones(2), (:i,))
+            b = Tensor(2.0 .* ones(3), (:j,))
+            # test_frule(contract, a, b; check_inferred=false, testset_name="vector-vector outer product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="vector-vector outer product")
+
+            # matrix-vector product
+            a = Tensor(ones(2, 3), (:i, :j))
+            b = Tensor(2.0 .* ones(3), (:j,))
+            # test_frule(contract, a, b; check_inferred=false, testset_name="matrix-vector product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="matrix-vector product")
+
+            # matrix-matrix product
+            a = Tensor(ones(4, 2), (:i, :j))
+            b = Tensor(2.0 .* ones(2, 3), (:j, :k))
+            # test_frule(contract, a, b; check_inferred=false, testset_name="matrix-matrix product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="matrix-matrix product")
+
+            # matrix-matrix inner product
+            a = Tensor(ones(3, 4), (:i, :j))
+            b = Tensor(ones(4, 3), (:j, :i))
+            # test_frule(contract, a, b; check_inferred=false, testset_name="matrix-matrix inner product")
+            test_rrule(contract, a, b; check_inferred=false, testset_name="matrix-matrix inner product")
+        end
+    end
 end

@@ -53,3 +53,31 @@ function ChainRulesCore.rrule(::typeof(Base.merge), a::TensorNetwork, b::TensorN
 
     return c, merge_pullback
 end
+
+# `contract` methods
+# function ChainRulesCore.rrule(::typeof(contract), x::Tensor; dims)
+#     y = contract(x; dims)
+
+#     function contract_pullback(ȳ)
+#         return (NoTangent(), ...) # TODO
+#     end
+#     contract_pullback(ȳ::AbstractThunk) = contract_pullback(unthunk(ȳ))
+
+#     return y, contract_pullback
+# end
+
+# TODO fix projectors: indices get permuted but projector doesn't know how to handle that
+function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs...)
+    c = contract(a, b; kwargs...)
+    # proj_a = ProjectTo(a)
+    # proj_b = ProjectTo(b)
+
+    function contract_pullback(c̄)
+        ā = @thunk contract(c̄, b)
+        b̄ = @thunk contract(a, c̄)
+        return (NoTangent(), ā, b̄)
+    end
+    contract_pullback(c̄::AbstractThunk) = contract_pullback(unthunk(c̄))
+
+    return c, contract_pullback
+end
