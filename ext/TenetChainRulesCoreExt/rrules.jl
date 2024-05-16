@@ -55,26 +55,35 @@ function ChainRulesCore.rrule(::typeof(Base.merge), a::TensorNetwork, b::TensorN
 end
 
 # `contract` methods
-# function ChainRulesCore.rrule(::typeof(contract), x::Tensor; dims)
-#     y = contract(x; dims)
+function ChainRulesCore.rrule(::typeof(contract), x::Tensor; kwargs...)
+    y = contract(x; kwargs...)
+    proj = ProjectTo(x)
 
-#     function contract_pullback(ȳ)
-#         return (NoTangent(), ...) # TODO
-#     end
-#     contract_pullback(ȳ::AbstractThunk) = contract_pullback(unthunk(ȳ))
+    function contract_pullback(ȳ)
+        y_shape_with_singletons = map(inds(x)) do i
+            i ∉ inds(ȳ) ? 1 : size(ȳ, i)
+        end
 
-#     return y, contract_pullback
-# end
+        dims_to_repeat = map(zip(size(x), y_shape_with_singletons .== 1)) do (dₓ, issingleton)
+            issingleton ? dₓ : 1
+        end
+        x̄ = proj(repeat(reshape(parent(ȳ), y_shape_with_singletons...), dims_to_repeat...))
 
-# TODO fix projectors: indices get permuted but projector doesn't know how to handle that
+        return (NoTangent(), x̄)
+    end
+    contract_pullback(ȳ::AbstractThunk) = contract_pullback(unthunk(ȳ))
+
+    return y, contract_pullback
+end
+
 function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs...)
     c = contract(a, b; kwargs...)
-    # proj_a = ProjectTo(a)
-    # proj_b = ProjectTo(b)
+    proj_a = ProjectTo(a)
+    proj_b = ProjectTo(b)
 
     function contract_pullback(c̄)
-        ā = @thunk contract(c̄, b)
-        b̄ = @thunk contract(a, c̄)
+        ā = @thunk proj_a(contract(c̄, b; out=inds(a)))
+        b̄ = @thunk proj_b(contract(a, c̄; out=inds(b)))
         return (NoTangent(), ā, b̄)
     end
     contract_pullback(c̄::AbstractThunk) = contract_pullback(unthunk(c̄))

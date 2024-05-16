@@ -31,12 +31,16 @@ end
 
 Perform tensor contraction operation.
 """
-function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))))
+function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothing)
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
-    ic = setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    ic::Vector{Symbol} = if isnothing(out)
+        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    else
+        out
+    end
 
     _ia = __omeinsum_sym2str(ia)
     _ib = __omeinsum_sym2str(ib)
@@ -47,11 +51,15 @@ function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))))
     return Tensor(data, ic)
 end
 
-function contract(a::Tensor; dims=nonunique(inds(a)))
+function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
     ia = inds(a)
     i = ∩(dims, ia)
 
-    ic = setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))
+    ic::Vector{Symbol} = if isnothing(out)
+        setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))
+    else
+        out
+    end
 
     data = EinCode((String.(ia),), String.(ic))(parent(a))
 

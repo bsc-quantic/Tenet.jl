@@ -70,19 +70,19 @@
         @testset "unary" begin
             x = Tensor(fill(1.0), Symbol[])
             test_frule(contract, x)
-            # test_rrule(contract, x; check_inferred=false)
+            test_rrule(contract, x; check_inferred=false)
 
             x = Tensor(ones(2), Symbol[:i])
             test_frule(contract, x)
-            # test_rrule(contract, x; check_inferred=false)
+            test_rrule(contract, x; check_inferred=false)
 
             x = Tensor(ones(2, 3), Symbol[:i, :j])
             test_frule(contract, x)
-            # test_rrule(contract, x; check_inferred=false)
+            test_rrule(contract, x; check_inferred=false)
 
             x = Tensor(ones(2, 3), Symbol[:i, :j])
             test_frule(contract, x; fkwargs=(dims=[:i],))
-            # test_rrule(contract, x; fkwargs=(dims=[:i],), check_inferred=false)
+            test_rrule(contract, x; fkwargs=(dims=[:i],), check_inferred=false)
         end
 
         @testset "binary" begin
