@@ -18,5 +18,7 @@ function ChainRulesCore.frule((_, ẋ), ::typeof(contract), x::Tensor; kwargs...
 end
 
 function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(contract), a::Tensor, b::Tensor; kwargs...)
-    return contract(a, b; kwargs...), contract(ȧ, ḃ; kwargs...)
+    c = contract(a, b; kwargs...)
+    ċ = contract(ȧ, b; kwargs...) + contract(a, ḃ; kwargs...)
+    return c, ċ
 end
