@@ -81,7 +81,7 @@ function codegen(::Val{:outplace}, path::EinExpr)
         end
 
         function $fname($(args...))
-            $(map(Iterators.flatten([Leaves(path), Branches(path)])) do node
+            $(map(Leaves(path)) do node
                 i = ssa[node]
                 name = Symbol(:ssa, i)
                 :($name = Tensor($name, $(head(node))))
