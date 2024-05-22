@@ -410,7 +410,14 @@ Generate a random tensor network.
   - `globalind` Add a global 'broadcast' dimension to every tensor.
 """
 function Base.rand(
-    ::Type{TensorNetwork}, n::Integer, regularity::Integer; out=0, dim=2:9, seed=nothing, globalind=false
+    ::Type{TensorNetwork},
+    n::Integer,
+    regularity::Integer;
+    out=0,
+    dim=2:9,
+    seed=nothing,
+    globalind=false,
+    eltype=Float64,
 )
     !isnothing(seed) && Random.seed!(seed)
 
@@ -443,7 +450,7 @@ function Base.rand(
         push!.(inputs, (ind,))
     end
 
-    tensors = Tensor[Tensor(rand([size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
+    tensors = Tensor[Tensor(rand(eltype, [size_dict[ind] for ind in input]...), tuple(input...)) for input in inputs]
     return TensorNetwork(tensors)
 end
 
