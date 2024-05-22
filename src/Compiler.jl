@@ -36,10 +36,24 @@ function codegen(::Val{:inplace}, path::EinExpr)
         return :(contract!($ssa_c, $ssa_a, $ssa_b))
     end
 
-    :(function $(gensym(:contract_compiled))($(args...))
-        $(ssa_eincodes...)
-        return $(Symbol(:ssa, ssa[path]))
-    end)
+    fname = gensym(:contract_compiled!)
+
+    quote
+        function $fname($(args...))
+            $(ssa_eincodes...)
+            return $(Symbol(:ssa, ssa[path]))
+        end
+
+        function $fname($(args...))
+            $(map(Iterators.flatten([Leaves(path), Branches(path)])) do node
+                i = ssa[node]
+                name = Symbol(:ssa, i)
+                :($name = Tensor($name, $(head(node))))
+            end...)
+
+            return $fname($(args...))
+        end
+    end
 end
 
 function codegen(::Val{:outplace}, path::EinExpr)
