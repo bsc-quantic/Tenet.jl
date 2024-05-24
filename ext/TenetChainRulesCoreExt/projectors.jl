@@ -31,3 +31,4 @@ function (projector::ProjectTo{TensorNetwork})(dx)
         end,
     )
 end
+(projector::ProjectTo{TensorNetwork})(dx::Vector{<:Tensor}) = projector(TensorNetwork(dx))
