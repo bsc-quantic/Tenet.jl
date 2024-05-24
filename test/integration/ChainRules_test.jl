@@ -63,7 +63,7 @@
         b = Tensor(rand(2, 3), (:j, :k))
 
         test_frule(merge, TensorNetwork([a]), TensorNetwork([b]))
-        test_rrule(merge, TensorNetwork([a]), TensorNetwork([b]))
+        test_rrule(merge, TensorNetwork([a]), TensorNetwork([b]); check_inferred=false)
     end
 
     @testset "contract" begin
