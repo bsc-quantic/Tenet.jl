@@ -189,10 +189,16 @@ function Base.view(t::Tensor, inds::Pair{Symbol,<:Any}...)
     end
 end
 
-Base.adjoint(t::Tensor) = Tensor(conj(parent(t)), inds(t))
+# NOTE: `conj` is automatically managed because `Tensor` inherits from `AbstractArray`,
+# but there is a bug when calling `conj` on `Tensor{T,0}` which makes it return a `Tensor{Tensor{Complex, 0}, 0}`
+Base.conj(x::Tensor{<:Complex,0}) = Tensor(conj(parent(x)), Symbol[])
+
+# NOTE: `adjoint` ≠ `transpose` ∘ `conj`
+# in our case, `adjoint` is just an alias for `conj`
+Base.adjoint(t::Tensor) = conj(t)
 
 # NOTE: Maybe use transpose for lazy transposition ?
-Base.transpose(t::Tensor{T,1,A}) where {T,A<:AbstractArray{T,1}} = permutedims(t, (1,))
+Base.transpose(t::Tensor{T,1,A}) where {T,A<:AbstractArray{T,1}} = copy(t)
 Base.transpose(t::Tensor{T,2,A}) where {T,A<:AbstractArray{T,2}} = Tensor(transpose(parent(t)), reverse(inds(t)))
 
 function expand(tensor::Tensor; label, axis=1, size=1, method=:zeros)

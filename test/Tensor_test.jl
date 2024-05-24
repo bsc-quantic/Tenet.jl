@@ -154,27 +154,31 @@
         @test all(x -> ==(x...), zip(tensor, data))
     end
 
-    @testset "adjoint" begin
+    @testset "conj/adjoint" begin
+        @testset "scalar" begin
+            tensor = Tensor(fill(1.0 + 1.0im), Symbol[])
+
+            @test inds(conj(tensor)) == Symbol[]
+            @test isapprox(conj(tensor), 1.0 - 1.0im)
+            @test adjoint(tensor) == conj(tensor)
+        end
+
         @testset "Vector" begin
-            data = rand(Complex{Float64}, 2)
+            data = fill(1.0 + 1.0im, 2)
             tensor = Tensor(data, (:i,))
 
-            @test inds(adjoint(tensor)) == inds(tensor)
-            @test ndims(adjoint(tensor)) == 1
-
-            @test isapprox(only(tensor' * tensor), data' * data)
+            @test inds(conj(tensor)) == [:i]
+            @test all(isapprox.(conj(tensor), fill(1.0 - 1.0im, size(data)...)))
+            @test adjoint(tensor) == conj(tensor)
         end
 
         @testset "Matrix" begin
-            using LinearAlgebra: tr
-
-            data = rand(Complex{Float64}, 2, 2)
+            data = fill(1.0 + 1.0im, 2, 2)
             tensor = Tensor(data, (:i, :j))
 
-            @test inds(adjoint(tensor)) == inds(tensor)
-            @test ndims(adjoint(tensor)) == 2
-
-            @test isapprox(only(tensor' * tensor), tr(data' * data))
+            @test inds(adjoint(tensor)) == [:i, :j]
+            @test all(isapprox.(conj(tensor), fill(1.0 - 1.0im, size(data)...)))
+            @test adjoint(tensor) == conj(tensor)
         end
     end
 
@@ -183,22 +187,18 @@
             data = rand(Complex{Float64}, 2)
             tensor = Tensor(data, (:i,))
 
-            @test inds(transpose(tensor)) == inds(tensor)
+            @test inds(transpose(tensor)) == [:i]
             @test ndims(transpose(tensor)) == 1
-
-            @test isapprox(only(transpose(tensor) * tensor), transpose(data) * data)
+            @test all(isapprox.(transpose(tensor), data))
         end
 
         @testset "Matrix" begin
-            using LinearAlgebra: tr
-
             data = rand(Complex{Float64}, 2, 2)
             tensor = Tensor(data, (:i, :j))
 
             @test inds(transpose(tensor)) == [:j, :i]
             @test ndims(transpose(tensor)) == 2
-
-            @test isapprox(only(transpose(tensor) * tensor), tr(transpose(data) * data))
+            @test all(isapprox.(transpose(tensor), transpose(data)))
         end
     end
 
