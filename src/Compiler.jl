@@ -1,5 +1,7 @@
 using EinExprs
 using AbstractTrees
+using MLIR
+using Reactant
 
 function compile(path::EinExpr; inplace::Bool=false)
     expr = if inplace
