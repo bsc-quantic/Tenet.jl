@@ -236,8 +236,7 @@ function contract(
 
     op_a = parent(a).mlir_data
     op_b = parent(b).mlir_data
-    # rsize = [i ∈ ia ? size(a, i) : size(b, i) for i in ic]
-    rsize = size(a)
+    rsize = Tuple(i ∈ ia ? size(a, i) : size(b, i) for i in ic)
     result_0 = Reactant.MLIR.IR.TensorType(rsize, mlirty)
     einsum_config = Reactant.MLIR.IR.Attribute("$(join(ia)),$(join(ib))->$(join(ic))")
 
