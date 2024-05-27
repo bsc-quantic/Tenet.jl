@@ -42,9 +42,9 @@ Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
 Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
 
-Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(length(tn.tensormap))-tensors TensorNetwork")
+Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(ntensors(tn))-tensors TensorNetwork")
 function Base.show(io::IO, tn::TensorNetwork)
-    return print(io, "TensorNetwork (#tensors=$(length(tn.tensormap)), #inds=$(length(tn.indexmap)))")
+    return print(io, "TensorNetwork (#tensors=$(ntensors(tn)), #inds=$(ninds(tn)))")
 end
 
 function Base.:(==)(a::TensorNetwork, b::TensorNetwork)
@@ -154,6 +154,24 @@ end
 function Tenet.inds(tn::TensorNetwork, ::Val{:parallelto}, i::Symbol)
     return mapreduce(inds, ∩, tensors(tn; contains=i))
 end
+
+"""
+    ntensors(tn::TensorNetwork)
+
+Return the number of tensors in the `TensorNetwork`.
+
+See also: [`ninds`](@ref)
+"""
+ntensors(tn::TensorNetwork) = length(tn.tensormap)
+
+"""
+    ninds(tn::TensorNetwork)
+
+Return the number of indices in the `TensorNetwork`.
+
+See also: [`ntensors`](@ref)
+"""
+ninds(tn::TensorNetwork) = length(tn.indexmap)
 
 """
     size(tn::TensorNetwork)
