@@ -105,3 +105,21 @@ function codegen(::Val{:outplace}, path::EinExpr)
         end
     end
 end
+
+function codegen(::Val{:TensorNetwork_from_arrays}, tn::TensorNetwork)
+    args = map(1:ntensors(tn)) do i
+        Symbol(:arg_, i)
+    end
+
+    fname = gensym(:TensorNetwork_from_arrays)
+
+    quote
+        function $fname($(args...))
+            deserialized_tensors = Tensor[$(map(enumerate(tensors(tn))) do (i, tensor)
+                :(Tensor($(Symbol(:arg_, i)), $(inds(tensor))))
+            end...)]
+
+            return TensorNetwork(deserialized_tensors)
+        end
+    end
+end
