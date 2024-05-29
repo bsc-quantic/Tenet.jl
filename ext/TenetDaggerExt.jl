@@ -41,6 +41,8 @@ function selectdims(a, proj::Pair...)
     end
 end
 
+contractfn(ic, chunk_a, ia, chunk_b, ib) = parent(contract(Tensor(chunk_a, ia), Tensor(chunk_b, ib); out=ic))
+
 function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     domain = Dagger.ArrayDomain([1:l for l in size(op)])
     partitioning = Dagger.Blocks(op)
@@ -81,7 +83,8 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         chunks[indices...] = Dagger.treereduce(
             Dagger.AddComputeOp,
             map(chunks_a, chunks_b) do chunk_a, chunk_b
-                Dagger.@spawn parent(contract(Tensor(chunk_a, op.ia), Tensor(chunk_b, op.ib); out=op.ic))
+                # TODO add ThunkOptions: alloc_util, occupancy, ...
+                Dagger.@spawn contractfn(op.ic, chunk_a, op.ia, chunk_b, op.ib)
             end,
         )
     end
