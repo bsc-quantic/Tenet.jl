@@ -109,4 +109,11 @@ function Tenet.contract(
     return Tensor(data, ic)
 end
 
+Tenet.contract(a::Tensor, b::Tensor{T,N,A}; kwargs...) where {T,N,A<:Dagger.DArray} = contract(b, a; kwargs...)
+function Tenet.contract(a::Tensor{T,N,A}, b::Tensor; kwargs...) where {T,N,A<:Dagger.DArray}
+    throw(
+        ArgumentError("contract on a Dagger.DArray-backed Tensor with a non-DArray-backed Tensor is not yet supported")
+    )
+end
+
 end
