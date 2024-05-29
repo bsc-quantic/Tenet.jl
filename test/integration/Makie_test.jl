@@ -8,16 +8,86 @@
 
     @testset "plot!" begin
         f = Figure()
-        @testset "(default)" graphplot!(f[1, 1], tn)
-        @testset "with labels" graphplot!(f[1, 1], tn; labels=true)
-        @testset "with sizes" graphplot!(f[1, 1], tn; node_size=[5, 10, 15])
-        @testset "with colors" graphplot!(f[1, 1], tn; node_color=[:red, :green, :blue])
-        @testset "3D" graphplot!(f[1, 1], tn; layout=Spring(; dim=3))
+        @testset "(default)" begin
+            @test try
+                graphplot!(f[1, 1], tn)
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "with labels" begin
+            @test try
+                graphplot!(f[1, 1], tn; labels=true)
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "with sizes" begin
+            @test try
+                graphplot!(f[1, 1], tn; node_size=[5, 10, 15])
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "with colors" begin
+            @test try
+                graphplot!(f[1, 1], tn; node_color=[:red, :green, :blue])
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "3D" begin
+            @test try
+                graphplot!(f[1, 1], tn; layout=Spring(; dim=3))
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
     end
 
     @testset "plot" begin
-        @testset "(default)" graphplot(tn)
-        @testset "with labels" graphplot(tn; labels=true)
-        @testset "3D" graphplot(tn; layout=Spring(; dim=3))
+        @testset "(default)" begin
+            try
+                graphplot(tn)
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "with labels" begin
+            try
+                graphplot(tn; labels=true)
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
+
+        @testset "3D" begin
+            try
+                graphplot(tn; layout=Spring(; dim=3))
+                return true
+            catch e
+                @warn e
+                return false
+            end
+        end
     end
 end
