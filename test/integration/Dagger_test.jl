@@ -54,4 +54,6 @@ using Distributed
             end
         end
     end
+
+    rmprocs(workers())
 end
