@@ -1,9 +1,10 @@
-@testset "Dagger" begin
-    using Tenet
-    using Dagger
-    using Distributed
+using Tenet
+using Dagger
+using Distributed
 
+@testset "Dagger" begin
     addprocs(1)
+    @everywhere using Dagger, Tenet
 
     @testset "Tensor" begin
         data = rand(4, 4)
