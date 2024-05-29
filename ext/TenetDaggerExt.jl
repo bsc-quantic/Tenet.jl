@@ -20,7 +20,17 @@ struct Contract{T,N} <: ArrayOp{T,N}
 end
 
 function Base.size(x::Contract)
-    return Tuple(i ∈ x.ia ? size(x.a, findfirst(==(i), x.ia)) : size(x.b, findfirst(==(i), x.ib) for i in x.ic))
+    return Tuple(
+        Iterators.map(x.ic) do i
+            if i ∈ x.ia
+                size(x.a, findfirst(==(i), x.ia))
+            elseif i ∈ x.ib
+                size(x.b, findfirst(==(i), x.ib))
+            else
+                throw(ErrorException("index $i not found in a nor b"))
+            end
+        end,
+    )
 end
 
 function Dagger.Blocks(x::Contract)
