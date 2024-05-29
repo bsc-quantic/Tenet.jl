@@ -1,7 +1,7 @@
 module TenetDaggerExt
 
 using Tenet
-using Dagger: Dagger, ArrayOp, Context, ArrayDomain
+using Dagger: Dagger, ArrayOp, Context, ArrayDomain, EagerThunk, DArray
 
 struct Contract{T,N} <: ArrayOp{T,N}
     ic::Vector{Symbol}
