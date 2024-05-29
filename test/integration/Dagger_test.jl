@@ -8,8 +8,7 @@ using Distributed
 
     @testset "Tensor" begin
         data = rand(4, 4)
-        block_sizes = ([2, 2], [2, 2])
-        block_array = DArray(data, block_sizes...)
+        block_array = DArray(data, Dagger.Blocks(2, 2))
         indices = (:i, :j)
 
         tensor = Tensor(data, indices)
@@ -22,7 +21,6 @@ using Distributed
     @testset "contract" begin
         @testset "block-block" begin
             data1, data2 = rand(4, 4), rand(4, 4)
-            block_sizes1, block_sizes2 = ([3, 1], [2, 2]), ([1, 3], [2, 2])
             block_array1 = distribute(data1, Dagger.Blocks(2, 2))
             block_array2 = distribute(data2, Dagger.Blocks(2, 2))
 
