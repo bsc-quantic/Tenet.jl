@@ -60,8 +60,8 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     # NOTE careful with ÷ for dividing into partitions
     subdomains = Array{ArrayDomain{N}}(undef, map(÷, size(op), partitioning.blocksize))
     for indices in eachindex(IndexCartesian(), subdomains)
-        subdomains[indices...] = ArrayDomain(
-            map(indices, partitioning.blocksize) do i, step
+        subdomains[indices] = ArrayDomain(
+            map(Tuple(indices), partitioning.blocksize) do i, step
                 (i - 1) * step .+ (1:step)
             end,
         )
@@ -78,19 +78,19 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
 
     chunks = similar(subdomains, EagerThunk)
     for indices in eachindex(IndexCartesian(), chunks)
-        outer_indices_a = indices[mask_a]
+        outer_indices_a = Tuple(indices)[mask_a]
         chunks_a = reduce(zip(outer_perm_a, outer_indices_a); init=Dagger.chunks(op.a)) do acc, (d, i)
             selectdim(acc, d, i:i)
         end
         chunks_a = permutedims(chunks_a, inner_perm_a)
 
-        outer_indices_b = indices[mask_b]
+        outer_indices_b = Tuple(indices)[mask_b]
         chunks_b = reduce(zip(outer_perm_b, outer_indices_b); init=Dagger.chunks(op.b)) do acc, (d, i)
             selectdim(acc, d, i:i)
         end
         chunks_b = permutedims(chunks_b, inner_perm_b)
 
-        chunks[indices...] = Dagger.treereduce(
+        chunks[indices] = Dagger.treereduce(
             Dagger.AddComputeOp,
             map(chunks_a, chunks_b) do chunk_a, chunk_b
                 # TODO add ThunkOptions: alloc_util, occupancy, ...
