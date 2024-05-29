@@ -55,10 +55,6 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         )
     end
 
-    contractor = EinCode(
-        (Tenet.__omeinsum_sym2str(op.ia), Tenet.__omeinsum_sym2str(op.ib)), Tenet.__omeinsum_sym2str(op.ic)
-    )
-
     suminds = setdiff(op.ia ∪ op.ib, op.ic)
     inner_perm_a = map(i -> findfirst(==(i), op.ia), suminds)
     inner_perm_b = map(i -> findfirst(==(i), op.ib), suminds)
@@ -85,7 +81,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
         chunks[indices...] = Dagger.treereduce(
             Dagger.AddComputeOp,
             map(chunks_a, chunks_b) do chunk_a, chunk_b
-                Dagger.@spawn contractor(chunk_a, chunk_b)
+                Dagger.@spawn parent(contract(Tensor(chunk_a, op.ia), Tensor(chunk_b, op.ib); out=op.ic))
             end,
         )
     end
