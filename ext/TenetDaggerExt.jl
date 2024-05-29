@@ -71,8 +71,8 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     inner_perm_a = map(i -> findfirst(==(i), op.ia), suminds)
     inner_perm_b = map(i -> findfirst(==(i), op.ib), suminds)
 
-    mask_a = op.ic .∈ op.ia
-    mask_b = op.ic .∈ op.ib
+    mask_a = op.ic .∈ (op.ia,)
+    mask_b = op.ic .∈ (op.ib,)
     outer_perm_a = map(i -> findfirst(==(i), op.ia), op.ic[mask_a])
     outer_perm_b = map(i -> findfirst(==(i), op.ib), op.ic[mask_b])
 
