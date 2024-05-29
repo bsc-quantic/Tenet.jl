@@ -4,18 +4,18 @@ using Tenet
 using Dagger: Dagger, ArrayOp, Context, ArrayDomain
 
 struct Contract{T,N} <: ArrayOp{T,N}
+    ic::Vector{Symbol}
     a::ArrayOp
     ia::Vector{Symbol}
     b::ArrayOp
     ib::Vector{Symbol}
-    ic::Vector{Symbol}
 
-    function Contract(a, ia, b, ib, ic)
+    function Contract(ic, a, ia, b, ib)
         allunique(ia) || throw(ErrorException("ia must have unique indices"))
         allunique(ib) || throw(ErrorException("ib must have unique indices"))
         allunique(ic) || throw(ErrorException("ic must have unique indices"))
         ic ⊆ ia ∪ ib || throw(ErrorException("ic must be a subset of ia ∪ ib"))
-        return new{promote_type(eltype(a), eltype(b)),length(ic)}(a, ia, b, ib, ic)
+        return new{promote_type(eltype(a), eltype(b)),length(ic)}(ic, a, ia, b, ib)
     end
 end
 
@@ -90,16 +90,19 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
 end
 
 function Tenet.contract(
-    a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; dims=(∩(inds(a), inds(b)))
+    a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; dims=(∩(inds(a), inds(b))), out=nothing
 ) where {Ta,Tb,Na,Nb,Aa<:Dagger.DArray{Ta,Na},Ab<:Dagger.DArray{Tb,Nb}}
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
-    ic = setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    ic::Vector{Symbol} = if isnothing(out)
+        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    else
+        out
+    end
 
-    data = Dagger._to_darray(Contract(parent(a), ia, parent(b), ib, ic))
-
+    data = Dagger._to_darray(Contract(ic, parent(a), ia, parent(b), ib))
     return Tensor(data, ic)
 end
 
