@@ -46,7 +46,7 @@ function Dagger.Blocks(x::Contract)
 end
 
 function selectdims(a, proj::Pair...)
-    reduce(proj; init=a) do acc, (d, i)
+    return reduce(proj; init=a) do acc, (d, i)
         selectdim(acc, d, i)
     end
 end
