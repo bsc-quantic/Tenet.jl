@@ -15,6 +15,7 @@ if VERSION >= v"1.10"
     @testset "Integration tests" verbose = true begin
         include("integration/ChainRules_test.jl")
         # include("integration/BlockArray_test.jl")
+        include("integration/Dagger_test.jl")
         include("integration/Makie_test.jl")
     end
 end
