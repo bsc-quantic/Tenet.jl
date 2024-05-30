@@ -34,7 +34,7 @@ using Distributed
 
             @test parent(contracted_block_tensor) isa DArray
             @test inds(contracted_block_tensor) == [:i, :k]
-            @test all(==((2, 2)) ∘ size, Dagger.subdomainchunks(parent(contracted_block_tensor)))
+            @test all(==((2, 2)) ∘ size, Dagger.domainchunks(parent(contracted_block_tensor)))
             @test collect(parent(contracted_block_tensor)) ≈ parent(contracted_tensor)
         end
 
