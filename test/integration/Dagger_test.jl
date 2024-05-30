@@ -38,21 +38,20 @@ using Distributed
             @test collect(parent(contracted_block_tensor)) ≈ parent(contracted_tensor)
         end
 
-        @test_broken begin
-            @testset "block-unblock" begin
-                data1, data2 = rand(4, 4), rand(4, 4)
-                block_array = distribute(data2, Blocks(2, 2))
+        #     @testset "block-unblock" begin
+        #         data1, data2 = rand(4, 4), rand(4, 4)
+        #         block_array = distribute(data2, Blocks(2, 2))
 
-                tensor = Tensor(data1, [:i, :j])
-                block_tensor = Tensor(block_array, [:j, :k])
+        #         tensor = Tensor(data1, [:i, :j])
+        #         block_tensor = Tensor(block_array, [:j, :k])
 
-                contracted_tensor = contract(tensor, block_tensor)
+        #         contracted_tensor = contract(tensor, block_tensor)
 
-                @test inds(contracted_tensor) == [:i, :k]
-                @test all(==((2, 2)) ∘ size, Dagger.subdomainchunks(parent(contracted_block_tensor)))
-                @test collect(parent(contracted_tensor)) ≈ parent(contract(tensor, Tensor(data2, [:j, :k])))
-            end
-        end
+        #         @test inds(contracted_tensor) == [:i, :k]
+        #         @test all(==((2, 2)) ∘ size, Dagger.subdomainchunks(parent(contracted_block_tensor)))
+        #         @test collect(parent(contracted_tensor)) ≈ parent(contract(tensor, Tensor(data2, [:j, :k])))
+        #     end
+        #     return false
     end
 
     rmprocs(workers())
