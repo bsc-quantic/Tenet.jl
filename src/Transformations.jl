@@ -118,37 +118,40 @@ Preemptively contract tensors whose result doesn't increase in size.
 """
 @kwdef struct ContractSimplification <: Transformation
     minimize::Symbol = :length
+    recursive::Bool = true
 
-    function ContractSimplification(minimize::Symbol)
+    function ContractSimplification(minimize::Symbol, recursive::Bool=true)
         @assert minimize in (:length, :rank)
-        return new(minimize)
+        return new(minimize, recursive)
     end
 end
 
 function transform!(tn::TensorNetwork, config::ContractSimplification)
-    # select indices that benefit from contraction
-    targets = filter(inds(tn; set=:inner)) do index
-        candidate_tensors = tensors(tn; contains=index)
+    targets = inds(tn; set=:inner)
+
+    for index in targets
+        # check if the index is already contracted
+        index ∈ inds(tn; set=:inner) || continue
 
         # check that the contraction minimizes the size/rank
+        candidate_tensors = tensors(tn; contains=index)
         result = sum([
             EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
             tensor in candidate_tensors
         ])
 
-        if config.minimize == :rank
-            return ndims(result) <= maximum(ndims, candidate_tensors)
+        winner = if config.minimize == :rank
+            ndims(result) <= maximum(ndims, candidate_tensors)
+        else # :length
+            removedsize(result) >= 0
         end
 
-        return removedsize(result) >= 0
+        winner && contract!(tn, index)
     end
 
-    # group parallel indices
-    targets = unique(Iterators.map(x -> inds(tn; parallelto=x), targets))
-
-    # contract target indices
-    for target in targets
-        contract!(tn, target)
+    # if the network has been modified, recursively apply the transformation
+    if length(inds(tn; set=:inner)) < length(targets) && config.recursive
+        transform!(tn, config)
     end
 
     return tn
