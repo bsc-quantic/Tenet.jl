@@ -138,6 +138,8 @@
     end
 
     @testset "ContractSimplification" begin
+        # TODO test `ContractSimplification` options
+
         using Tenet: ContractSimplification
 
         # create a tensor network where tensors B and D can be absorbed
@@ -155,7 +157,7 @@
         @test max(rank(tensors(reduced)) == max(rank(tensors(tn))))
 
         # Test that the resulting tn contains <= tensors than the original
-        @test length(tensors(reduced)) == length(tensors(tn)) - 3
+        @test length(tensors(reduced)) == 1
 
         # Test that the resulting contraction contains the same as the original
         @test contract(reduced) ≈ contract(tn)
