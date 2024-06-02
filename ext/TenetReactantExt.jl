@@ -1,5 +1,6 @@
 module TenetReactantExt
 
+using Tenet
 using Reactant
 const Cassette = Reactant.Cassette
 const MLIR = Reactant.MLIR
