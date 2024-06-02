@@ -162,6 +162,7 @@ function codegen(::Val{:grad}, path::EinExpr)
         ssa_c = Symbol(:ssa, k)
         ∇ssa_c = Symbol(:∇ssa, k)
 
+        # TODO setindex! not implemented for ConcreteRArray
         quote
             $∇ssa_c = similar($ssa_c)
             $∇ssa_c[] = one(eltype($∇ssa_c))
