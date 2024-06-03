@@ -6,7 +6,19 @@ const Cassette = Reactant.Cassette
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
-function contract(
+function Tenet.contract(
+    a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
+) where {Ta,Na,Aa<:Reactant.ConcreteRArray,Tb,Nb,Ab<:Reactant.ConcreteRArray}
+    c = @invoke Tenet.contract(a::Tensor, b::Tensor; kwargs...)
+    return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
+end
+
+function Tenet.contract(a::Tensor{T,N,A}; kwargs...) where {T,N,A<:Reactant.ConcreteRArray}
+    c = @invoke Tenet.contract(a::Tensor; kwargs...)
+    return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
+end
+
+function Tenet.contract(
     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; dims=(∩(inds(a), inds(b))), out=nothing
 ) where {Ta,Na,Aa<:Reactant.TracedRArray,Tb,Nb,Ab<:Reactant.TracedRArray}
     ia = collect(inds(a))
@@ -35,7 +47,7 @@ function contract(
     return _res
 end
 
-function contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where {T,N,A<:Reactant.TracedRArray}
+function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where {T,N,A<:Reactant.TracedRArray}
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -58,6 +70,6 @@ function contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where 
     return Tensor(data, ic)
 end
 
-Cassette.overdub(ctx::Reactant.TraceCtx, f::typeof(contract), args...; kwargs...) = f(args...; kwargs...)
+Cassette.overdub(ctx::Reactant.TraceCtx, f::typeof(Tenet.contract), args...; kwargs...) = f(args...; kwargs...)
 
 end
