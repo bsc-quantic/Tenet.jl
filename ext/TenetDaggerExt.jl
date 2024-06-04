@@ -59,7 +59,7 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
 
     # NOTE careful with ÷ for dividing into partitions
     subdomains = map(Iterators.product(map((n -> 1:n) ∘ ÷, size(op), partitioning.blocksize)...)) do indices
-        subdomains[indices...] = ArrayDomain(
+        ArrayDomain(
             map(indices, partitioning.blocksize) do i, step
                 (i - 1) * step .+ (1:step)
             end,
