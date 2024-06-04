@@ -67,8 +67,8 @@ function Dagger.stage(ctx::Context, op::Contract{T,N}) where {T,N}
     end
 
     suminds = setdiff(op.ia ∪ op.ib, op.ic)
-    inner_perm_a = sortperm(map(i -> findfirst(==(i), op.ia), suminds))
-    inner_perm_b = sortperm(map(i -> findfirst(==(i), op.ib), suminds))
+    inner_perm_a = invperm(sortperm(map(i -> findfirst(==(i), op.ia), suminds)))
+    inner_perm_b = invperm(sortperm(map(i -> findfirst(==(i), op.ib), suminds)))
 
     mask_a = op.ic .∈ (op.ia,)
     mask_b = op.ic .∈ (op.ib,)
