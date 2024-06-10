@@ -227,7 +227,7 @@ end
 const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
 
 macro unsafe_region(tn, block)
-    quote
+    return esc(quote
         local old = copy($tn)
         try
             $with($is_unsafe_region => true) do
@@ -239,7 +239,7 @@ macro unsafe_region(tn, block)
                 throw(DimensionMismatch("Inconsistent size of indices"))
             end
         end
-    end |> esc
+    end)
 end
 
 """
@@ -255,7 +255,9 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
     # Only check index sizes if we are not in an unsafe region
     if !is_unsafe_region[]
         for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
-        throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
+            throw(
+                DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))")
+            )
         end
     end
 
