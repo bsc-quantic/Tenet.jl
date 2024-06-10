@@ -3,6 +3,7 @@ using Random
 using EinExprs
 using OMEinsum
 using LinearAlgebra
+using ScopedValues
 
 """
     TensorNetwork
@@ -72,7 +73,6 @@ function __check_index_sizes(tn)
         # Compare the size of each subsequent tensor for this index
         for tensor in tensors
             if size(tensor, index) != reference_size
-                throw(DimensionMismatch("Inconsistent size for index $index."))
                 return false
             end
         end
@@ -224,17 +224,20 @@ function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     return tensors
 end
 
-const is_unsafe_region = Ref(false) # global ScopedValue for the unsafe region
+const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
 
 macro unsafe_region(tn, block)
     quote
-        local old_is_unsafe = $is_unsafe_region[]
-        $is_unsafe_region[] = true
+        local old = copy($tn)
         try
-            $block
+            $with($is_unsafe_region => true) do
+                $block
+            end
         finally
-            $is_unsafe_region[] = old_is_unsafe
-            Tenet.__check_index_sizes($tn)
+            if !Tenet.__check_index_sizes($tn)
+                tn = old
+                throw(DimensionMismatch("Inconsistent size of indices"))
+            end
         end
     end |> esc
 end
