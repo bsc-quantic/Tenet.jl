@@ -361,10 +361,12 @@
 
         @testset "unsafe region" begin
             tn = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+            tn_copy = copy(tn)
             @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
                 tensor = Tensor(ones(3, 2), [:c, :d])
                 push!(tn, tensor)
             end
+            @test tn == tn_copy
 
             Tenet.@unsafe_region tn begin
                 tensor = Tensor(ones(3, 2), [:c, :d])
