@@ -227,19 +227,21 @@ end
 const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
 
 macro unsafe_region(tn, block)
-    return esc(quote
-        local old = copy($tn)
-        try
-            $with($is_unsafe_region => true) do
-                $block
+    return esc(
+        quote
+            local old = copy($tn)
+            try
+                $with($is_unsafe_region => true) do
+                    $block
+                end
+            finally
+                if !Tenet.__check_index_sizes($tn)
+                    tn = old
+                    throw(DimensionMismatch("Inconsistent size of indices"))
+                end
             end
-        finally
-            if !Tenet.__check_index_sizes($tn)
-                tn = old
-                throw(DimensionMismatch("Inconsistent size of indices"))
-            end
-        end
-    end)
+        end,
+    )
 end
 
 """
