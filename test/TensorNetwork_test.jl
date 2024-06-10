@@ -347,4 +347,47 @@
             end
         end
     end
+
+    @testset "@unsafe_region" begin
+        @testset "safe region" begin
+            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+            Tenet.@unsafe_region tn begin
+                tensor = Tensor(ones(2, 2), [:c, :d])
+                push!(tn, tensor)
+                @test length(tensors(tn)) == 3
+            end
+            @test length(tensors(tn)) == 3
+        end
+
+        @testset "unsafe region" begin
+            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+            tn_copy = copy(tn)
+            @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                tensor = Tensor(ones(3, 2), [:c, :d])
+                push!(tn, tensor)
+            end
+            @test tn == tn_copy
+
+            Tenet.@unsafe_region tn begin
+                tensor = Tensor(ones(3, 2), [:c, :d])
+                push!(tn, tensor)
+                @test length(tensors(tn)) == 3
+                pop!(tn, tensor)
+            end
+
+            @testset "SubArray" begin
+                a = Tensor(view(ones(2, 2), 1:2, 1:2), [:a, :b])
+                b = Tensor(view(ones(2, 2), 1:2, 1:2), [:b, :c])
+                c = Tensor(view(ones(3, 2), 1:3, 1:2), [:c, :d])
+                tn = TensorNetwork([a, b])
+
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    push!(tn, c)
+                end
+
+                @test tensors(tn)[1] === a
+                @test tensors(tn)[2] === b
+            end
+        end
+    end
 end

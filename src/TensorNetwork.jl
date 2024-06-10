@@ -3,6 +3,7 @@ using Random
 using EinExprs
 using OMEinsum
 using LinearAlgebra
+using ScopedValues
 
 """
     TensorNetwork
@@ -61,6 +62,23 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
         tb = b[inds(ta)...]
         isapprox(ta, tb; kwargs...)
     end
+end
+
+function __check_index_sizes(tn)
+    # Iterate through each index in the indexmap
+    for (index, tensors) in tn.indexmap
+        # Get the size of the first tensor for this index
+        reference_size = size(tensors[1], index)
+
+        # Compare the size of each subsequent tensor for this index
+        for tensor in tensors
+            if size(tensor, index) != reference_size
+                return false
+            end
+        end
+    end
+
+    return true
 end
 
 """
@@ -206,6 +224,26 @@ function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     return tensors
 end
 
+const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
+
+macro unsafe_region(tn, block)
+    return esc(
+        quote
+            local old = copy($tn)
+            try
+                $with($is_unsafe_region => true) do
+                    $block
+                end
+            finally
+                if !Tenet.__check_index_sizes($tn)
+                    tn = old
+                    throw(DimensionMismatch("Inconsistent size of indices"))
+                end
+            end
+        end,
+    )
+end
+
 """
     push!(tn::TensorNetwork, tensor::Tensor)
 
@@ -216,9 +254,13 @@ See also: [`append!`](@ref), [`pop!`](@ref).
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     tensor ∈ keys(tn.tensormap) && return tn
 
-    # check index sizes
-    for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
-        throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
+    # Only check index sizes if we are not in an unsafe region
+    if !is_unsafe_region[]
+        for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
+            throw(
+                DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))")
+            )
+        end
     end
 
     tn.tensormap[tensor] = collect(inds(tensor))
