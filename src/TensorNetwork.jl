@@ -249,9 +249,11 @@ See also: [`append!`](@ref), [`pop!`](@ref).
 function Base.push!(tn::TensorNetwork, tensor::Tensor)
     tensor ∈ keys(tn.tensormap) && return tn
 
-    # check index sizes
-    for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
+    # Only check index sizes if we are not in an unsafe region
+    if !is_unsafe_region[]
+        for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
         throw(DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))"))
+        end
     end
 
     tn.tensormap[tensor] = collect(inds(tensor))
