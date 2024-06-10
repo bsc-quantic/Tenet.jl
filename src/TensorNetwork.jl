@@ -63,6 +63,24 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     end
 end
 
+function __check_index_sizes(tn)
+    # Iterate through each index in the indexmap
+    for (index, tensors) in tn.indexmap
+        # Get the size of the first tensor for this index
+        reference_size = size(tensors[1], index)
+
+        # Compare the size of each subsequent tensor for this index
+        for tensor in tensors
+            if size(tensor, index) != reference_size
+                throw(DimensionMismatch("Inconsistent size for index $index."))
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 """
     tensors(tn::TensorNetwork)
 
