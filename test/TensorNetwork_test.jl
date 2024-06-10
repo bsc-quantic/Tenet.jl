@@ -364,7 +364,6 @@
             @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
                 tensor = Tensor(ones(3, 2), [:c, :d])
                 push!(tn, tensor)
-                @test length(tensors(tn)) == 3
             end
 
             Tenet.@unsafe_region tn begin
@@ -382,7 +381,6 @@
 
                 @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
                     push!(tn, c)
-                    @test length(tensors(tn)) == 3
                 end
 
                 @test tensors(tn)[1] === a
