@@ -224,6 +224,21 @@ function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     return tensors
 end
 
+const is_unsafe_region = Ref(false) # global ScopedValue for the unsafe region
+
+macro unsafe_region(tn, block)
+    quote
+        local old_is_unsafe = $is_unsafe_region[]
+        $is_unsafe_region[] = true
+        try
+            $block
+        finally
+            $is_unsafe_region[] = old_is_unsafe
+            Tenet.__check_index_sizes($tn)
+        end
+    end |> esc
+end
+
 """
     push!(tn::TensorNetwork, tensor::Tensor)
 
