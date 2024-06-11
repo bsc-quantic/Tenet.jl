@@ -107,6 +107,11 @@
         @test stride(tensor, 3) == stride(tensor, :k) == 4
     end
 
+    @testset "unsafe_convert" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test unsafe_convert(Ptr{Float64}, tensor) == unsafe_convert(Ptr{Float64}, parent(tensor))
+    end
+
     @testset "Base.replace" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == [:u, :v, :w]
