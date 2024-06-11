@@ -99,6 +99,14 @@
         @test !(tensor ≈ data)
     end
 
+    @testset "strides" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+        @test strides(tensor) == (1, 2, 4)
+        @test stride(tensor, 1) == stride(tensor, :i) == 1
+        @test stride(tensor, 2) == stride(tensor, :j) == 2
+        @test stride(tensor, 3) == stride(tensor, :k) == 4
+    end
+
     @testset "Base.replace" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == [:u, :v, :w]
