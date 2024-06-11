@@ -166,6 +166,11 @@
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
 
+        @test firstindex(tensor) == 1
+        @test lastindex(tensor) == 8
+        @test all(firstindex(tensor, i) == 1 for i in 1:ndims(tensor))
+        @test all(lastindex(tensor, i) == 2 for i in 1:ndims(tensor))
+
         @test axes(tensor) == axes(data)
         @test first(tensor) == first(data)
         @test last(tensor) == last(data)
