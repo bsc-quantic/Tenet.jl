@@ -189,8 +189,8 @@
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
 
-        @test Base.IteratorSize(tensor) == Base.HasShape()
-        @test Base.IteratorEltype(tensor) == eltype(data)
+        @test Base.IteratorSize(tensor) == Base.HasShape{3}()
+        @test Base.IteratorEltype(tensor) == Base.HasEltype()
         @test all(x -> ==(x...), zip(tensor, data))
     end
 
