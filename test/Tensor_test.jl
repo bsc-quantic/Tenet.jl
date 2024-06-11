@@ -112,6 +112,43 @@
         @test Base.unsafe_convert(Ptr{Float64}, tensor) == Base.unsafe_convert(Ptr{Float64}, parent(tensor))
     end
 
+    @testset "Indexing" begin
+        data = [1 2; 3 4]
+        tensor = Tensor(copy(data), (:i, :j))
+
+        @testset "getindex" begin
+            @test tensor[1, 1] == 1
+            @test tensor[1, 2] == 2
+            @test tensor[2, 1] == 3
+            @test tensor[2, 2] == 4
+
+            @test tensor[1, :] == [1, 2]
+            @test tensor[2, :] == [3, 4]
+            @test tensor[:, 1] == [1, 3]
+            @test tensor[:, 2] == [2, 4]
+
+            @test tensor[:, :] isa Matrix{Int} && tensor[:, :] == data
+            @test tensor[:] isa Vector{Int} && tensor[:] == data[:]
+        end
+
+        @testset "setindex!" begin
+            tensor[1, 1] = 0
+            @test tensor[1, 1] == 0
+
+            tensor[1, :] = [5, 5]
+            @test tensor[1, :] == [5, 5]
+
+            tensor[:, 1] = [6, 6]
+            @test tensor[:, 1] == [6, 6]
+
+            tensor[:, :] = data * 5
+            @test tensor[:, :] == data * 5
+
+            tensor[:] = data[:] * 10
+            @test tensor[:] == data[:] * 10
+        end
+    end
+
     @testset "Base.replace" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test inds(replace(tensor, :i => :u, :j => :v, :k => :w)) == [:u, :v, :w]
