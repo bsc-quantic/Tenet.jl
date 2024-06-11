@@ -34,7 +34,13 @@ Base.similar(t::Tensor, S::Type; inds=inds(t)) = Tensor(similar(parent(t), S), i
 function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds=inds(t)) where {T,N}
     return Tensor(similar(parent(t), S, dims), inds)
 end
+function Base.similar(t::Tensor, ::Type, dims::Base.Dims{N}; kwargs...) where {N}
+    throw(DimensionMismatch("`dims` needs to be of length $(ndims(t))"))
+end
 Base.similar(t::Tensor{T,N}, dims::Base.Dims{N}; inds=inds(t)) where {T,N} = Tensor(similar(parent(t), dims), inds)
+function Base.similar(t::Tensor, dims::Base.Dims{N}; kwargs...) where {N}
+    throw(DimensionMismatch("`dims` needs to be of length $(ndims(t))"))
+end
 
 Base.zero(t::Tensor) = Tensor(zero(parent(t)), inds(t))
 

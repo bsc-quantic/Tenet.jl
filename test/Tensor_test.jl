@@ -26,6 +26,31 @@
         @test parent(copy(view(tensor, :i => 1))) isa Array
     end
 
+    @testset "similar" begin
+        tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+
+        @test eltype(similar(tensor)) == eltype(tensor)
+        @test size(similar(tensor)) == size(tensor)
+        @test parent(similar(tensor)) !== parent(tensor)
+        @test inds(similar(tensor)) == inds(tensor)
+
+        @test inds(similar(tensor; inds=[:a, :b, :c])) == [:a, :b, :c]
+
+        @test eltype(similar(tensor, Bool)) == Bool
+        @test size(similar(tensor, Bool)) == size(tensor)
+        @test inds(similar(tensor, Bool)) == inds(tensor)
+
+        @test eltype(similar(tensor, 2, 2, 4)) == eltype(tensor)
+        @test size(similar(tensor, 2, 2, 4)) == (2, 2, 4)
+        @test inds(similar(tensor, 2, 2, 4)) == inds(tensor)
+
+        @test eltype(similar(tensor, Bool, 2, 2, 4)) == Bool
+        @test size(similar(tensor, Bool, 2, 2, 4)) == (2, 2, 4)
+        @test inds(similar(tensor, Bool, 2, 2, 4)) == inds(tensor)
+
+        @test_throws DimensionMismatch similar(tensor, 2, 2)
+    end
+
     @testset "isequal" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test tensor == copy(tensor)
