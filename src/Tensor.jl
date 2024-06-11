@@ -145,7 +145,7 @@ Base.stride(t::Tensor, i::Symbol) = stride(parent(t), dim(t, i))
 
 Base.unsafe_convert(::Type{Ptr{T}}, t::Tensor{T}) where {T} = Base.unsafe_convert(Ptr{T}, parent(t))
 
-Base.elsize(T::Type{<:Tensor}) = elsize(parenttype(T))
+Base.elsize(T::Type{<:Tensor}) = Base.elsize(parenttype(T))
 
 # Broadcasting
 Base.BroadcastStyle(::Type{T}) where {T<:Tensor} = ArrayStyle{T}()
