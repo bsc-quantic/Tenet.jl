@@ -109,7 +109,7 @@
 
     @testset "unsafe_convert" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-        @test unsafe_convert(Ptr{Float64}, tensor) == unsafe_convert(Ptr{Float64}, parent(tensor))
+        @test Base.unsafe_convert(Ptr{Float64}, tensor) == Base.unsafe_convert(Ptr{Float64}, parent(tensor))
     end
 
     @testset "Base.replace" begin
