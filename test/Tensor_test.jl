@@ -26,6 +26,11 @@
         @test parent(copy(view(tensor, :i => 1))) isa Array
     end
 
+    @testset "eltype" for T in [Bool, Int, Float64, Complex{Float64}]
+        tensor = Tensor(rand(T, 2), [:i])
+        @test eltype(tensor) == T
+    end
+
     @testset "similar" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
 
