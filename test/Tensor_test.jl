@@ -86,6 +86,7 @@
 
         @test !(tensor ≈ Tensor(data, (:i, :m, :n, :l)))
         @test !(tensor ≈ Tensor(rand(2, 2, 2), (:i, :j, :k)))
+        @test !(tensor ≈ data)
     end
 
     @testset "Base.replace" begin
