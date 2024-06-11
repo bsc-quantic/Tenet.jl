@@ -51,6 +51,12 @@
         @test_throws DimensionMismatch similar(tensor, 2, 2)
     end
 
+    @testset "zero" begin
+        tensor = Tensor(ones(2, 2, 2), (:i, :j, :k))
+        @test parent(zero(tensor)) == zeros(size(tensor)...)
+        @test inds(zero(tensor)) == inds(tensor)
+    end
+
     @testset "isequal" begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
         @test tensor == copy(tensor)
