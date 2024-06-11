@@ -183,6 +183,9 @@
     @testset "iteration" begin
         data = rand(2, 2, 2)
         tensor = Tensor(data, (:i, :j, :k))
+
+        @test Base.IteratorSize(tensor) == Base.HasShape()
+        @test Base.IteratorEltype(tensor) == eltype(data)
         @test all(x -> ==(x...), zip(tensor, data))
     end
 
