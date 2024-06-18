@@ -210,18 +210,18 @@ end
 
 function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
-    listtensors = mapreduce(∪, inds(tensor)) do index
-        tensors(tn; intersects=index)
+    tensors = mapreduce(∪, inds(tensor)) do index
+        Tenet.tensors(tn; intersects=index)
     end
-    open && filter!(x -> x !== tensor, listtensors)
-    return listtensors
+    open && filter!(x -> x !== tensor, tensors)
+    return tensors
 end
 
 function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
-    listtensors = mapreduce(inds, ∪, tensors(tn; intersects=i))
+    tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
-    return listtensors
+    return tensors
 end
 
 const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
