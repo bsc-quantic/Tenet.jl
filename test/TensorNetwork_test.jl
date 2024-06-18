@@ -25,6 +25,85 @@
         end
     end
 
+    @testset "Base.similar" begin
+        listtensors = [Tensor(rand(2,3,4), (:i, :j, :k)), Tensor(rand(4,3,2), (:l, :j, :m))]
+        tn = TensorNetwork(listtensors)
+
+        similartn = similar(tn)
+
+        @test length(tensors(tn)) == length(tensors(similartn))
+        @test issetequal(inds(tn), inds(similartn))
+        @test all(tensors(similartn)) do tns
+            all(isapprox.(tns, 0; atol=1e-10))
+        end
+    end
+
+    @testset "Base.zero" begin
+        listtensors = [Tensor(rand(2,3,4), (:i, :j, :k)), Tensor(rand(4,3,2), (:l, :j, :m))]
+        tn = TensorNetwork(listtensors)
+
+        zerostn = zero(tn)
+
+        @test all(tensors(zerostn)) do tns
+            iszero(tns)
+        end
+    end
+
+    @testset "Base.isapprox" begin
+        ta = [Tensor([1.0001 2.0001 3.0001; 3.9999 4.9999 5.9999], (:i, :j))]
+        tb = [Tensor([1 2 3; 4 5 6], (:i, :j))]
+        tn = TensorNetwork(ta)
+        approxtn = TensorNetwork(tb)
+        atoltrue = 1e-3
+        atolfalse = 1e-5
+
+        @test Base.isapprox(tn, approxtn; atol=atoltrue)
+        @test !Base.isapprox(tn, approxtn; atol=atolfalse)
+    end
+
+    @testset "arrays" begin
+        arr1 = rand(2,3,4)
+        arr2 = rand(4,3,2)
+        listtensors = [Tensor(arr1, (:i, :j, :k)), Tensor(arr2, (:l, :j, :m))]
+        tn = TensorNetwork(listtensors)
+
+        listarrays = arrays(tn)
+        
+        @test all(isa.(listarrays, Array))
+        @test all([all(tns .== arr) for (tns, arr) in zip(listtensors, listarrays)])
+    end
+
+    @testset "Base.eltype" begin
+        datatype = ComplexF64
+        listtensors = [Tensor(rand(datatype, 2,3,4), (:i, :j, :k)), Tensor(rand(datatype, 4,3,2), (:l, :j, :m))]
+        tn = TensorNetwork(listtensors)
+
+        @test eltype(tn) == datatype
+    end
+
+    @testset "neighbors" begin
+        t1 = Tensor(rand(2,3,4), (:i, :j, :k))
+        t2 = Tensor(rand(4,3,2), (:l, :j, :m))
+        t3 = Tensor(rand(4,4,4), (:l, :n, :o))
+        listtensors = [t1, t2, t3]
+        tn = TensorNetwork(listtensors)
+
+        @testset "by tensor" begin
+            @test issetequal(neighbors(tn, t1), [t2])
+            @test issetequal(neighbors(tn, t2), [t1, t3])
+            @test issetequal(neighbors(tn, t3), [t2])
+            @test_throws AssertionError neighbors(tn, Tensor(rand(4,4,4), (:a, :b, :c)))
+        end
+
+        @testset "by symbol" begin
+            @test issetequal(neighbors(tn, :i), inds(t1))
+            @test issetequal(neighbors(tn, :j), inds(t1) ∪ inds(t2))
+            @test issetequal(neighbors(tn, :l), inds(t2) ∪ inds(t3))
+            @test issetequal(neighbors(tn, :n), inds(t3))
+            @test_throws AssertionError neighbors(tn, :p)
+        end
+    end
+
     @testset "push!" begin
         tn = TensorNetwork()
         tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
@@ -56,12 +135,29 @@
     end
 
     @testset "merge!" begin
-        tensor = Tensor(zeros(2, 3), (:i, :j))
-        A = TensorNetwork([tensor])
-        B = TensorNetwork()
+        @testset "two tn" begin
+            tensor = Tensor(zeros(2, 3), (:i, :j))
+            A = TensorNetwork([tensor])
+            B = TensorNetwork()
 
-        merge!(A, B)
-        @test only(tensors(A)) === tensor
+            merge!(A, B)
+            @test only(tensors(A)) === tensor
+        end
+        @testset "three tn" begin
+            tensor1 = Tensor(zeros(2, 3), (:i, :j))
+            tensor2 = Tensor(ones(3, 4), (:j, :k))
+            tensor3 = Tensor(rand(4, 5), (:k, :l))
+            A = TensorNetwork([tensor1])
+            B = TensorNetwork([tensor2])
+            C = TensorNetwork([tensor3])
+
+            merge!(A, B, C)
+            @test length(tensors(A)) == 3
+            @test issetequal(inds(A), [:i, :j, :k, :l])
+            @test tensor1 ∈ tensors(A)
+            @test tensor2 ∈ tensors(A)
+            @test tensor3 ∈ tensors(A)
+        end
     end
 
     @testset "pop!" begin
@@ -316,6 +412,26 @@
 
             # replace!(tn, A => new_tensor, new_tensor => new_tensor2)
             # @test issetequal(tensors(tn), [new_tensor2, B, C])
+        end
+    end
+
+    @testset "Base.in" begin
+        @testset "by tensor" begin
+            tensor1 = Tensor(rand(3,4), (:i, :j))
+            tensor2 = Tensor(rand(4,5), (:j, :k))
+            tn = TensorNetwork([tensor1, tensor2])
+
+            # Broadcast not working
+            @test in(tensor1, tn)
+            @test in(tensor2, tn)
+        end
+        @testset "by symbol" begin
+            indices = (:i, :j)
+            tn = TensorNetwork([Tensor(rand(3,4), indices)])
+
+            # Broadcast not working
+            @test in(indices[1], tn)
+            @test in(indices[2], tn)
         end
     end
 
