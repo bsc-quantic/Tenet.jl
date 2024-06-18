@@ -1,6 +1,8 @@
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
 EinExprs = "b1794770-133b-4de1-afb4-526377e9f4c5"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Tenet = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
