@@ -26,7 +26,7 @@
     end
 
     @testset "Base.similar" begin
-        listtensors = [Tensor(rand(2,3,4), (:i, :j, :k)), Tensor(rand(4,3,2), (:l, :j, :m))]
+        listtensors = [Tensor(rand(2, 3, 4), (:i, :j, :k)), Tensor(rand(4, 3, 2), (:l, :j, :m))]
         tn = TensorNetwork(listtensors)
 
         similartn = similar(tn)
@@ -39,7 +39,7 @@
     end
 
     @testset "Base.zero" begin
-        listtensors = [Tensor(rand(2,3,4), (:i, :j, :k)), Tensor(rand(4,3,2), (:l, :j, :m))]
+        listtensors = [Tensor(rand(2, 3, 4), (:i, :j, :k)), Tensor(rand(4, 3, 2), (:l, :j, :m))]
         tn = TensorNetwork(listtensors)
 
         zerostn = zero(tn)
@@ -62,29 +62,29 @@
     end
 
     @testset "arrays" begin
-        arr1 = rand(2,3,4)
-        arr2 = rand(4,3,2)
+        arr1 = rand(2, 3, 4)
+        arr2 = rand(4, 3, 2)
         listtensors = [Tensor(arr1, (:i, :j, :k)), Tensor(arr2, (:l, :j, :m))]
         tn = TensorNetwork(listtensors)
 
         listarrays = arrays(tn)
-        
+
         @test all(isa.(listarrays, Array))
         @test all([all(tns .== arr) for (tns, arr) in zip(listtensors, listarrays)])
     end
 
     @testset "Base.eltype" begin
         datatype = ComplexF64
-        listtensors = [Tensor(rand(datatype, 2,3,4), (:i, :j, :k)), Tensor(rand(datatype, 4,3,2), (:l, :j, :m))]
+        listtensors = [Tensor(rand(datatype, 2, 3, 4), (:i, :j, :k)), Tensor(rand(datatype, 4, 3, 2), (:l, :j, :m))]
         tn = TensorNetwork(listtensors)
 
         @test eltype(tn) == datatype
     end
 
     @testset "neighbors" begin
-        t1 = Tensor(rand(2,3,4), (:i, :j, :k))
-        t2 = Tensor(rand(4,3,2), (:l, :j, :m))
-        t3 = Tensor(rand(4,4,4), (:l, :n, :o))
+        t1 = Tensor(rand(2, 3, 4), (:i, :j, :k))
+        t2 = Tensor(rand(4, 3, 2), (:l, :j, :m))
+        t3 = Tensor(rand(4, 4, 4), (:l, :n, :o))
         listtensors = [t1, t2, t3]
         tn = TensorNetwork(listtensors)
 
@@ -92,7 +92,7 @@
             @test issetequal(neighbors(tn, t1), [t2])
             @test issetequal(neighbors(tn, t2), [t1, t3])
             @test issetequal(neighbors(tn, t3), [t2])
-            @test_throws AssertionError neighbors(tn, Tensor(rand(4,4,4), (:a, :b, :c)))
+            @test_throws AssertionError neighbors(tn, Tensor(rand(4, 4, 4), (:a, :b, :c)))
         end
 
         @testset "by symbol" begin
@@ -417,8 +417,8 @@
 
     @testset "Base.in" begin
         @testset "by tensor" begin
-            tensor1 = Tensor(rand(3,4), (:i, :j))
-            tensor2 = Tensor(rand(4,5), (:j, :k))
+            tensor1 = Tensor(rand(3, 4), (:i, :j))
+            tensor2 = Tensor(rand(4, 5), (:j, :k))
             tn = TensorNetwork([tensor1, tensor2])
 
             # Broadcast not working
@@ -427,7 +427,7 @@
         end
         @testset "by symbol" begin
             indices = (:i, :j)
-            tn = TensorNetwork([Tensor(rand(3,4), indices)])
+            tn = TensorNetwork([Tensor(rand(3, 4), indices)])
 
             # Broadcast not working
             @test in(indices[1], tn)
