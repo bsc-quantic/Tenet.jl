@@ -1,5 +1,8 @@
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
 EinExprs = "b1794770-133b-4de1-afb4-526377e9f4c5"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
