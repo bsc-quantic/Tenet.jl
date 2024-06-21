@@ -33,9 +33,7 @@
 
         @test length(tensors(tn)) == length(tensors(similartn))
         @test issetequal(inds(tn), inds(similartn))
-        @test all(tensors(similartn)) do tns
-            all(isapprox.(tns, 0; atol=1e-10))
-        end
+        @test all(map((tns,simtns)-> inds(tns)==inds(simtns), tensors(tn), tensors(similartn)))
     end
 
     @testset "Base.zero" begin
@@ -443,11 +441,11 @@
 
         projopentn = selectdim(tn, :i, projdim)
         @test tensors(projopentn) == [Tensor(tensor1[projdim, :], [:j]), tensor2]
-        @test issetequal(inds(projopentn), [:j,:k])
+        @test issetequal(inds(projopentn), [:j, :k])
 
         projvirttn = selectdim(tn, :j, projdim)
         @test tensors(projvirttn) == [Tensor(tensor1[:, projdim], [:i]), Tensor(tensor2[projdim,:], [:k])]
-        @test issetequal(inds(projopentn), [:i,:k])
+        @test issetequal(inds(projvirttn), [:i, :k])
     end
 
     @testset "Base.conj!" begin
@@ -456,7 +454,7 @@
             tensor2 = Tensor(rand(ComplexF64, 4,5), (:j, :k))
             complextn = TensorNetwork([tensor1, tensor2])
 
-            @test imag.(tensors(conj!(complextn))) == -imag.(tensors(complextn))
+            @test -imag.(tensors(complextn)) == imag.(tensors(conj!(complextn)))
         end
         @testset "for real" begin
             tensor1 = Tensor(rand(3,4), (:i, :j))
