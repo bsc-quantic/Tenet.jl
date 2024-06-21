@@ -534,4 +534,20 @@
             end
         end
     end
+
+    @testset "LinearAlgebra.svd!" begin
+        M = rand(ComplexF64, 4, 3)
+        U, S, V = svd(M)
+
+        tensorU = Tensor(U, (:i, :j))
+        tensorS = Tensor(Diagonal(S), (:j, :k))
+        tensorV = Tensor(transpose(V), (:k, :l))
+        svdtn = TensorNetwork([tensorU, tensorS, tensorV])
+
+        ctensor = contract(svdtn)
+        ctn = TensorNetwork([ctensor])
+
+        svd!(ctn; left_inds=[:i], right_inds=[:l])
+        @test isapprox([S, U, V], tensors(ctn); rtol=1e-9)
+    end
 end
