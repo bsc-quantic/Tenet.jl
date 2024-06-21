@@ -420,16 +420,14 @@
             tn = TensorNetwork([tensor1, tensor2])
 
             # Broadcast not working
-            @test in(tensor1, tn)
-            @test in(tensor2, tn)
+            @test all(∈(tn), [tensor1, tensor2])
         end
         @testset "by symbol" begin
             indices = (:i, :j)
             tn = TensorNetwork([Tensor(rand(3, 4), indices)])
 
             # Broadcast not working
-            @test in(indices[1], tn)
-            @test in(indices[2], tn)
+            @test all(∈(tn), indices)
         end
     end
 
