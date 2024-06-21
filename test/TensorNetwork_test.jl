@@ -538,16 +538,18 @@
     @testset "LinearAlgebra.svd!" begin
         M = rand(ComplexF64, 4, 3)
         U, S, V = svd(M)
+        ctn = TensorNetwork([Tensor(M, [:i, :j])])
 
-        tensorU = Tensor(U, (:i, :j))
-        tensorS = Tensor(Diagonal(S), (:j, :k))
-        tensorV = Tensor(transpose(V), (:k, :l))
-        svdtn = TensorNetwork([tensorU, tensorS, tensorV])
+        svd!(ctn; left_inds=[:i], right_inds=[:j])
+        @test isapprox([S, U, conj(V)], tensors(ctn); rtol=1e-9)
+    end
 
-        ctensor = contract(svdtn)
-        ctn = TensorNetwork([ctensor])
+    @testset "LinearAlgebra.qr!" begin
+        M = rand(ComplexF64, 4, 3)
+        F = qr(M)
+        ctn = TensorNetwork([Tensor(M, [:i, :j])])
 
-        svd!(ctn; left_inds=[:i], right_inds=[:l])
-        @test isapprox([S, U, V], tensors(ctn); rtol=1e-9)
+        qr!(ctn; left_inds=[:i], right_inds=[:j])
+        @test isapprox([F.R, Matrix(F.Q)], tensors(ctn); rtol=1e-9)
     end
 end
