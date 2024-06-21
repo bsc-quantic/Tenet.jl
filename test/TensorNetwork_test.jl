@@ -435,6 +435,38 @@
         end
     end
 
+    @testset "selectdim" begin
+        tensor1 = Tensor(rand(3,4), (:i, :j))
+        tensor2 = Tensor(rand(4,5), (:j, :k))
+        tn = TensorNetwork([tensor1, tensor2])
+        projdim = 1
+
+        projopentn = selectdim(tn, :i, projdim)
+        @test tensors(projopentn) == [Tensor(tensor1[projdim, :], [:j]), tensor2]
+        @test issetequal(inds(projopentn), [:j,:k])
+
+        projvirttn = selectdim(tn, :j, projdim)
+        @test tensors(projvirttn) == [Tensor(tensor1[:, projdim], [:i]), Tensor(tensor2[projdim,:], [:k])]
+        @test issetequal(inds(projopentn), [:i,:k])
+    end
+
+    @testset "Base.conj!" begin
+        @testset "for complex" begin
+            tensor1 = Tensor(rand(ComplexF64, 3,4), (:i, :j))
+            tensor2 = Tensor(rand(ComplexF64, 4,5), (:j, :k))
+            complextn = TensorNetwork([tensor1, tensor2])
+
+            @test imag.(tensors(conj!(complextn))) == -imag.(tensors(complextn))
+        end
+        @testset "for real" begin
+            tensor1 = Tensor(rand(3,4), (:i, :j))
+            tensor2 = Tensor(rand(4,5), (:j, :k))
+            realtn = TensorNetwork([tensor1, tensor2])
+
+            @test tensors(conj!(realtn)) == tensors(realtn)
+        end
+    end
+
     @testset "contract" begin
         @testset "hyperindex" begin
             let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
