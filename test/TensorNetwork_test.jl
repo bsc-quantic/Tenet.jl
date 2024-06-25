@@ -33,7 +33,7 @@
 
         @test length(tensors(tn)) == length(tensors(similartn))
         @test issetequal(inds(tn), inds(similartn))
-        @test all(map((tns,simtns)-> inds(tns)==inds(simtns), tensors(tn), tensors(similartn)))
+        @test all(map((tns, simtns) -> inds(tns) == inds(simtns), tensors(tn), tensors(similartn)))
     end
 
     @testset "Base.zero" begin
@@ -432,8 +432,8 @@
     end
 
     @testset "selectdim" begin
-        tensor1 = Tensor(rand(3,4), (:i, :j))
-        tensor2 = Tensor(rand(4,5), (:j, :k))
+        tensor1 = Tensor(rand(3, 4), (:i, :j))
+        tensor2 = Tensor(rand(4, 5), (:j, :k))
         tn = TensorNetwork([tensor1, tensor2])
         projdim = 1
 
@@ -442,21 +442,21 @@
         @test issetequal(inds(projopentn), [:j, :k])
 
         projvirttn = selectdim(tn, :j, projdim)
-        @test tensors(projvirttn) == [Tensor(tensor1[:, projdim], [:i]), Tensor(tensor2[projdim,:], [:k])]
+        @test tensors(projvirttn) == [Tensor(tensor1[:, projdim], [:i]), Tensor(tensor2[projdim, :], [:k])]
         @test issetequal(inds(projvirttn), [:i, :k])
     end
 
     @testset "Base.conj!" begin
         @testset "for complex" begin
-            tensor1 = Tensor(rand(ComplexF64, 3,4), (:i, :j))
-            tensor2 = Tensor(rand(ComplexF64, 4,5), (:j, :k))
+            tensor1 = Tensor(rand(ComplexF64, 3, 4), (:i, :j))
+            tensor2 = Tensor(rand(ComplexF64, 4, 5), (:j, :k))
             complextn = TensorNetwork([tensor1, tensor2])
 
             @test -imag.(tensors(complextn)) == imag.(tensors(conj!(complextn)))
         end
         @testset "for real" begin
-            tensor1 = Tensor(rand(3,4), (:i, :j))
-            tensor2 = Tensor(rand(4,5), (:j, :k))
+            tensor1 = Tensor(rand(3, 4), (:i, :j))
+            tensor2 = Tensor(rand(4, 5), (:j, :k))
             realtn = TensorNetwork([tensor1, tensor2])
 
             @test tensors(conj!(realtn)) == tensors(realtn)
@@ -563,7 +563,7 @@
 
         L, U, P = lu(tensor; left_inds, right_inds)
         lu!(ctn; left_inds, right_inds)
-        
+
         @test isapprox(parent.([L, U, P]), parent.(tensors(ctn)); rtol=1e-9)
         @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
     end
