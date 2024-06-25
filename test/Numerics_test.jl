@@ -216,7 +216,7 @@
         @test_throws ArgumentError lu(tensor, right_inds=(:i, :j, :k, :l))
 
         # throw if chosen virtual index already present
-        @test_throws ArgumentError qr(tensor, left_inds=(:i,), virtualind=:j)
+        @test_throws ArgumentError lu(tensor, left_inds=(:i,:j), virtualind=(:j,:k))
 
         L, U, P = lu(tensor; left_inds=[:i, :j], virtualind=vidx)
         @test inds(L) == [:x, :y]
