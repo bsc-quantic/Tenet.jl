@@ -1,10 +1,18 @@
 module TenetReactantExt
 
 using Tenet
+using EinExprs
 using Reactant
 const Cassette = Reactant.Cassette
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
+
+# fixes problem on overdubbing `contract` with `TensorNetwork`
+function Cassette.overdub(
+    ctx::Reactant.TraceCtx, f::typeof(Base.collect_similar), x::Vector{<:EinExpr}, args...; kwargs...
+)
+    return f(x, args...; kwargs...)
+end
 
 function Tenet.contract(
     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
