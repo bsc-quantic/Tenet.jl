@@ -552,4 +552,19 @@
         qr!(ctn; left_inds=[:i], right_inds=[:j])
         @test isapprox([F.R, Matrix(F.Q)], tensors(ctn); rtol=1e-9)
     end
+
+    @testset "LinearAlgebra.lu!" begin
+        M = rand(ComplexF64, 4, 3)
+        left_inds = [:i]
+        right_inds = [:j]
+        indsM = left_inds ∪ right_inds
+        tensor = Tensor(M, indsM)
+        ctn = TensorNetwork([tensor])
+
+        L, U, P = lu(tensor; left_inds, right_inds)
+        lu!(ctn; left_inds, right_inds)
+        
+        @test isapprox(parent.([L, U, P]), parent.(tensors(ctn)); rtol=1e-9)
+        @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
+    end
 end
