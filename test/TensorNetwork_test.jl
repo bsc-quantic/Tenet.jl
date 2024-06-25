@@ -537,8 +537,8 @@
 
     @testset "LinearAlgebra.svd!" begin
         M = rand(ComplexF64, 4, 3)
-        left_inds=[:i]
-        right_inds=[:j]
+        left_inds = [:i]
+        right_inds = [:j]
         indsM = left_inds ∪ right_inds
 
         U, S, V = svd(M)
@@ -551,8 +551,8 @@
 
     @testset "LinearAlgebra.qr!" begin
         M = rand(ComplexF64, 4, 3)
-        left_inds=[:i]
-        right_inds=[:j]
+        left_inds = [:i]
+        right_inds = [:j]
         indsM = left_inds ∪ right_inds
 
         F = qr(M)
