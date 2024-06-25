@@ -33,7 +33,7 @@
 
         @test length(tensors(tn)) == length(tensors(similartn))
         @test issetequal(inds(tn), inds(similartn))
-        @test all(map((tns, simtns) -> inds(tns) == inds(simtns), tensors(tn), tensors(similartn)))
+        @test all(splat(==), zip(inds.(tensors(tn)), inds.(tensors(similartn))))
     end
 
     @testset "Base.zero" begin
