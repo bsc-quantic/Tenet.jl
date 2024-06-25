@@ -537,20 +537,30 @@
 
     @testset "LinearAlgebra.svd!" begin
         M = rand(ComplexF64, 4, 3)
-        U, S, V = svd(M)
-        ctn = TensorNetwork([Tensor(M, [:i, :j])])
+        left_inds=[:i]
+        right_inds=[:j]
+        indsM = left_inds ∪ right_inds
 
-        svd!(ctn; left_inds=[:i], right_inds=[:j])
+        U, S, V = svd(M)
+        ctn = TensorNetwork([Tensor(M, indsM)])
+
+        svd!(ctn; left_inds, right_inds)
         @test isapprox([S, U, conj(V)], tensors(ctn); rtol=1e-9)
+        @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
     end
 
     @testset "LinearAlgebra.qr!" begin
         M = rand(ComplexF64, 4, 3)
-        F = qr(M)
-        ctn = TensorNetwork([Tensor(M, [:i, :j])])
+        left_inds=[:i]
+        right_inds=[:j]
+        indsM = left_inds ∪ right_inds
 
-        qr!(ctn; left_inds=[:i], right_inds=[:j])
+        F = qr(M)
+        ctn = TensorNetwork([Tensor(M, indsM)])
+
+        qr!(ctn; left_inds, right_inds)
         @test isapprox([F.R, Matrix(F.Q)], tensors(ctn); rtol=1e-9)
+        @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
     end
 
     @testset "LinearAlgebra.lu!" begin
@@ -564,7 +574,7 @@
         L, U, P = lu(tensor; left_inds, right_inds)
         lu!(ctn; left_inds, right_inds)
 
-        @test isapprox(parent.([L, U, P]), parent.(tensors(ctn)); rtol=1e-9)
+        @test issetequal(Set(parent.([P, L, U])), Set(arrays(ctn)))
         @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
     end
 end
