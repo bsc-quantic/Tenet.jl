@@ -211,7 +211,7 @@ end
 function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
-        tensors(tn; intersects=index)
+        Tenet.tensors(tn; intersects=index)
     end
     open && filter!(x -> x !== tensor, tensors)
     return tensors
@@ -219,7 +219,7 @@ end
 
 function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
-    tensors = mapreduce(inds, ∪, tensors(tn; intersects=i))
+    tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
     return tensors
 end
@@ -392,7 +392,7 @@ end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
     old, new = old_new
-    issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match match"))
+    issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match"))
 
     # rename internal indices so there is no accidental hyperedge
     replace!(new, [index => Symbol(uuid4()) for index in filter(∈(inds(tn)), inds(new; set=:inner))]...)
@@ -622,7 +622,7 @@ end
 
 function LinearAlgebra.lu!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
-    L, U = lu(tensor; left_inds, right_inds, kwargs...)
-    replace!(tn, tensor => TensorNetwork([L, U]))
+    L, U, P = lu(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => TensorNetwork([P, L, U]))
     return tn
 end
