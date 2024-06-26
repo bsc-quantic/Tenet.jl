@@ -225,9 +225,15 @@
     end
 
     @testset "rand" begin
-        tn = rand(TensorNetwork, 10, 3)
-        @test tn isa TensorNetwork
-        @test length(tensors(tn)) == 10
+        @testset "default kwargs" begin
+            tn = rand(TensorNetwork, 10, 3)
+            @test tn isa TensorNetwork
+            @test length(tensors(tn)) == 10
+        end
+        @testset "global index" begin
+            tn = rand(TensorNetwork, 10, 3; globalind=true)
+            @test intersect(inds.(tensors(tn))...) |> length == 1
+        end
     end
 
     @testset "copy" begin
@@ -323,13 +329,97 @@
     end
 
     @testset "contract" begin
-        tn = rand(TensorNetwork, 5, 3)
-        @test contract(tn) isa Tensor
+        @testset "by einexpr" begin
+            tn = rand(TensorNetwork, 5, 3)
+            @test contract(tn) isa Tensor
 
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2), (:k, :l, :m))
-        tn = TensorNetwork([A, B])
-        @test contract(tn) isa Tensor
+            A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+            B = Tensor(rand(2, 2, 2), (:k, :l, :m))
+            tn = TensorNetwork([A, B])
+
+            ctn = contract(tn)
+            @test ctn isa Tensor
+            @test issetequal([:i, :j, :l, :m], inds(ctn))
+        end
+
+        @testset "by index" begin
+            A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+            B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+            C = Tensor(rand(2, 2, 2), (:n, :o, :p))
+            tn = TensorNetwork([A, B, C])
+
+            ctn = contract(tn, :k)
+            @test ctn isa TensorNetwork
+            @test length(tensors(ctn)) == 2
+            @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(ctn))
+        end
+
+        @testset "by tensor" begin
+            A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+            B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+            newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
+            tn = TensorNetwork([A, B])
+
+            ctn = contract(tn, newtensor)
+            @test tn isa TensorNetwork
+            @test issetequal([A, B], tensors(tn))
+            @test ctn isa Tensor
+            @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
+        end
+
+        @testset "hyperindex" begin
+            let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
+                tn_transformed = transform(tn, Tenet.HyperFlatten())
+
+                result = contract(tn, :i)
+                @test issetequal(inds(result), [:a, :b])
+
+                @test contract(tn_transformed) ≈ only(tensors(result))
+            end
+
+            let tn = TensorNetwork([
+                    Tensor(ones(2, 2), [:a, :X]),
+                    Tensor(ones(2), [:X]),
+                    Tensor(ones(2, 2, 2), [:X, :c, :Y]),
+                    Tensor(ones(2), [:Y]),
+                    Tensor(ones(2, 2, 2), [:Y, :d, :Z]),
+                    Tensor(ones(2), [:Z]),
+                    Tensor(ones(2, 2, 2), [:Z, :e, :T]),
+                    Tensor(ones(2), [:T]),
+                    Tensor(ones(2, 2), [:b, :T]),
+                ])
+                tn_transformed = transform(tn, Tenet.HyperFlatten())
+
+                @test contract(tn) ≈ contract(tn_transformed)
+            end
+        end
+    end
+
+    @testset "contract!" begin
+        @testset "by index" begin
+            A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+            B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+            C = Tensor(rand(2, 2, 2), (:n, :o, :p))
+            tn = TensorNetwork([A, B, C])
+
+            contract!(tn, :k)
+            @test tn isa TensorNetwork
+            @test length(tensors(tn)) == 2
+            @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(tn))
+        end
+
+        @testset "by tensor" begin
+            A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+            B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+            newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
+            tn = TensorNetwork([A, B])
+
+            ctn = contract!(tn, newtensor)
+            @test tn isa TensorNetwork
+            @test issetequal([:i, :j, :k, :l, :m, :n, :o, :p], inds(tn))
+            @test ctn isa Tensor
+            @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
+        end
     end
 
     @testset "Base.replace!" begin
@@ -460,35 +550,6 @@
             realtn = TensorNetwork([tensor1, tensor2])
 
             @test tensors(conj!(realtn)) == tensors(realtn)
-        end
-    end
-
-    @testset "contract" begin
-        @testset "hyperindex" begin
-            let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
-                tn_transformed = transform(tn, Tenet.HyperFlatten())
-
-                result = contract!(tn, :i)
-                @test issetequal(inds(result), [:a, :b])
-
-                @test contract(tn_transformed) ≈ only(tensors(result))
-            end
-
-            let tn = TensorNetwork([
-                    Tensor(ones(2, 2), [:a, :X]),
-                    Tensor(ones(2), [:X]),
-                    Tensor(ones(2, 2, 2), [:X, :c, :Y]),
-                    Tensor(ones(2), [:Y]),
-                    Tensor(ones(2, 2, 2), [:Y, :d, :Z]),
-                    Tensor(ones(2), [:Z]),
-                    Tensor(ones(2, 2, 2), [:Z, :e, :T]),
-                    Tensor(ones(2), [:T]),
-                    Tensor(ones(2, 2), [:b, :T]),
-                ])
-                tn_transformed = transform(tn, Tenet.HyperFlatten())
-
-                @test contract(tn) ≈ contract(tn_transformed)
-            end
         end
     end
 
