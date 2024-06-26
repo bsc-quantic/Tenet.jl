@@ -232,7 +232,7 @@
         end
         @testset "global index" begin
             tn = rand(TensorNetwork, 10, 3; globalind=true)
-            @test intersect(inds.(tensors(tn))...) |> length == 1
+            @test length(intersect(inds.(tensors(tn))...)) == 1
         end
     end
 
@@ -509,20 +509,20 @@
             t_iln = Tensor(zeros(2, 2, 2), (:i, :l, :n))
             t_mn = Tensor(zeros(2, 2), (:m, :n))
             t_replaced = t_ilm
-            
+
             tensorsA = [t_ij, t_ik, t_ilm]
             tnA = TensorNetwork(tensorsA)
             tensorsB = [t_iln, t_mn]
             tnB = TensorNetwork(tensorsB)
-            
+
             tn_nomatch = TensorNetwork([t_iln])
             @test_throws ArgumentError replace!(tnA, t_replaced => tn_nomatch)
-            
+
             finaltensors = [t_ij, t_ik, t_iln, t_mn]
             finalinds = [:i, :j, :k, :l, :m, :n]
 
             replace!(tnA, t_replaced => tnB)
-            @test tensors(tnA) |> length == (length(tensorsA) + length(tensorsB) - 1)
+            @test length(tensors(tnA)) == (length(tensorsA) + length(tensorsB) - 1)
             @test issetequal(finalinds, inds(tnA))
             @test issetequal(finaltensors, tensors(tnA))
         end
