@@ -7,9 +7,6 @@
 [![Documentation: stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/)
 [![Documentation: dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://bsc-quantic.github.io/Tenet.jl/dev/)
 
-> [!IMPORTANT]
-> The code for quantum tensor networks has been moved to the new [`Qrochet`](https://github.com/bsc-quantic/Qrochet.jl) library.
-
 A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
 
 - **Expressiveness** _Simple to use._ 👶
