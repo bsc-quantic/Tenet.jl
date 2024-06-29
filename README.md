@@ -19,14 +19,9 @@ A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at loc
 - Tensor Network slicing/cuttings
 - Automatic Differentiation of TN contraction
 - Distributed contraction
-- Local Tensor Network transformations
-  - Hyperindex converter
-  - Rank simplification
-  - Diagonal reduction
-  - Anti-diagonal gauging
-  - Column reduction
-  - Split simplification
+- Local Tensor Network transformations/simplifications
 - 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- Quantum Tensor Networks
 
 ## Preview
 
