@@ -18,33 +18,31 @@ export transform, transform!
 
 include("Compiler.jl")
 
-include("Quantum/Site.jl")
-export Site, @site_str
-
-include("Quantum/Quantum.jl")
+include("Site.jl")
 export Site, @site_str, isdual
-export ninputs, noutputs, inputs, outputs, sites, nsites
-export Quantum
 
-include("Quantum/Ansatz.jl")
+include("Quantum.jl")
+export Quantum, ninputs, noutputs, inputs, outputs, sites, nsites
+
+include("Ansatz/Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
 
-include("Quantum/Ansatz/Product.jl")
+include("Ansatz/Product.jl")
 export Product
 
-include("Quantum/Ansatz/Dense.jl")
+include("Ansatz/Dense.jl")
 export Dense
 
-include("Quantum/Ansatz/Chain.jl")
+include("Ansatz/Chain.jl")
 export Chain
 export MPS, pMPS, MPO, pMPO
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!
 export canonize, canonize!, mixed_canonize, mixed_canonize!
 
-include("Quantum/Ansatz/Grid.jl")
+include("Ansatz/Grid.jl")
 export Grid
 export PEPS, pPEPS, PEPO, pPEPO
 
