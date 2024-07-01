@@ -92,3 +92,37 @@ function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs..
 
     return c, contract_pullback
 end
+
+Quantum_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+Quantum_pullback(ȳ::AbstractArray) = (NoTangent(), ȳ, NoTangent())
+Quantum_pullback(ȳ::AbstractThunk) = Quantum_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Quantum}, x::TensorNetwork, sites) = Quantum(x, sites), Quantum_pullback
+
+Ansatz_pullback(ȳ) = (NoTangent(), ȳ.super)
+Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
+function ChainRulesCore.rrule(::Type{T}, x::Quantum) where {T<:Ansatz}
+    y = T(x)
+    return y, Ansatz_pullback
+end
+
+Ansatz_boundary_pullback(ȳ) = (NoTangent(), ȳ.super, NoTangent())
+Ansatz_boundary_pullback(ȳ::AbstractThunk) = Ansatz_boundary_pullback(unthunk(ȳ))
+function ChainRulesCore.rrule(::Type{T}, x::Quantum, boundary) where {T<:Ansatz}
+    return T(x, boundary), Ansatz_boundary_pullback
+end
+
+Ansatz_from_arrays_pullback(ȳ) = (NoTangent(), NoTangent(), NoTangent(), parent.(tensors(ȳ.super.tn)))
+Ansatz_from_arrays_pullback(ȳ::AbstractThunk) = Ansatz_from_arrays_pullback(unthunk(ȳ))
+function ChainRulesCore.rrule(
+    ::Type{T}, socket::Tenet.Socket, boundary::Tenet.Boundary, arrays; kwargs...
+) where {T<:Ansatz}
+    y = T(socket, boundary, arrays; kwargs...)
+    return y, Ansatz_from_arrays_pullback
+end
+
+copy_pullback(ȳ) = (NoTangent(), ȳ)
+copy_pullback(ȳ::AbstractThunk) = unthunk(ȳ)
+function ChainRulesCore.rrule(::typeof(copy), x::Quantum)
+    y = copy(x)
+    return y, copy_pullback
+end
