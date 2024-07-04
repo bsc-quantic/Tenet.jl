@@ -16,7 +16,7 @@
     @test_throws ArgumentError eigsolve(tensor, right_inds=[:z])
 
     # Perform eigensolve
-    vals, vecs = eigsolve(tensor; left_inds=[:i], right_inds=[:j])
+    vals, vecs, info = eigsolve(tensor; left_inds=[:i], right_inds=[:j])
 
     @test length(vals) == 4
     @test length(vecs) == 4
@@ -38,7 +38,7 @@
     # Test consistency with permuted tensor
     tensor_permuted = Tensor(data, (:j, :i))
 
-    vals_perm, vecs_perm = eigsolve(tensor_permuted; left_inds=[:j], right_inds=[:i])
+    vals_perm, vecs_perm, info = eigsolve(tensor_permuted; left_inds=[:j], right_inds=[:i])
 
     @test length(vals_perm) == 4
     @test length(vecs_perm) == 4
@@ -71,7 +71,7 @@
     data = (A + A') / 2 # Make it Hermitian
     tensor = Tensor(reshape(data, 2, 2, 2, 2), (:i, :j, :k, :l))
 
-    vals, vecs = eigsolve(tensor; left_inds=[:i, :j], right_inds=[:k, :l])
+    vals, vecs, info = eigsolve(tensor; left_inds=[:i, :j], right_inds=[:k, :l])
 
     # Convert vecs to matrix form for reconstruction
     V_matrix = hcat([reshape(parent(vec), :) for vec in vecs]...)

@@ -50,12 +50,12 @@ function eigsolve(tensor::Tensor, args...; left_inds=(), right_inds=())
     data = reshape(parent(tensor), prod_left_sizes, prod_right_sizes)
 
     # Compute eigenvalues and eigenvectors
-    vals, vecs = KrylovKit.eigsolve(data, args...)
+    vals, vecs, info = KrylovKit.eigsolve(data, args...)
 
     # Tensorify the eigenvectors
     tensor_vecs = [Tensor(reshape(vecs[i], left_sizes...), left_inds) for i in 1:length(vecs)]
 
-    return vals, tensor_vecs
+    return vals, tensor_vecs, info
 end
 
 end
