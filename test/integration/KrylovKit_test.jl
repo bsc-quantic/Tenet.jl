@@ -61,7 +61,9 @@
         data = (A + A') / 2 # Make it Hermitian
         tensor = Tensor(data, (:i, :j))
 
-        vals, vecs = eigsolve(tensor, rand(ComplexF64, 4), 1, :SR, Lanczos(krylovdim=2, tol=1e-16); left_inds=[:i], right_inds=[:j])
+        vals, vecs = eigsolve(
+            tensor, rand(ComplexF64, 4), 1, :SR, Lanczos(; krylovdim=2, tol=1e-16); left_inds=[:i], right_inds=[:j]
+        )
 
         @test length(vals) == 1
         @test length(vecs) == 1
