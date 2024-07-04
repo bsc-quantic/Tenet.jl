@@ -57,15 +57,26 @@
     @test parent(reconstructed_tensor) ≈ parent(reconstructed_tensor_perm)
 
     @testset "Lanczos" begin
-        A = rand(ComplexF64, 4, 4)
-        data = (A + A') / 2 # Make it Hermitian
-        tensor = Tensor(data, (:i, :j))
-
-        vals, vecs = eigsolve(
+        vals_lanczos, vecs_lanczos = eigsolve(
             tensor, rand(ComplexF64, 4), 1, :SR, Lanczos(; krylovdim=2, tol=1e-16); left_inds=[:i], right_inds=[:j]
         )
 
-        @test length(vals) == 1
-        @test length(vecs) == 1
+        @test length(vals_lanczos) == 1
+        @test length(vecs_lanczos) == 1
+
+        @test minimum(vals) ≈ first(vals_lanczos)
     end
+
+    A = rand(ComplexF64, 4, 4)
+    data = (A + A') / 2 # Make it Hermitian
+    tensor = Tensor(reshape(data, 2, 2, 2, 2), (:i, :j, :k, :l))
+
+    vals, vecs = eigsolve(tensor; left_inds=[:i, :j], right_inds=[:k, :l])
+
+    # Convert vecs to matrix form for reconstruction
+    V_matrix = hcat([reshape(parent(vec), :) for vec in vecs]...)
+    D_matrix = Diagonal(vals)
+    reconstructed_matrix = V_matrix * D_matrix * inv(V_matrix)
+
+    @test isapprox(reconstructed_matrix, data)
 end
