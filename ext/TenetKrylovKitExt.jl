@@ -1,4 +1,7 @@
+module TenetKrylovKitExt
+
 using KrylovKit
+using Tenet
 
 """
     KrylovKit.eigsolve(tensor::Tensor; left_inds, right_inds, kwargs...)
@@ -20,7 +23,7 @@ end
 
 function eigsolve(tensor::Tensor, args...; left_inds=(), right_inds=())
     # Determine the left and right indices
-    left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
+    left_inds, right_inds = Tenet.factorinds(tensor, left_inds, right_inds)
 
     # Ensure that the resulting matrix is square
     left_sizes = map(Base.Fix1(size, tensor), left_inds)
@@ -43,4 +46,6 @@ function eigsolve(tensor::Tensor, args...; left_inds=(), right_inds=())
     tensor_vecs = [Tensor(reshape(vecs[i], left_sizes...), left_inds) for i in 1:length(vecs)]
 
     return vals, tensor_vecs
+end
+
 end
