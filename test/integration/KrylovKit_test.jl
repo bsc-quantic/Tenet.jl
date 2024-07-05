@@ -36,9 +36,7 @@
     @test isapprox(reconstructed_tensor, tensor)
 
     # Test consistency with permuted tensor
-    tensor_permuted = Tensor(data, (:j, :i))
-
-    vals_perm, vecs_perm, info = eigsolve(tensor_permuted; left_inds=[:j], right_inds=[:i])
+    vals_perm, vecs_perm, info = eigsolve(tensor; left_inds=[:j], right_inds=[:i])
 
     @test length(vals_perm) == 4
     @test length(vecs_perm) == 4
