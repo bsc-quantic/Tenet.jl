@@ -6,15 +6,6 @@
     data = (A + A') / 2 # Make it Hermitian
     tensor = Tensor(data, (:i, :j))
 
-    # throw if the resulting matrix is not square
-    tensor_non_square = Tensor(rand(ComplexF64, 2, 4, 6), (:i, :j, :k))
-    @test_throws ArgumentError eigsolve(tensor_non_square; left_inds=[:i, :j])
-    @test_throws ArgumentError eigsolve(tensor_non_square; right_inds=[:j, :k])
-
-    # throw if index is not present
-    @test_throws ArgumentError eigsolve(tensor, left_inds=[:z])
-    @test_throws ArgumentError eigsolve(tensor, right_inds=[:z])
-
     # Perform eigensolve
     vals, vecs, info = eigsolve(tensor; left_inds=[:i], right_inds=[:j])
 
@@ -25,6 +16,15 @@
         @test inds(vec) == [:i]
         @test size(vec) == (4,)
     end
+
+    # throw if index is not present
+    @test_throws ArgumentError eigsolve(tensor; left_inds=[:z])
+    @test_throws ArgumentError eigsolve(tensor; right_inds=[:z])
+
+    # throw if the resulting matrix is not square
+    tensor_non_square = Tensor(rand(ComplexF64, 2, 4, 6), (:i, :j, :k))
+    @test_throws ArgumentError eigsolve(tensor_non_square; left_inds=[:i, :j], right_inds=[:k])
+    @test_throws ArgumentError eigsolve(tensor_non_square; right_inds=[:j, :k])
 
     # Convert vecs to matrix form for reconstruction
     V_matrix = hcat([reshape(parent(vec), :) for vec in vecs]...)

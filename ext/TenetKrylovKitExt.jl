@@ -1,7 +1,68 @@
 module TenetKrylovKitExt
 
-using KrylovKit
 using Tenet
+using KrylovKit
+
+function eigsolve_prehook_tensor_reshape(A::Tensor, left_inds, right_inds)
+    left_inds, right_inds = Tenet.factorinds(A, left_inds, right_inds)
+
+    # Determine the left and right indices
+    left_sizes = size.((A,), left_inds)
+    right_sizes = size.((A,), right_inds)
+    prod_left_sizes = prod(left_sizes)
+    prod_right_sizes = prod(right_sizes)
+
+    if prod_left_sizes != prod_right_sizes
+        throw(
+            ArgumentError("The resulting matrix must be square, but got sizes $prod_left_sizes and $prod_right_sizes.")
+        )
+    end
+
+    # Permute and reshape the tensor
+    A = permutedims(A, [left_inds..., right_inds...])
+    Amat = reshape(parent(A), prod_left_sizes, prod_right_sizes)
+
+    return Amat, left_sizes, right_sizes
+end
+
+function KrylovKit.eigselector(A::Tensor, T::Type; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    Amat, _, _ = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
+    return KrylovKit.eigselector(Amat, T; kwargs...)
+end
+
+function KrylovKit.eigsolve(
+    A::Tensor,
+    howmany::Int=1,
+    which::KrylovKit.Selector=:LM,
+    T::Type=eltype(A);
+    left_inds=Symbol[],
+    right_inds=Symbol[],
+    kwargs...,
+)
+    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
+
+    # Compute eigenvalues and eigenvectors
+    vals, vecs, info = KrylovKit.eigsolve(Amat, howmany, which; kwargs...)
+
+    # Tensorify the eigenvectors
+    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
+
+    return vals, Avecs, info
+end
+
+function KrylovKit.eigsolve(
+    f::Tensor, x₀, howmany::Int=1, which::KrylovKit.Selector=:LM; left_inds=Symbol[], right_inds=Symbol[], kwargs...
+)
+    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
+
+    # Compute eigenvalues and eigenvectors
+    vals, vecs, info = KrylovKit.eigsolve(Amat, x₀, howmany, which; kwargs...)
+
+    # Tensorify the eigenvectors
+    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
+
+    return vals, Avecs, info
+end
 
 """
     KrylovKit.eigsolve(tensor::Tensor; left_inds, right_inds, kwargs...)
@@ -13,49 +74,25 @@ Perform eigenvalue decomposition on a tensor.
   - `left_inds`: left indices to be used in the eigenvalue decomposition. Defaults to all indices of `t` except `right_inds`.
   - `right_inds`: right indices to be used in the eigenvalue decomposition. Defaults to all indices of `t` except `left_inds`.
 """
-function KrylovKit.eigsolve(tensor::Tensor; left_inds=(), right_inds=())
-    return eigsolve(tensor; left_inds=left_inds, right_inds=right_inds)
-end
-
 function KrylovKit.eigsolve(
-    tensor::Tensor,
-    x₀::Vector{ComplexF64},
-    howmany::Int64,
-    which::Union{Symbol,EigSorter},
-    alg::Lanczos;
-    left_inds=(),
-    right_inds=(),
-)
-    return eigsolve(tensor, x₀, howmany, which, alg; left_inds=left_inds, right_inds=right_inds)
-end
-
-function eigsolve(tensor::Tensor, args...; left_inds=(), right_inds=())
-    # Determine the left and right indices
-    left_inds, right_inds = Tenet.factorinds(tensor, left_inds, right_inds)
-
-    # Ensure that the resulting matrix is square
-    left_sizes = map(Base.Fix1(size, tensor), left_inds)
-    right_sizes = map(Base.Fix1(size, tensor), right_inds)
-    prod_left_sizes = prod(left_sizes)
-    prod_right_sizes = prod(right_sizes)
-
-    if prod_left_sizes != prod_right_sizes
-        throw(
-            ArgumentError("The resulting matrix must be square, but got sizes $prod_left_sizes and $prod_right_sizes.")
-        )
-    end
-
-    # Permute and reshape the tensor
-    tensor = permutedims(tensor, [left_inds..., right_inds...])
-    data = reshape(parent(tensor), prod_left_sizes, prod_right_sizes)
+    A::Tensor,
+    x₀,
+    howmany::Int,
+    which::KrylovKit.Selector,
+    alg::Algorithm;
+    left_inds=Symbol[],
+    right_inds=Symbol[],
+    kwargs...,
+) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
+    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
 
     # Compute eigenvalues and eigenvectors
-    vals, vecs, info = KrylovKit.eigsolve(data, args...)
+    vals, vecs, info = KrylovKit.eigsolve(Amat, x₀, howmany, which, alg; kwargs...)
 
     # Tensorify the eigenvectors
-    tensor_vecs = [Tensor(reshape(vecs[i], left_sizes...), left_inds) for i in 1:length(vecs)]
+    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
 
-    return vals, tensor_vecs, info
+    return vals, Avecs, info
 end
 
 end
