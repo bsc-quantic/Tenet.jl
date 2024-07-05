@@ -24,6 +24,10 @@ makedocs(;
         "Tensor Networks" => "tensor-network.md",
         "Contraction" => "contraction.md",
         "Transformations" => "transformations.md",
+        "Quantum" => [
+            "Introduction" => "quantum.md",
+            "Ansatzes" => ["`Product` ansatz" => "ansatz/product.md", "`Chain` ansatz" => "ansatz/chain.md"],
+        ],
         "Visualization" => "visualization.md",
         "Alternatives" => "alternatives.md",
         "References" => "references.md",
