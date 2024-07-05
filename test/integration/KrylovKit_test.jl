@@ -52,7 +52,7 @@
     reconstructed_tensor_perm = Tensor(reconstructed_matrix_perm, (:j, :i))
     @test isapprox(reconstructed_tensor_perm, tensor_permuted)
 
-    @test parent(reconstructed_tensor) ≈ parent(reconstructed_tensor_perm)
+    @test parent(reconstructed_tensor) ≈ parent(transpose(reconstructed_tensor_perm))
 
     @testset "Lanczos" begin
         vals_lanczos, vecs_lanczos = eigsolve(
