@@ -64,3 +64,9 @@ function nonunique(x)
     nonuniqueindexes = setdiff(1:length(x), uniqueindexes)
     return unique(x[nonuniqueindexes])
 end
+
+const __indexcounter::Threads.Atomic{Int} = Threads.Atomic{Int}(1)
+
+currindex() = letter(__indexcounter[])
+nextindex() = (__indexcounter.value >= 135000) ? resetindex() : letter(Threads.atomic_add!(__indexcounter, 1))
+resetindex() = letter(Threads.atomic_xchg!(__indexcounter, 1))

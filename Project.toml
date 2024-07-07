@@ -28,6 +28,8 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
+Yao = "5872b779-8223-5990-8dd0-5abbb0748c8c"
 
 [extensions]
 TenetAdaptExt = "Adapt"
@@ -39,6 +41,8 @@ TenetFiniteDifferencesExt = "FiniteDifferences"
 TenetGraphMakieExt = ["GraphMakie", "Makie"]
 TenetKrylovKitExt = ["KrylovKit"]
 TenetReactantExt = "Reactant"
+TenetQuacExt = "Quac"
+TenetYaoExt = "Yao"
 
 [compat]
 AbstractTrees = "0.4"
@@ -58,9 +62,11 @@ LinearAlgebra = "1.9"
 Makie = "0.18,0.19,0.20, 0.21"
 Muscle = "0.2"
 OMEinsum = "0.7, 0.8"
+Quac = "0.3"
 Random = "1.9"
 Reactant = "0.1"
 ScopedValues = "1"
 SparseArrays = "1.9"
 UUIDs = "1.9"
+Yao = "0.8, 0.9"
 julia = "1.9"

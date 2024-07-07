@@ -8,6 +8,10 @@ using OMEinsum
     include("Numerics_test.jl")
     include("TensorNetwork_test.jl")
     include("Transformations_test.jl")
+    include("Site_test.jl")
+    include("Quantum_test.jl")
+    include("Product_test.jl")
+    include("Chain_test.jl")
 end
 
 # CI hangs on these tests for some unknown reason on Julia 1.9
@@ -18,6 +22,7 @@ if VERSION >= v"1.10"
         include("integration/Dagger_test.jl")
         include("integration/Makie_test.jl")
         include("integration/KrylovKit_test.jl")
+        include("integration/Quac_test.jl")
     end
 end
 
