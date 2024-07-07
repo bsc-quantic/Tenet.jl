@@ -4,6 +4,7 @@ Pkg.develop(; path=joinpath(@__DIR__, ".."))
 Pkg.instantiate()
 
 using Documenter
+using DocumenterVitepress
 using DocumenterCitations
 using Tenet
 using CairoMakie
@@ -33,12 +34,13 @@ makedocs(;
         "References" => "references.md",
     ],
     pagesonly=true,
-    format=Documenter.HTML(;
-        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"]
+    format=DocumenterVitepress.MarkdownVitepress(;
+        repo="https://github.com/bsc-quantic/Tenet.jl",
+        assets=["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"],
     ),
     plugins=[bib],
     checkdocs=:exports,
     warnonly=true,
 )
 
-deploydocs(; repo="github.com/bsc-quantic/Tenet.jl.git", devbranch="master", push_preview=true)
+deploydocs(; repo="github.com/bsc-quantic/Tenet.jl.git", target="build", devbranch="master", push_preview=true)
