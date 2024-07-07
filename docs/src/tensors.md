@@ -23,9 +23,9 @@ T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \in \mathcal{F} \qquad\qquad \f
 
 Tensor algebra is a higher-order generalization of linear algebra, where scalar numbers can be viewed as _order-0 tensors_, vectors as _order-1 tensors_, matrices as _order-2 tensors_, ...
 
-```@raw html
+<!-- ```@raw html
 <img src="assets/tensor.excalidraw.svg" class="invert-on-dark"/>
-```
+``` -->
 
 Letters are used to identify each of the vector spaces the tensor relates to.
 In computer science, you would intuitively think of tensors as "_n-dimensional arrays with named dimensions_".

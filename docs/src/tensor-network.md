@@ -8,12 +8,12 @@ Tensor Networks (TN) are a graphical notation for representing complex multi-lin
 
 can be represented visually as
 
-```@raw html
+<!-- ```@raw html
 <figure>
 <img width=500 src="assets/tn-sketch.svg" alt="Sketch of a Tensor Network">
 <figcaption>Sketch of a Tensor Network</figcaption>
 </figure>
-```
+``` -->
 
 The graph's nodes represent tensors and edges represent tensor indices.
 
