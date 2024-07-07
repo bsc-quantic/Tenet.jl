@@ -50,7 +50,7 @@
 
     # Ensure the reconstruction is correct
     reconstructed_tensor_perm = Tensor(reconstructed_matrix_perm, (:j, :i))
-    @test isapprox(reconstructed_tensor_perm, tensor_permuted)
+    @test isapprox(reconstructed_tensor_perm, transpose(tensor))
 
     @test parent(reconstructed_tensor) ≈ parent(transpose(reconstructed_tensor_perm))
 
