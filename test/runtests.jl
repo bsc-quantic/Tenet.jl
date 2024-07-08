@@ -21,6 +21,7 @@ if VERSION >= v"1.10"
         # include("integration/BlockArray_test.jl")
         include("integration/Dagger_test.jl")
         include("integration/Makie_test.jl")
+        include("integration/KrylovKit_test.jl")
         include("integration/Quac_test.jl")
     end
 end
