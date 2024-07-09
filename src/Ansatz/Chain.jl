@@ -39,7 +39,7 @@ function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; ord
 
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex(gen) for _ in 1:(2n)]
+    symbols = [nextindex!(gen) for _ in 1:(2n)]
 
     _tensors = map(enumerate(arrays)) do (i, array)
         inds = map(order) do dir
@@ -70,7 +70,7 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order=d
 
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex(gen) for _ in 1:(2n)]
+    symbols = [nextindex!(gen) for _ in 1:(2n)]
 
     _tensors = map(enumerate(arrays)) do (i, array)
         _order = if i == 1
@@ -107,7 +107,7 @@ function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; 
 
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex(gen) for _ in 1:(3n)]
+    symbols = [nextindex!(gen) for _ in 1:(3n)]
 
     _tensors = map(enumerate(arrays)) do (i, array)
         inds = map(order) do dir
@@ -141,7 +141,7 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
 
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex(gen) for _ in 1:(3n - 1)]
+    symbols = [nextindex!(gen) for _ in 1:(3n - 1)]
 
     _tensors = map(enumerate(arrays)) do (i, array)
         _order = if i == 1

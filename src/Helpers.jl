@@ -72,7 +72,7 @@ struct IndexCounter
 end
 
 currindex(gen::IndexCounter) = letter(gen.counter[])
-function nextindex(gen::IndexCounter)
+function nextindex!(gen::IndexCounter)
     if gen.counter.value >= 135000
         throw(ErrorException("run-out of indices!"))
     end

@@ -16,7 +16,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
 
     n = nqubits(circuit)
     gen = Tenet.IndexCounter()
-    wire = [[Tenet.nextindex(gen)] for _ in 1:n]
+    wire = [[Tenet.nextindex!(gen)] for _ in 1:n]
     tensors = Tensor[]
 
     for gate in flatten_circuit(circuit)
@@ -31,7 +31,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l
-                from, to = last(wire[l]), Tenet.nextindex(gen)
+                from, to = last(wire[l]), Tenet.nextindex!(gen)
                 push!(wire[l], to)
                 (from, to)
             end,

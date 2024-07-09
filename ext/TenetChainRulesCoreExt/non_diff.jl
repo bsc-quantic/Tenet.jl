@@ -11,7 +11,7 @@
 @non_differentiable Base.replace!(::TensorNetwork, ::Pair{Symbol,Symbol}...)
 
 @non_differentiable Tenet.currindex(args...; kwargs...)
-@non_differentiable Tenet.nextindex(args...; kwargs...)
+@non_differentiable Tenet.nextindex!(args...; kwargs...)
 @non_differentiable Tenet.resetindex!(args...; kwargs...)
 
 # WARN type-piracy
