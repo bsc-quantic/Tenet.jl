@@ -1,7 +1,6 @@
 module TenetQuacExt
 
 using Tenet
-using Tenet
 using Quac: Gate, Circuit, lanes, arraytype, Swap
 
 function Tenet.Dense(gate::Gate)
@@ -14,7 +13,9 @@ Tenet.evolve!(qtn::Ansatz, gate::Gate; kwargs...) = evolve!(qtn, Tenet.Dense(gat
 
 function Tenet.Quantum(circuit::Circuit)
     n = lanes(circuit)
-    wire = [[Tenet.nextindex()] for _ in 1:n]
+    gen = Tenet.IndexCounter()
+
+    wire = [[Tenet.nextindex(gen)] for _ in 1:n]
     tensors = Tensor[]
 
     for gate in circuit
@@ -29,7 +30,7 @@ function Tenet.Quantum(circuit::Circuit)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(lanes(gate)) do l
-                from, to = last(wire[l]), Tenet.nextindex()
+                from, to = last(wire[l]), Tenet.nextindex(gen)
                 push!(wire[l], to)
                 (from, to)
             end,

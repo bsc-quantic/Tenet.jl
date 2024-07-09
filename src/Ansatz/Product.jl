@@ -18,7 +18,8 @@ Product(arrays::Vector{<:AbstractVector}) = Product(State(), Open(), arrays)
 Product(arrays::Vector{<:AbstractMatrix}) = Product(Operator(), Open(), arrays)
 
 function Product(::State, ::Open, arrays)
-    symbols = [nextindex() for _ in 1:length(arrays)]
+    gen = IndexCounter()
+    symbols = [nextindex(gen) for _ in 1:length(arrays)]
     _tensors = map(enumerate(arrays)) do (i, array)
         Tensor(array, [symbols[i]])
     end
@@ -30,7 +31,8 @@ end
 
 function Product(::Operator, ::Open, arrays)
     n = length(arrays)
-    symbols = [nextindex() for _ in 1:(2 * length(arrays))]
+    gen = IndexCounter()
+    symbols = [nextindex(gen) for _ in 1:(2 * length(arrays))]
     _tensors = map(enumerate(arrays)) do (i, array)
         Tensor(array, [symbols[i + n], symbols[i]])
     end

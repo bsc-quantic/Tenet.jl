@@ -10,8 +10,9 @@
 # TODO maybe we need to convert this into a frule/rrule? such that the tangents change their indices too
 @non_differentiable Base.replace!(::TensorNetwork, ::Pair{Symbol,Symbol}...)
 
-@non_differentiable Tenet.currindex()
-@non_differentiable Tenet.nextindex()
+@non_differentiable Tenet.currindex(args...; kwargs...)
+@non_differentiable Tenet.nextindex(args...; kwargs...)
+@non_differentiable Tenet.resetindex(args...; kwargs...)
 
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)
