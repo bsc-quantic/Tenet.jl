@@ -73,6 +73,9 @@ end
 
 currindex(gen::IndexCounter) = letter(gen.counter[])
 function nextindex(gen::IndexCounter)
-    return (gen.counter.value >= 135000) ? resetindex() : letter(Threads.atomic_add!(gen.counter, 1))
+    if gen.counter.value >= 135000
+        throw(ErrorException("run-out of indices!"))
+    end
+    return letter(Threads.atomic_add!(gen.counter, 1))
 end
-resetindex(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
+resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))

@@ -12,7 +12,7 @@
 
 @non_differentiable Tenet.currindex(args...; kwargs...)
 @non_differentiable Tenet.nextindex(args...; kwargs...)
-@non_differentiable Tenet.resetindex(args...; kwargs...)
+@non_differentiable Tenet.resetindex!(args...; kwargs...)
 
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)
