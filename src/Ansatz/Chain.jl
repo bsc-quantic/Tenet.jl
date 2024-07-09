@@ -712,6 +712,64 @@ function unpack_2sitewf!(ψ::Chain, bond, left_inds, right_inds, virtualind)
     return ψ
 end
 
+Tenet.__check_index_sizes(qtn::Chain) = Tenet.__check_index_sizes(TensorNetwork(qtn))
+
+evolve(ψ::Chain, mpo::Chain) = evolve!(copy(ψ), mpo)
+
+"""
+    evolve!(ψ::Chain, mpo::Chain)
+
+Applies a Matrix Product Operator (MPO) `mpo` to the [`Chain`](@ref).
+"""
+function evolve!(ψ::Chain, mpo::Chain)
+    L = nsites(ψ)
+
+    Tenet.@unsafe_region ψ begin
+        for i in 1:L
+            contractedind = inds(ψ; at = Site(i))
+            t = contract(tensors(ψ; at = Site(i)), tensors(mpo; at = Site(i)); dims = (contractedind,))
+            physicalind = inds(mpo; at = Site(i))
+
+            # Fuse the two right legs of t into one
+            if i == 1
+                wanted_inds = (physicalind, rightindex(ψ, Site(i)), rightindex(mpo, Site(i)))
+                new_inds = (contractedind, rightindex(ψ, Site(i)))
+            elseif i < L
+                wanted_inds = (
+                    physicalind,
+                    leftindex(ψ, Site(i)),
+                    leftindex(mpo, Site(i)),
+                    rightindex(ψ, Site(i)),
+                    rightindex(mpo, Site(i)),
+                )
+                new_inds = (contractedind, leftindex(ψ, Site(i)), rightindex(ψ, Site(i)))
+            else
+                wanted_inds = (physicalind, leftindex(ψ, Site(i)), leftindex(mpo, Site(i)))
+                new_inds = (contractedind, leftindex(ψ, Site(i)))
+            end
+
+            perm = Tenet.__find_index_permutation(wanted_inds, inds(t))
+            t = permutedims(t, perm)
+
+            t = Tensor(
+                reshape(t, tuple(size(t, 1), [size(t, k) * size(t, k + 1) for k in 2:2:length(wanted_inds)]...)),
+                new_inds,
+            )
+
+            replace!(TensorNetwork(ψ), tensors(ψ; at = Site(i)) => t)
+
+            if i < L
+                d = size(TensorNetwork(mpo), rightindex(mpo, Site(i)))
+                Λᵢ = tensors(ψ; between = (Site(i), Site(i + 1)))
+                Λᵢ = Tensor(diag(kron(Matrix(LinearAlgebra.I, d, d), diagm(parent(Λᵢ)))), inds(Λᵢ))
+                replace!(TensorNetwork(ψ), tensors(ψ; between = (Site(i), Site(i + 1))) => Λᵢ)
+            end
+        end
+    end
+
+    return ψ
+end
+
 function expect(ψ::Chain, observables)
     # contract observable with TN
     ϕ = copy(ψ)
