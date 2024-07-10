@@ -726,9 +726,9 @@ function evolve!(ψ::Chain, mpo::Chain)
 
     Tenet.@unsafe_region ψ begin
         for i in 1:L
-            contractedind = inds(ψ; at = Site(i))
-            t = contract(tensors(ψ; at = Site(i)), tensors(mpo; at = Site(i)); dims = (contractedind,))
-            physicalind = inds(mpo; at = Site(i))
+            contractedind = inds(ψ; at=Site(i))
+            t = contract(tensors(ψ; at=Site(i)), tensors(mpo; at=Site(i)); dims=(contractedind,))
+            physicalind = inds(mpo; at=Site(i))
 
             # Fuse the two right legs of t into one
             if i == 1
@@ -756,13 +756,13 @@ function evolve!(ψ::Chain, mpo::Chain)
                 new_inds,
             )
 
-            replace!(TensorNetwork(ψ), tensors(ψ; at = Site(i)) => t)
+            replace!(TensorNetwork(ψ), tensors(ψ; at=Site(i)) => t)
 
             if i < L
                 d = size(TensorNetwork(mpo), rightindex(mpo, Site(i)))
-                Λᵢ = tensors(ψ; between = (Site(i), Site(i + 1)))
+                Λᵢ = tensors(ψ; between=(Site(i), Site(i + 1)))
                 Λᵢ = Tensor(diag(kron(Matrix(LinearAlgebra.I, d, d), diagm(parent(Λᵢ)))), inds(Λᵢ))
-                replace!(TensorNetwork(ψ), tensors(ψ; between = (Site(i), Site(i + 1))) => Λᵢ)
+                replace!(TensorNetwork(ψ), tensors(ψ; between=(Site(i), Site(i + 1))) => Λᵢ)
             end
         end
     end
