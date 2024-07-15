@@ -93,7 +93,7 @@ Perform eigenvalue decomposition on a tensor.
 """
 function KrylovKit.eigsolve(
     A::Tensor,
-    x₀::Vector,
+    x₀,
     howmany::Int,
     which::KrylovKit.Selector,
     alg::Algorithm;
