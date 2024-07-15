@@ -30,9 +30,7 @@ function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, rig
 
     # Determine the left and right indices
     left_sizes = size.((A,), left_inds)
-    right_sizes = size.((A,), right_inds)
     prod_left_sizes = prod(left_sizes)
-    prod_right_sizes = prod(right_sizes)
 
     inds(x₀) != left_inds && throw(
         ArgumentError(
@@ -45,16 +43,9 @@ function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, rig
         ),
     )
 
-    if prod_left_sizes != prod_right_sizes
-        throw(
-            ArgumentError("The resulting matrix must be square, but got sizes $prod_left_sizes and $prod_right_sizes.")
-        )
-    end
+    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
 
     # Permute and reshape the tensor
-    A = permutedims(A, [left_inds..., right_inds...])
-    Amat = reshape(parent(A), prod_left_sizes, prod_right_sizes)
-
     x₀ = permutedims(x₀, left_inds)
     x₀vec = reshape(parent(x₀), prod_left_sizes)
 
