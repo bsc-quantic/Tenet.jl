@@ -39,9 +39,7 @@ function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, rig
             "The initial guess must have the same left indices as the tensor, but got $(inds(x₀)) and $left_inds."
         ),
     )
-    x₀_sizes = size.((x₀,), left_inds)
-    prod_x₀_sizes = prod(x₀_sizes)
-    prod_x₀_sizes != prod_left_sizes && throw(
+    prod(size.((x₀,), left_inds)) != prod_left_sizes && throw(
         ArgumentError(
             "The initial guess must have the same size as the left indices, but got sizes $prod_x₀_sizes and $prod_left_sizes.",
         ),
@@ -83,40 +81,6 @@ function KrylovKit.eigsolve(
     return vals, Avecs, info
 end
 
-function KrylovKit.eigsolve(
-    f::Tensor,
-    x₀::Tensor,
-    howmany::Int=1,
-    which::KrylovKit.Selector=:LM;
-    left_inds=Symbol[],
-    right_inds=Symbol[],
-    kwargs...,
-)
-    Amat, left_sizes, right_sizes, x₀vec = eigsolve_prehook_tensor_reshape(A, x₀, left_inds, Symbol[])
-
-    # Compute eigenvalues and eigenvectors
-    vals, vecs, info = KrylovKit.eigsolve(Amat, x₀vec, howmany, which; kwargs...)
-
-    # Tensorify the eigenvectors
-    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
-
-    return vals, Avecs, info
-end
-
-function KrylovKit.eigsolve(
-    f::Tensor, x₀, howmany::Int=1, which::KrylovKit.Selector=:LM; left_inds=Symbol[], right_inds=Symbol[], kwargs...
-)
-    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
-
-    # Compute eigenvalues and eigenvectors
-    vals, vecs, info = KrylovKit.eigsolve(Amat, x₀, howmany, which; kwargs...)
-
-    # Tensorify the eigenvectors
-    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
-
-    return vals, Avecs, info
-end
-
 """
     KrylovKit.eigsolve(tensor::Tensor; left_inds, right_inds, kwargs...)
 
@@ -129,7 +93,7 @@ Perform eigenvalue decomposition on a tensor.
 """
 function KrylovKit.eigsolve(
     A::Tensor,
-    x₀,
+    x₀::Vector,
     howmany::Int,
     which::KrylovKit.Selector,
     alg::Algorithm;
@@ -141,6 +105,27 @@ function KrylovKit.eigsolve(
 
     # Compute eigenvalues and eigenvectors
     vals, vecs, info = KrylovKit.eigsolve(Amat, x₀, howmany, which, alg; kwargs...)
+
+    # Tensorify the eigenvectors
+    Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
+
+    return vals, Avecs, info
+end
+
+function KrylovKit.eigsolve(
+    A::Tensor,
+    x₀::Tensor,
+    howmany::Int,
+    which::KrylovKit.Selector,
+    alg::Algorithm;
+    left_inds=Symbol[],
+    right_inds=Symbol[],
+    kwargs...,
+) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
+    Amat, left_sizes, right_sizes, x₀vec = eigsolve_prehook_tensor_reshape(A, x₀, left_inds, right_inds)
+
+    # Compute eigenvalues and eigenvectors
+    vals, vecs, info = KrylovKit.eigsolve(Amat, x₀vec, howmany, which, alg; kwargs...)
 
     # Tensorify the eigenvectors
     Avecs = [Tensor(reshape(vec, left_sizes...), left_inds) for vec in vecs]
