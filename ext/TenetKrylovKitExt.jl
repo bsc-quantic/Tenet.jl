@@ -118,7 +118,7 @@ function KrylovKit.eigsolve(
     howmany::Int,
     which::KrylovKit.Selector,
     alg::Algorithm;
-    left_inds=Symbol[],
+    left_inds=inds(x₀),
     right_inds=Symbol[],
     kwargs...,
 ) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
