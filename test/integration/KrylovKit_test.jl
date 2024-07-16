@@ -55,8 +55,24 @@
     @test parent(reconstructed_tensor) ≈ parent(transpose(reconstructed_tensor_perm))
 
     @testset "Lanczos" begin
-        vals_lanczos, vecs_lanczos = eigsolve(
-            tensor, rand(ComplexF64, 4), 1, :SR, Lanczos(; krylovdim=2, tol=1e-16); left_inds=[:i], right_inds=[:j]
+        @test_throws ArgumentError eigsolve(
+            tensor,
+            Tensor(rand(ComplexF64, 4), (:j,)),
+            1,
+            :SR,
+            Lanczos(; krylovdim=2, tol=1e-16);
+            left_inds=[:i],
+            right_inds=[:j],
+        )
+
+        vals_lanczos, vecs_lanczos, info = eigsolve(
+            tensor,
+            Tensor(rand(ComplexF64, 4), (:i,)),
+            1,
+            :SR,
+            Lanczos(; krylovdim=2, tol=1e-16);
+            left_inds=[:i],
+            right_inds=[:j],
         )
 
         @test length(vals_lanczos) == 1
