@@ -28,8 +28,7 @@ end
 function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, right_inds)
     left_inds, right_inds = Tenet.factorinds(A, left_inds, right_inds)
 
-    # Determine the left and right indices
-    left_sizes = size.((A,), left_inds)
+    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
     prod_left_sizes = prod(left_sizes)
 
     inds(x₀) != left_inds && throw(
@@ -42,8 +41,6 @@ function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, rig
             "The initial guess must have the same size as the left indices, but got sizes $prod_x₀_sizes and $prod_left_sizes.",
         ),
     )
-
-    Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
 
     # Permute and reshape the tensor
     x₀ = permutedims(x₀, left_inds)
