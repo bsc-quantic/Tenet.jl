@@ -10,6 +10,10 @@ for op in [
     @eval Base.$op(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = broadcast($op, a, b)
 end
 
+function Base.literal_pow(f, a::Tensor{T,0}, ::Val{p}) where {T,p}
+    return Tensor(fill(Base.literal_pow(f, only(a), Val(p))))
+end
+
 # NOTE used for marking non-differentiability
 # NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
 __omeinsum_sym2str(x) = String[string(i) for i in x]
