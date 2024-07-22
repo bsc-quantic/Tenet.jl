@@ -6,6 +6,36 @@ using Reactant
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
+function Reactant.make_tracer(
+    seen::IdDict, prev::RT, path::Tuple, mode::Reactant.TraceMode; kwargs...
+) where {RT<:Tensor}
+    tracedata = Reactant.make_tracer(seen, parent(prev), Reactant.append_path(path, 1), mode; kwargs...)
+    return Tensor(tracedata, inds(prev))
+end
+
+function Reactant.make_tracer(seen::IdDict, prev::TensorNetwork, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    tracetensors = map(enumerate(tensors(prev))) do (i, tensor)
+        Reactant.make_tracer(seen, tensor, Reactant.append_path(path, i), mode; kwargs...)
+    end
+    return TensorNetwork(tracetensors)
+end
+
+function Reactant.make_tracer(seen::IdDict, prev::Quantum, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    tracetn = Reactant.make_tracer(seen, TensorNetwork(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+    return Quantum(tracetn, copy(prev.sites))
+end
+
+function Reactant.make_tracer(seen::IdDict, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    tracequantum = Reactant.make_tracer(seen, Quantum(prev), Reactant.append_path(path, :super), mode; kwargs...)
+    return Tenet.Product(tracequantum)
+end
+
+function Reactant.make_tracer(seen::IdDict, prev::Tenet.Chain, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    tracequantum = Reactant.make_tracer(seen, Quantum(prev), Reactant.append_path(path, :super), mode; kwargs...)
+    return Tenet.Chain(tracequantum, boundary(prev))
+end
+
+
 function Tenet.contract(
     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
 ) where {Ta,Na,Aa<:Reactant.ConcreteRArray,Tb,Nb,Ab<:Reactant.ConcreteRArray}
