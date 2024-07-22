@@ -6,6 +6,8 @@ using Reactant
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
+const Enzyme = Reactant.Enzyme
+
 function Reactant.make_tracer(
     seen::IdDict, prev::RT, path::Tuple, mode::Reactant.TraceMode; kwargs...
 ) where {RT<:Tensor}
@@ -35,6 +37,44 @@ function Reactant.make_tracer(seen::IdDict, prev::Tenet.Chain, path::Tuple, mode
     return Tenet.Chain(tracequantum, boundary(prev))
 end
 
+function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
+    @assert length(path) == 2
+    @assert path[2] === 1
+
+    x = parent(tensors(x)[path[1]]).mlir_data
+
+    return push!(ad_inputs, x)
+end
+
+function Reactant.set!(x::TensorNetwork, path, tostore; emptypath=false)
+    @assert length(path) == 2
+    @assert path[2] === 1
+
+    x = parent(tensors(x)[path[1]])
+    x.mlir_data = tostore
+
+    if emptypath
+        x.paths = ()
+    end
+end
+
+function Reactant.set_act!(inp::Enzyme.Annotation{TensorNetwork}, path, reverse, tostore; emptypath=false)
+    @assert length(path) == 2
+    @assert path[2] === 1
+
+    x = if inp isa Enzyme.Active
+        inp.val
+    else
+        inp.dval
+    end
+
+    x = parent(tensors(x)[path[1]])
+    x.mlir_data = tostore
+
+    if emptypath
+        x.paths = ()
+    end
+end
 
 function Tenet.contract(
     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
