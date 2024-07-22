@@ -6,7 +6,8 @@ function Dense(::State, array::AbstractArray; sites=Site.(1:ndims(array)))
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
 
-    symbols = [nextindex() for _ in 1:ndims(array)]
+    gen = IndexCounter()
+    symbols = [nextindex!(gen) for _ in 1:ndims(array)]
     sitemap = Dict{Site,Symbol}(
         map(sites, 1:ndims(array)) do site, i
             site => symbols[i]
@@ -25,7 +26,8 @@ function Dense(::Operator, array::AbstractArray; sites)
     @assert all(>(1), size(array))
     @assert length(sites) == ndims(array)
 
-    tensor_inds = [nextindex() for _ in 1:ndims(array)]
+    gen = IndexCounter()
+    tensor_inds = [nextindex!(gen) for _ in 1:ndims(array)]
     tensor = Tensor(array, tensor_inds)
     tn = TensorNetwork([tensor])
 

@@ -22,9 +22,10 @@ function Grid(::State, ::Periodic, arrays::Matrix{<:AbstractArray})
     @assert all(==(4) ∘ ndims, arrays) "All arrays must have 4 dimensions"
 
     m, n = size(arrays)
-    pinds = map(_ -> nextindex(), arrays)
-    hvinds = map(_ -> nextindex(), arrays)
-    vvinds = map(_ -> nextindex(), arrays)
+    gen = IndexCounter()
+    pinds = map(_ -> nextindex!(gen), arrays)
+    hvinds = map(_ -> nextindex!(gen), arrays)
+    vvinds = map(_ -> nextindex!(gen), arrays)
 
     _tensors = map(eachindex(IndexCartesian(), arrays)) do I
         i, j = Tuple(I)
@@ -61,9 +62,10 @@ function Grid(::State, ::Open, arrays::Matrix{<:AbstractArray})
         throw(DimensionMismatch())
     end
 
-    pinds = map(_ -> nextindex(), arrays)
-    vvinds = [nextindex() for _ in 1:(m - 1), _ in 1:n]
-    hvinds = [nextindex() for _ in 1:m, _ in 1:(n - 1)]
+    gen = IndexCounter()
+    pinds = map(_ -> nextindex!(gen), arrays)
+    vvinds = [nextindex!(gen) for _ in 1:(m - 1), _ in 1:n]
+    hvinds = [nextindex!(gen) for _ in 1:m, _ in 1:(n - 1)]
 
     _tensors = map(eachindex(IndexCartesian(), arrays)) do I
         i, j = Tuple(I)
@@ -88,10 +90,11 @@ function Grid(::Operator, ::Periodic, arrays::Matrix{<:AbstractArray})
     @assert all(==(4) ∘ ndims, arrays) "All arrays must have 4 dimensions"
 
     m, n = size(arrays)
-    ipinds = map(_ -> nextindex(), arrays)
-    opinds = map(_ -> nextindex(), arrays)
-    hvinds = map(_ -> nextindex(), arrays)
-    vvinds = map(_ -> nextindex(), arrays)
+    gen = IndexCounter()
+    ipinds = map(_ -> nextindex!(gen), arrays)
+    opinds = map(_ -> nextindex!(gen), arrays)
+    hvinds = map(_ -> nextindex!(gen), arrays)
+    vvinds = map(_ -> nextindex!(gen), arrays)
 
     _tensors = map(eachindex(IndexCartesian(), arrays)) do I
         i, j = Tuple(I)
@@ -133,10 +136,11 @@ function Grid(::Operator, ::Open, arrays::Matrix{<:AbstractArray})
         throw(DimensionMismatch())
     end
 
-    ipinds = map(_ -> nextindex(), arrays)
-    opinds = map(_ -> nextindex(), arrays)
-    vvinds = [nextindex() for _ in 1:(m - 1), _ in 1:n]
-    hvinds = [nextindex() for _ in 1:m, _ in 1:(n - 1)]
+    gen = IndexCounter()
+    ipinds = map(_ -> nextindex!(gen), arrays)
+    opinds = map(_ -> nextindex!(gen), arrays)
+    vvinds = [nextindex!(gen) for _ in 1:(m - 1), _ in 1:n]
+    hvinds = [nextindex!(gen) for _ in 1:m, _ in 1:(n - 1)]
 
     _tensors = map(eachindex(IndexCartesian(), arrays)) do I
         i, j = Tuple(I)

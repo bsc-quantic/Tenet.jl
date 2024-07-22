@@ -65,8 +65,17 @@ function nonunique(x)
     return unique(x[nonuniqueindexes])
 end
 
-const __indexcounter::Threads.Atomic{Int} = Threads.Atomic{Int}(1)
+struct IndexCounter
+    counter::Threads.Atomic{Int}
 
-currindex() = letter(__indexcounter[])
-nextindex() = (__indexcounter.value >= 135000) ? resetindex() : letter(Threads.atomic_add!(__indexcounter, 1))
-resetindex() = letter(Threads.atomic_xchg!(__indexcounter, 1))
+    IndexCounter(init::Int=1) = new(Threads.Atomic{Int}(init))
+end
+
+currindex(gen::IndexCounter) = letter(gen.counter[])
+function nextindex!(gen::IndexCounter)
+    if gen.counter.value >= 135000
+        throw(ErrorException("run-out of indices!"))
+    end
+    return letter(Threads.atomic_add!(gen.counter, 1))
+end
+resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
