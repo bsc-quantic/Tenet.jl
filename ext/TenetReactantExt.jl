@@ -22,6 +22,8 @@ function Reactant.make_tracer(seen::IdDict, prev::TensorNetwork, path::Tuple, mo
     return TensorNetwork(tracetensors)
 end
 
+Reactant.traced_getfield(x::TensorNetwork, i::Int) = tensors(x)[i]
+
 function Reactant.make_tracer(seen::IdDict, prev::Quantum, path::Tuple, mode::Reactant.TraceMode; kwargs...)
     tracetn = Reactant.make_tracer(seen, TensorNetwork(prev), Reactant.append_path(path, :tn), mode; kwargs...)
     return Quantum(tracetn, copy(prev.sites))
