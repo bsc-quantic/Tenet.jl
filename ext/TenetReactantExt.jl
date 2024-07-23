@@ -16,8 +16,9 @@ function Reactant.make_tracer(
 end
 
 function Reactant.make_tracer(seen::IdDict, prev::TensorNetwork, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-    tracetensors = map(enumerate(tensors(prev))) do (i, tensor)
-        Reactant.make_tracer(seen, tensor, Reactant.append_path(path, i), mode; kwargs...)
+    tracetensors = Vector{Tensor}(undef, Tenet.ntensors(prev))
+    for (i, tensor) in enumerate(tensors(prev))
+        tracetensors[i] = Reactant.make_tracer(seen, tensor, Reactant.append_path(path, i), mode; kwargs...)
     end
     return TensorNetwork(tracetensors)
 end
