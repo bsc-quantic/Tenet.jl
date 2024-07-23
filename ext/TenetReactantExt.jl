@@ -97,6 +97,9 @@ function Tenet.contract(
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
+    counter = Tenet.IndexCounter()
+    translator = Dict(i => only(string(Tenet.nextindex!(counter))) for i in ia ∪ ib)
+
     ic::Vector{Symbol} = if isnothing(out)
         setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
     else
@@ -110,7 +113,11 @@ function Tenet.contract(
     op_b = parent(b).mlir_data
     rsize = Tuple(i ∈ ia ? size(a, i) : size(b, i) for i in ic)
     result_0 = Reactant.MLIR.IR.TensorType(rsize, mlirty)
-    einsum_config = Reactant.MLIR.IR.Attribute("$(join(ia)),$(join(ib))->$(join(ic))")
+
+    tia = Char[translator[i] for i in ia]
+    tib = Char[translator[i] for i in ib]
+    tic = Char[translator[i] for i in ic]
+    einsum_config = Reactant.MLIR.IR.Attribute("$(join(tia)),$(join(tib))->$(join(tic))")
 
     result = Reactant.MLIR.IR.result(stablehlo.einsum(op_a, op_b; result_0, einsum_config))
 
