@@ -21,12 +21,20 @@ function Base.get!(f, cf::CachedField)
 end
 
 """
+    AbstractTensorNetwork
+
+Abstract type for `TensorNetwork`-derived types.
+Its subtypes must implement conversion or extraction of the underlying `TensorNetwork` by overloading the `TensorNetwork` constructor.
+"""
+abstract type AbstractTensorNetwork end
+
+"""
     TensorNetwork
 
 Graph of interconnected tensors, representing a multilinear equation.
 Graph vertices represent tensors and graph edges, tensor indices.
 """
-struct TensorNetwork
+struct TensorNetwork <: AbstractTensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
     tensormap::IdDict{Tensor,Vector{Symbol}}
 
@@ -49,6 +57,7 @@ struct TensorNetwork
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
+TensorNetwork(tn::TensorNetwork) = tn
 
 """
     copy(tn::TensorNetwork)

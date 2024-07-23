@@ -1,4 +1,12 @@
 """
+    AbstractQuantum
+
+Abstract type for `Quantum`-derived types.
+Its subtypes must implement conversion or extraction of the underlying `Quantum` by overloading the `Quantum` constructor.
+"""
+abstract type AbstractQuantum <: AbstractTensorNetwork end
+
+"""
     Quantum
 
 Tensor Network with a notion of "causality". This leads to the notion of sites and directionality (input/output).
@@ -7,7 +15,7 @@ Tensor Network with a notion of "causality". This leads to the notion of sites a
 
   - Indices are referenced by `Site`s.
 """
-struct Quantum
+struct Quantum <: AbstractQuantum
     tn::TensorNetwork
 
     # WARN keep them synchronized
@@ -38,7 +46,8 @@ Quantum(qtn::Quantum) = qtn
 
 Returns the underlying `TensorNetwork` of a [`Quantum`](@ref) Tensor Network.
 """
-Tenet.TensorNetwork(q::Quantum) = q.tn
+TensorNetwork(q::Quantum) = q.tn
+TensorNetwork(q::AbstractQuantum) = TensorNetwork(Quantum(q))
 
 Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
 
