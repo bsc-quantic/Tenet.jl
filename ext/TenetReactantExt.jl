@@ -114,7 +114,7 @@ function Tenet.contract(
 
     result = Reactant.MLIR.IR.result(stablehlo.einsum(op_a, op_b; result_0, einsum_config))
 
-    data = Reactant.TracedRArray{T,rsize,length(ic)}((), result)
+    data = Reactant.TracedRArray{T,length(ic)}((), result, rsize)
     _res = Tensor(data, ic)
     return _res
 end
@@ -138,7 +138,7 @@ function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) 
 
     result = Reactant.MLIR.IR.result(stablehlo.unary_einsum(operand; result_0, einsum_config))
 
-    data = Reactant.TracedRArray{T,rsize,length(ic)}((), result)
+    data = Reactant.TracedRArray{T,length(ic)}((), result, rsize)
     return Tensor(data, ic)
 end
 
