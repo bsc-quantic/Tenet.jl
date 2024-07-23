@@ -29,6 +29,7 @@ KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Yao = "5872b779-8223-5990-8dd0-5abbb0748c8c"
 
 [extensions]
@@ -42,6 +43,7 @@ TenetGraphMakieExt = ["GraphMakie", "Makie"]
 TenetKrylovKitExt = ["KrylovKit"]
 TenetQuacExt = "Quac"
 TenetReactantExt = "Reactant"
+TenetSerializationExt = "Serialization"
 TenetYaoExt = "Yao"
 
 [compat]
@@ -66,6 +68,7 @@ Quac = "0.3"
 Random = "1.9"
 Reactant = "0.1"
 ScopedValues = "1"
+Serialization = "1.9"
 SparseArrays = "1.9"
 UUIDs = "1.9"
 Yao = "0.8, 0.9"
