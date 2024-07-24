@@ -4,6 +4,7 @@ using EinExprs
 using OMEinsum
 using LinearAlgebra
 using ScopedValues
+using Serialization
 
 """
     TensorNetwork
@@ -631,4 +632,14 @@ function LinearAlgebra.lu!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Sym
     L, U, P = lu(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([P, L, U]))
     return tn
+end
+
+function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)
+    Serialization.writetag(s.io, Serialization.OBJECT_TAG)
+    return serialize(s, tensors(obj))
+end
+
+function Serialization.deserialize(s::AbstractSerializer, ::Type{TensorNetwork})
+    ts = deserialize(s)
+    return TensorNetwork(ts)
 end

@@ -13,6 +13,7 @@ Muscle = "21fe5c4b-a943-414d-bf3e-516f24900631"
 OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ScopedValues = "7e506255-f358-4e82-b7e4-beb19740aa63"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
@@ -29,7 +30,6 @@ KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
-Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Yao = "5872b779-8223-5990-8dd0-5abbb0748c8c"
 
 [extensions]
@@ -43,7 +43,6 @@ TenetGraphMakieExt = ["GraphMakie", "Makie"]
 TenetKrylovKitExt = ["KrylovKit"]
 TenetQuacExt = "Quac"
 TenetReactantExt = "Reactant"
-TenetSerializationExt = "Serialization"
 TenetYaoExt = "Yao"
 
 [compat]
