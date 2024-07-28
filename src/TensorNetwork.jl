@@ -6,6 +6,16 @@ using LinearAlgebra
 using ScopedValues
 using Serialization
 
+mutable struct CachedField{T}
+    isvalid::Bool
+    value::T
+end
+
+CachedField{T}() where {T} = CachedField{T}(false, T())
+
+invalidate!(cf::CachedField) = cf.isvalid = false
+Base.get!(f, cf::CachedField) = cf.isvalid ? cf.value : cf.value = f()
+
 """
     TensorNetwork
 
@@ -15,6 +25,8 @@ Graph vertices represent tensors and graph edges, tensor indices.
 struct TensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
     tensormap::IdDict{Tensor,Vector{Symbol}}
+
+    sorted_tensors::CachedField{Vector{Tensor}}
 
     function TensorNetwork(tensors)
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
@@ -28,7 +40,7 @@ struct TensorNetwork
             dict
         end
 
-        return new(indexmap, tensormap)
+        return new(indexmap, tensormap, CachedField{Vector{Tensor}}())
     end
 end
 
@@ -103,7 +115,11 @@ function tensors(tn::TensorNetwork; kwargs...)
     end
 end
 
-tensors(tn::TensorNetwork, ::Val{:all}) = sort!(collect(keys(tn.tensormap)); by=inds)
+function tensors(tn::TensorNetwork, ::Val{:all})
+    get!(tn.sorted_tensors) do
+        sort!(collect(keys(tn.tensormap)); by=inds)
+    end
+end
 
 tensors(tn::TensorNetwork, ::Val{:contains}, i::Symbol) = copy(tn.indexmap[i])
 tensors(tn::TensorNetwork, ::Val{:contains}, is::AbstractVecOrTuple{Symbol}) = tensors(⊆, tn, is)
@@ -275,6 +291,8 @@ function Base.push!(tn::TensorNetwork, tensor::Tensor)
         push!(get!(tn.indexmap, index, Tensor[]), tensor)
     end
 
+    invalidate!(tn.sorted_tensors)
+
     return tn
 end
 
@@ -335,6 +353,8 @@ function Base.delete!(tn::TensorNetwork, tensor::Tensor)
         tryprune!(tn, index)
     end
     delete!(tn.tensormap, tensor)
+
+    invalidate!(tn.sorted_tensors)
 
     return tn
 end
