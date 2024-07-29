@@ -14,7 +14,11 @@ end
 CachedField{T}() where {T} = CachedField{T}(false, T())
 
 invalidate!(cf::CachedField) = cf.isvalid = false
-Base.get!(f, cf::CachedField) = cf.isvalid ? cf.value : cf.value = f()
+function Base.get!(f, cf::CachedField)
+    !cf.isvalid && (cf.value = f())
+    cf.isvalid = true
+    return cf.value
+end
 
 """
     TensorNetwork
