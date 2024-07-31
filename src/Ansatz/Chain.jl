@@ -236,7 +236,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     push!(arrays, reshape(Matrix(F.Q), p, min(χ, p)))
 
     # Bulk tensors
-    for i in 2:n-1
+    for i in 2:(n - 1)
         χl = min(χ, p^(i - 1))
         χr = min(χ, p^i)
 
@@ -273,7 +273,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     push!(arrays, reshape(Matrix(F.Q), ip, op, min(χ, ip * op)))
 
     # Bulk tensors
-    for i in 2:n-1
+    for i in 2:(n - 1)
         χl = min(χ, ip^(i - 1) * op^(i - 1))
         χr = min(χ, ip^i * op^i)
 
@@ -288,7 +288,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     end
 
     # Right boundary tensor
-    F = lq!(rand(rng, T, min(χ, ip * op) , ip * op))
+    F = lq!(rand(rng, T, min(χ, ip * op), ip * op))
     push!(arrays, reshape(Matrix(F.Q), min(χ, ip * op), ip, op))
 
     return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
