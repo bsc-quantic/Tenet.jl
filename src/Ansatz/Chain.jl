@@ -240,7 +240,9 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
         χl = min(χ, p^(i - 1))
         χr = min(χ, p^i)
 
-        if i > n ÷ 2
+        if isodd(n) && i == n ÷ 2 + 1
+            χr = χl
+        elseif i > n ÷ 2
             j = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(χ, p^j)
             χr = min(χ, p^(j - 1))
@@ -277,7 +279,9 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
         χl = min(χ, ip^(i - 1) * op^(i - 1))
         χr = min(χ, ip^i * op^i)
 
-        if i > n ÷ 2
+        if isodd(n) && i == n ÷ 2 + 1
+            χr = χl
+        elseif i > n ÷ 2
             j = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(χ, ip^j * op^j)
             χr = min(χ, ip^(j - 1) * op^(j - 1))
