@@ -254,8 +254,6 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     F = lq!(rand(rng, T, min(χ, p), p))
     push!(arrays, Matrix(F.Q))
 
-    @show size.(arrays)
-
     return Chain(State(), Open(), arrays; order=(:l, :o, :r))
 end
 
