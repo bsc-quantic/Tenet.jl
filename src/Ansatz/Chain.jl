@@ -1,6 +1,5 @@
 using LinearAlgebra
 using Random
-using Muscle: gramschmidt!
 
 struct Chain <: Ansatz
     super::Quantum
@@ -223,42 +222,43 @@ function Base.rand(rng::AbstractRNG, ::Type{A}, ::Type{B}, ::Type{S}; kwargs...)
     return rand(rng, ChainSampler{B,S}(; kwargs...), B, S)
 end
 
+# TODO let choose the orthogonality center
 function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open}, ::Type{State})
     n = sampler.parameters.n
     χ = sampler.parameters.χ
     p = get(sampler.parameters, :p, 2)
     T = get(sampler.parameters, :eltype, Float64)
 
-    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
-        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
-            χl = min(χ, p^(i - 1))
-            χr = min(χ, p^i)
+    arrays = Vector{AbstractArray{T,N} where {N}}()
 
-            # swap bond dims after mid and handle midpoint for odd-length MPS
-            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
+    # Left boundary tensor
+    F = lq!(rand(rng, T, 1, p * min(χ, p)))
+    push!(arrays, reshape(Matrix(F.Q), p, min(χ, p)))
+
+    # Bulk tensors
+    for i in 2:n-1
+        χl = min(χ, p^(i - 1))
+        χr = min(χ, p^i)
+
+        if i > n ÷ 2
+            j = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, p^j)
+            χr = min(χ, p^(j - 1))
         end
 
-        # fix for first site
-        i == 1 && ((χl, χr) = (χr, 1))
-
-        # orthogonalize by Gram-Schmidt algorithm
-        A = gramschmidt!(rand(rng, T, χl, χr * p))
-
-        A = reshape(A, χl, χr, p)
-        permutedims(A, (3, 1, 2))
+        F = lq!(rand(rng, T, χl, p * χr))
+        push!(arrays, reshape(Matrix(F.Q), χl, p, χr))
     end
 
-    # reshape boundary sites
-    arrays[1] = reshape(arrays[1], p, p)
-    arrays[n] = reshape(arrays[n], p, p)
+    # Right boundary tensor
+    F = lq!(rand(rng, T, min(χ, p), p))
+    push!(arrays, Matrix(F.Q))
 
-    # normalize state
-    arrays[1] ./= sqrt(p)
+    @show size.(arrays)
 
-    return Chain(State(), Open(), arrays)
+    return Chain(State(), Open(), arrays; order=(:l, :o, :r))
 end
 
-# TODO let choose the orthogonality center
 # TODO different input/output physical dims
 function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open}, ::Type{Operator})
     n = sampler.parameters.n
@@ -268,35 +268,32 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
 
     ip = op = p
 
-    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
-        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
-            χl = min(χ, ip^(i - 1) * op^(i - 1))
-            χr = min(χ, ip^i * op^i)
+    arrays = Vector{AbstractArray{T,N} where {N}}()
 
-            # swap bond dims after mid and handle midpoint for odd-length MPS
-            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
+    # Left boundary tensor
+    F = lq!(rand(rng, T, 1, ip * op * min(χ, ip * op)))
+    push!(arrays, reshape(Matrix(F.Q), ip, op, min(χ, ip * op)))
+
+    # Bulk tensors
+    for i in 2:n-1
+        χl = min(χ, ip^(i - 1) * op^(i - 1))
+        χr = min(χ, ip^i * op^i)
+
+        if i > n ÷ 2
+            j = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, ip^j * op^j)
+            χr = min(χ, ip^(j - 1) * op^(j - 1))
         end
 
-        shape = if i == 1
-            (χr, ip, op)
-        elseif i == n
-            (χl, ip, op)
-        else
-            (χl, χr, ip, op)
-        end
-
-        # orthogonalize by Gram-Schmidt algorithm
-        A = gramschmidt!(rand(rng, T, shape[1], prod(shape[2:end])))
-        A = reshape(A, shape)
-
-        (i == 1 || i == n) ? permutedims(A, (2, 3, 1)) : permutedims(A, (3, 4, 1, 2))
+        F = lq!(rand(rng, T, χl, ip * op * χr))
+        push!(arrays, reshape(Matrix(F.Q), χl, ip, op, χr))
     end
 
-    # normalize
-    ζ = min(χ, ip * op)
-    arrays[1] ./= sqrt(ζ)
+    # Right boundary tensor
+    F = lq!(rand(rng, T, min(χ, ip * op) , ip * op))
+    push!(arrays, reshape(Matrix(F.Q), min(χ, ip * op), ip, op))
 
-    return Chain(Operator(), Open(), arrays)
+    return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
 end
 
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
