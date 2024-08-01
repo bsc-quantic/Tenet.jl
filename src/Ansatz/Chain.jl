@@ -238,7 +238,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
             (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
-        # orthogonalize by Gram-Schmidt algorithm
+        # orthogonalize by QR factorization
         F = lq!(rand(rng, T, χl, p * χr))
 
         reshape(Matrix(F.Q), χl, p, χr)
@@ -269,7 +269,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
             (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
-        # orthogonalize by Gram-Schmidt algorithm
+        # orthogonalize by QR factorization
         F = lq!(rand(rng, T, χl, ip * op * χr))
         reshape(Matrix(F.Q), χl, ip, op, χr)
     end
@@ -278,6 +278,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     arrays[1] = reshape(arrays[1], p, p, min(χ, ip * op))
     arrays[n] = reshape(arrays[n], min(χ, ip * op), p, p)
 
+    # TODO order might not be the best for performance
     return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
 end
 
