@@ -229,32 +229,24 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     p = get(sampler.parameters, :p, 2)
     T = get(sampler.parameters, :eltype, Float64)
 
-    arrays = Vector{AbstractArray{T,N} where {N}}()
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, p^(i - 1))
+            χr = min(χ, p^i)
 
-    # Left boundary tensor
-    F = lq!(rand(rng, T, 1, p * min(χ, p)))
-    push!(arrays, reshape(Matrix(F.Q), p, min(χ, p)))
-
-    # Bulk tensors
-    for i in 2:(n - 1)
-        χl = min(χ, p^(i - 1))
-        χr = min(χ, p^i)
-
-        if isodd(n) && i == n ÷ 2 + 1
-            χr = χl
-        elseif i > n ÷ 2
-            j = (n + 1 - abs(2i - n - 1)) ÷ 2
-            χl = min(χ, p^j)
-            χr = min(χ, p^(j - 1))
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
+        # orthogonalize by Gram-Schmidt algorithm
         F = lq!(rand(rng, T, χl, p * χr))
-        push!(arrays, reshape(Matrix(F.Q), χl, p, χr))
+
+        reshape(Matrix(F.Q), χl, p, χr)
     end
 
-    # Right boundary tensor
-    F = lq!(rand(rng, T, min(χ, p), p))
-    push!(arrays, Matrix(F.Q))
+    # reshape boundary sites
+    arrays[1] = reshape(arrays[1], p, p)
+    arrays[n] = reshape(arrays[n], p, p)
 
     return Chain(State(), Open(), arrays; order=(:l, :o, :r))
 end
@@ -268,32 +260,23 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
 
     ip = op = p
 
-    arrays = Vector{AbstractArray{T,N} where {N}}()
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, ip^(i - 1) * op^(i - 1))
+            χr = min(χ, ip^i * op^i)
 
-    # Left boundary tensor
-    F = lq!(rand(rng, T, 1, ip * op * min(χ, ip * op)))
-    push!(arrays, reshape(Matrix(F.Q), ip, op, min(χ, ip * op)))
-
-    # Bulk tensors
-    for i in 2:(n - 1)
-        χl = min(χ, ip^(i - 1) * op^(i - 1))
-        χr = min(χ, ip^i * op^i)
-
-        if isodd(n) && i == n ÷ 2 + 1
-            χr = χl
-        elseif i > n ÷ 2
-            j = (n + 1 - abs(2i - n - 1)) ÷ 2
-            χl = min(χ, ip^j * op^j)
-            χr = min(χ, ip^(j - 1) * op^(j - 1))
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
         end
 
+        # orthogonalize by Gram-Schmidt algorithm
         F = lq!(rand(rng, T, χl, ip * op * χr))
-        push!(arrays, reshape(Matrix(F.Q), χl, ip, op, χr))
+        reshape(Matrix(F.Q), χl, ip, op, χr)
     end
 
-    # Right boundary tensor
-    F = lq!(rand(rng, T, min(χ, ip * op), ip * op))
-    push!(arrays, reshape(Matrix(F.Q), min(χ, ip * op), ip, op))
+    # reshape boundary sites
+    arrays[1] = reshape(arrays[1], p, p, min(χ, ip * op))
+    arrays[n] = reshape(arrays[n], min(χ, ip * op), p, p)
 
     return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
 end
