@@ -256,6 +256,8 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
         return b
     end
 
+    resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
+    replacements = merge!(resetindex_mapping, Dict(replacements))
     replace!(TensorNetwork(b), replacements...)
 
     for site in sitesb

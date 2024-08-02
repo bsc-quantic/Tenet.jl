@@ -212,9 +212,13 @@ See also: [`ntensors`](@ref)
 """
 ninds(tn::TensorNetwork) = length(tn.indexmap)
 
-function resetindex!(tn::TensorNetwork)
-    gen = IndexCounter()
-    mapping = Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
+function resetindex!(::Val{:return_mapping}, tn::TensorNetwork; init::Int=1)
+    gen = IndexCounter(init)
+    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
+end
+
+function resetindex!(tn::TensorNetwork; init::Int=1)
+    mapping = resetindex!(Val(:return_mapping), tn; init=init)
     return replace!(tn, mapping)
 end
 
