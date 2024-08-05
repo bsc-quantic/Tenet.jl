@@ -554,14 +554,8 @@
 
             replace!(tn, old_new...)
 
-            # issetequal to this
-            # [:O, :A, :K]
-            # [:K, :V, :B, :L]
-            # [:L, :U, :C, :M]
-            # [:M, :P, :D, :N]
-            # [:N, :J, :E]
             @test issetequal(
-                inds.(tensors(tn)), [[:O, :A, :K], [:K, :V, :B, :L], [:L, :U, :C, :M], [:M, :P, :D, :N], [:N, :J, :E]]
+                inds.(tensors(tn)), [[:A, :P, :L], [:L, :B, :K, :U], [:U, :C, :V, :O], [:O, :D, :J, :N], [:N, :E, :M]]
             )
         end
     end
