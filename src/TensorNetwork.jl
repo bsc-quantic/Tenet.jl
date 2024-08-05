@@ -420,24 +420,21 @@ function Base.replace!(tn::TensorNetwork, old_new::Base.AbstractVecOrTuple{Pair{
         ),
     )
 
-    from′ = setdiff(from, to)
-    to′ = setdiff(to, from)
-
-    # no overlap so easy replacement
-    for (f, t) in zip(from′, to′)
-        replace!(tn, f => t)
-    end
-
-    # overlap between old and new indices => need a temporary name `replace!`
     overlap = from ∩ to
-    if !isempty(overlap)
-        tmp = Dict([i => gensym(i) for i in overlap])
+    if isempty(overlap)
+        # no overlap so easy replacement
+        for (f, t) in zip(from, to)
+            replace!(tn, f => t)
+        end
+    else
+        # overlap between old and new indices => need a temporary name `replace!`
+        tmp = Dict([i => gensym(i) for i in from])
 
         # replace old indices with temporary names
-        replace!(tn, pairs(tmp)...)
+        replace!(tn, tmp)
 
         # replace temporary names with new indices
-        replace!(tn, [tmp[i] => i for i in Iterators.filter(∈(overlap), to)])
+        replace!(tn, [tmp[f] => t for (f, t) in zip(from, to)])
     end
 
     # return the final index mapping
