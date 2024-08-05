@@ -262,6 +262,7 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
 
     for site in sitesb
         ind = inds(b; at=ioa != iob ? site' : site)
+        b.sites[site'] = b.sites[site] ∈ keys(mapping) ? mapping[b.sites[site]] : b.sites[site]
         b.sites[site] = ind ∈ keys(mapping) ? mapping[ind] : ind
     end
 
