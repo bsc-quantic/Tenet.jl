@@ -53,9 +53,6 @@
             tn2 = TensorNetwork(_tensors2)
             qtn2 = Quantum(tn2, Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p)) # mpo-like tensor network
 
-            T₁ = tensors(qtn; at=site"1")
-            U₁ = tensors(qtn2; at=site"1")
-
             Tenet.@reindex! outputs(qtn) => inputs(qtn2)
 
             @test issetequal([qtn2.sites[i] for i in inputs(qtn2)], [qtn.sites[i] for i in outputs(qtn)])
@@ -69,9 +66,6 @@
             _tensors2 = Tensor[Tensor(rand(2, 2, 2), [:A, :B, :C]), Tensor(rand(2, 2, 2, 2), [:D, :E, :C, :F]), Tensor(rand(2, 2, 2), [:F, :G, :H])]
             tn2 = TensorNetwork(_tensors2)
             qtn2 = Quantum(tn2, Dict(site"1" => :A, site"1'" => :B, site"2" => :D, site"2'" => :E, site"3" => :G, site"3'" => :H)) # mpo-like tensor network
-
-            T₁ = tensors(qtn; at=site"1")
-            U₁ = tensors(qtn2; at=site"1")
 
             Tenet.@reindex! outputs(qtn) => inputs(qtn2)
 
