@@ -72,11 +72,11 @@
             @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
 
             # test that the both inputs/outputs appear on the corresponding tensor
-            @test all(Site(1:3)) do i
+            @test all(Site.(1:3)) do i
                 inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
             end
 
-            @test all(Site(1:3)) do i
+            @test all(Site.(1:3)) do i
                 (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
             end
         end
@@ -109,11 +109,11 @@
             @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
 
             # test that the both inputs/outputs appear on the corresponding tensor
-            @test all(Site(1:3)) do i
+            @test all(Site.(1:3)) do i
                 inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
             end
 
-            @test all(Site(1:3)) do i
+            @test all(Site.(1:3)) do i
                 (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
             end
         end
