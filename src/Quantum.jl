@@ -262,6 +262,9 @@ end
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
 
+    resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
+    resetindex!(a)
+
     sitesb = if iob === :inputs
         inputs(b)
     elseif iob === :outputs
@@ -283,6 +286,16 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     replace!(b, replacements)
 
     return b
+end
+
+function resetindex!(tn::Quantum; init=1)
+    mapping = resetindex!(Val(:return_mapping), TensorNetwork(tn); init)
+
+    replace!(TensorNetwork(tn), mapping)
+
+    for (site, index) in tn.sites
+        tn.sites[site] = mapping[index]
+    end
 end
 
 """
