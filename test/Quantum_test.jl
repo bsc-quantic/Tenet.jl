@@ -45,47 +45,76 @@
 
     @testset "reindex!" begin
         @testset "manual indices" begin
-            _tensors = Tensor[Tensor(rand(2, 2), [:i, :j]), Tensor(rand(2, 2, 2), [:j, :k, :l]), Tensor(rand(2, 2), [:l, :m])]
-            tn = TensorNetwork(_tensors)
-            qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :k, site"3" => :m)) # mps-like tensor network
+            # mps-like tensor network
+            mps = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]), Tensor(rand(2, 2, 2), [:j, :k, :l]), Tensor(rand(2, 2), [:l, :m])
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m),
+            )
 
-            _tensors2 = Tensor[Tensor(rand(2, 2, 2), [:i, :j, :k]), Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]), Tensor(rand(2, 2, 2), [:o, :p, :n])]
-            tn2 = TensorNetwork(_tensors2)
-            qtn2 = Quantum(tn2, Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p)) # mpo-like tensor network
+            # mpo-like tensor network
+            mpo = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2), [:o, :p, :n]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
+            )
 
-            Tenet.@reindex! outputs(qtn) => inputs(qtn2)
+            Tenet.@reindex! outputs(mps) => inputs(mpo)
 
-            @test issetequal([qtn.sites[i] for i in outputs(qtn)], [qtn2.sites[i] for i in inputs(qtn2)])
+            @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
 
             # test that the both inputs/outputs appear on the corresponding tensor
-            for i in 1:3
-                @test qtn.sites[outputs(qtn)[i]] in inds(tensors(qtn)[i])
-
-                @test qtn2.sites[inputs(qtn2)[i]] in inds(tensors(qtn2)[i])
-                @test qtn2.sites[outputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+            @test all(Site(1:3)) do i
+                inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
             end
 
+            @test all(Site(1:3)) do i
+                (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
+            end
         end
 
         @testset "regular indices" begin
-            _tensors = Tensor[Tensor(rand(2, 2), [:A, :B]), Tensor(rand(2, 2, 2), [:C, :B, :D]), Tensor(rand(2, 2), [:E, :D])]
-            tn = TensorNetwork(_tensors)
-            qtn = Quantum(tn, Dict(site"1" => :A, site"2" => :C, site"3" => :E)) # mps-like tensor network
+            # mps-like tensor network
+            mps = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:A, :B]), Tensor(rand(2, 2, 2), [:C, :B, :D]), Tensor(rand(2, 2), [:E, :D])
+                    ],
+                ),
+                Dict(site"1" => :A, site"2" => :C, site"3" => :E),
+            )
 
-            _tensors2 = Tensor[Tensor(rand(2, 2, 2), [:A, :B, :C]), Tensor(rand(2, 2, 2, 2), [:D, :E, :C, :F]), Tensor(rand(2, 2, 2), [:F, :G, :H])]
-            tn2 = TensorNetwork(_tensors2)
-            qtn2 = Quantum(tn2, Dict(site"1" => :A, site"1'" => :B, site"2" => :D, site"2'" => :E, site"3" => :G, site"3'" => :H)) # mpo-like tensor network
+            # mpo-like tensor network
+            mpo = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:A, :B, :C]),
+                        Tensor(rand(2, 2, 2, 2), [:D, :E, :C, :F]),
+                        Tensor(rand(2, 2, 2), [:F, :G, :H]),
+                    ],
+                ),
+                Dict(site"1" => :A, site"1'" => :B, site"2" => :D, site"2'" => :E, site"3" => :G, site"3'" => :H),
+            )
 
-            Tenet.@reindex! outputs(qtn) => inputs(qtn2)
+            Tenet.@reindex! outputs(mps) => inputs(mpo)
 
-            @test issetequal([qtn.sites[i] for i in outputs(qtn)], [qtn2.sites[i] for i in inputs(qtn2)])
+            @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
 
             # test that the both inputs/outputs appear on the corresponding tensor
-            for i in 1:3
-                @test qtn.sites[outputs(qtn)[i]] in inds(tensors(qtn)[i])
+            @test all(Site(1:3)) do i
+                inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
+            end
 
-                @test qtn2.sites[inputs(qtn2)[i]] in inds(tensors(qtn2)[i])
-                @test qtn2.sites[outputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+            @test all(Site(1:3)) do i
+                (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
             end
         end
     end

@@ -528,14 +528,29 @@
         end
     end
 
-    @testset "complicated replacement" begin
+    @testset "overlapping replacement" begin
         A = Tensor(rand(2, 2, 2), (:F, :A, :K))
         B = Tensor(rand(2, 2, 2, 2), (:K, :G, :B, :L))
         C = Tensor(rand(2, 2, 2, 2), (:L, :H, :C, :M))
         D = Tensor(rand(2, 2, 2, 2), (:M, :I, :D, :N))
         E = Tensor(rand(2, 2, 2), (:N, :J, :E))
 
-        old_new = [:N => :N, :F => :A, :M => :O, :A => :P, :D => :J, :B => :K, :I => :D, :H => :C, :G => :B, :J => :E, :K => :L, :L => :U, :E => :M, :C => :V]
+        old_new = [
+            :N => :N,
+            :F => :A,
+            :M => :O,
+            :A => :P,
+            :D => :J,
+            :B => :K,
+            :I => :D,
+            :H => :C,
+            :G => :B,
+            :J => :E,
+            :K => :L,
+            :L => :U,
+            :E => :M,
+            :C => :V,
+        ]
         tn = TensorNetwork([A, B, C, D, E])
 
         replace!(tn, old_new...)
@@ -546,7 +561,9 @@
         # [:L, :U, :C, :M]
         # [:M, :P, :D, :N]
         # [:N, :J, :E]
-        @test issetequal(vcat(collect(values(tn.tensormap))...), vcat([[:O, :A, :K], [:K, :V, :B, :L], [:L, :U, :C, :M], [:M, :P, :D, :N], [:N, :J, :E]]...))
+        @test issetequal(
+            inds.(tensors(tn)), [[:O, :A, :K], [:K, :V, :B, :L], [:L, :U, :C, :M], [:M, :P, :D, :N], [:N, :J, :E]]
+        )
     end
 
     @testset "Base.in" begin
