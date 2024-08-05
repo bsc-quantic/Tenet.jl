@@ -258,10 +258,10 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
 
     resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
     replacements = merge!(resetindex_mapping, Dict(replacements))
-    replace!(TensorNetwork(b), replacements...)
+    _, mapping = replace!(TensorNetwork(b), replacements...)
 
     for site in sitesb
-        b.sites[site] = inds(a; at=ioa != iob ? site' : site)
+        b.sites[site] = inds(b; at=site) ∈ keys(mapping) ? mapping[inds(b; at=site)] : inds(b; at=site)
     end
 
     return b

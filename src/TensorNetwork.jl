@@ -430,7 +430,8 @@ function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol}...)
         replace!(tn, [tmp[i] => i for i in Iterators.filter(∈(overlap), to)]...)
     end
 
-    return tn
+    # return the final index mapping
+    return tn, Dict(from′ .=> to′)
 end
 
 function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
