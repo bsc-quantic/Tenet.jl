@@ -262,8 +262,8 @@ end
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
 
-    resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
     resetindex!(a)
+    resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
 
     sitesb = if iob === :inputs
         inputs(b)
@@ -281,8 +281,6 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
         return b
     end
 
-    resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
-    replacements = merge!(resetindex_mapping, Dict(replacements))
     replace!(b, replacements)
 
     return b
@@ -301,7 +299,7 @@ end
 """
     @reindex! a => b
 
-Reindexes the input/output sites of a [`Quantum`](@ref) Tensor Network `b` to match the input/output sites of another [`Quantum`](@ref) Tensor Network `a`.
+Reindexes the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
 """
 macro reindex!(expr)
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
