@@ -237,6 +237,28 @@ end
 
 Tenet.tensors(tn::Quantum, ::Val{:at}, site::Site) = only(tensors(tn; intersects=inds(tn; at=site)))
 
+# TODO use interfaces/abstract types for better composition of functionality
+@inline function Base.replace!(tn::Quantum, old_new::P...) where {P<:Pair}
+    return invoke(replace!, Tuple{Quantum,Base.AbstractVecOrTuple{P}}, tn, old_new)
+end
+@inline Base.replace!(tn::Quantum, old_new::Dict) = replace!(tn, collect(old_new))
+
+function Base.replace!(tn::Quantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
+    # replace indices in underlying Tensor Network
+    replace!(TensorNetwork(tn), old_new)
+
+    # replace indices in site information
+    from, to = first.(old_new), last.(old_new)
+    for (site, index) in tn.sites
+        i = findfirst(==(index), from)
+        if !isnothing(i)
+            tn.sites[site] = to[i]
+        end
+    end
+
+    return tn
+end
+
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
 
@@ -258,13 +280,7 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
 
     resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
     replacements = merge!(resetindex_mapping, Dict(replacements))
-    _, mapping = replace!(TensorNetwork(b), replacements...)
-
-    for site in sitesb
-        ind = inds(a; at=ioa != iob ? site' : site)
-        b.sites[site'] = b.sites[site] ∈ keys(mapping) ? mapping[b.sites[site]] : b.sites[site]
-        b.sites[site] = ind ∈ keys(mapping) ? mapping[ind] : ind
-    end
+    replace!(b, replacements)
 
     return b
 end
