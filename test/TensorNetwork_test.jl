@@ -526,44 +526,44 @@
             @test issetequal(finalinds, inds(tnA))
             @test issetequal(finaltensors, tensors(tnA))
         end
-    end
 
-    @testset "overlapping replacement" begin
-        A = Tensor(rand(2, 2, 2), (:F, :A, :K))
-        B = Tensor(rand(2, 2, 2, 2), (:K, :G, :B, :L))
-        C = Tensor(rand(2, 2, 2, 2), (:L, :H, :C, :M))
-        D = Tensor(rand(2, 2, 2, 2), (:M, :I, :D, :N))
-        E = Tensor(rand(2, 2, 2), (:N, :J, :E))
+        @testset "overlapping replacement" begin
+            A = Tensor(rand(2, 2, 2), (:F, :A, :K))
+            B = Tensor(rand(2, 2, 2, 2), (:K, :G, :B, :L))
+            C = Tensor(rand(2, 2, 2, 2), (:L, :H, :C, :M))
+            D = Tensor(rand(2, 2, 2, 2), (:M, :I, :D, :N))
+            E = Tensor(rand(2, 2, 2), (:N, :J, :E))
 
-        old_new = [
-            :N => :N,
-            :F => :A,
-            :M => :O,
-            :A => :P,
-            :D => :J,
-            :B => :K,
-            :I => :D,
-            :H => :C,
-            :G => :B,
-            :J => :E,
-            :K => :L,
-            :L => :U,
-            :E => :M,
-            :C => :V,
-        ]
-        tn = TensorNetwork([A, B, C, D, E])
+            old_new = [
+                :N => :N,
+                :F => :A,
+                :M => :O,
+                :A => :P,
+                :D => :J,
+                :B => :K,
+                :I => :D,
+                :H => :C,
+                :G => :B,
+                :J => :E,
+                :K => :L,
+                :L => :U,
+                :E => :M,
+                :C => :V,
+            ]
+            tn = TensorNetwork([A, B, C, D, E])
 
-        replace!(tn, old_new...)
+            replace!(tn, old_new...)
 
-        # issetequal to this
-        # [:O, :A, :K]
-        # [:K, :V, :B, :L]
-        # [:L, :U, :C, :M]
-        # [:M, :P, :D, :N]
-        # [:N, :J, :E]
-        @test issetequal(
-            inds.(tensors(tn)), [[:O, :A, :K], [:K, :V, :B, :L], [:L, :U, :C, :M], [:M, :P, :D, :N], [:N, :J, :E]]
-        )
+            # issetequal to this
+            # [:O, :A, :K]
+            # [:K, :V, :B, :L]
+            # [:L, :U, :C, :M]
+            # [:M, :P, :D, :N]
+            # [:N, :J, :E]
+            @test issetequal(
+                inds.(tensors(tn)), [[:O, :A, :K], [:K, :V, :B, :L], [:L, :U, :C, :M], [:M, :P, :D, :N], [:N, :J, :E]]
+            )
+        end
     end
 
     @testset "Base.in" begin
