@@ -55,7 +55,16 @@
 
             Tenet.@reindex! outputs(qtn) => inputs(qtn2)
 
-            @test issetequal([qtn2.sites[i] for i in inputs(qtn2)], [qtn.sites[i] for i in outputs(qtn)])
+            @test issetequal([qtn.sites[i] for i in outputs(qtn)], [qtn2.sites[i] for i in inputs(qtn2)])
+
+            # test that the both inputs/outputs appear on the corresponding tensor
+            for i in 1:3
+                @test qtn.sites[outputs(qtn)[i]] in inds(tensors(qtn)[i])
+
+                @test qtn2.sites[inputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+                @test qtn2.sites[outputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+            end
+
         end
 
         @testset "regular indices" begin
@@ -69,7 +78,15 @@
 
             Tenet.@reindex! outputs(qtn) => inputs(qtn2)
 
-            @test issetequal([qtn2.sites[i] for i in inputs(qtn2)], [qtn.sites[i] for i in outputs(qtn)])
+            @test issetequal([qtn.sites[i] for i in outputs(qtn)], [qtn2.sites[i] for i in inputs(qtn2)])
+
+            # test that the both inputs/outputs appear on the corresponding tensor
+            for i in 1:3
+                @test qtn.sites[outputs(qtn)[i]] in inds(tensors(qtn)[i])
+
+                @test qtn2.sites[inputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+                @test qtn2.sites[outputs(qtn2)[i]] in inds(tensors(qtn2)[i])
+            end
         end
     end
 end
