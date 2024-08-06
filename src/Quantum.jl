@@ -237,8 +237,33 @@ end
 
 Tenet.tensors(tn::Quantum, ::Val{:at}, site::Site) = only(tensors(tn; intersects=inds(tn; at=site)))
 
+# TODO use interfaces/abstract types for better composition of functionality
+@inline function Base.replace!(tn::Quantum, old_new::P...) where {P<:Pair}
+    return invoke(replace!, Tuple{Quantum,Base.AbstractVecOrTuple{P}}, tn, old_new)
+end
+@inline Base.replace!(tn::Quantum, old_new::Dict) = replace!(tn, collect(old_new))
+
+function Base.replace!(tn::Quantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
+    # replace indices in underlying Tensor Network
+    replace!(TensorNetwork(tn), old_new)
+
+    # replace indices in site information
+    from, to = first.(old_new), last.(old_new)
+    for (site, index) in tn.sites
+        i = findfirst(==(index), from)
+        if !isnothing(i)
+            tn.sites[site] = to[i]
+        end
+    end
+
+    return tn
+end
+
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
+
+    resetindex!(a)
+    resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
 
     sitesb = if iob === :inputs
         inputs(b)
@@ -256,21 +281,25 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
         return b
     end
 
-    resetindex_mapping = resetindex!(Val(:return_mapping), TensorNetwork(b); init=ninds(TensorNetwork(a)))
-    replacements = merge!(resetindex_mapping, Dict(replacements))
-    replace!(TensorNetwork(b), replacements...)
-
-    for site in sitesb
-        b.sites[site] = inds(a; at=ioa != iob ? site' : site)
-    end
+    replace!(b, replacements)
 
     return b
+end
+
+function resetindex!(tn::Quantum; init=1)
+    mapping = resetindex!(Val(:return_mapping), TensorNetwork(tn); init)
+
+    replace!(TensorNetwork(tn), mapping)
+
+    for (site, index) in tn.sites
+        tn.sites[site] = mapping[index]
+    end
 end
 
 """
     @reindex! a => b
 
-Reindexes the input/output sites of a [`Quantum`](@ref) Tensor Network `b` to match the input/output sites of another [`Quantum`](@ref) Tensor Network `a`.
+Reindexes the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
 """
 macro reindex!(expr)
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)

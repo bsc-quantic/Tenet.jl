@@ -303,7 +303,7 @@
         @test t_ilm === tn[:i, :l, :m]
         @test t_lm === tn[:l, :m]
 
-        # NOTE although it should throw `KeyError`, it throws `ArgumentError` due to implementation 
+        # NOTE although it should throw `KeyError`, it throws `ArgumentError` due to implementation
         @test_throws ArgumentError tn[:i, :x]
         @test_throws ArgumentError tn[:i, :j, :k]
     end
@@ -525,6 +525,38 @@
             @test length(tensors(tnA)) == (length(tensorsA) + length(tensorsB) - 1)
             @test issetequal(finalinds, inds(tnA))
             @test issetequal(finaltensors, tensors(tnA))
+        end
+
+        @testset "overlapping replacement" begin
+            A = Tensor(rand(2, 2, 2), (:F, :A, :K))
+            B = Tensor(rand(2, 2, 2, 2), (:K, :G, :B, :L))
+            C = Tensor(rand(2, 2, 2, 2), (:L, :H, :C, :M))
+            D = Tensor(rand(2, 2, 2, 2), (:M, :I, :D, :N))
+            E = Tensor(rand(2, 2, 2), (:N, :J, :E))
+
+            old_new = [
+                :N => :N,
+                :F => :A,
+                :M => :O,
+                :A => :P,
+                :D => :J,
+                :B => :K,
+                :I => :D,
+                :H => :C,
+                :G => :B,
+                :J => :E,
+                :K => :L,
+                :L => :U,
+                :E => :M,
+                :C => :V,
+            ]
+            tn = TensorNetwork([A, B, C, D, E])
+
+            replace!(tn, old_new...)
+
+            @test issetequal(
+                inds.(tensors(tn)), [[:A, :P, :L], [:L, :B, :K, :U], [:U, :C, :V, :O], [:O, :D, :J, :N], [:N, :E, :M]]
+            )
         end
     end
 
