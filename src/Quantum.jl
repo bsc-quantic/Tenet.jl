@@ -238,12 +238,7 @@ function nsites(tn::Quantum; set=:all)
     end
 end
 
-"""
-    getindex(q::Quantum, site::Site)
-
-Returns the index associated with a site in a [`Quantum`](@ref) Tensor Network.
-"""
-@deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site)
+@deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site) false
 
 # TODO use interfaces/abstract types for better composition of functionality
 @inline function Base.replace!(tn::Quantum, old_new::P...) where {P<:Pair}
