@@ -28,6 +28,157 @@ Its subtypes must implement conversion or extraction of the underlying `TensorNe
 """
 abstract type AbstractTensorNetwork end
 
+inds(tn::AbstractTensorNetwork; kwargs...) = inds(TensorNetwork(tn); kwargs...)
+ninds(tn::AbstractTensorNetwork) = ninds(TensorNetwork(tn))
+
+tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(TensorNetwork(tn); kwargs...)
+ntensors(tn::AbstractTensorNetwork) = ntensors(TensorNetwork(tn))
+arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
+Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
+
+Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = in(tensor, TensorNetwork(tn))
+Base.in(index::Symbol, tn::AbstractTensorNetwork) = in(index, TensorNetwork(tn))
+
+Base.size(tn::AbstractTensorNetwork, args...) = size(TensorNetwork(tn), args...)
+
+Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
+
+Base.conj(tn::AbstractTensorNetwork) = conj!(copy(tn))
+function Base.conj!(tn::AbstractTensorNetwork)
+    foreach(conj!, tensors(tn))
+    return tn
+end
+
+function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
+    @assert tensor ∈ tn "Tensor not found in TensorNetwork"
+    tensors = mapreduce(∪, inds(tensor)) do index
+        Tenet.tensors(tn; intersects=index)
+    end
+    open && filter!(x -> x !== tensor, tensors)
+    return tensors
+end
+
+function neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
+    @assert i ∈ tn "Index $i not found in TensorNetwork"
+    tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
+    # open && filter!(x -> x !== i, tensors)
+    return tensors
+end
+
+"""
+    slice!(tn::AbstractTensorNetwork, index::Symbol, i)
+
+In-place projection of `index` on dimension `i`.
+
+See also: [`selectdim`](@ref), [`view`](@ref).
+"""
+function slice!(tn::AbstractTensorNetwork, label::Symbol, i)
+    for tensor in pop!(TensorNetwork(tn), label)
+        push!(tn, selectdim(tensor, label, i))
+    end
+
+    return tn
+end
+
+"""
+    selectdim(tn::AbstractTensorNetwork, index::Symbol, i)
+
+Return a copy of the [`AbstractTensorNetwork`](@ref) where `index` has been projected to dimension `i`.
+
+See also: [`view`](@ref), [`slice!`](@ref).
+"""
+Base.selectdim(tn::AbstractTensorNetwork, index::Symbol, i) = @view tn[index => i]
+
+"""
+    view(tn::AbstractTensorNetwork, index => i...)
+
+Return a copy of the [`AbstractTensorNetwork`](@ref) where each `index` has been projected to dimension `i`.
+It is equivalent to a recursive call of [`selectdim`](@ref).
+
+See also: [`selectdim`](@ref), [`slice!`](@ref).
+"""
+function Base.view(tn::AbstractTensorNetwork, slices::Pair{Symbol}...)
+    tn = copy(tn)
+
+    for (label, i) in slices
+        slice!(tn, label, i)
+    end
+
+    return tn
+end
+
+"""
+    einexpr(tn::AbstractTensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
+
+Search a contraction path for the given [`AbstractTensorNetwork`](@ref) and return it as a `EinExpr`.
+
+# Keyword Arguments
+
+  - `optimizer` Contraction path optimizer. Check [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) documentation for more info.
+  - `outputs` Indices that won't be contracted. Defaults to open indices.
+  - `kwargs` Options to be passed to the optimizer.
+
+See also: [`contract`](@ref).
+"""
+function EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer=Greedy, outputs=inds(tn; set=:open), kwargs...)
+    return einexpr(
+        optimizer,
+        sum(
+            [
+                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
+                tensor in tensors(tn)
+            ];
+            skip=outputs,
+        );
+        kwargs...,
+    )
+end
+
+contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
+
+# TODO sequence of indices?
+# TODO what if parallel neighbour indices?
+"""
+    contract!(tn::TensorNetwork, index)
+
+In-place contraction of tensors connected to `index`.
+
+See also: [`contract`](@ref).
+"""
+function contract!(tn::AbstractTensorNetwork, i)
+    _tensors = sort!(tensors(tn; intersects=i); by=length)
+    tensor = contract(TensorNetwork(_tensors))
+    _tn = TensorNetwork(tn)
+    delete!(_tn, i)
+    push!(_tn, tensor)
+    return tn
+end
+contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
+
+"""
+    contract(tn::AbstractTensorNetwork; kwargs...)
+
+Contract a [`AbstractTensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
+
+The `kwargs` will be passed down to the [`einexpr`](@ref) function.
+
+See also: [`einexpr`](@ref), [`contract!`](@ref).
+"""
+function contract(tn::AbstractTensorNetwork; path=einexpr(tn))
+    length(path.args) == 0 && return tn[inds(path)...]
+
+    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
+    return contract(intermediates...; dims=suminds(path))
+end
+
+function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
+    tn = TensorNetwork(tn)
+    push!(tn, t)
+    return contract(tn; kwargs...)
+end
+contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
+contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
+
 """
     TensorNetwork
 
@@ -90,23 +241,6 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     end
 end
 
-function __check_index_sizes(tn)
-    # Iterate through each index in the indexmap
-    for (index, tensors) in tn.indexmap
-        # Get the size of the first tensor for this index
-        reference_size = size(tensors[1], index)
-
-        # Compare the size of each subsequent tensor for this index
-        for tensor in tensors
-            if size(tensor, index) != reference_size
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
 """
     tensors(tn::TensorNetwork)
 
@@ -143,10 +277,6 @@ tensors(tn::TensorNetwork, ::Val{:intersects}, is::AbstractVecOrTuple{Symbol}) =
 function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
     return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
 end
-
-arrays(tn::TensorNetwork) = parent.(tensors(tn))
-
-Base.collect(tn::TensorNetwork) = tensors(tn)
 
 """
     inds(tn::TensorNetwork, set = :all)
@@ -242,26 +372,26 @@ If `index` is set, return the dimensionality of `index`. This is equivalent to `
 Base.size(tn::TensorNetwork) = Dict{Symbol,Int}(index => size(tn, index) for index in keys(tn.indexmap))
 Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
 
-Base.eltype(tn::TensorNetwork) = promote_type(eltype.(tensors(tn))...)
-
+# TODO move to `tensors` method
 function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int=1)
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
-function neighbors(tn::TensorNetwork, tensor::Tensor; open::Bool=true)
-    @assert tensor ∈ tn "Tensor not found in TensorNetwork"
-    tensors = mapreduce(∪, inds(tensor)) do index
-        Tenet.tensors(tn; intersects=index)
-    end
-    open && filter!(x -> x !== tensor, tensors)
-    return tensors
-end
+function __check_index_sizes(tn)
+    # Iterate through each index in the indexmap
+    for (index, tensors) in tn.indexmap
+        # Get the size of the first tensor for this index
+        reference_size = size(tensors[1], index)
 
-function neighbors(tn::TensorNetwork, i::Symbol; open::Bool=true)
-    @assert i ∈ tn "Index $i not found in TensorNetwork"
-    tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
-    # open && filter!(x -> x !== i, tensors)
-    return tensors
+        # Compare the size of each subsequent tensor for this index
+        for tensor in tensors
+            if size(tensor, index) != reference_size
+                return false
+            end
+        end
+    end
+
+    return true
 end
 
 const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
@@ -484,48 +614,6 @@ Base.in(tensor::Tensor, tn::TensorNetwork) = tensor ∈ keys(tn.tensormap)
 Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
 
 """
-    slice!(tn::TensorNetwork, index::Symbol, i)
-
-In-place projection of `index` on dimension `i`.
-
-See also: [`selectdim`](@ref), [`view`](@ref).
-"""
-function slice!(tn::TensorNetwork, label::Symbol, i)
-    for tensor in pop!(tn, label)
-        push!(tn, selectdim(tensor, label, i))
-    end
-
-    return tn
-end
-
-"""
-    selectdim(tn::TensorNetwork, index::Symbol, i)
-
-Return a copy of the [`TensorNetwork`](@ref) where `index` has been projected to dimension `i`.
-
-See also: [`view`](@ref), [`slice!`](@ref).
-"""
-Base.selectdim(tn::TensorNetwork, label::Symbol, i) = @view tn[label => i]
-
-"""
-    view(tn::TensorNetwork, index => i...)
-
-Return a copy of the [`TensorNetwork`](@ref) where each `index` has been projected to dimension `i`.
-It is equivalent to a recursive call of [`selectdim`](@ref).
-
-See also: [`selectdim`](@ref), [`slice!`](@ref).
-"""
-function Base.view(tn::TensorNetwork, slices::Pair{Symbol}...)
-    tn = copy(tn)
-
-    for (label, i) in slices
-        slice!(tn, label, i)
-    end
-
-    return tn
-end
-
-"""
     rand(TensorNetwork, n::Integer, regularity::Integer; out = 0, dim = 2:9, seed = nothing, globalind = false)
 
 Generate a random tensor network.
@@ -597,84 +685,6 @@ Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
 
 Base.rand(::Type{TensorNetwork}; kwargs...) = rand(Random.default_rng(), TensorNetwork; kwargs...)
 Base.rand(rng::AbstractRNG, ::Type{TensorNetwork}; kwargs...) = rand(rng, TNSampler(; kwargs...))
-
-"""
-    einexpr(tn::TensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
-
-Search a contraction path for the given [`TensorNetwork`](@ref) and return it as a `EinExpr`.
-
-# Keyword Arguments
-
-  - `optimizer` Contraction path optimizer. Check [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl) documentation for more info.
-  - `outputs` Indices that won't be contracted. Defaults to open indices.
-  - `kwargs` Options to be passed to the optimizer.
-
-See also: [`contract`](@ref).
-"""
-function EinExprs.einexpr(tn::TensorNetwork; optimizer=Greedy, outputs=inds(tn; set=:open), kwargs...)
-    return einexpr(
-        optimizer,
-        sum(
-            [
-                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
-                tensor in tensors(tn)
-            ];
-            skip=outputs,
-        );
-        kwargs...,
-    )
-end
-
-function Base.conj!(tn::TensorNetwork)
-    foreach(conj!, tensors(tn))
-    return tn
-end
-
-Base.conj(tn::TensorNetwork) = TensorNetwork(map(conj, tensors(tn)))
-
-# TODO sequence of indices?
-# TODO what if parallel neighbour indices?
-"""
-    contract!(tn::TensorNetwork, index)
-
-In-place contraction of tensors connected to `index`.
-
-See also: [`contract`](@ref).
-"""
-function contract!(tn::TensorNetwork, i)
-    _tensors = sort!(tensors(tn; intersects=i); by=length)
-    tensor = contract(TensorNetwork(_tensors))
-    delete!(tn, i)
-    push!(tn, tensor)
-    return tn
-end
-function contract(tn::TensorNetwork, i)
-    tn = copy(tn)
-    return contract!(tn, i)
-end
-contract!(tn::TensorNetwork, i::Symbol) = contract!(tn, [i])
-contract(tn::TensorNetwork, i::Symbol) = contract(tn, [i])
-
-"""
-    contract(tn::TensorNetwork; kwargs...)
-
-Contract a [`TensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
-
-The `kwargs` will be passed down to the [`einexpr`](@ref) function.
-
-See also: [`einexpr`](@ref), [`contract!`](@ref).
-"""
-function contract(tn::TensorNetwork; path=einexpr(tn))
-    length(path.args) == 0 && return tn[inds(path)...]
-
-    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
-    return contract(intermediates...; dims=suminds(path))
-end
-
-contract!(t::Tensor, tn::TensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
-contract!(tn::TensorNetwork, t::Tensor; kwargs...) = (push!(tn, t); contract(tn; kwargs...))
-contract(t::Tensor, tn::TensorNetwork; kwargs...) = contract(tn, t; kwargs...)
-contract(tn::TensorNetwork, t::Tensor; kwargs...) = contract!(copy(tn), t; kwargs...)
 
 function LinearAlgebra.svd!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
