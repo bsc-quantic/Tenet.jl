@@ -436,7 +436,7 @@
             @testset "not canonical" begin
                 evolved = evolve!(deepcopy(qtn), gate; threshold = 1e-14, iscanonical = false)
                 @test length(tensors(evolved)) == 5
-                @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
+                @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(
                     contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn))
                 )
