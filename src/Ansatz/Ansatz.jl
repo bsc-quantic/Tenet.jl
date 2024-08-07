@@ -3,40 +3,19 @@ using LinearAlgebra
 """
     Ansatz
 
-[`Quantum`](@ref) Tensor Network with a predefined structure.
+[`AbstractQuantum`](@ref) Tensor Network with a predefined structure.
 
 # Notes
 
   - Any subtype must define `super::Quantum` field or specialize the `Quantum` method.
 """
-abstract type Ansatz end
+abstract type Ansatz <: AbstractQuantum end
 
+# TODO maybe we need to change this?
 Quantum(@nospecialize tn::Ansatz) = tn.super
 
 Base.:(==)(a::Ansatz, b::Ansatz) = Quantum(a) == Quantum(b)
 Base.isapprox(a::Ansatz, b::Ansatz; kwargs...) = isapprox(Quantum(a), Quantum(b); kwargs...)
-
-# TODO forward `Quantum` methods
-for f in [
-    :(Tenet.TensorNetwork),
-    :ninputs,
-    :noutputs,
-    :inputs,
-    :outputs,
-    :nsites,
-    :nlanes,
-    :socket,
-    :(Tenet.arrays),
-    :(Base.collect),
-]
-    @eval $f(@nospecialize tn::Ansatz) = $f(Quantum(tn))
-end
-
-abstract type Boundary end
-struct Open <: Boundary end
-struct Periodic <: Boundary end
-
-function boundary end
 
 alias(::A) where {A} = string(A)
 function Base.summary(io::IO, tn::A) where {A<:Ansatz}
@@ -44,17 +23,7 @@ function Base.summary(io::IO, tn::A) where {A<:Ansatz}
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
 
-sites(tn::Ansatz; kwargs...) = sites(Quantum(tn); kwargs...)
-
-function Tenet.inds(tn::Ansatz; kwargs...)
-    if keys(kwargs) === (:bond,)
-        inds(tn, Val(:bond), kwargs[:bond]...)
-    else
-        inds(Quantum(tn); kwargs...)
-    end
-end
-
-function Tenet.inds(tn::Ansatz, ::Val{:bond}, site1::Site, site2::Site)
+function Tenet.inds(tn::Ansatz, ::Val{:bond}, (site1, site2)::Tuple{Site,Site}) #, site2::Site)
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
@@ -66,15 +35,7 @@ function Tenet.inds(tn::Ansatz, ::Val{:bond}, site1::Site, site2::Site)
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-function Tenet.tensors(tn::Ansatz; kwargs...)
-    if keys(kwargs) === (:between,)
-        tensors(tn, Val(:between), kwargs[:between]...)
-    else
-        tensors(Quantum(tn); kwargs...)
-    end
-end
-
-function Tenet.tensors(tn::Ansatz, ::Val{:between}, site1::Site, site2::Site)
+function Tenet.tensors(tn::Ansatz, ::Val{:between}, (site1, site2)::Tuple{Site,Site})
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
@@ -106,3 +67,10 @@ end
 function LinearAlgebra.norm2(ψ::Ansatz; kwargs...)
     return abs(sqrt(only(contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...))))
 end
+
+# Traits
+abstract type Boundary end
+struct Open <: Boundary end
+struct Periodic <: Boundary end
+
+function boundary end
