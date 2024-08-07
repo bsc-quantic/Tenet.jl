@@ -83,7 +83,7 @@ nlanes(tn::AbstractQuantum) = length(lanes(tn))
 """
     Socket
 
-Abstract type representing the socket of a [`Quantum`](@ref) Tensor Network.
+Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 abstract type Socket end
 
@@ -209,7 +209,6 @@ end
 
 function sites(tn::AbstractQuantum, ::Val{:set}, query)
     tn = Quantum(tn)
-
     if query === :all
         collect(keys(tn.sites))
     elseif query === :inputs
@@ -217,11 +216,9 @@ function sites(tn::AbstractQuantum, ::Val{:set}, query)
     elseif query === :outputs
         filter(!isdual, keys(tn.sites))
     else
-        throw(MethodError(sites, (Quantum,), kwargs))
+        throw(ArgumentError("invalid set: $query"))
     end
 end
-
-# sites(tn::AbstractQuantum, ::Val{:at}, i) = findfirst(i -> i === kwargs[:at], tn.sites)
 
 """
     nsites(q::Quantum)
