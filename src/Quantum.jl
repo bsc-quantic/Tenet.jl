@@ -26,7 +26,12 @@ function sites(tn::AbstractQuantum; kwargs...)
     return sites(tn, Val(key), value)
 end
 
-nsites(tn::AbstractQuantum; kwargs...) = nsites(Quantum(tn); kwargs...)
+function nsites(tn::AbstractQuantum; kwargs...)
+    isempty(kwargs) && return nsites(tn, Val(:set), :all)
+    key = only(keys(kwargs))
+    value = values(kwargs)[key]
+    return nsites(tn, Val(key), value)
+end
 
 """
     inputs(q::Quantum)
@@ -225,13 +230,16 @@ end
 
 Returns the number of sites of a [`Quantum`](@ref) Tensor Network.
 """
-function nsites(tn::Quantum; set=:all)
-    if set === :all
+function nsites(tn::AbstractQuantum, ::Val{:set}, query)
+    tn = Quantum(tn)
+    if query === :all
         length(tn.sites)
-    elseif set === :inputs
-        length(sites(tn; set))
-    elseif set === :outputs
-        length(sites(tn; set))
+    elseif query === :inputs
+        length(sites(tn; set=query))
+    elseif query === :outputs
+        length(sites(tn; set=query))
+    else
+        throw(ArgumentError("invalid set: $query"))
     end
 end
 
