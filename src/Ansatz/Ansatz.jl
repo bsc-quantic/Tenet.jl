@@ -23,7 +23,7 @@ function Base.summary(io::IO, tn::A) where {A<:Ansatz}
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
 
-function Tenet.inds(tn::Ansatz, ::Val{:bond}, (site1, site2)::Tuple{Site,Site}) #, site2::Site)
+function Tenet.inds(tn::Ansatz, ::Val{:bond}, (site1, site2)::Tuple{Site,Site})
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
