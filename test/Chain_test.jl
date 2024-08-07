@@ -390,64 +390,56 @@
         @testset "one site" begin
             i = 2
             mat = reshape(LinearAlgebra.I(2), 2, 2)
-            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(i, dual=true)])
+            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(i; dual=true)])
 
             qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
                 canonized = canonize(qtn)
 
-                evolved = evolve!(deepcopy(canonized), gate; threshold = 1e-14)
-                @test isapprox(
-                    contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized))
-                )
+                evolved = evolve!(deepcopy(canonized), gate; threshold=1e-14)
+                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized)))
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
                 @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
             end
 
             @testset "not canonical" begin
-                evolved = evolve!(deepcopy(qtn), gate; threshold = 1e-14, iscanonical = false)
+                evolved = evolve!(deepcopy(qtn), gate; threshold=1e-14, iscanonical=false)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(
-                    contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
             end
         end
 
         @testset "two sites" begin
             i, j = 2, 3
-            mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)),2,2,2,2)
-            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i, dual=true), Site(j, dual=true)])
+            mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
+            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
 
             qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
                 canonized = canonize(qtn)
 
-                evolved = evolve!(deepcopy(canonized), gate; threshold = 1e-14)
-                @test isapprox(
-                    contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized))
-                )
+                evolved = evolve!(deepcopy(canonized), gate; threshold=1e-14)
+                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized)))
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
                 @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
             end
 
             @testset "not canonical" begin
-                evolved = evolve!(deepcopy(qtn), gate; threshold = 1e-14, iscanonical = false)
+                evolved = evolve!(deepcopy(qtn), gate; threshold=1e-14, iscanonical=false)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(
-                    contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
             end
         end
     end
 
     @testset "expect" begin
         i, j = 2, 3
-        mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)),2,2,2,2)
-        gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i, dual=true), Site(j, dual=true)])
+        mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
+        gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
 
         qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
