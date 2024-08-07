@@ -598,9 +598,18 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
         end,
     )
     replace!(
-        TensorNetwork(gate),
+        Quantum(gate),
         map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
             inds(gate; at=site) => contracting_index
+        end,
+    )
+
+    # replace output indices of the gate for gensym indices
+    output_inds = [gensym(:out) for _ in outputs(gate)]
+    replace!(
+        Quantum(gate),
+        map(zip(outputs(gate), output_inds)) do (site, out)
+            inds(gate; at=site) => out
         end,
     )
 
