@@ -324,7 +324,7 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
         push!(right_inds, leftindex(tn, site))
 
         site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))
-        push!(left_inds, Quantum(tn)[site])
+        push!(left_inds, inds(tn; at=site))
 
         only(right_inds)
     elseif direction === :right
@@ -332,7 +332,7 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
         push!(right_inds, rightindex(tn, site))
 
         site == Site(1) || push!(left_inds, leftindex(tn, site))
-        push!(left_inds, Quantum(tn)[site])
+        push!(left_inds, inds(tn; at=site))
 
         only(right_inds)
     else
@@ -528,13 +528,19 @@ function evolve!(qtn::Chain, gate::Dense; threshold=nothing, maxdim=nothing, isc
     end
 
     # TODO refactor out to `islane`?
-    if !issetequal(adjoint.(inputs(gate)), outputs(gate))
-        throw(ArgumentError("Gate inputs ($(inputs(gate))) and outputs ($(outputs(gate))) must be the same"))
+    if !issetequal(adjoint.(sites(gate; set=:inputs)), sites(gate; set=:outputs))
+        throw(
+            ArgumentError(
+                "Gate inputs ($(sites(gate; set=:inputs))) and outputs ($(sites(gate; set=:outputs))) must be the same"
+            ),
+        )
     end
 
     # TODO refactor out to `canconnect`?
-    if adjoint.(inputs(gate)) ⊈ outputs(qtn)
-        throw(ArgumentError("Gate inputs ($(inputs(gate))) must be a subset of the TN sites ($(sites(qtn)))"))
+    if adjoint.(sites(gate; set=:inputs)) ⊈ sites(qtn; set=:outputs)
+        throw(
+            ArgumentError("Gate inputs ($(sites(gate; set=:inputs))) must be a subset of the TN sites ($(sites(qtn)))")
+        )
     end
 
     if nlanes(gate) == 1
@@ -542,7 +548,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold=nothing, maxdim=nothing, isc
     elseif nlanes(gate) == 2
         # check gate sites are contiguous
         # TODO refactor this out?
-        gate_inputs = sort!(map(id, inputs(gate)))
+        gate_inputs = sort!(map(id, sites(gate; set=:inputs)))
         range = UnitRange(extrema(gate_inputs)...)
 
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
@@ -562,14 +568,14 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     gate = copy(gate)
 
     contracting_index = gensym(:tmp)
-    targetsite = only(inputs(gate))'
+    targetsite = only(sites(gate; set=:inputs))'
 
     # reindex contracting index
     replace!(TensorNetwork(qtn), inds(qtn; at=targetsite) => contracting_index)
     replace!(TensorNetwork(gate), inds(gate; at=targetsite') => contracting_index)
 
     # reindex output of gate to match TN sitemap
-    replace!(TensorNetwork(gate), inds(gate; at=only(outputs(gate))) => inds(qtn; at=targetsite))
+    replace!(TensorNetwork(gate), inds(gate; at=only(sites(gate; set=:outputs))) => inds(qtn; at=targetsite))
 
     # contract gate with TN
     merge!(TensorNetwork(qtn), TensorNetwork(gate))
@@ -581,7 +587,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
-    bond = sitel, siter = minmax(outputs(gate)...)
+    bond = sitel, siter = minmax(sites(gate; set=:outputs)...)
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
@@ -590,22 +596,22 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
     iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
-    contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
+    contracting_inds = [gensym(:tmp) for _ in sites(gate; set=:inputs)]
     replace!(
         TensorNetwork(qtn),
-        map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
             inds(qtn; at=site') => contracting_index
         end,
     )
     replace!(
         TensorNetwork(gate),
-        map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
             inds(gate; at=site) => contracting_index
         end,
     )
 
     # reindex output of gate to match TN sitemap
-    for site in outputs(gate)
+    for site in sites(gate; set=:outputs)
         if inds(qtn; at=site) != inds(gate; at=site)
             replace!(TensorNetwork(gate), inds(gate; at=site) => inds(qtn; at=site))
         end

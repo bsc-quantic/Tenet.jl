@@ -3,8 +3,8 @@
         @testset "State" begin
             qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3"])
             @test boundary(qtn) == Periodic()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
@@ -39,8 +39,8 @@
         @testset "Operator" begin
             qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == 3
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 3
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
             @test boundary(qtn) == Periodic()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
@@ -83,8 +83,8 @@
         @testset "State" begin
             qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3"])
             @test boundary(qtn) == Open()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
@@ -118,8 +118,8 @@
         @testset "Operator" begin
             qtn = Chain(Operator(), Open(), [rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == 3
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 3
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
             @test boundary(qtn) == Open()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
@@ -212,8 +212,8 @@
 
             qtn = rand(Chain, Open, State; n, p=2, χ)
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == n
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == n
             @test issetequal(sites(qtn), map(Site, 1:n))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)
@@ -226,8 +226,8 @@
 
             qtn = rand(Chain, Open, Operator; n, p=2, χ)
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == n
-            @test noutputs(qtn) == n
+            @test nsites(qtn; set=:inputs) == n
+            @test nsites(qtn; set=:outputs) == n
             @test issetequal(sites(qtn), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)

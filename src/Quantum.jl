@@ -72,7 +72,7 @@ Returns the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 function lanes(tn::AbstractQuantum)
     return unique(
-        Iterators.map(Iterators.flatten([inputs(tn), outputs(tn)])) do site
+        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
             isdual(site) ? site' : site
         end,
     )
@@ -184,7 +184,9 @@ Base.:(==)(a::Quantum, b::Quantum) = a.tn == b.tn && a.sites == b.sites
 Base.isapprox(a::Quantum, b::Quantum; kwargs...) = isapprox(a.tn, b.tn; kwargs...) && a.sites == b.sites
 
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
-Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
+function Base.show(io::IO, q::Quantum)
+    return print(io, "Quantum (inputs=$(nsites(q; set=:inputs)), outputs=$(nsites(q; set=:outputs)))")
+end
 
 Tenet.inds(tn::Quantum, ::Val{:at}, site::Site) = Quantum(tn).sites[site]
 
@@ -274,9 +276,9 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
 
     sitesb = if iob === :inputs
-        collect(inputs(b))
+        collect(sites(b; set=:inputs))
     elseif iob === :outputs
-        collect(outputs(b))
+        collect(sites(b; set=:outputs))
     else
         error("Invalid argument: :$iob")
     end
@@ -328,18 +330,18 @@ Merges multiple [`Quantum`](@ref) Tensor Networks into a single one by connectin
 """
 Base.merge(a::Quantum, others::Quantum...) = foldl(merge, others; init=a)
 function Base.merge(a::Quantum, b::Quantum)
-    @assert issetequal(outputs(a), map(adjoint, inputs(b))) "Outputs of $a must match inputs of $b"
+    @assert issetequal(sites(a; set=:outputs), map(adjoint, sites(b; set=:inputs))) "Outputs of $a must match inputs of $b"
 
     @reindex! outputs(a) => inputs(b)
     tn = merge(TensorNetwork(a), TensorNetwork(b))
 
     sites = Dict{Site,Symbol}()
 
-    for site in inputs(a)
+    for site in sites(a; set=:inputs)
         sites[site] = inds(a; at=site)
     end
 
-    for site in outputs(b)
+    for site in sites(b; set=:outputs)
         sites[site] = inds(b; at=site)
     end
 

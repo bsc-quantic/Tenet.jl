@@ -19,7 +19,7 @@ Base.isapprox(a::Ansatz, b::Ansatz; kwargs...) = isapprox(Quantum(a), Quantum(b)
 
 alias(::A) where {A} = string(A)
 function Base.summary(io::IO, tn::A) where {A<:Ansatz}
-    return print(io, "$(alias(tn)) (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
+    return print(io, "$(alias(tn)) (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
 

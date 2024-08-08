@@ -4,8 +4,8 @@
     _tensors = Tensor[Tensor(zeros(2), [:i])]
     tn = TensorNetwork(_tensors)
     qtn = Quantum(tn, Dict(site"1" => :i))
-    @test ninputs(qtn) == 0
-    @test noutputs(qtn) == 1
+    @test nsites(qtn; set=:inputs) == 0
+    @test nsites(qtn; set=:outputs) == 1
     @test issetequal(sites(qtn), [site"1"])
     @test socket(qtn) == State(; dual=false)
 
@@ -16,24 +16,24 @@
     _tensors = Tensor[Tensor(zeros(2), [:i])]
     tn = TensorNetwork(_tensors)
     qtn = Quantum(tn, Dict(site"1'" => :i))
-    @test ninputs(qtn) == 1
-    @test noutputs(qtn) == 0
+    @test nsites(qtn; set=:inputs) == 1
+    @test nsites(qtn; set=:outputs) == 0
     @test issetequal(sites(qtn), [site"1'"])
     @test socket(qtn) == State(; dual=true)
 
     _tensors = Tensor[Tensor(zeros(2, 2), [:i, :j])]
     tn = TensorNetwork(_tensors)
     qtn = Quantum(tn, Dict(site"1" => :i, site"1'" => :j))
-    @test ninputs(qtn) == 1
-    @test noutputs(qtn) == 1
+    @test nsites(qtn; set=:inputs) == 1
+    @test nsites(qtn; set=:outputs) == 1
     @test issetequal(sites(qtn), [site"1", site"1'"])
     @test socket(qtn) == Operator()
 
     _tensors = Tensor[Tensor(fill(0))]
     tn = TensorNetwork(_tensors)
     qtn = Quantum(tn, Dict())
-    @test ninputs(qtn) == 0
-    @test noutputs(qtn) == 0
+    @test nsites(qtn; set=:inputs) == 0
+    @test nsites(qtn; set=:outputs) == 0
     @test isempty(sites(qtn))
     @test socket(qtn) == Scalar()
 
@@ -69,7 +69,9 @@
 
             Tenet.@reindex! outputs(mps) => inputs(mpo)
 
-            @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
+            @test issetequal(
+                [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
+            )
 
             # test that the both inputs/outputs appear on the corresponding tensor
             @test all(Site.(1:3)) do i
@@ -106,7 +108,9 @@
 
             Tenet.@reindex! outputs(mps) => inputs(mpo)
 
-            @test issetequal([inds(mps; at=i) for i in outputs(mps)], [inds(mpo; at=i) for i in inputs(mpo)])
+            @test issetequal(
+                [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
+            )
 
             # test that the both inputs/outputs appear on the corresponding tensor
             @test all(Site.(1:3)) do i
