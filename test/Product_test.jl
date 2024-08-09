@@ -5,8 +5,8 @@
 
     qtn = Product([rand(2) for _ in 1:3])
     @test socket(qtn) == State()
-    @test ninputs(qtn) == 0
-    @test noutputs(qtn) == 3
+    @test nsites(qtn; set=:inputs) == 0
+    @test nsites(qtn; set=:outputs) == 3
     @test norm(qtn) isa Number
     @test begin
         normalize!(qtn)
@@ -18,8 +18,8 @@
 
     qtn = Product([rand(2, 2) for _ in 1:3])
     @test socket(qtn) == Operator()
-    @test ninputs(qtn) == 3
-    @test noutputs(qtn) == 3
+    @test nsites(qtn; set=:inputs) == 3
+    @test nsites(qtn; set=:outputs) == 3
     @test norm(qtn) isa Number
     @test opnorm(qtn) isa Number
     @test begin
