@@ -142,6 +142,92 @@ function Base.view(tn::AbstractTensorNetwork, slices::Pair{Symbol}...)
 end
 
 """
+    replace!(tn::AbstractTensorNetwork, old => new...)
+    replace(tn::AbstractTensorNetwork, old => new...)
+
+Replace the element in `old` with the one in `new`. Depending on the types of `old` and `new`, the following behaviour is expected:
+
+  - If `Symbol`s, it will correspond to a index renaming.
+  - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
+"""
+@inline function Base.replace!(tn::AbstractTensorNetwork, old_new::P...) where {P<:Pair}
+    return invoke(replace!, Tuple{AbstractTensorNetwork,Base.AbstractVecOrTuple{P}}, tn, old_new)
+end
+@inline Base.replace!(tn::AbstractTensorNetwork, old_new::Dict) = replace!(tn, collect(old_new))
+
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTuple{Pair})
+    for pair in old_new
+        replace!(tn, pair)
+    end
+    return tn
+end
+
+Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
+Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
+
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
+    tn = TensorNetwork(tn)
+    old, new = old_new
+    old ∈ tn || throw(ArgumentError("index $old does not exist"))
+    old == new && return tn
+    new ∉ tn || throw(ArgumentError("index $new is already present"))
+    # NOTE `copy` because collection underneath is mutated
+    for tensor in copy(tensors(tn; contains=old))
+        # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
+        push!(tn, replace(tensor, old_new))
+        delete!(tn, tensor)
+    end
+    tryprune!(tn, old)
+    return tn
+end
+
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
+    from, to = first.(old_new), last.(old_new)
+    allinds = inds(tn)
+
+    # condition: from ⊆ allinds
+    from ⊆ allinds || throw(ArgumentError("set of old indices must be a subset of current indices"))
+
+    # condition: from \ to ∩ allinds = ∅
+    isdisjoint(setdiff(to, from), allinds) || throw(
+        ArgumentError(
+            "new indices must be either a element of the old indices or not an element of the TensorNetwork's indices",
+        ),
+    )
+
+    overlap = from ∩ to
+    if isempty(overlap)
+        # no overlap so easy replacement
+        for (f, t) in zip(from, to)
+            replace!(tn, f => t)
+        end
+    else
+        # overlap between old and new indices => need a temporary name `replace!`
+        tmp = Dict([i => gensym(i) for i in from])
+
+        # replace old indices with temporary names
+        replace!(tn, tmp)
+
+        # replace temporary names with new indices
+        replace!(tn, [tmp[f] => t for (f, t) in zip(from, to)])
+    end
+
+    # return the final index mapping
+    return tn
+end
+
+function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
+    tn = TensorNetwork(tn)
+    old_tensor, new_tensor = pair
+    issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
+
+    delete!(tn, old_tensor)
+    push!(tn, new_tensor)
+
+    return tn
+end
+
+"""
     einexpr(tn::AbstractTensorNetwork; optimizer = EinExprs.Greedy, output = inds(tn, :open), kwargs...)
 
 Search a contraction path for the given [`AbstractTensorNetwork`](@ref) and return it as a `EinExpr`.
@@ -474,7 +560,13 @@ Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
 Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
 
-tryprune!(tn::TensorNetwork, i::Symbol) = (x = isempty(tn.indexmap[i]) && delete!(tn.indexmap, i); x)
+function tryprune!(tn::AbstractTensorNetwork, i::Symbol)
+    if i ∈ tn
+        tn = TensorNetwork(tn)
+        isempty(tn.indexmap[i]) && delete!(tn.indexmap, i)
+    end
+    return nothing
+end
 
 function Base.delete!(tn::TensorNetwork, tensor::Tensor)
     for index in unique(inds(tensor))
@@ -488,91 +580,8 @@ function Base.delete!(tn::TensorNetwork, tensor::Tensor)
     return tn
 end
 
-"""
-    replace!(tn::TensorNetwork, old => new...)
-    replace(tn::TensorNetwork, old => new...)
-
-Replace the element in `old` with the one in `new`. Depending on the types of `old` and `new`, the following behaviour is expected:
-
-  - If `Symbol`s, it will correspond to a index renaming.
-  - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
-"""
-@inline function Base.replace!(tn::TensorNetwork, old_new::P...) where {P<:Pair}
-    return invoke(replace!, Tuple{TensorNetwork,Base.AbstractVecOrTuple{P}}, tn, old_new)
-end
-@inline Base.replace!(tn::TensorNetwork, old_new::Dict) = replace!(tn, collect(old_new))
-
-function Base.replace!(tn::TensorNetwork, old_new::Base.AbstractVecOrTuple{Pair})
-    for pair in old_new
-        replace!(tn, pair)
-    end
-    return tn
-end
-
-Base.replace(tn::TensorNetwork, old_new::Pair...) = replace(tn, old_new)
-Base.replace(tn::TensorNetwork, old_new) = replace!(copy(tn), old_new)
-
-function Base.replace!(tn::TensorNetwork, old_new::Pair{Symbol,Symbol})
-    old, new = old_new
-    old ∈ keys(tn.indexmap) || throw(ArgumentError("index $old does not exist"))
-    old == new && return tn
-    new ∉ keys(tn.indexmap) || throw(ArgumentError("index $new is already present"))
-    # NOTE `copy` because collection underneath is mutated
-    for tensor in copy(tn.indexmap[old])
-        # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
-        push!(tn, replace(tensor, old_new))
-        delete!(tn, tensor)
-    end
-    delete!(tn.indexmap, old)
-    return tn
-end
-
-function Base.replace!(tn::TensorNetwork, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
-    from, to = first.(old_new), last.(old_new)
-    allinds = inds(tn)
-
-    # condition: from ⊆ allinds
-    from ⊆ allinds || throw(ArgumentError("set of old indices must be a subset of current indices"))
-
-    # condition: from \ to ∩ allinds = ∅
-    isdisjoint(setdiff(to, from), allinds) || throw(
-        ArgumentError(
-            "new indices must be either a element of the old indices or not an element of the TensorNetwork's indices",
-        ),
-    )
-
-    overlap = from ∩ to
-    if isempty(overlap)
-        # no overlap so easy replacement
-        for (f, t) in zip(from, to)
-            replace!(tn, f => t)
-        end
-    else
-        # overlap between old and new indices => need a temporary name `replace!`
-        tmp = Dict([i => gensym(i) for i in from])
-
-        # replace old indices with temporary names
-        replace!(tn, tmp)
-
-        # replace temporary names with new indices
-        replace!(tn, [tmp[f] => t for (f, t) in zip(from, to)])
-    end
-
-    # return the final index mapping
-    return tn
-end
-
-function Base.replace!(tn::TensorNetwork, pair::Pair{<:Tensor,<:Tensor})
-    old_tensor, new_tensor = pair
-    issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
-
-    push!(tn, new_tensor)
-    delete!(tn, old_tensor)
-
-    return tn
-end
-
-function Base.replace!(tn::TensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:TensorNetwork})
+    tn = TensorNetwork(tn)
     old, new = old_new
     issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match"))
 
