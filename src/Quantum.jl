@@ -188,7 +188,7 @@ function Base.show(io::IO, q::Quantum)
     return print(io, "Quantum (inputs=$(nsites(q; set=:inputs)), outputs=$(nsites(q; set=:outputs)))")
 end
 
-Tenet.inds(tn::Quantum, ::Val{:at}, site::Site) = Quantum(tn).sites[site]
+Tenet.inds(tn::Quantum, ::Val{:at}, site::Site) = tn.sites[site]
 
 """
     adjoint(q::Quantum)
