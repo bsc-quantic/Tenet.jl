@@ -23,7 +23,8 @@ function Base.summary(io::IO, tn::A) where {A<:Ansatz}
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
 
-function Tenet.inds(tn::Ansatz, ::Val{:bond}, (site1, site2)::Tuple{Site,Site})
+@kwmethod function inds(tn::Ansatz; bond)
+    (site1, site2) = bond
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
@@ -35,7 +36,8 @@ function Tenet.inds(tn::Ansatz, ::Val{:bond}, (site1, site2)::Tuple{Site,Site})
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-function Tenet.tensors(tn::Ansatz, ::Val{:between}, (site1, site2)::Tuple{Site,Site})
+@kwmethod function Tenet.tensors(tn::Ansatz; between)
+    (site1, site2) = between
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"

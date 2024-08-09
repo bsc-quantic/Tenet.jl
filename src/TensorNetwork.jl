@@ -5,6 +5,7 @@ using OMEinsum
 using LinearAlgebra
 using ScopedValues
 using Serialization
+using KeywordDispatch
 
 mutable struct CachedField{T}
     isvalid::Bool
@@ -44,12 +45,10 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:hyper` Indices mentioned at least in three tensors.
       + `:parallelto` Indices parallel to `i` in the graph (`i` included).
 """
-function inds(tn::AbstractTensorNetwork; kwargs...)
-    isempty(kwargs) && return inds(tn, Val(:set), :all)
-    key = only(keys(kwargs))
-    value = values(kwargs)[key]
-    return inds(tn, Val(key), value)
-end
+function inds end
+
+@kwdispatch inds(tn::AbstractTensorNetwork)
+@kwmethod inds(tn::AbstractTensorNetwork;) = inds(tn; set=:all)
 
 ninds(tn::AbstractTensorNetwork) = ninds(TensorNetwork(tn))
 
@@ -63,12 +62,9 @@ Return a list of the `Tensor`s in the [`AbstractTensorNetwork`](@ref).
 
   - As the tensors of a [`AbstractTensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
 """
-function tensors(tn::AbstractTensorNetwork; kwargs...)
-    isempty(kwargs) && return tensors(tn, Val(:all))
-    key = only(keys(kwargs))
-    value = values(kwargs)[key]
-    return tensors(tn, Val(key), value)
-end
+function tensors end
+
+@kwdispatch tensors(tn::AbstractTensorNetwork)
 
 ntensors(tn::AbstractTensorNetwork) = ntensors(TensorNetwork(tn))
 arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
@@ -279,38 +275,40 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     end
 end
 
-function inds(tn::AbstractTensorNetwork, ::Val{:set}, query)
+@kwmethod function inds(tn::AbstractTensorNetwork; set)
     tn = TensorNetwork(tn)
-    if query === :all
+    if set === :all
         collect(keys(tn.indexmap))
-    elseif query === :open
+    elseif set === :open
         map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
-    elseif query === :inner
+    elseif set === :inner
         map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
-    elseif query === :hyper
+    elseif set === :hyper
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
-        throw(MethodError(inds, "unknown query: $(keys(kwargs))"))
+        throw(MethodError(inds, "unknown query: $set"))
     end
 end
 
-function inds(tn::AbstractTensorNetwork, ::Val{:parallelto}, i::Symbol)
-    return mapreduce(inds, ∩, tensors(tn; contains=i))
+@kwmethod function inds(tn::AbstractTensorNetwork; parallelto)
+    return mapreduce(inds, ∩, tensors(tn; contains=parallelto))
 end
 
-function tensors(tn::AbstractTensorNetwork, ::Val{:all})
+@kwmethod function tensors(tn::AbstractTensorNetwork;)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
         sort!(collect(keys(tn.tensormap)); by=inds)
     end
 end
 
-tensors(tn::AbstractTensorNetwork, ::Val{:contains}, i::Symbol) = copy(TensorNetwork(tn).indexmap[i])
-tensors(tn::AbstractTensorNetwork, ::Val{:contains}, is::AbstractVecOrTuple{Symbol}) = tensors(⊆, TensorNetwork(tn), is)
+@kwmethod tensors(tn::AbstractTensorNetwork; contains::Symbol) = copy(TensorNetwork(tn).indexmap[contains])
+@kwmethod function tensors(tn::AbstractTensorNetwork; contains::AbstractVecOrTuple{Symbol})
+    return tensors(⊆, TensorNetwork(tn), contains)
+end
 
-tensors(tn::AbstractTensorNetwork, ::Val{:intersects}, i::Symbol) = tensors(!isdisjoint, TensorNetwork(tn), [i])
-function tensors(tn::AbstractTensorNetwork, ::Val{:intersects}, is::AbstractVecOrTuple{Symbol})
-    return tensors(!isdisjoint, TensorNetwork(tn), is)
+@kwmethod tensors(tn::AbstractTensorNetwork; intersects::Symbol) = tensors(!isdisjoint, TensorNetwork(tn), [intersects])
+@kwmethod function tensors(tn::AbstractTensorNetwork; intersects::AbstractVecOrTuple{Symbol})
+    return tensors(!isdisjoint, TensorNetwork(tn), intersects)
 end
 
 function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})

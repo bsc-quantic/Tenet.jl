@@ -9,8 +9,7 @@ abstract type AbstractQuantum <: AbstractTensorNetwork end
 # `AbstractTensorNetwork` interface
 TensorNetwork(tn::AbstractQuantum) = TensorNetwork(Quantum(tn))
 
-inds(tn::AbstractQuantum, ::Val{:at}, site::Site) = inds(Quantum(tn), Val(:at), site)
-tensors(tn::AbstractQuantum, ::Val{:at}, site::Site) = only(tensors(tn; intersects=inds(tn; at=site)))
+@kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
 
 # `AbstractQuantum` interface
 # TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
@@ -19,19 +18,17 @@ tensors(tn::AbstractQuantum, ::Val{:at}, site::Site) = only(tensors(tn; intersec
 
 Returns the sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
-function sites(tn::AbstractQuantum; kwargs...)
-    isempty(kwargs) && return sites(tn, Val(:set), :all)
-    key = only(keys(kwargs))
-    value = values(kwargs)[key]
-    return sites(tn, Val(key), value)
-end
+function sites end
 
-function nsites(tn::AbstractQuantum; kwargs...)
-    isempty(kwargs) && return nsites(tn, Val(:set), :all)
-    key = only(keys(kwargs))
-    value = values(kwargs)[key]
-    return nsites(tn, Val(key), value)
-end
+@kwdispatch sites(tn::AbstractQuantum)
+@kwmethod sites(tn::AbstractQuantum;) = sites(tn; set=:all)
+
+"""
+    nsites(q::AbstractQuantum)
+
+Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
 """
     inputs(q::Quantum)
@@ -188,7 +185,7 @@ function Base.show(io::IO, q::Quantum)
     return print(io, "Quantum (inputs=$(nsites(q; set=:inputs)), outputs=$(nsites(q; set=:outputs)))")
 end
 
-Tenet.inds(tn::Quantum, ::Val{:at}, site::Site) = tn.sites[site]
+@kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
 
 """
     adjoint(q::Quantum)
@@ -214,34 +211,16 @@ function Base.adjoint(qtn::Quantum)
     return Quantum(tn, sites)
 end
 
-function sites(tn::AbstractQuantum, ::Val{:set}, query)
+@kwmethod function sites(tn::AbstractQuantum; set)
     tn = Quantum(tn)
-    if query === :all
+    if set === :all
         collect(keys(tn.sites))
-    elseif query === :inputs
+    elseif set === :inputs
         filter(isdual, keys(tn.sites))
-    elseif query === :outputs
+    elseif set === :outputs
         filter(!isdual, keys(tn.sites))
     else
-        throw(ArgumentError("invalid set: $query"))
-    end
-end
-
-"""
-    nsites(q::Quantum)
-
-Returns the number of sites of a [`Quantum`](@ref) Tensor Network.
-"""
-function nsites(tn::AbstractQuantum, ::Val{:set}, query)
-    tn = Quantum(tn)
-    if query === :all
-        length(tn.sites)
-    elseif query === :inputs
-        length(sites(tn; set=query))
-    elseif query === :outputs
-        length(sites(tn; set=query))
-    else
-        throw(ArgumentError("invalid set: $query"))
+        throw(ArgumentError("invalid set: $set"))
     end
 end
 
