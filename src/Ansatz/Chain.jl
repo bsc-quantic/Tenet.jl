@@ -611,10 +611,10 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
     )
 
     # replace output indices of the gate for gensym indices
-    output_inds = [gensym(:out) for _ in outputs(gate)]
+    output_inds = [gensym(:out) for _ in sites(gate; set=:outputs)]
     replace!(
         Quantum(gate),
-        map(zip(outputs(gate), output_inds)) do (site, out)
+        map(zip(sites(gate; set=:outputs), output_inds)) do (site, out)
             inds(gate; at=site) => out
         end,
     )
