@@ -31,6 +31,7 @@ makedocs(;
         "Visualization" => "visualization.md",
         "Alternatives" => "alternatives.md",
         "References" => "references.md",
+        "⚒️ Developer Reference" => ["Inheritance and Traits" => "developer/inheritance.md"],
     ],
     pagesonly=true,
     format=Documenter.HTML(;
