@@ -31,7 +31,7 @@ makedocs(;
         "Visualization" => "visualization.md",
         "Alternatives" => "alternatives.md",
         "References" => "references.md",
-        "⚒️ Developer Reference" => ["Inheritance and Traits" => "developer/inheritance.md"],
+        "⚒️ Developer Reference" => ["`TensorNetwork` type hierarchy" => "developer/type-hierarchy.md"],
     ],
     pagesonly=true,
     format=Documenter.HTML(;
