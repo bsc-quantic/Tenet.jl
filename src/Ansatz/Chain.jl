@@ -548,7 +548,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold=nothing, maxdim=nothing, isc
     elseif nlanes(gate) == 2
         # check gate sites are contiguous
         # TODO refactor this out?
-        gate_inputs = sort!(map(id, sites(gate; set=:inputs)))
+        gate_inputs = sort!(id.(sites(gate; set=:inputs)))
         range = UnitRange(extrema(gate_inputs)...)
 
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
