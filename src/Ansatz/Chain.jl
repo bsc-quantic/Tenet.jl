@@ -282,13 +282,13 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
 end
 
-"""
-    Tenet.contract!(tn::Chain; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
+# """
+#     Tenet.contract!(tn::Chain; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
 
-For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
-The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
-specifies whether to delete the singular values tensor after the contraction.
-"""
+# For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
+# The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
+# specifies whether to delete the singular values tensor after the contraction.
+# """
 @kwmethod contract(tn::Chain; between, direction, delete_Λ) = contract!(copy(tn); between, direction, delete_Λ)
 @kwmethod function contract!(tn::Chain; between, direction, delete_Λ)
     site1, site2 = between

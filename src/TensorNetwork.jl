@@ -286,15 +286,15 @@ end
 contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
 contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 
-"""
-    contract(tn::AbstractTensorNetwork; kwargs...)
+# """
+#     contract(tn::AbstractTensorNetwork; kwargs...)
 
-Contract a [`AbstractTensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
+# Contract a [`AbstractTensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
 
-The `kwargs` will be passed down to the [`einexpr`](@ref) function.
+# The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
-See also: [`einexpr`](@ref), [`contract!`](@ref).
-"""
+# See also: [`einexpr`](@ref), [`contract!`](@ref).
+# """
 @kwmethod contract(tn::AbstractTensorNetwork;) = contract(tn; path=einexpr(tn))
 @kwmethod function contract(tn::AbstractTensorNetwork; path)
     length(path.args) == 0 && return tn[inds(path)...]
