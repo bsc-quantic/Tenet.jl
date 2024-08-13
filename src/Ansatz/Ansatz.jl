@@ -47,7 +47,7 @@ end
 
     isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
 
-    return TensorNetwork(tn)[only(inds(tensor1) ∩ inds(tensor2))]
+    return tn[only(inds(tensor1) ∩ inds(tensor2))]
 end
 
 struct MissingSchmidtCoefficientsException <: Base.Exception

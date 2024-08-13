@@ -199,7 +199,7 @@ function Base.adjoint(qtn::Quantum)
         end,
     )
 
-    tn = conj(TensorNetwork(qtn))
+    tn = conj(qtn)
 
     # rename inner indices
     physical_inds = values(sites)
@@ -208,7 +208,7 @@ function Base.adjoint(qtn::Quantum)
         i => Symbol(i, "'")
     end...)
 
-    return Quantum(tn, sites)
+    return Quantum(TensorNetwork(tn), sites)
 end
 
 @kwmethod function sites(tn::AbstractQuantum; set)
@@ -226,15 +226,9 @@ end
 
 @deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site) false
 
-# TODO use interfaces/abstract types for better composition of functionality
-@inline function Base.replace!(tn::Quantum, old_new::P...) where {P<:Pair}
-    return invoke(replace!, Tuple{Quantum,Base.AbstractVecOrTuple{P}}, tn, old_new)
-end
-@inline Base.replace!(tn::Quantum, old_new::Dict) = replace!(tn, collect(old_new))
-
 function Base.replace!(tn::Quantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
     # replace indices in underlying Tensor Network
-    replace!(TensorNetwork(tn), old_new)
+    @invoke replace!(tn::AbstractTensorNetwork, old_new)
 
     # replace indices in site information
     from, to = first.(old_new), last.(old_new)
@@ -275,9 +269,10 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     return b
 end
 
-function resetindex!(tn::Quantum; init=1)
-    mapping = resetindex!(Val(:return_mapping), TensorNetwork(tn); init)
+function resetindex!(tn::AbstractQuantum; init=1)
+    tn = Quantum(tn)
 
+    mapping = resetindex!(Val(:return_mapping), tn; init)
     replace!(TensorNetwork(tn), mapping)
 
     for (site, index) in tn.sites

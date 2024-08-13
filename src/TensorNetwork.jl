@@ -108,7 +108,7 @@ See also: [`selectdim`](@ref), [`view`](@ref).
 """
 function slice!(tn::AbstractTensorNetwork, label::Symbol, i)
     for tensor in pop!(TensorNetwork(tn), label)
-        push!(tn, selectdim(tensor, label, i))
+        push!(TensorNetwork(tn), selectdim(tensor, label, i))
     end
 
     return tn
@@ -150,8 +150,8 @@ Replace the element in `old` with the one in `new`. Depending on the types of `o
   - If `Symbol`s, it will correspond to a index renaming.
   - If `Tensor`s, first element that satisfies _egality_ (`≡` or `===`) will be replaced.
 """
-@inline function Base.replace!(tn::AbstractTensorNetwork, old_new::P...) where {P<:Pair}
-    return invoke(replace!, Tuple{AbstractTensorNetwork,Base.AbstractVecOrTuple{P}}, tn, old_new)
+@inline function Base.replace!(tn::T, old_new::P...) where {T<:AbstractTensorNetwork,P<:Pair}
+    return invoke(replace!, Tuple{T,Base.AbstractVecOrTuple{P}}, tn, old_new)
 end
 @inline Base.replace!(tn::AbstractTensorNetwork, old_new::Dict) = replace!(tn, collect(old_new))
 
@@ -254,6 +254,9 @@ function EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer=Greedy, outputs=i
     )
 end
 
+@kwdispatch contract(tn::AbstractTensorNetwork)
+@kwdispatch contract!(tn::AbstractTensorNetwork)
+
 contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
 
 # TODO sequence of indices?
@@ -275,6 +278,14 @@ function contract!(tn::AbstractTensorNetwork, i)
 end
 contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
 
+function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
+    tn = TensorNetwork(tn)
+    push!(tn, t)
+    return contract(tn; kwargs...)
+end
+contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
+contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
+
 """
     contract(tn::AbstractTensorNetwork; kwargs...)
 
@@ -284,20 +295,34 @@ The `kwargs` will be passed down to the [`einexpr`](@ref) function.
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-function contract(tn::AbstractTensorNetwork; path=einexpr(tn))
+@kwmethod contract(tn::AbstractTensorNetwork;) = contract(tn; path=einexpr(tn))
+@kwmethod function contract(tn::AbstractTensorNetwork; path)
     length(path.args) == 0 && return tn[inds(path)...]
 
     intermediates = map(subpath -> contract(tn; path=subpath), path.args)
     return contract(intermediates...; dims=suminds(path))
 end
 
-function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
-    tn = TensorNetwork(tn)
-    push!(tn, t)
-    return contract(tn; kwargs...)
+function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = tn[left_inds ∪ right_inds...]
+    U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => TensorNetwork([U, s, Vt]))
+    return tn
 end
-contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
-contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
+
+function LinearAlgebra.qr!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = tn[left_inds ∪ right_inds...]
+    Q, R = qr(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => TensorNetwork([Q, R]))
+    return tn
+end
+
+function LinearAlgebra.lu!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = tn[left_inds ∪ right_inds...]
+    L, U, P = lu(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => TensorNetwork([P, L, U]))
+    return tn
+end
 
 """
     TensorNetwork
@@ -419,12 +444,12 @@ See also: [`ntensors`](@ref)
 """
 ninds(tn::TensorNetwork) = length(tn.indexmap)
 
-function resetindex!(::Val{:return_mapping}, tn::TensorNetwork; init::Int=1)
+function resetindex!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
     gen = IndexCounter(init)
     return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
 end
 
-function resetindex!(tn::TensorNetwork; init::Int=1)
+function resetindex!(tn::AbstractTensorNetwork; init::Int=1)
     mapping = resetindex!(Val(:return_mapping), tn; init=init)
     return replace!(tn, mapping)
 end
@@ -441,7 +466,8 @@ Base.size(tn::TensorNetwork) = Dict{Symbol,Int}(index => size(tn, index) for ind
 Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
 
 # TODO move to `tensors` method
-function Base.getindex(tn::TensorNetwork, is::Symbol...; mul::Int=1)
+function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
+    tn = TensorNetwork(tn)
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
@@ -676,27 +702,6 @@ Base.get(obj::TNSampler, name, default) = get(obj.config, name, default)
 
 Base.rand(::Type{TensorNetwork}; kwargs...) = rand(Random.default_rng(), TensorNetwork; kwargs...)
 Base.rand(rng::AbstractRNG, ::Type{TensorNetwork}; kwargs...) = rand(rng, TNSampler(; kwargs...))
-
-function LinearAlgebra.svd!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
-    tensor = tn[left_inds ∪ right_inds...]
-    U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
-    replace!(tn, tensor => TensorNetwork([U, s, Vt]))
-    return tn
-end
-
-function LinearAlgebra.qr!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
-    tensor = tn[left_inds ∪ right_inds...]
-    Q, R = qr(tensor; left_inds, right_inds, kwargs...)
-    replace!(tn, tensor => TensorNetwork([Q, R]))
-    return tn
-end
-
-function LinearAlgebra.lu!(tn::TensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
-    tensor = tn[left_inds ∪ right_inds...]
-    L, U, P = lu(tensor; left_inds, right_inds, kwargs...)
-    replace!(tn, tensor => TensorNetwork([P, L, U]))
-    return tn
-end
 
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)
     Serialization.writetag(s.io, Serialization.OBJECT_TAG)
