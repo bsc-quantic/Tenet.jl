@@ -222,11 +222,11 @@ end
 @kwmethod function sites(tn::AbstractQuantum; set)
     tn = Quantum(tn)
     if set === :all
-        collect(keys(tn.sites))
+        sort!(collect(keys(tn.sites)))
     elseif set === :inputs
-        filter(isdual, keys(tn.sites))
+        sort!(filter(isdual, keys(tn.sites)))
     elseif set === :outputs
-        filter(!isdual, keys(tn.sites))
+        sort!(filter(!isdual, keys(tn.sites)))
     else
         throw(ArgumentError("invalid set: $set"))
     end
