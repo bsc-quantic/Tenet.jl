@@ -7,8 +7,8 @@
         qftqtn = Quantum(qftcirc)
 
         # correct number of inputs and outputs
-        @test ninputs(qftqtn) == n
-        @test noutputs(qftqtn) == n
+        @test nsites(qftqtn; set=:inputs) == n
+        @test nsites(qftqtn; set=:outputs) == n
         @test socket(qftqtn) == Operator()
 
         # all open indices are sites

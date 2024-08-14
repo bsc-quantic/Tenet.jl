@@ -3,8 +3,8 @@
         @testset "State" begin
             qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3"])
             @test boundary(qtn) == Periodic()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
@@ -32,15 +32,15 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
 
             for i in 1:nsites(qtn)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
             end
         end
 
         @testset "Operator" begin
             qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == 3
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 3
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
             @test boundary(qtn) == Periodic()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
@@ -57,8 +57,8 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
 
             for i in 1:length(arrays)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i; dual=true))) == 4
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i; dual=true))) == 4
             end
 
             arrays = [permutedims(array, (4, 1, 3, 2)) for array in arrays] # now we have (:r, :o, :l, :i)
@@ -73,8 +73,8 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i; dual=true))) == 4
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i; dual=true))) == 4
             end
         end
     end
@@ -83,8 +83,8 @@
         @testset "State" begin
             qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3"])
             @test boundary(qtn) == Open()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
@@ -112,14 +112,14 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:nsites(qtn)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
             end
         end
         @testset "Operator" begin
             qtn = Chain(Operator(), Open(), [rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == 3
-            @test noutputs(qtn) == 3
+            @test nsites(qtn; set=:inputs) == 3
+            @test nsites(qtn; set=:outputs) == 3
             @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
             @test boundary(qtn) == Open()
             @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
@@ -136,8 +136,8 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i; dual=true))) == 4
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i; dual=true))) == 4
             end
 
             arrays = [
@@ -156,8 +156,8 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at=Site(i; dual=true))) == 4
+                @test size(qtn, inds(qtn; at=Site(i))) == 2
+                @test size(qtn, inds(qtn; at=Site(i; dual=true))) == 4
             end
         end
     end
@@ -194,13 +194,13 @@
         # @test_throws ArgumentError truncate!(qtn, [Site(2), Site(3)])
 
         truncated = Tenet.truncate(qtn, [Site(2), Site(3)]; maxdim=1)
-        @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
-        @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
+        @test size(truncated, rightindex(truncated, Site(2))) == 1
+        @test size(truncated, leftindex(truncated, Site(3))) == 1
 
         singular_values = tensors(qtn; between=(Site(2), Site(3)))
         truncated = Tenet.truncate(qtn, [Site(2), Site(3)]; threshold=singular_values[2] + 0.1)
-        @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
-        @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
+        @test size(truncated, rightindex(truncated, Site(2))) == 1
+        @test size(truncated, leftindex(truncated, Site(3))) == 1
     end
 
     @testset "rand" begin
@@ -212,12 +212,12 @@
 
             qtn = rand(Chain, Open, State; n, p=2, χ)
             @test socket(qtn) == State()
-            @test ninputs(qtn) == 0
-            @test noutputs(qtn) == n
+            @test nsites(qtn; set=:inputs) == 0
+            @test nsites(qtn; set=:outputs) == n
             @test issetequal(sites(qtn), map(Site, 1:n))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)
-            @test maximum(last, size(TensorNetwork(qtn))) <= χ
+            @test maximum(last, size(qtn)) <= χ
         end
 
         @testset "Operator" begin
@@ -226,12 +226,12 @@
 
             qtn = rand(Chain, Open, Operator; n, p=2, χ)
             @test socket(qtn) == Operator()
-            @test ninputs(qtn) == n
-            @test noutputs(qtn) == n
+            @test nsites(qtn; set=:inputs) == n
+            @test nsites(qtn; set=:outputs) == n
             @test issetequal(sites(qtn), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)
-            @test maximum(last, size(TensorNetwork(qtn))) <= χ
+            @test maximum(last, size(qtn)) <= χ
         end
     end
 
@@ -241,21 +241,21 @@
         @testset "contract" begin
             qtn = rand(Chain, Open, State; n=5, p=2, χ=20)
             let canonized = canonize(qtn)
-                @test_throws ArgumentError contract!(canonized, :between, Site(1), Site(2); direction=:dummy)
+                @test_throws ArgumentError contract!(canonized; between=(Site(1), Site(2)), direction=:dummy)
             end
 
             canonized = canonize(qtn)
 
             for i in 1:4
-                contract_some = contract(canonized, :between, Site(i), Site(i + 1))
+                contract_some = contract(canonized; between=(Site(i), Site(i + 1)))
                 Bᵢ = tensors(contract_some; at=Site(i))
 
-                @test isapprox(contract(TensorNetwork(contract_some)), contract(TensorNetwork(qtn)))
-                @test_throws MethodError tensors(contract_some, :between, Site(i), Site(i + 1))
+                @test isapprox(contract(contract_some), contract(qtn))
+                @test_throws ArgumentError tensors(contract_some; between=(Site(i), Site(i + 1)))
 
                 @test isrightcanonical(contract_some, Site(i))
                 @test isleftcanonical(
-                    contract(canonized, :between, Site(i), Site(i + 1); direction=:right), Site(i + 1)
+                    contract(canonized; between=(Site(i), Site(i + 1)), direction=:right), Site(i + 1)
                 )
 
                 Γᵢ = tensors(canonized; at=Site(i))
@@ -273,27 +273,19 @@
             for method in [:qr, :svd]
                 canonized = canonize_site(qtn, site"1"; direction=:right, method=method)
                 @test isleftcanonical(canonized, site"1")
-                @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
 
                 canonized = canonize_site(qtn, site"2"; direction=:right, method=method)
                 @test isleftcanonical(canonized, site"2")
-                @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
 
                 canonized = canonize_site(qtn, site"2"; direction=:left, method=method)
                 @test isrightcanonical(canonized, site"2")
-                @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
 
                 canonized = canonize_site(qtn, site"3"; direction=:left, method=method)
                 @test isrightcanonical(canonized, site"3")
-                @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-                )
+                @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
             end
 
             # Ensure that svd creates a new tensor
@@ -307,9 +299,7 @@
             canonized = canonize(qtn)
 
             @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
-            @test isapprox(
-                contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-            )
+            @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
             @test isapprox(norm(qtn), norm(canonized))
 
             # Extract the singular values between each adjacent pair of sites in the canonized chain
@@ -322,12 +312,12 @@
                 if i == 1
                     @test isleftcanonical(canonized, Site(i))
                 elseif i == 5 # in the limits of the chain, we get the norm of the state
-                    contract!(canonized, :between, Site(i - 1), Site(i); direction=:right)
+                    contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
                     tensor = tensors(canonized; at=Site(i))
-                    replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
+                    replace!(canonized, tensor => tensor / norm(canonized))
                     @test isleftcanonical(canonized, Site(i))
                 else
-                    contract!(canonized, :between, Site(i - 1), Site(i); direction=:right)
+                    contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
                     @test isleftcanonical(canonized, Site(i))
                 end
             end
@@ -336,14 +326,14 @@
                 canonized = canonize(qtn)
 
                 if i == 1 # in the limits of the chain, we get the norm of the state
-                    contract!(canonized, :between, Site(i), Site(i + 1); direction=:left)
+                    contract!(canonized; between=(Site(i), Site(i + 1)), direction=:left)
                     tensor = tensors(canonized; at=Site(i))
-                    replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
+                    replace!(canonized, tensor => tensor / norm(canonized))
                     @test isrightcanonical(canonized, Site(i))
                 elseif i == 5
                     @test isrightcanonical(canonized, Site(i))
                 else
-                    contract!(canonized, :between, Site(i), Site(i + 1); direction=:left)
+                    contract!(canonized; between=(Site(i), Site(i + 1)), direction=:left)
                     @test isrightcanonical(canonized, Site(i))
                 end
             end
@@ -361,9 +351,7 @@
             @test isrightcanonical(canonized, Site(4))
             @test isrightcanonical(canonized, Site(5))
 
-            @test isapprox(
-                contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(TensorNetwork(qtn))
-            )
+            @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(qtn))
         end
     end
 
@@ -383,7 +371,7 @@
             i > 1 && @test leftindex(adjoint_qtn, Site(i; dual=true)) == Symbol(String(leftindex(qtn, Site(i))) * "'")
         end
 
-        @test isapprox(contract(TensorNetwork(qtn)), contract(TensorNetwork(adjoint_qtn)))
+        @test isapprox(contract(qtn), contract(adjoint_qtn))
     end
 
     @testset "evolve!" begin
@@ -398,16 +386,16 @@
                 canonized = canonize(qtn)
 
                 evolved = evolve!(deepcopy(canonized), gate; threshold=1e-14)
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized)))
+                @test isapprox(contract(evolved), contract(canonized))
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
+                @test isapprox(contract(evolved), contract(qtn))
             end
 
             @testset "arbitrary chain" begin
                 evolved = evolve!(deepcopy(qtn), gate; threshold=1e-14, iscanonical=false)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
+                @test isapprox(contract(evolved), contract(qtn))
             end
         end
 
@@ -422,16 +410,16 @@
                 canonized = canonize(qtn)
 
                 evolved = evolve!(deepcopy(canonized), gate; threshold=1e-14)
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(canonized)))
+                @test isapprox(contract(evolved), contract(canonized))
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
+                @test isapprox(contract(evolved), contract(qtn))
             end
 
             @testset "arbitrary chain" begin
                 evolved = evolve!(deepcopy(qtn), gate; threshold=1e-14, iscanonical=false)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(contract(TensorNetwork(evolved)), contract(TensorNetwork(qtn)))
+                @test isapprox(contract(evolved), contract(qtn))
             end
         end
     end

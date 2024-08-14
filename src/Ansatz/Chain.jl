@@ -174,7 +174,7 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
 end
 
 function Base.convert(::Type{Chain}, qtn::Product)
-    arrs::Vector{Array} = arrays(TensorNetwork(qtn))
+    arrs::Vector{Array} = arrays(qtn)
     arrs[1] = reshape(arrs[1], size(arrs[1])..., 1)
     arrs[end] = reshape(arrs[end], size(arrs[end])..., 1)
     map!(@view(arrs[2:(end - 1)]), @view(arrs[2:(end - 1)])) do arr
@@ -282,26 +282,25 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     return Chain(Operator(), Open(), arrays; order=(:l, :i, :o, :r))
 end
 
-Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
-Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Val(query), args...; kwargs...)
+# """
+#     Tenet.contract!(tn::Chain; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
 
-"""
-    Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left, delete_Λ = true)
-
-For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
-The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
-specifies whether to delete the singular values tensor after the contraction.
-"""
-function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol=:left, delete_Λ=true)
-    Λᵢ = tensors(tn; between=(site1, site2))
+# For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
+# The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
+# specifies whether to delete the singular values tensor after the contraction.
+# """
+@kwmethod contract(tn::Chain; between, direction, delete_Λ) = contract!(copy(tn); between, direction, delete_Λ)
+@kwmethod function contract!(tn::Chain; between, direction, delete_Λ)
+    site1, site2 = between
+    Λᵢ = tensors(tn; between)
     Λᵢ === nothing && return tn
 
     if direction === :right
         Γᵢ₊₁ = tensors(tn; at=site2)
-        replace!(TensorNetwork(tn), Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
+        replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
     elseif direction === :left
         Γᵢ = tensors(tn; at=site1)
-        replace!(TensorNetwork(tn), Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
+        replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
     else
         throw(ArgumentError("Unknown direction=:$direction"))
     end
@@ -310,6 +309,10 @@ function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; d
 
     return tn
 end
+@kwmethod contract(tn::Chain; between) = contract(tn; between, direction=:left, delete_Λ=true)
+@kwmethod contract!(tn::Chain; between) = contract!(tn; between, direction=:left, delete_Λ=true)
+@kwmethod contract(tn::Chain; between, direction) = contract(tn; between, direction, delete_Λ=true)
+@kwmethod contract!(tn::Chain; between, direction) = contract!(tn; between, direction, delete_Λ=true)
 
 canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 canonize_site!(tn::Chain, args...; kwargs...) = canonize_site!(boundary(tn), tn, args...; kwargs...)
@@ -324,7 +327,7 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
         push!(right_inds, leftindex(tn, site))
 
         site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))
-        push!(left_inds, Quantum(tn)[site])
+        push!(left_inds, inds(tn; at=site))
 
         only(right_inds)
     elseif direction === :right
@@ -332,7 +335,7 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
         push!(right_inds, rightindex(tn, site))
 
         site == Site(1) || push!(left_inds, leftindex(tn, site))
-        push!(left_inds, Quantum(tn)[site])
+        push!(left_inds, inds(tn; at=site))
 
         only(right_inds)
     else
@@ -348,8 +351,8 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
         throw(ArgumentError("Unknown factorization method=:$method"))
     end
 
-    contract!(TensorNetwork(tn), virtualind)
-    replace!(TensorNetwork(tn), tmpind => virtualind)
+    contract!(tn, virtualind)
+    replace!(tn, tmpind => virtualind)
 
     return tn
 end
@@ -382,9 +385,9 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real}=nothing, max
 
     extent = collect(
         if !isnothing(maxdim)
-            1:min(size(TensorNetwork(qtn), vind), maxdim)
+            1:min(size(qtn, vind), maxdim)
         else
-            1:size(TensorNetwork(qtn), vind)
+            1:size(qtn, vind)
         end,
     )
 
@@ -397,7 +400,7 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real}=nothing, max
         abs(spectrum[i]) > threshold
     end
 
-    slice!(TensorNetwork(qtn), vind, extent)
+    slice!(qtn, vind, extent)
 
     return qtn
 end
@@ -462,7 +465,7 @@ function canonize!(::Open, tn::Chain)
         # extract the singular values and contract them with the next tensor
         Λᵢ = pop!(TensorNetwork(tn), tensors(tn; between=(Site(i), Site(i + 1))))
         Aᵢ₊₁ = tensors(tn; at=Site(i + 1))
-        replace!(TensorNetwork(tn), Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
+        replace!(tn, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
         push!(Λ, Λᵢ)
     end
 
@@ -470,7 +473,7 @@ function canonize!(::Open, tn::Chain)
         Λᵢ = Λ[i - 1] # singular values start between site 1 and 2
         A = tensors(tn; at=Site(i))
         Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ)); dims=())
-        replace!(TensorNetwork(tn), A => Γᵢ)
+        replace!(tn, A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
     end
 
@@ -528,13 +531,19 @@ function evolve!(qtn::Chain, gate::Dense; threshold=nothing, maxdim=nothing, isc
     end
 
     # TODO refactor out to `islane`?
-    if !issetequal(adjoint.(inputs(gate)), outputs(gate))
-        throw(ArgumentError("Gate inputs ($(inputs(gate))) and outputs ($(outputs(gate))) must be the same"))
+    if !issetequal(adjoint.(sites(gate; set=:inputs)), sites(gate; set=:outputs))
+        throw(
+            ArgumentError(
+                "Gate inputs ($(sites(gate; set=:inputs))) and outputs ($(sites(gate; set=:outputs))) must be the same"
+            ),
+        )
     end
 
     # TODO refactor out to `canconnect`?
-    if adjoint.(inputs(gate)) ⊈ outputs(qtn)
-        throw(ArgumentError("Gate inputs ($(inputs(gate))) must be a subset of the TN sites ($(sites(qtn)))"))
+    if adjoint.(sites(gate; set=:inputs)) ⊈ sites(qtn; set=:outputs)
+        throw(
+            ArgumentError("Gate inputs ($(sites(gate; set=:inputs))) must be a subset of the TN sites ($(sites(qtn)))")
+        )
     end
 
     if nlanes(gate) == 1
@@ -542,7 +551,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold=nothing, maxdim=nothing, isc
     elseif nlanes(gate) == 2
         # check gate sites are contiguous
         # TODO refactor this out?
-        gate_inputs = sort!(map(id, inputs(gate)))
+        gate_inputs = sort!(id.(sites(gate; set=:inputs)))
         range = UnitRange(extrema(gate_inputs)...)
 
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
@@ -562,18 +571,18 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     gate = copy(gate)
 
     contracting_index = gensym(:tmp)
-    targetsite = only(inputs(gate))'
+    targetsite = only(sites(gate; set=:inputs))'
 
     # reindex contracting index
-    replace!(TensorNetwork(qtn), inds(qtn; at=targetsite) => contracting_index)
-    replace!(TensorNetwork(gate), inds(gate; at=targetsite') => contracting_index)
+    replace!(qtn, inds(qtn; at=targetsite) => contracting_index)
+    replace!(gate, inds(gate; at=targetsite') => contracting_index)
 
     # reindex output of gate to match TN sitemap
-    replace!(TensorNetwork(gate), inds(gate; at=only(outputs(gate))) => inds(qtn; at=targetsite))
+    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(qtn; at=targetsite))
 
     # contract gate with TN
     merge!(TensorNetwork(qtn), TensorNetwork(gate))
-    return contract!(TensorNetwork(qtn), contracting_index)
+    return contract!(qtn, contracting_index)
 end
 
 # TODO: Maybe rename iscanonical kwarg ?
@@ -581,7 +590,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
-    bond = sitel, siter = minmax(outputs(gate)...)
+    bond = sitel, siter = minmax(sites(gate; set=:outputs)...)
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
@@ -590,31 +599,31 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
     iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
-    contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
+    contracting_inds = [gensym(:tmp) for _ in sites(gate; set=:inputs)]
     replace!(
         TensorNetwork(qtn),
-        map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
             inds(qtn; at=site') => contracting_index
         end,
     )
     replace!(
         Quantum(gate),
-        map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
             inds(gate; at=site) => contracting_index
         end,
     )
 
     # replace output indices of the gate for gensym indices
-    output_inds = [gensym(:out) for _ in outputs(gate)]
+    output_inds = [gensym(:out) for _ in sites(gate; set=:outputs)]
     replace!(
         Quantum(gate),
-        map(zip(outputs(gate), output_inds)) do (site, out)
+        map(zip(sites(gate; set=:outputs), output_inds)) do (site, out)
             inds(gate; at=site) => out
         end,
     )
 
     # reindex output of gate to match TN sitemap
-    for site in outputs(gate)
+    for site in sites(gate; set=:outputs)
         if inds(qtn; at=site) != inds(gate; at=site)
             replace!(TensorNetwork(gate), inds(gate; at=site) => inds(qtn; at=site))
         end
@@ -622,7 +631,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
 
     # contract physical inds
     merge!(TensorNetwork(qtn), TensorNetwork(gate))
-    contract!(TensorNetwork(qtn), contracting_inds)
+    contract!(qtn, contracting_inds)
 
     # decompose using SVD
     push!(left_inds, inds(qtn; at=sitel))
@@ -640,7 +649,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical=f
         # renormalize the bond
         if renormalize && iscanonical
             λ = tensors(qtn; between=bond)
-            replace!(TensorNetwork(qtn), λ => normalize(λ))
+            replace!(qtn, λ => normalize(λ)) # TODO this can be replaced by `normalize!(λ)`
         elseif renormalize && !iscanonical
             normalize!(qtn, bond[1])
         end
@@ -665,10 +674,10 @@ function contract_2sitewf!(ψ::Chain, bond)
     Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
     Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(sitel) - 1), sitel; direction=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, siter, Site(id(siter) + 1); direction=:left, delete_Λ=false)
+    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
 
-    contract!(TensorNetwork(ψ), inds(ψ; bond=bond))
+    contract!(ψ, inds(ψ; bond=bond))
 
     return ψ
 end
@@ -735,5 +744,5 @@ function overlap(::State, a::Chain, ::State, b::Chain)
 end
 
 # TODO optimize
-overlap(a::Product, b::Chain) = contract(TensorNetwork(merge(Quantum(a), Quantum(b)')))
-overlap(a::Chain, b::Product) = contract(TensorNetwork(merge(Quantum(a), Quantum(b)')))
+overlap(a::Product, b::Chain) = contract(merge(Quantum(a), Quantum(b)'))
+overlap(a::Chain, b::Product) = contract(merge(Quantum(a), Quantum(b)'))
