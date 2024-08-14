@@ -110,7 +110,7 @@ Returns the sites of a [`Quantum`](@ref) Tensor Network.
 """
 function sites(tn::Quantum; kwargs...)
     if isempty(kwargs)
-        collect(keys(tn.sites))
+      sort(collect(keys(tn.sites)))
     elseif keys(kwargs) === (:at,)
         findfirst(i -> i === kwargs[:at], tn.sites)
     else
