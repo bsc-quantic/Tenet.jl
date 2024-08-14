@@ -8,6 +8,9 @@
     @test nsites(qtn; set=:outputs) == 1
     @test issetequal(sites(qtn), [site"1"])
     @test socket(qtn) == State(; dual=false)
+    @test inds(qtn; at=site"1") == :i
+    @test issetequal(inds(qtn; set=:physical), [:i])
+    @test isempty(inds(qtn; set=:virtual))
 
     # forwarded methods to `TensorNetwork`
     @test TensorNetwork(qtn) == tn
@@ -20,6 +23,9 @@
     @test nsites(qtn; set=:outputs) == 0
     @test issetequal(sites(qtn), [site"1'"])
     @test socket(qtn) == State(; dual=true)
+    @test inds(qtn; at=site"1'") == :i
+    @test issetequal(inds(qtn; set=:physical), [:i])
+    @test isempty(inds(qtn; set=:virtual))
 
     _tensors = Tensor[Tensor(zeros(2, 2), [:i, :j])]
     tn = TensorNetwork(_tensors)
@@ -28,6 +34,10 @@
     @test nsites(qtn; set=:outputs) == 1
     @test issetequal(sites(qtn), [site"1", site"1'"])
     @test socket(qtn) == Operator()
+    @test inds(qtn; at=site"1") == :i
+    @test inds(qtn; at=site"1'") == :j
+    @test issetequal(inds(qtn; set=:physical), [:i, :j])
+    @test isempty(inds(qtn; set=:virtual))
 
     _tensors = Tensor[Tensor(fill(0))]
     tn = TensorNetwork(_tensors)
@@ -36,6 +46,8 @@
     @test nsites(qtn; set=:outputs) == 0
     @test isempty(sites(qtn))
     @test socket(qtn) == Scalar()
+    @test isempty(inds(qtn; set=:physical))
+    @test isempty(inds(qtn; set=:virtual))
 
     # detect errors
     _tensors = Tensor[Tensor(zeros(2), [:i]), Tensor(zeros(2), [:i])]
