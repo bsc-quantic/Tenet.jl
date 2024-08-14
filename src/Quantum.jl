@@ -11,8 +11,23 @@ TensorNetwork(tn::AbstractQuantum) = TensorNetwork(Quantum(tn))
 
 @kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
 
+# `pop!` / `delete!` methods call this method
+function Base.pop!(tn::AbstractQuantum, tensor)
+    @invoke pop!(tn::AbstractTensorNetwork, tensor)
+
+    # TODO replace with `inds(tn; set=:physical)` when implemented
+    targets = values(Quantum(tn).sites) ∩ inds(tensor)
+    for target in targets
+        rmsite!(tn, findfirst(==(target), Quantum(tn).sites))
+    end
+
+    return tensor
+end
+
 # `AbstractQuantum` interface
-# TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
+addsite!(tn::AbstractQuantum, site, index) = addsite!(Quantum(tn), site, index)
+rmsite!(tn::AbstractQuantum, site) = rmsite!(Quantum(tn), site)
+
 """
     sites(q::AbstractQuantum)
 
@@ -209,6 +224,26 @@ function Base.adjoint(qtn::Quantum)
     end...)
 
     return Quantum(TensorNetwork(tn), sites)
+end
+
+function addsite!(tn::Quantum, site, index)
+    if haskey(tn.sites, site)
+        error("Site $site already exists")
+    end
+
+    if index ∉ inds(tn; set=:open)
+        error("Index $index must be open")
+    end
+
+    return tn.sites[site] = index
+end
+
+function rmsite!(tn::Quantum, site)
+    if !haskey(tn.sites, site)
+        error("Site $site does not exist")
+    end
+
+    return delete!(tn.sites, site)
 end
 
 @kwmethod function sites(tn::AbstractQuantum; set)

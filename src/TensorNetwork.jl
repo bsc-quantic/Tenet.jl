@@ -29,6 +29,9 @@ Its subtypes must implement conversion or extraction of the underlying `TensorNe
 """
 abstract type AbstractTensorNetwork end
 
+Base.push!(tn::AbstractTensorNetwork, tensor::Tensor) = push!(TensorNetwork(tn), tensor)
+Base.pop!(tn::AbstractTensorNetwork, tensor::Tensor) = pop!(TensorNetwork(tn), tensor)
+
 # TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
 """
     inds(tn::AbstractTensorNetwork, set = :all)
@@ -584,7 +587,7 @@ end
 
 Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
-Base.delete!(tn::TensorNetwork, x) = (_ = pop!(tn, x); tn)
+Base.delete!(tn::AbstractTensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 function tryprune!(tn::AbstractTensorNetwork, i::Symbol)
     if i ∈ tn
