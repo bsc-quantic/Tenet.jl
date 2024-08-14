@@ -1,3 +1,5 @@
+using KeywordDispatch
+
 """
     AbstractQuantum
 
@@ -174,6 +176,15 @@ function Base.show(io::IO, q::Quantum)
 end
 
 @kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
+@kwmethod function inds(tn::AbstractQuantum; set)
+    if set === :physical
+        return values(Quantum(tn).sites)
+    elseif set === :virtual
+        return setdiff(inds(tn), values(Quantum(tn).sites))
+    else
+        return inds(TensorNetwork(tn); set)
+    end
+end
 
 """
     adjoint(q::Quantum)
