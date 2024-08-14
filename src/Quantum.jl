@@ -224,9 +224,9 @@ end
     if set === :all
         sort!(collect(keys(tn.sites)))
     elseif set === :inputs
-        sort!(filter(isdual, keys(tn.sites)))
+        sort!(collect(Iterators.filter(isdual, keys(tn.sites))))
     elseif set === :outputs
-        sort!(filter(!isdual, keys(tn.sites)))
+        sort!(collect(Iterators.filter(!isdual, keys(tn.sites))))
     else
         throw(ArgumentError("invalid set: $set"))
     end
