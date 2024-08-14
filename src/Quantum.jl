@@ -45,36 +45,9 @@ Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
-"""
-    inputs(q::Quantum)
-
-Returns the input sites of a [`Quantum`](@ref) Tensor Network.
-"""
-# inputs(q::Quantum) = sort!(collect(filter(isdual, keys(q.sites))))
 @deprecate inputs(tn::AbstractQuantum) sites(tn; set=:inputs)
-
-"""
-    outputs(q::Quantum)
-
-Returns the output sites of a [`Quantum`](@ref) Tensor Network.
-"""
-# outputs(q::Quantum) = sort!(collect(filter(!isdual, keys(q.sites))))
 @deprecate outputs(tn::AbstractQuantum) sites(tn; set=:outputs)
-
-"""
-    ninputs(q::Quantum)
-
-Returns the number of input sites of a [`Quantum`](@ref) Tensor Network.
-"""
-# ninputs(q::Quantum) = count(isdual, keys(q.sites))
 @deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
-
-"""
-    noutputs(q::Quantum)
-
-Returns the number of output sites of a [`Quantum`](@ref) Tensor Network.
-"""
-# noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 @deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
 
 """
