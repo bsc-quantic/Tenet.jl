@@ -16,8 +16,6 @@ export contract, contract!
 include("Transformations.jl")
 export transform, transform!
 
-include("Compiler.jl")
-
 include("Site.jl")
 export Site, @site_str, isdual
 
