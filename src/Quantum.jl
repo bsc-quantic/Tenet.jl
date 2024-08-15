@@ -321,22 +321,22 @@ end
 
 Merges multiple [`Quantum`](@ref) Tensor Networks into a single one by connecting input/output sites.
 """
-Base.merge(a::Quantum, others::Quantum...) = foldl(merge, others; init=a)
-function Base.merge(a::Quantum, b::Quantum)
+Base.merge(a::AbstractQuantum, others::AbstractQuantum...) = foldl(merge, others; init=a)
+function Base.merge(a::AbstractQuantum, b::AbstractQuantum)
     @assert issetequal(sites(a; set=:outputs), map(adjoint, sites(b; set=:inputs))) "Outputs of $a must match inputs of $b"
 
     @reindex! outputs(a) => inputs(b)
     tn = merge(TensorNetwork(a), TensorNetwork(b))
 
-    sites = Dict{Site,Symbol}()
+    mergedsites = Dict{Site,Symbol}()
 
     for site in sites(a; set=:inputs)
-        sites[site] = inds(a; at=site)
+        mergedsites[site] = inds(a; at=site)
     end
 
     for site in sites(b; set=:outputs)
-        sites[site] = inds(b; at=site)
+        mergedsites[site] = inds(b; at=site)
     end
 
-    return Quantum(tn, sites)
+    return Quantum(tn, mergedsites)
 end
