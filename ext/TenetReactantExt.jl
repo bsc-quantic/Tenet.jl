@@ -11,7 +11,7 @@ const Enzyme = Reactant.Enzyme
 function Reactant.make_tracer(
     seen::IdDict, @nospecialize(prev::RT), path::Tuple, mode::Reactant.TraceMode; kwargs...
 ) where {RT<:Tensor}
-    tracedata = Reactant.make_tracer(seen, parent(prev), Reactant.append_path(path, 1), mode; kwargs...)
+    tracedata = Reactant.make_tracer(seen, parent(prev), Reactant.append_path(path, :data), mode; kwargs...)
     return Tensor(tracedata, inds(prev))
 end
 
@@ -40,9 +40,21 @@ function Reactant.make_tracer(seen::IdDict, prev::Tenet.Chain, path::Tuple, mode
     return Tenet.Chain(tracequantum, boundary(prev))
 end
 
+function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
+    data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
+    return :($Tensor($data, $(inds(tocopy))))
+end
+
+function Reactant.create_result(tocopy::TensorNetwork, @nospecialize(path), result_stores)
+    elems = map(1:Tenet.ntensors(tocopy)) do i
+        Reactant.create_result(tensors(tocopy)[i], Reactant.append_path(path, i), result_stores)
+    end
+    return :($TensorNetwork([$(elems...)]))
+end
+
 function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
     @assert length(path) == 2
-    @assert path[2] === 1
+    @assert path[2] === :data
 
     x = parent(tensors(x)[path[1]]).mlir_data
 
@@ -51,7 +63,7 @@ end
 
 function Reactant.set!(x::TensorNetwork, path, tostore; emptypath=false)
     @assert length(path) == 2
-    @assert path[2] === 1
+    @assert path[2] === :data
 
     x = parent(tensors(x)[path[1]])
     x.mlir_data = tostore
@@ -63,7 +75,7 @@ end
 
 function Reactant.set_act!(inp::Enzyme.Annotation{TensorNetwork}, path, reverse, tostore; emptypath=false)
     @assert length(path) == 2
-    @assert path[2] === 1
+    @assert path[2] === :data
 
     x = if inp isa Enzyme.Active
         inp.val
