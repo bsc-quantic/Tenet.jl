@@ -400,7 +400,11 @@ end
     elseif set === :hyper
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
-        throw(MethodError(inds, "unknown query: $set"))
+      throw(ArgumentError("unknown query: set=$(set). 
+        Possible options are: 
+        :all, :open :inner :hyper :parallelto
+        For Quantum also :physical :virtual
+        "))
     end
 end
 
