@@ -746,3 +746,18 @@ end
 # TODO optimize
 overlap(a::Product, b::Chain) = contract(merge(Quantum(a), Quantum(b)'))
 overlap(a::Chain, b::Product) = contract(merge(Quantum(a), Quantum(b)'))
+
+
+# Quick MPS/MPO builders for lazy people
+
+""" Builds a product state MPS for the state |+> = [1/sqrt(2), 1/sqrt(2)]"""
+product_plus(n::Int=20) = convert(Chain, Product(fill([1, 1]/sqrt(2), n)))
+
+""" Builds a product state MPS for the state |Z↑> = [1,0] """
+product_up(n::Int=20) = convert(Chain, Product(fill([1, 0], n)))
+
+""" Builds a random MPS of length `n` and max bond dimension `linkdims` """
+random_mps(n::Int=10; linkdims::Int=20) = rand(Chain, Open, State; n, χ=linkdims)
+
+random_mpo(n::Int=10; linkdims::Int=2)  = rand(Chain, Open, Operator; n, χ=linkdims)
+
