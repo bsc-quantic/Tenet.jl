@@ -39,6 +39,7 @@ export MPS, pMPS, MPO, pMPO
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!
 export canonize, canonize!, mixed_canonize, mixed_canonize!
+export random_mps, random_mpo, product_up, product_plus
 
 include("Ansatz/Grid.jl")
 export Grid
