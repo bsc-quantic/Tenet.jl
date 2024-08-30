@@ -3,6 +3,7 @@ module TenetReactantExt
 using Tenet
 using EinExprs
 using Reactant
+using Reactant: @reactant_override
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
@@ -35,6 +36,7 @@ function Reactant.make_tracer(seen::IdDict, prev::Tenet.Product, path::Tuple, mo
     return Tenet.Product(tracequantum)
 end
 
+# TODO try rely on generic fallback for ansatzes -> do it when refactoring to MPS/MPO
 function Reactant.make_tracer(seen::IdDict, prev::Tenet.Chain, path::Tuple, mode::Reactant.TraceMode; kwargs...)
     tracequantum = Reactant.make_tracer(seen, Quantum(prev), Reactant.append_path(path, :super), mode; kwargs...)
     return Tenet.Chain(tracequantum, boundary(prev))
@@ -50,6 +52,17 @@ function Reactant.create_result(tocopy::TensorNetwork, @nospecialize(path), resu
         Reactant.create_result(tensors(tocopy)[i], Reactant.append_path(path, i), result_stores)
     end
     return :($TensorNetwork([$(elems...)]))
+end
+
+function Reactant.create_result(tocopy::Quantum, @nospecialize(path), result_stores)
+    tn = Reactant.create_result(TensorNetwork(tocopy), Reactant.append_path(path, :tn), result_stores)
+    return :($Quantum($tn, $(copy(tocopy.sites))))
+end
+
+# TODO try rely on generic fallback for ansatzes -> do it when refactoring to MPS/MPO
+function Reactant.create_result(tocopy::Tenet.Chain, @nospecialize(path), result_stores)
+    qtn = Reactant.create_result(Quantum(tocopy), Reactant.append_path(path, :super), result_stores)
+    return :($(Tenet.Chain)($qtn, $(boundary(tocopy))))
 end
 
 function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
@@ -91,16 +104,23 @@ function Reactant.set_act!(inp::Enzyme.Annotation{TensorNetwork}, path, reverse,
     end
 end
 
-function Tenet.contract(
-    a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
-) where {Ta,Na,Aa<:Reactant.ConcreteRArray,Tb,Nb,Ab<:Reactant.ConcreteRArray}
-    c = @invoke Tenet.contract(a::Tensor, b::Tensor; kwargs...)
-    return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
-end
+# function Tenet.contract(
+#     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
+# ) where {Ta,Na,Aa<:Reactant.ConcreteRArray,Tb,Nb,Ab<:Reactant.ConcreteRArray}
+#     c = @invoke Tenet.contract(a::Tensor, b::Tensor; kwargs...)
+#     return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
+# end
 
-function Tenet.contract(a::Tensor{T,N,A}; kwargs...) where {T,N,A<:Reactant.ConcreteRArray}
-    c = @invoke Tenet.contract(a::Tensor; kwargs...)
-    return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
+# function Tenet.contract(a::Tensor{T,N,A}; kwargs...) where {T,N,A<:Reactant.ConcreteRArray}
+#     c = @invoke Tenet.contract(a::Tensor; kwargs...)
+#     return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
+# end
+
+# TODO why is the override not working?
+@reactant_override function Base.:(-)(a::Tenet.Tensor, b::Tenet.Tensor)
+    issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
+    perm = __find_index_permutation(inds(a), inds(b))
+    return Tensor(parent(a) - permutedims(parent(b), perm), inds(a))
 end
 
 function Tenet.contract(
