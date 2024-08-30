@@ -178,7 +178,7 @@ end
 @kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
 @kwmethod function inds(tn::AbstractQuantum; set)
     if set === :physical
-        return values(Quantum(tn).sites)
+        return collect(values(Quantum(tn).sites))
     elseif set === :virtual
         return setdiff(inds(tn), values(Quantum(tn).sites))
     else
