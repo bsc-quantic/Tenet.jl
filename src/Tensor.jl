@@ -1,5 +1,6 @@
 using Base: @propagate_inbounds
 using Base.Broadcast: Broadcasted, ArrayStyle
+using LinearAlgebra
 
 struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
@@ -240,3 +241,5 @@ function __expand_repeat(array, axis, size)
         outer=(fill(1, axis - 1)..., size, fill(1, ndims(array) - axis + 1)...),
     )
 end
+
+LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
