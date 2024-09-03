@@ -76,3 +76,12 @@ struct Open <: Boundary end
 struct Periodic <: Boundary end
 
 function boundary end
+
+abstract type Form end
+struct NonCanonical <: Form end
+struct MixedCanonical <: Form
+    orthogonality_center::Union{Site,Vector{Site}}
+end
+struct Canonical <: Form end
+
+function form end
