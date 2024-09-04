@@ -29,5 +29,5 @@
         norm(qtn) ≈ 1
     end
     @test adjoint(qtn) isa Product
-    @test socket(adjoint(qtn)) == State(; dual=true)
+    @test socket(adjoint(qtn)) == Operator()
 end
