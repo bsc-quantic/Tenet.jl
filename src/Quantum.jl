@@ -65,9 +65,7 @@ function Base.adjoint(qtn::Quantum)
     # rename inner indices
     physical_inds = values(sites)
     virtual_inds = setdiff(inds(tn), physical_inds)
-    replace!(tn, map(virtual_inds) do i
-        i => Symbol(i, "'")
-    end...)
+    replace!(tn, map(i -> i => Symbol(i, "'"), virtual_inds))
 
     return Quantum(tn, sites)
 end
