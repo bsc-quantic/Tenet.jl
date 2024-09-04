@@ -12,6 +12,8 @@
         normalize!(qtn)
         norm(qtn) ≈ 1
     end
+    @test adjoint(qtn) isa Product
+    @test socket(adjoint(qtn)) == State(; dual=true)
 
     # conversion to `Quantum`
     @test Quantum(qtn) isa Quantum
@@ -26,4 +28,6 @@
         normalize!(qtn)
         norm(qtn) ≈ 1
     end
+    @test adjoint(qtn) isa Product
+    @test socket(adjoint(qtn)) == State(; dual=true)
 end

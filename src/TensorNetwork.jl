@@ -165,6 +165,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTup
     return tn
 end
 
+Base.replace!(tn::AbstractTensorNetwork) = tn
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
