@@ -52,6 +52,10 @@ function Base.ones(::Type{Product}, n::Integer; p::Int=2, eltype=Bool)
     )
 end
 
+function Base.adjoint(tn::Product)
+    return Product(adjoint(Quantum(tn)))
+end
+
 LinearAlgebra.norm(tn::Product, p::Real=2) = LinearAlgebra.norm(socket(tn), tn, p)
 function LinearAlgebra.norm(::Union{State,Operator}, tn::Product, p::Real)
     return mapreduce(*, tensors(tn)) do tensor
