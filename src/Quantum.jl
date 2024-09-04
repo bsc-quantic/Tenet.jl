@@ -209,7 +209,6 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
-addsite!(tn::AbstractQuantum, site, index) = addsite!(Quantum(tn), site, index)
 function addsite!(tn::Quantum, site, index)
     if haskey(tn.sites, site)
         error("Site $site already exists")
@@ -222,7 +221,6 @@ function addsite!(tn::Quantum, site, index)
     return tn.sites[site] = index
 end
 
-rmsite!(tn::AbstractQuantum, site) = rmsite!(Quantum(tn), site)
 function rmsite!(tn::Quantum, site)
     if !haskey(tn.sites, site)
         error("Site $site does not exist")
