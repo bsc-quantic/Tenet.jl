@@ -16,7 +16,7 @@ function Tenet.Quantum(pyobj::Py)
     gen = Tenet.IndexCounter()
 
     wire = [[Tenet.nextindex!(gen)] for _ in 1:n]
-    tensors = Tensor[]
+    tn = TensorNetwork()
 
     for instr in pyobj
         # if unassigned parameters, throw
@@ -44,15 +44,15 @@ function Tenet.Quantum(pyobj::Py)
         )
 
         tensor = Tensor(array, Tuple(inds))
-        push!(tensors, tensor)
+        push!(tn, tensor)
     end
 
     sites = merge(
-        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire)]),
-        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire)]),
+        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire) if first(index) ∈ tn]),
+        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire) if last(index) ∈ tn]),
     )
 
-    return Quantum(Tenet.TensorNetwork(tensors), sites)
+    return Quantum(tn, sites)
 end
 
 end
