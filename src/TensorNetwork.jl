@@ -644,6 +644,33 @@ This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on l
 Base.in(tensor::Tensor, tn::TensorNetwork) = tensor ∈ keys(tn.tensormap)
 Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
 
+function groupinds!(tn::AbstractTensorNetwork, i)
+    parinds = filter!(!=(i), inds(tn; parallelto=i))
+    length(parinds) == 0 && return tn
+
+    newtensors = map(@invoke pop!(TensorNetwork(tn), parinds ∪ (i,))) do tensor
+        locᵢ = findfirst(==(i), inds(tensor))
+        locs = findall(∈(parinds), inds(tensor))
+
+        perm = collect(1:ndims(tensor))
+        for (j, loc) in enumerate(locs)
+            perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
+        end
+
+        newshape = collect(size(tensor))
+        newshape[locᵢ] *= prod(x -> size(tensor, x), parinds)
+        deleteat!(newshape, locs)
+        newinds = deleteat!(collect(inds(tensor)), locs)
+
+        newarray = reshape(permutedims(parent(tensor), perm), newshape...)
+        return Tensor(newarray, newinds)
+    end
+
+    append!(tn, newtensors)
+
+    return tn
+end
+
 """
     rand(TensorNetwork, n::Integer, regularity::Integer; out = 0, dim = 2:9, seed = nothing, globalind = false)
 
