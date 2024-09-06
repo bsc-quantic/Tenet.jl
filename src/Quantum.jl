@@ -191,7 +191,7 @@ end
 
 Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
 """
-Base.adjoint(tn::AbstractQuantum) = adjoint!(copy(tn))
+Base.adjoint(tn::AbstractQuantum) = adjoint!(deepcopy(tn))
 
 function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     conj!(tn)
