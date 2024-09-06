@@ -80,7 +80,7 @@ Base.size(tn::AbstractTensorNetwork, args...) = size(TensorNetwork(tn), args...)
 
 Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
-Base.conj(tn::AbstractTensorNetwork) = conj!(copy(tn))
+Base.conj(tn::AbstractTensorNetwork) = conj!(deepcopy(tn))
 function Base.conj!(tn::AbstractTensorNetwork)
     foreach(conj!, tensors(tn))
     return tn
