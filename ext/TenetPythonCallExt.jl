@@ -20,7 +20,11 @@ function Tenet.Quantum(pyobj::Py)
 
     for instr in pyobj
         # if unassigned parameters, throw
-        matrix = instr.matrix
+        matrix = if pyhasattr(instr, Py("matrix"))
+            instr.matrix
+        else
+            instr.operation.to_matrix()
+        end
         if pyisnone(matrix)
             throw(ArgumentError("Expected parameters already assigned, but got $(pyobj.params)"))
         end
