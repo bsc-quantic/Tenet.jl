@@ -14,7 +14,7 @@ TensorNetwork(tn::AbstractQuantum) = TensorNetwork(Quantum(tn))
 @kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
 
 # `pop!` / `delete!` methods call this method
-function Base.pop!(tn::AbstractQuantum, tensor)
+function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
     @invoke pop!(tn::AbstractTensorNetwork, tensor)
 
     # TODO replace with `inds(tn; set=:physical)` when implemented
