@@ -11,7 +11,7 @@ include("Numerics.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, neighbors, slice!
-export contract, contract!
+export contract, contract!, groupinds!
 
 include("Transformations.jl")
 export transform, transform!
