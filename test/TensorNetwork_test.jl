@@ -585,7 +585,7 @@
         @test size(tn, :i) == 4
         @test Tenet.ntensors(tn) == 2
 
-        tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j, :k])])
+        tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
         groupinds!(tn, :i)
         @test inds(tn) == [:i, :k]
         @test size(tn, :i) == 4
