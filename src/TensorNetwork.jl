@@ -558,7 +558,7 @@ Add a list of tensors to a `TensorNetwork`.
 
 See also: [`push!`](@ref), [`merge!`](@ref).
 """
-Base.append!(tn::TensorNetwork, tensors) = (foreach(Base.Fix1(push!, tn), tensors); tn)
+Base.append!(tn::AbstractTensorNetwork, tensors) = (foreach(Base.Fix1(push!, tn), tensors); tn)
 
 """
     merge!(self::TensorNetwork, others::TensorNetwork...)
@@ -584,7 +584,7 @@ See also: [`push!`](@ref), [`delete!`](@ref).
 Base.pop!(tn::TensorNetwork, tensor::Tensor) = (delete!(tn, tensor); tensor)
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
+function Base.pop!(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensorlist = tensors(tn; intersects=i)
     for tensor in tensorlist
         _ = pop!(tn, tensor)
