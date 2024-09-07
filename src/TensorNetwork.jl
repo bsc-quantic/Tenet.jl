@@ -644,6 +644,11 @@ This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on l
 Base.in(tensor::Tensor, tn::TensorNetwork) = tensor ∈ keys(tn.tensormap)
 Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
 
+"""
+    groupinds!(tn::AbstractTensorNetwork, i::Symbol)
+
+Group indices parallel to `i` and reshape the tensors to reflect it.
+"""
 function groupinds!(tn::AbstractTensorNetwork, i)
     parinds = filter!(!=(i), inds(tn; parallelto=i))
     length(parinds) == 0 && return tn
