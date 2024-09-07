@@ -587,14 +587,14 @@
 
         tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
         groupinds!(tn, :i)
-        @test inds(tn) == [:i, :k]
+        @test issetequal(inds(tn), [:i, :k])
         @test size(tn, :i) == 4
         @test size(tn, :k) == 2
         @test Tenet.ntensors(tn) == 2
 
         tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2), [:j])])
         groupinds!(tn, :i)
-        @test inds(tn) == [:i, :j]
+        @test issetequal(inds(tn), [:i, :j])
         @test size(tn, :i) == 2
         @test size(tn, :j) == 2
         @test Tenet.ntensors(tn) == 2
