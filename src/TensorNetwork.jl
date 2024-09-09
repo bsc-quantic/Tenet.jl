@@ -650,7 +650,7 @@ Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
 """
     groupinds!(tn::AbstractTensorNetwork, i::Symbol)
 
-Group indices parallel to `i` and reshape the tensors to reflect it.
+Group indices parallel to `i` and reshape the tensors accordingly.
 """
 function groupinds!(tn::AbstractTensorNetwork, i)
     parinds = filter!(!=(i), inds(tn; parallelto=i))
