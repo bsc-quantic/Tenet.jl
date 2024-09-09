@@ -416,7 +416,10 @@ end
 end
 
 @kwmethod function inds(tn::AbstractTensorNetwork; parallelto)
-    return mapreduce(inds, ∩, tensors(tn; contains=parallelto))
+    candidates = filter!(!=(parallelto), mapreduce(inds, ∩, tensors(tn; contains=parallelto)))
+    return filter(candidates) do i
+        length(tensors(tn; contains=i)) == length(tensors(tn; contains=parallelto))
+    end
 end
 
 @kwmethod function tensors(tn::AbstractTensorNetwork;)
