@@ -416,7 +416,10 @@ end
 end
 
 @kwmethod function inds(tn::AbstractTensorNetwork; parallelto)
-    return mapreduce(inds, ∩, tensors(tn; contains=parallelto))
+    candidates = filter!(!=(parallelto), mapreduce(inds, ∩, tensors(tn; contains=parallelto)))
+    return filter(candidates) do i
+        length(tensors(tn; contains=i)) == length(tensors(tn; contains=parallelto))
+    end
 end
 
 @kwmethod function tensors(tn::AbstractTensorNetwork;)
@@ -558,7 +561,7 @@ Add a list of tensors to a `TensorNetwork`.
 
 See also: [`push!`](@ref), [`merge!`](@ref).
 """
-Base.append!(tn::TensorNetwork, tensors) = (foreach(Base.Fix1(push!, tn), tensors); tn)
+Base.append!(tn::AbstractTensorNetwork, tensors) = (foreach(Base.Fix1(push!, tn), tensors); tn)
 
 """
     merge!(self::TensorNetwork, others::TensorNetwork...)
@@ -584,7 +587,7 @@ See also: [`push!`](@ref), [`delete!`](@ref).
 Base.pop!(tn::TensorNetwork, tensor::Tensor) = (delete!(tn, tensor); tensor)
 Base.pop!(tn::TensorNetwork, i::Symbol) = pop!(tn, (i,))
 
-function Base.pop!(tn::TensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
+function Base.pop!(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
     tensorlist = tensors(tn; intersects=i)
     for tensor in tensorlist
         _ = pop!(tn, tensor)
@@ -643,6 +646,38 @@ This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on l
 """
 Base.in(tensor::Tensor, tn::TensorNetwork) = tensor ∈ keys(tn.tensormap)
 Base.in(index::Symbol, tn::TensorNetwork) = index ∈ keys(tn.indexmap)
+
+"""
+    groupinds!(tn::AbstractTensorNetwork, i::Symbol)
+
+Group indices parallel to `i` and reshape the tensors accordingly.
+"""
+function groupinds!(tn::AbstractTensorNetwork, i)
+    parinds = filter!(!=(i), inds(tn; parallelto=i))
+    length(parinds) == 0 && return tn
+
+    newtensors = map(@invoke pop!(TensorNetwork(tn), parinds ∪ (i,))) do tensor
+        locᵢ = findfirst(==(i), inds(tensor))
+        locs = findall(∈(parinds), inds(tensor))
+
+        perm = collect(1:ndims(tensor))
+        for (j, loc) in enumerate(locs)
+            perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
+        end
+
+        newshape = collect(size(tensor))
+        newshape[locᵢ] *= prod(x -> size(tensor, x), parinds)
+        deleteat!(newshape, locs)
+        newinds = deleteat!(collect(inds(tensor)), locs)
+
+        newarray = reshape(permutedims(parent(tensor), perm), newshape...)
+        return Tensor(newarray, newinds)
+    end
+
+    append!(tn, newtensors)
+
+    return tn
+end
 
 """
     rand(TensorNetwork, n::Integer, regularity::Integer; out = 0, dim = 2:9, seed = nothing, globalind = false)

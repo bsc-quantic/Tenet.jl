@@ -257,6 +257,17 @@
         @test issetequal(inds(tn; set=:open), [:j, :k])
         @test issetequal(inds(tn; set=:inner), [:i, :l, :m])
         @test issetequal(inds(tn; set=:hyper), [:i])
+
+        @testset "parallelto" begin
+            tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j])])
+            @test issetequal(inds(tn; parallelto=:i), [:j])
+
+            tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
+            @test issetequal(inds(tn; parallelto=:i), [:j])
+
+            tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2), [:j])])
+            @test isempty(inds(tn; parallelto=:i))
+        end
     end
 
     @testset "size" begin
@@ -576,6 +587,28 @@
             # Broadcast not working
             @test all(∈(tn), indices)
         end
+    end
+
+    @testset "groupinds!" begin
+        tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j])])
+        groupinds!(tn, :i)
+        @test inds(tn) == [:i]
+        @test size(tn, :i) == 4
+        @test Tenet.ntensors(tn) == 2
+
+        tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
+        groupinds!(tn, :i)
+        @test issetequal(inds(tn), [:i, :k])
+        @test size(tn, :i) == 4
+        @test size(tn, :k) == 2
+        @test Tenet.ntensors(tn) == 2
+
+        tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2), [:j])])
+        groupinds!(tn, :i)
+        @test issetequal(inds(tn), [:i, :j])
+        @test size(tn, :i) == 2
+        @test size(tn, :j) == 2
+        @test Tenet.ntensors(tn) == 3
     end
 
     @testset "selectdim" begin
