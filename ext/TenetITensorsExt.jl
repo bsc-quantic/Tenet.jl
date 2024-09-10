@@ -9,4 +9,6 @@ function Tenet.Tensor(tensor::ITensor)
     return Tensor(array, is)
 end
 
+Tenet.TensorNetwork(tn::Vector{ITensor}) = TensorNetwork(map(Tensor, tn))
+
 end
