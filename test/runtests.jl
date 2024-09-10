@@ -23,6 +23,8 @@ if VERSION >= v"1.10"
         include("integration/Makie_test.jl")
         include("integration/KrylovKit_test.jl")
         include("integration/Quac_test.jl")
+        include("integration/ITensors_test.jl")
+        include("integration/ITensorNetworks_test.jl")
     end
 end
 
