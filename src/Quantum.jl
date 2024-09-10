@@ -242,6 +242,11 @@ end
     end
 end
 
+@kwmethod function sites(tn::AbstractQuantum; at::Symbol)
+    tn = Quantum(tn)
+    return findfirst(==(at), tn.sites)
+end
+
 @deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site) false
 
 function Base.replace!(tn::Quantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
