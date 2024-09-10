@@ -1,6 +1,6 @@
 @testset "ITensorNetworks" begin
     using ITensors: ITensors, ITensor, Index, array
-    using ITensorNetworks: ITensorNetwork
+    using ITensorNetworks: ITensorNetwork, vertices
 
     i = Index(2, "i")
     j = Index(3, "j")
@@ -19,7 +19,7 @@
 
     itn = convert(ITensorNetwork, tn)
     @test itn isa ITensorNetwork
-    @test issetequal(arrays(itn), array.([a, b, c]))
+    @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
 
     # TODO test Quantum
 end

@@ -17,7 +17,10 @@
     @test itensor isa ITensor
     @test size(itensor) == (2, 3, 4)
     @test array(itensor) == parent(tensor)
-    @test all(splat(==), zip(map(x -> replace(x, "\"" => ""), string.(tags.(ITensors.inds(itensor)))), ["i", "j", "k"]))
+    @test all(
+        splat(==),
+        zip(map(x -> replace(x, "\"" => ""), string.(ITensors.tags.(ITensors.inds(itensor)))), ["i", "j", "k"]),
+    )
 
     tn = rand(TensorNetwork, 4, 3)
     itensors = convert(Vector{ITensor}, tn)
