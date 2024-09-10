@@ -3,7 +3,7 @@ module TenetITensorsExt
 using Tenet
 using ITensors: ITensors, ITensor, Index
 
-function Tenet.Tensor(tensor::ITensor)
+function Base.convert(::Type{Tensor}, tensor::ITensor)
     array = ITensors.array(tensor)
     is = Symbol.(ITensors.id.(ITensors.inds(tensor)))
     return Tensor(array, is)
@@ -16,7 +16,7 @@ function Base.convert(::Type{ITensor}, tensor::Tensor; inds=Dict{Symbol,Index}()
     return ITensor(parent(tensor), indices)
 end
 
-Tenet.TensorNetwork(tn::Vector{ITensor}) = TensorNetwork(map(Tensor, tn))
+Base.convert(::Type{TensorNetwork}, tn::Vector{ITensor}) = TensorNetwork(map(Tensor, tn))
 
 function Base.convert(::Type{Vector{ITensor}}, tn::Tenet.AbstractTensorNetwork; inds=Dict{Symbol,Index}())
     indices = merge(inds, Dict(
