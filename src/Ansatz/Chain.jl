@@ -34,7 +34,7 @@ defaultorder(::Type{Chain}, ::Operator) = (:o, :i, :l, :r)
 function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; order=defaultorder(Chain, State()))
     @assert all(==(3) ∘ ndims, arrays) "All arrays must have 3 dimensions"
     issetequal(order, defaultorder(Chain, State())) ||
-        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Chain, State())))"))
 
     n = length(arrays)
     gen = IndexCounter()
