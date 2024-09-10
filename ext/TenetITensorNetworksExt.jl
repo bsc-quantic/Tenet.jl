@@ -1,7 +1,7 @@
 module TenetITensorNetworksExt
 
 using Tenet
-using ITensorNetworks: ITensorNetworks, ITensorNetwork, ITensor, Index, siteinds, plev, vertices
+using ITensorNetworks: ITensorNetworks, ITensorNetwork, ITensor, Index, siteinds, plev, vertices, rename_vertices
 const ITensors = ITensorNetworks.ITensors
 const DataGraphs = ITensorNetworks.DataGraphs
 const TenetITensorsExt = Base.get_extension(Tenet, :TenetITensorsExt)
@@ -25,6 +25,18 @@ function Base.convert(::Type{Quantum}, tn::ITensorNetwork)
         end,
     )
     return Quantum(convert(TensorNetwork, tn), sitedict)
+end
+
+function Base.convert(::Type{ITensorNetwork}, tn::Tenet.AbstractQuantum)
+    itn = @invoke convert(ITensorNetwork, tn::Tenet.AbstractTensorNetwork)
+
+    return rename_vertices(itn) do v
+        itensor = itn[v]
+        indices = map(x -> Symbol(replace(x, "\"" => "")), string.(ITensors.tags.(ITensors.inds(itensor))))
+        tensor = only(tensors(tn; contains=indices))
+        physical_index = only(inds(tn; set=:physical) ∩ inds(tensor))
+        return sites(tn; at=physical_index).id
+    end
 end
 
 end
