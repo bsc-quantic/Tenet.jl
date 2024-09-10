@@ -1,11 +1,15 @@
 module TenetITensorNetworksExt
 
 using Tenet
-using ITensorNetworks: ITensorNetworks, ITensorNetwork, ITensor, siteinds, plev, vertices
+using ITensorNetworks: ITensorNetworks, ITensorNetwork, ITensor, Index, siteinds, plev, vertices
 const ITensors = ITensorNetworks.ITensors
 const DataGraphs = ITensorNetworks.DataGraphs
 
 Base.convert(::Type{TensorNetwork}, tn::ITensorNetwork) = TensorNetwork([convert(Tensor, tn[v]) for v in vertices(tn)])
+
+function Base.convert(::Type{ITensorNetwork}, tn::AbstractTensorNetwork; inds=Dict{Symbol,Index}())
+    return ITensorNetwork(convert(Vector{ITensor}, tn); inds)
+end
 
 function Base.convert(::Type{Quantum}, tn::ITensorNetwork)
     sitedict = Dict(
