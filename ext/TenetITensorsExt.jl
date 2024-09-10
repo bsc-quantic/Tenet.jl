@@ -31,7 +31,7 @@ function Base.convert(::Type{ITensor}, tensor::Tensor; inds=Dict{Symbol,Index}()
     return ITensor(parent(tensor), indices)
 end
 
-Base.convert(::Type{TensorNetwork}, tn::Vector{ITensor}) = TensorNetwork(map(Tensor, tn))
+Base.convert(::Type{TensorNetwork}, tn::Vector{ITensor}) = TensorNetwork(map(t -> convert(Tensor, t), tn))
 
 function Base.convert(::Type{Vector{ITensor}}, tn::Tenet.AbstractTensorNetwork; inds=Dict{Symbol,Index}())
     indices = merge(inds, Dict(
