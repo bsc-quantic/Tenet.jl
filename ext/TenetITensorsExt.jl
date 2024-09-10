@@ -17,6 +17,7 @@ function tagize(index::Symbol)
     return length(tag) > 16 ? tag[(end - 16 + 1):end] : tag
 end
 
+# TODO customize index names
 function Base.convert(::Type{Tensor}, tensor::ITensor)
     array = ITensors.array(tensor)
     is = map(symbolize, ITensors.inds(tensor))
