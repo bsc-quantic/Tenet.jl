@@ -5,7 +5,7 @@ using ITensors: ITensors, ITensor
 
 function Tenet.Tensor(tensor::ITensor)
     array = ITensors.array(tensor)
-    is = Symbol.(id.(ITensor.inds(tensor)))
+    is = Symbol.(ITensors.id.(ITensors.inds(tensor)))
     return Tensor(array, is)
 end
 
