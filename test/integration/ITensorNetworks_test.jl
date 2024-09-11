@@ -1,3 +1,7 @@
+# breaks in instantiation on Julia 1.9
+using Pkg
+Pkg.add("ITensorNetworks")
+
 @testset "ITensorNetworks" begin
     using ITensors: ITensors, ITensor, Index, array
     using ITensorNetworks: ITensorNetwork, vertices
