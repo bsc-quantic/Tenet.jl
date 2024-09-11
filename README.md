@@ -22,6 +22,7 @@ A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at loc
 - Local Tensor Network transformations/simplifications
 - 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
 - Quantum Tensor Networks
+- Conversion from/to [ITensors.jl](https://github.com/ITensor/ITensors.jl) and [ITensorNetworks.jl](https://github.com/ITensor/ITensorNetworks.jl)
 
 ## Preview
 
