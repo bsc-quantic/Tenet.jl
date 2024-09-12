@@ -227,7 +227,6 @@ function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
 
     push!(tn, new_tensor)
     delete!(tn, old_tensor)
-    push!(tn, new_tensor)
 
     return tn
 end
