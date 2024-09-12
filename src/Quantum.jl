@@ -8,118 +8,6 @@ Its subtypes must implement conversion or extraction of the underlying `Quantum`
 """
 abstract type AbstractQuantum <: AbstractTensorNetwork end
 
-# `AbstractTensorNetwork` interface
-TensorNetwork(tn::AbstractQuantum) = TensorNetwork(Quantum(tn))
-
-@kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
-
-# `pop!` / `delete!` methods call this method
-function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
-    @invoke pop!(tn::AbstractTensorNetwork, tensor)
-
-    # TODO replace with `inds(tn; set=:physical)` when implemented
-    targets = values(Quantum(tn).sites) ∩ inds(tensor)
-    for target in targets
-        rmsite!(tn, findfirst(==(target), Quantum(tn).sites))
-    end
-
-    return tensor
-end
-
-# `AbstractQuantum` interface
-addsite!(tn::AbstractQuantum, site, index) = addsite!(Quantum(tn), site, index)
-rmsite!(tn::AbstractQuantum, site) = rmsite!(Quantum(tn), site)
-
-"""
-    sites(q::AbstractQuantum)
-
-Returns the sites of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-function sites end
-
-@kwdispatch sites(tn::AbstractQuantum)
-@kwmethod sites(tn::AbstractQuantum;) = sites(tn; set=:all)
-
-"""
-    nsites(q::AbstractQuantum)
-
-Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
-
-@deprecate inputs(tn::AbstractQuantum) sites(tn; set=:inputs)
-@deprecate outputs(tn::AbstractQuantum) sites(tn; set=:outputs)
-@deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
-@deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
-
-"""
-    lanes(q::AbstractQuantum)
-
-Returns the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-function lanes(tn::AbstractQuantum)
-    return unique(
-        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
-            isdual(site) ? site' : site
-        end,
-    )
-end
-
-"""
-    nlanes(q::AbstractQuantum)
-
-Returns the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-nlanes(tn::AbstractQuantum) = length(lanes(tn))
-
-"""
-    Socket
-
-Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-abstract type Socket end
-
-"""
-    Scalar <: Socket
-
-Socket representing a scalar; i.e. a Tensor Network with no open sites.
-"""
-struct Scalar <: Socket end
-
-"""
-    State <: Socket
-
-Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
-"""
-@kwdef struct State <: Socket
-    dual::Bool = false
-end
-
-"""
-    Operator <: Socket
-
-Socket representing an operator; i.e. a Tensor Network with both input and output sites.
-"""
-struct Operator <: Socket end
-
-"""
-    socket(q::Quantum)
-
-Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
-"""
-function socket(q::AbstractQuantum)
-    _sites = sites(q)
-    if isempty(_sites)
-        Scalar()
-    elseif all(!isdual, _sites)
-        State()
-    elseif all(isdual, _sites)
-        State(; dual=true)
-    else
-        Operator()
-    end
-end
-
 """
     Quantum
 
@@ -153,27 +41,34 @@ struct Quantum <: AbstractQuantum
     end
 end
 
-Quantum(qtn::Quantum) = qtn
+Quantum(tn::Quantum) = tn
 
 """
-    TensorNetwork(q::Quantum)
+    TensorNetwork(q::AbstractQuantum)
 
-Returns the underlying `TensorNetwork` of a [`Quantum`](@ref) Tensor Network.
+Returns the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
 """
-TensorNetwork(q::Quantum) = q.tn
+TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 
-Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
+Base.copy(tn::Quantum) = Quantum(copy(TensorNetwork(tn)), copy(tn.sites))
 
-Base.similar(q::Quantum) = Quantum(similar(TensorNetwork(q)), copy(q.sites))
-Base.zero(q::Quantum) = Quantum(zero(TensorNetwork(q)), copy(q.sites))
+Base.similar(tn::Quantum) = Quantum(similar(TensorNetwork(tn)), copy(tn.sites))
+Base.zero(tn::Quantum) = Quantum(zero(TensorNetwork(tn)), copy(tn.sites))
 
-Base.:(==)(a::Quantum, b::Quantum) = a.tn == b.tn && a.sites == b.sites
-Base.isapprox(a::Quantum, b::Quantum; kwargs...) = isapprox(a.tn, b.tn; kwargs...) && a.sites == b.sites
-
-Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
-function Base.show(io::IO, q::Quantum)
-    return print(io, "Quantum (inputs=$(nsites(q; set=:inputs)), outputs=$(nsites(q; set=:outputs)))")
+function Base.:(==)(a::AbstractQuantum, b::AbstractQuantum)
+    return Quantum(a).sites == Quantum(b).sites && @invoke ==(a::AbstractTensorNetwork, b::AbstractTensorNetwork)
 end
+function Base.isapprox(a::AbstractQuantum, b::AbstractQuantum; kwargs...)
+    return Quantum(a).sites == Quantum(b).sites &&
+           @invoke isapprox(a::AbstractTensorNetwork, b::AbstractTensorNetwork; kwargs...)
+end
+
+Base.summary(io::IO, tn::AbstractQuantum) = print(io, "$(ntensors(tn))-tensors Quantum")
+function Base.show(io::IO, tn::T) where {T<:AbstractQuantum}
+    return print(io, "$T (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
+end
+
+@kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
 
 @kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
 @kwmethod function inds(tn::AbstractQuantum; set)
@@ -186,70 +81,24 @@ end
     end
 end
 
-"""
-    adjoint(q::Quantum)
-
-Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
-"""
-Base.adjoint(tn::AbstractQuantum) = adjoint!(deepcopy(tn))
-
-function LinearAlgebra.adjoint!(tn::AbstractQuantum)
-    conj!(tn)
-
-    # update site information
-    oldsites = copy(Quantum(tn).sites)
-    empty!(Quantum(tn).sites)
-    for (site, index) in oldsites
-        addsite!(tn, site', index)
-    end
-
-    # rename inner indices
-    replace!(tn, map(i -> i => Symbol(i, "'"), inds(tn; set=:virtual)))
-
-    return tn
-end
-
-function addsite!(tn::Quantum, site, index)
-    if haskey(tn.sites, site)
-        error("Site $site already exists")
-    end
-
-    if index ∉ inds(tn; set=:open)
-        error("Index $index must be open")
-    end
-
-    return tn.sites[site] = index
-end
-
-function rmsite!(tn::Quantum, site)
-    if !haskey(tn.sites, site)
-        error("Site $site does not exist")
-    end
-
-    return delete!(tn.sites, site)
-end
-
-@kwmethod function sites(tn::AbstractQuantum; set)
-    tn = Quantum(tn)
-    if set === :all
-        sort!(collect(keys(tn.sites)))
-    elseif set === :inputs
-        sort!(collect(Iterators.filter(isdual, keys(tn.sites))))
-    elseif set === :outputs
-        sort!(collect(Iterators.filter(!isdual, keys(tn.sites))))
-    else
-        throw(ArgumentError("invalid set: $set"))
-    end
-end
-
-@kwmethod function sites(tn::AbstractQuantum; at::Symbol)
-    tn = Quantum(tn)
-    return findfirst(==(at), tn.sites)
-end
-
 @deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site) false
 
-function Base.replace!(tn::Quantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
+# `pop!` / `delete!` methods call this method
+function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
+    @invoke pop!(tn::AbstractTensorNetwork, tensor)
+
+    # TODO replace with `inds(tn; set=:physical)` when implemented
+    targets = values(Quantum(tn).sites) ∩ inds(tensor)
+    for target in targets
+        rmsite!(tn, findfirst(==(target), Quantum(tn).sites))
+    end
+
+    return tensor
+end
+
+function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
+    tn = Quantum(tn)
+
     # replace indices in underlying Tensor Network
     @invoke replace!(tn::AbstractTensorNetwork, old_new)
 
@@ -321,11 +170,117 @@ macro reindex!(expr)
 end
 
 """
+    sites(q::AbstractQuantum)
+
+Returns the sites of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+function sites end
+
+@kwdispatch sites(tn::AbstractQuantum)
+@kwmethod sites(tn::AbstractQuantum;) = sites(tn; set=:all)
+
+"""
+    nsites(q::AbstractQuantum)
+
+Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
+
+@deprecate inputs(tn::AbstractQuantum) sites(tn; set=:inputs)
+@deprecate outputs(tn::AbstractQuantum) sites(tn; set=:outputs)
+@deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
+@deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
+
+"""
+    lanes(q::AbstractQuantum)
+
+Returns the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+function lanes(tn::AbstractQuantum)
+    return unique(
+        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
+            isdual(site) ? site' : site
+        end,
+    )
+end
+
+"""
+    nlanes(q::AbstractQuantum)
+
+Returns the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+nlanes(tn::AbstractQuantum) = length(lanes(tn))
+
+function addsite!(tn::AbstractQuantum, site, index)
+    tn = Quantum(tn)
+    if haskey(tn.sites, site)
+        error("Site $site already exists")
+    end
+
+    if index ∉ inds(tn; set=:open)
+        error("Index $index must be open")
+    end
+
+    return tn.sites[site] = index
+end
+
+function rmsite!(tn::AbstractQuantum, site)
+    tn = Quantum(tn)
+    if !haskey(tn.sites, site)
+        error("Site $site does not exist")
+    end
+
+    return delete!(tn.sites, site)
+end
+
+@kwmethod function sites(tn::AbstractQuantum; set)
+    tn = Quantum(tn)
+    if set === :all
+        sort!(collect(keys(tn.sites)))
+    elseif set === :inputs
+        sort!(collect(Iterators.filter(isdual, keys(tn.sites))))
+    elseif set === :outputs
+        sort!(collect(Iterators.filter(!isdual, keys(tn.sites))))
+    else
+        throw(ArgumentError("invalid set: $set"))
+    end
+end
+
+@kwmethod function sites(tn::AbstractQuantum; at::Symbol)
+    tn = Quantum(tn)
+    return findfirst(==(at), tn.sites)
+end
+
+"""
+    adjoint(q::Quantum)
+
+Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
+"""
+Base.adjoint(tn::AbstractQuantum) = adjoint!(deepcopy(tn))
+
+function LinearAlgebra.adjoint!(tn::AbstractQuantum)
+    conj!(tn)
+
+    # update site information
+    oldsites = copy(Quantum(tn).sites)
+    empty!(Quantum(tn).sites)
+    for (site, index) in oldsites
+        addsite!(tn, site', index)
+    end
+
+    # rename inner indices
+    replace!(tn, map(i -> i => Symbol(i, "'"), inds(tn; set=:virtual)))
+
+    return tn
+end
+
+"""
     merge(a::Quantum, b::Quantum...)
 
 Merges multiple [`Quantum`](@ref) Tensor Networks into a single one by connecting input/output sites.
 """
 Base.merge(a::AbstractQuantum, others::AbstractQuantum...) = foldl(merge, others; init=a)
+
 function Base.merge(a::AbstractQuantum, b::AbstractQuantum)
     @assert issetequal(sites(a; set=:outputs), map(adjoint, sites(b; set=:inputs))) "Outputs of $a must match inputs of $b"
 
@@ -343,4 +298,61 @@ function Base.merge(a::AbstractQuantum, b::AbstractQuantum)
     end
 
     return Quantum(tn, mergedsites)
+end
+
+function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
+    p == 2 || throw(ArgumentError("only L2-norm is implemented yet"))
+    return LinearAlgebra.norm2(ψ; kwargs...)
+end
+
+function LinearAlgebra.norm2(ψ::AbstractQuantum; kwargs...)
+    return abs(sqrt(only(contract(merge(Quantum(ψ), Quantum(ψ')); kwargs...))))
+end
+
+"""
+    Socket
+
+Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+abstract type Socket end
+
+"""
+    Scalar <: Socket
+
+Socket representing a scalar; i.e. a Tensor Network with no open sites.
+"""
+struct Scalar <: Socket end
+
+"""
+    State <: Socket
+
+Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
+"""
+@kwdef struct State <: Socket
+    dual::Bool = false
+end
+
+"""
+    Operator <: Socket
+
+Socket representing an operator; i.e. a Tensor Network with both input and output sites.
+"""
+struct Operator <: Socket end
+
+"""
+    socket(q::Quantum)
+
+Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
+"""
+function socket(q::AbstractQuantum)
+    _sites = sites(q)
+    if isempty(_sites)
+        Scalar()
+    elseif all(!isdual, _sites)
+        State()
+    elseif all(isdual, _sites)
+        State(; dual=true)
+    else
+        Operator()
+    end
 end
