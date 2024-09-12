@@ -53,6 +53,19 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(qtn, NonCanonical())
 end
 
+function Base.convert(::Type{MPS}, tn::Product)
+    @assert socket(tn) == State()
+
+    arrs::Vector{Array} = arrays(tn)
+    arrs[1] = reshape(arrs[1], size(arrs[1])..., 1)
+    arrs[end] = reshape(arrs[end], size(arrs[end])..., 1)
+    map!(@view(arrs[2:(end - 1)]), @view(arrs[2:(end - 1)])) do arr
+        reshape(arr, size(arr)..., 1, 1)
+    end
+
+    return MPS(arrs)
+end
+
 Base.adjoint(tn::MPS) = MPS(adjoint(Quantum(tn)), form(tn))
 
 # TODO different input/output physical dims

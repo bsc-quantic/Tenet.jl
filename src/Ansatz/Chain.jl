@@ -72,17 +72,6 @@ function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; 
     return Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Base.convert(::Type{Chain}, qtn::Product)
-    arrs::Vector{Array} = arrays(qtn)
-    arrs[1] = reshape(arrs[1], size(arrs[1])..., 1)
-    arrs[end] = reshape(arrs[end], size(arrs[end])..., 1)
-    map!(@view(arrs[2:(end - 1)]), @view(arrs[2:(end - 1)])) do arr
-        reshape(arr, size(arr)..., 1, 1)
-    end
-
-    return Chain(socket(qtn), Open(), arrs)
-end
-
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
 function leftsite(::Open, tn::Chain, site::Site)
     return id(site) ∈ range(2, nlanes(tn)) ? Site(id(site) - 1; dual=isdual(site)) : nothing
