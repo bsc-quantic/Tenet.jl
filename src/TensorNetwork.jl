@@ -225,6 +225,7 @@ function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     old_tensor, new_tensor = pair
     issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
 
+    push!(tn, new_tensor)
     delete!(tn, old_tensor)
     push!(tn, new_tensor)
 
