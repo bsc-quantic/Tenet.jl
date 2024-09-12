@@ -15,12 +15,12 @@ A Julia library for **Ten**sor **Net**works. `Tenet` can be executed both at loc
 
 ## Features
 
-- Optimized Tensor Network contraction order, powered by [`EinExprs`](https://github.com/bsc-quantic/EinExprs.jl)
+- Optimized Tensor Network contraction order, powered by [EinExprs.jl](https://github.com/bsc-quantic/EinExprs.jl)
 - Tensor Network slicing/cuttings
 - Automatic Differentiation of TN contraction
 - Distributed contraction
 - Local Tensor Network transformations/simplifications
-- 2D & 3D visualization of large networks, powered by [`Makie`](https://github.com/MakieOrg/Makie.jl)
+- 2D & 3D visualization of large networks, powered by [Makie.jl](https://github.com/MakieOrg/Makie.jl)
 - Quantum Tensor Networks
 - Conversion from/to [ITensors.jl](https://github.com/ITensor/ITensors.jl) and [ITensorNetworks.jl](https://github.com/ITensor/ITensorNetworks.jl)
 
