@@ -76,7 +76,9 @@ function Base.show(io::IO, tn::T) where {T<:AbstractTensorNetwork}
 end
 
 Base.:(==)(a::AbstractTensorNetwork, b::AbstractTensorNetwork) = all(splat(==), zip(tensors(a), tensors(b)))
-Base.isapprox(a::AbstractTensorNetwork, b::AbstractTensorNetwork) = all(splat(isapprox), zip(tensors(a), tensors(b)))
+function Base.isapprox(a::AbstractTensorNetwork, b::AbstractTensorNetwork; kwargs...)
+    return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
+end
 
 Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
