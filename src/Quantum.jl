@@ -274,13 +274,6 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
-"""
-    merge(a::Quantum, b::Quantum...)
-
-Merges multiple [`Quantum`](@ref) Tensor Networks into a single one by connecting input/output sites.
-"""
-Base.merge(a::AbstractQuantum, others::AbstractQuantum...) = foldl(merge, others; init=a)
-
 function Base.merge(a::AbstractQuantum, b::AbstractQuantum)
     @assert issetequal(sites(a; set=:outputs), map(adjoint, sites(b; set=:inputs))) "Outputs of $a must match inputs of $b"
 
