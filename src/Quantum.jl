@@ -291,6 +291,9 @@ function rmsite!(tn::AbstractQuantum, site)
     return delete!(tn.sites, site)
 end
 
+hassite(tn::AbstractQuantum, site) = haskey(Quantum(tn).sites, site)
+Base.in(site::Site, tn::AbstractQuantum) = hassite(tn, site)
+
 @kwmethod function sites(tn::AbstractQuantum; set)
     tn = Quantum(tn)
     if set === :all
