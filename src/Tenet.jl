@@ -26,6 +26,7 @@ include("Ansatz/Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
+export form
 
 include("Ansatz/Product.jl")
 export Product

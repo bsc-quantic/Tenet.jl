@@ -1,33 +1,51 @@
+using KeywordDispatch
 using LinearAlgebra
+using Graphs
+using MetaGraphsNext
+
+abstract type AbstractAnsatz <: AbstractQuantum end
 
 """
     Ansatz
 
-[`AbstractQuantum`](@ref) Tensor Network with a predefined structure.
-
-# Notes
-
-  - Any subtype must define `super::Quantum` field or specialize the `Quantum` method.
+[`AbstractQuantum`](@ref) Tensor Network with a preserving structure.
 """
-abstract type Ansatz <: AbstractQuantum end
+struct Ansatz <: AbstractAnsatz
+    tn::Quantum
+    lattice::MetaGraph
 
-# TODO maybe we need to change this?
-Quantum(@nospecialize tn::Ansatz) = tn.super
-
-Base.:(==)(a::Ansatz, b::Ansatz) = Quantum(a) == Quantum(b)
-Base.isapprox(a::Ansatz, b::Ansatz; kwargs...) = isapprox(Quantum(a), Quantum(b); kwargs...)
-
-alias(::A) where {A} = string(A)
-function Base.summary(io::IO, tn::A) where {A<:Ansatz}
-    return print(io, "$(alias(tn)) (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
+    function Ansatz(tn, lattice)
+        if !issetequal(site(tn), labels(lattice))
+            throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
+        end
+        return new(tn, lattice)
+    end
 end
-Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
 
-@kwmethod function inds(tn::Ansatz; bond)
+Ansatz(tn::Ansatz) = tn
+Quantum(tn::AbstractAnsatz) = Ansatz(tn).tn
+lattice(tn::AbstractAnsatz) = Ansatz(tn).lattice
+
+function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
+    return ==(latice.((a, b))...) && isapprox(Quantum(a), Quantum(b); kwargs...)
+end
+
+function neighbors(tn::AbstractAnsatz, site::Site)
+    # TODO
+    # return neighbors(lattice(tn), site)
+end
+
+function isneighbor(tn::AbstractAnsatz, a::Site, b::Site)
+    # TODO
+    # return isneighbor(lattice(tn), a, b)
+end
+
+@kwmethod function inds(tn::AbstractAnsatz; bond)
     (site1, site2) = bond
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
+    @assert isneighbor(tn, site1, site2) "Sites must be neighbors"
 
     tensor1 = tensors(tn; at=site1)
     tensor2 = tensors(tn; at=site2)
@@ -36,11 +54,12 @@ Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-@kwmethod function Tenet.tensors(tn::Ansatz; between)
+@kwmethod function Tenet.tensors(tn::AbstractAnsatz; between)
     (site1, site2) = between
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
+    @assert isneighbor(tn, site1, site2) "Sites must be neighbors"
 
     tensor1 = tensors(tn; at=site1)
     tensor2 = tensors(tn; at=site2)
@@ -58,16 +77,6 @@ MissingSchmidtCoefficientsException(bond::Vector{<:Site}) = MissingSchmidtCoeffi
 
 function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
     return print(io, "Can't access the spectrum on bond $(e.bond)")
-end
-
-function LinearAlgebra.norm(ψ::Ansatz, p::Real=2; kwargs...)
-    p == 2 || throw(ArgumentError("only L2-norm is implemented yet"))
-
-    return LinearAlgebra.norm2(ψ; kwargs...)
-end
-
-function LinearAlgebra.norm2(ψ::Ansatz; kwargs...)
-    return abs(sqrt(only(contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...))))
 end
 
 # Traits
