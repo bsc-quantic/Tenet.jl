@@ -40,13 +40,15 @@ export MPS
 include("Ansatz/MPO.jl")
 export MPO
 
+include("Ansatz/PEPS.jl")
+export PEPS
+
+include("Ansatz/PEPO.jl")
+export PEPO
+
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!
 export canonize, canonize!, mixed_canonize, mixed_canonize!
-
-include("Ansatz/Grid.jl")
-export Grid
-export PEPS, pPEPS, PEPO, pPEPO
 
 export evolve!, expect, overlap
 
