@@ -46,10 +46,7 @@ export PEPS
 include("Ansatz/PEPO.jl")
 export PEPO
 
-export leftindex, rightindex, isleftcanonical, isrightcanonical
-export canonize_site, canonize_site!, truncate!
-export canonize, canonize!, mixed_canonize, mixed_canonize!
-
+export canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
 export evolve!, expect, overlap
 
 # reexports from EinExprs
