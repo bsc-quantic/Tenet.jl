@@ -1,11 +1,17 @@
 using Random
 
-abstract type AbstractMPS <: Ansatz end
+abstract type AbstractMPS <: AbstractAnsatz end
 
 struct MPS <: AbstractMPS
-    super::Quantum
+    tn::Ansatz
     form::Form
 end
+
+Ansatz(tn::MPS) = tn.tn
+
+Base.copy(x::MPS) = MPS(copy(Ansatz(x)), form(x))
+Base.similar(x::MPS) = MPS(similar(Ansatz(x)), form(x))
+Base.zero(x::MPS) = MPS(zero(Ansatz(x)), form(x))
 
 defaultorder(::Type{MPS}) = (:o, :l, :r)
 boundary(::MPS) = Open()
@@ -49,8 +55,10 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     qtn = Quantum(tn, sitemap)
-
-    return MPS(qtn, NonCanonical())
+    graph = path_graph(n)
+    lattice = MetaGraph(graph, Site.(vertices(graph)) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    ansatz = Ansatz(qtn, lattice)
+    return MPS(ansatz, NonCanonical())
 end
 
 function Base.convert(::Type{MPS}, tn::Product)
@@ -66,7 +74,7 @@ function Base.convert(::Type{MPS}, tn::Product)
     return MPS(arrs)
 end
 
-Base.adjoint(tn::MPS) = MPS(adjoint(Quantum(tn)), form(tn))
+Base.adjoint(tn::MPS) = MPS(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
