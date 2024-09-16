@@ -1,55 +1,54 @@
 using LinearAlgebra
+using Graphs
+using MetaGraphsNext
 
-struct Product <: Ansatz
-    super::Quantum
+struct Product <: AbstractAnsatz
+    tn::Ansatz
 end
 
-Base.copy(x::Product) = Product(copy(Quantum(x)))
+Ansatz(tn::Product) = tn.tn
 
-Base.similar(x::Product) = Product(similar(Quantum(x)))
-Base.zero(x::Product) = Product(zero(Quantum(x)))
+Base.copy(x::Product) = Product(copy(Ansatz(x)))
 
-function Product(tn::TensorNetwork, sites)
-    @assert isempty(inds(tn; set=:inner)) "Product ansatz must not have inner indices"
-    return Product(Quantum(tn, sites))
-end
+Base.similar(x::Product) = Product(similar(Ansatz(x)))
+Base.zero(x::Product) = Product(zero(Ansatz(x)))
 
-Product(arrays::Vector{<:AbstractVector}) = Product(State(), Open(), arrays)
-Product(arrays::Vector{<:AbstractMatrix}) = Product(Operator(), Open(), arrays)
-
-function Product(::State, ::Open, arrays)
+function Product(arrays::Vector{<:AbstractVector})
+    n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex!(gen) for _ in 1:length(arrays)]
+    symbols = [nextindex!(gen) for _ in 1:n]
     _tensors = map(enumerate(arrays)) do (i, array)
         Tensor(array, [symbols[i]])
     end
 
-    sitemap = Dict(Site(i) => symbols[i] for i in 1:length(arrays))
-
-    return Product(TensorNetwork(_tensors), sitemap)
+    sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
+    qtn = Quantum(TensorNetwork(_tensors), sitemap)
+    lattice = MetaGraph(Graph(n), Pair{Site,Nothing}[Site(i) => nothing for i in 1:n], Pair{Tuple{Site,Site},Nothing}[])
+    ansatz = Ansatz(qtn, lattice)
+    return Product(ansatz)
 end
 
-function Product(::Operator, ::Open, arrays)
+function Product(arrays::Vector{<:AbstractMatrix})
     n = length(arrays)
     gen = IndexCounter()
     symbols = [nextindex!(gen) for _ in 1:(2 * length(arrays))]
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i + n], symbols[i]])
+        Tensor(array, [symbols[i + n], symbols[i]], [])
     end
 
     sitemap = merge!(Dict(Site(i; dual=true) => symbols[i] for i in 1:n), Dict(Site(i) => symbols[i + n] for i in 1:n))
-
-    return Product(TensorNetwork(_tensors), sitemap)
+    qtn = Quantum(TensorNetwork(_tensors), sitemap)
+    lattice = MetaGraph(Graph(n), Pair{Site,Nothing}[Site(i) => nothing for i in 1:n], Pair{Tuple{Site,Site},Nothing}[])
+    ansatz = Ansatz(qtn, lattice)
+    return Product(ansatz)
 end
 
 function Base.zeros(::Type{Product}, n::Integer; p::Int=2, eltype=Bool)
-    return Product(State(), Open(), fill(append!([one(eltype)], collect(Iterators.repeated(zero(eltype), p - 1))), n))
+    return Product(fill(append!([one(eltype)], collect(Iterators.repeated(zero(eltype), p - 1))), n))
 end
 
 function Base.ones(::Type{Product}, n::Integer; p::Int=2, eltype=Bool)
-    return Product(
-        State(), Open(), fill(append!([zero(eltype), one(eltype)], collect(Iterators.repeated(zero(eltype), p - 2))), n)
-    )
+    return Product(fill(append!([zero(eltype), one(eltype)], collect(Iterators.repeated(zero(eltype), p - 2))), n))
 end
 
 LinearAlgebra.norm(tn::Product, p::Real=2) = LinearAlgebra.norm(socket(tn), tn, p)
