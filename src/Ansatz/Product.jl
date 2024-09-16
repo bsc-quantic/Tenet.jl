@@ -9,7 +9,6 @@ end
 Ansatz(tn::Product) = tn.tn
 
 Base.copy(x::Product) = Product(copy(Ansatz(x)))
-
 Base.similar(x::Product) = Product(similar(Ansatz(x)))
 Base.zero(x::Product) = Product(zero(Ansatz(x)))
 
