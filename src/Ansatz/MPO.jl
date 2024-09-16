@@ -1,9 +1,17 @@
 using Random
 
-struct MPO <: Ansatz
-    super::Quantum
+abstract type AbstractMPO <: AbstractAnsatz end
+
+struct MPO <: AbstractAnsatz
+    tn::Ansatz
     form::Form
 end
+
+Ansatz(tn::MPO) = tn.tn
+
+Base.copy(x::MPO) = MPO(copy(Ansatz(x)), form(x))
+Base.similar(x::MPO) = MPO(similar(Ansatz(x)), form(x))
+Base.zero(x::MPO) = MPO(zero(Ansatz(x)), form(x))
 
 defaultorder(::Type{MPO}) = (:o, :i, :l, :r)
 boundary(::MPO) = Open()
@@ -50,8 +58,10 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
     qtn = Quantum(tn, sitemap)
-
-    return MPO(qtn, NonCanonical())
+    graph = path_graph(n)
+    lattice = MetaGraph(graph, Site.(vertices(graph)) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    ansatz = Ansatz(qtn, lattice)
+    return MPO(ansatz, NonCanonical())
 end
 
 function Base.convert(::Type{MPO}, tn::Product)
@@ -67,7 +77,7 @@ function Base.convert(::Type{MPO}, tn::Product)
     return MPO(arrs)
 end
 
-Base.adjoint(tn::MPO) = MPO(adjoint(Quantum(tn)), form(tn))
+Base.adjoint(tn::MPO) = MPO(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
