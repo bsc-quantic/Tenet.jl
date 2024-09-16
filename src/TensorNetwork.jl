@@ -6,6 +6,7 @@ using LinearAlgebra
 using ScopedValues
 using Serialization
 using KeywordDispatch
+using Graphs
 
 mutable struct CachedField{T}
     isvalid::Bool
@@ -474,7 +475,7 @@ Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(o
 Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init=self)
 Base.merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = merge!(copy(self), others...)
 
-function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
         Tenet.tensors(tn; intersects=index)
@@ -483,7 +484,7 @@ function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     return tensors
 end
 
-function neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
     tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
