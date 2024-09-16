@@ -15,7 +15,7 @@ struct Ansatz <: AbstractAnsatz
     lattice::MetaGraph
 
     function Ansatz(tn, lattice)
-        if !issetequal(site(tn), labels(lattice))
+        if !issetequal(sites(tn), labels(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end
         return new(tn, lattice)
@@ -30,7 +30,7 @@ function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
     return ==(latice.((a, b))...) && isapprox(Quantum(a), Quantum(b); kwargs...)
 end
 
-function neighbors(tn::AbstractAnsatz, site::Site)
+function Graphs.neighbors(tn::AbstractAnsatz, site::Site)
     # TODO
     # return neighbors(lattice(tn), site)
 end
