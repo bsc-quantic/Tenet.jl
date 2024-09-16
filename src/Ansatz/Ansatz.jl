@@ -15,7 +15,7 @@ struct Ansatz <: AbstractAnsatz
     lattice::MetaGraph
 
     function Ansatz(tn, lattice)
-        if !issetequal(sites(tn), labels(lattice))
+        if !issetequal(lanes(tn), labels(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end
         return new(tn, lattice)
