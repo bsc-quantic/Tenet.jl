@@ -106,3 +106,5 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}, n, χ; eltype=Float64, 
     # TODO order might not be the best for performance
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
+
+function evolve!(ψ::MPS, op::MPO; threshold=nothing, maxdim=nothing, renormalize=false) end
