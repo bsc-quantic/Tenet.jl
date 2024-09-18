@@ -81,9 +81,10 @@ Base.adjoint(tn::MPO) = MPO(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}, n, χ; eltype=Float64, physical_dim=2)
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float64, physdim=2)
     T = eltype
-    ip = op = physical_dim
+    ip = op = physdim
+    χ = maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
@@ -100,8 +101,8 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}, n, χ; eltype=Float64, 
     end
 
     # reshape boundary sites
-    arrays[1] = reshape(arrays[1], p, p, min(χ, ip * op))
-    arrays[n] = reshape(arrays[n], min(χ, ip * op), p, p)
+    arrays[1] = reshape(arrays[1], ip, op, min(χ, ip * op))
+    arrays[n] = reshape(arrays[n], min(χ, ip * op), ip, op)
 
     # TODO order might not be the best for performance
     return MPO(arrays; order=(:l, :i, :o, :r))
