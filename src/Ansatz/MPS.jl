@@ -138,7 +138,7 @@ end
 @kwmethod contract(tn::MPS; between, direction) = contract(tn; between, direction, delete_Λ=true)
 @kwmethod contract!(tn::MPS; between, direction) = contract!(tn; between, direction, delete_Λ=true)
 
-@kwmethod function sites(ψ::MPS, site::Site; dir)
+function sites(ψ::MPS, site::Site; dir)
     if dir === :left
         return site == site"1" ? nothing : Site(id(site) - 1)
     elseif dir === :right
