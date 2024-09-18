@@ -155,7 +155,8 @@ end
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
 function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    return simple_update!(ψ, gate; threshold, maxdim, renormalize)
+    # TODO renormalize not yet implemented
+    return simple_update!(ψ, gate; threshold, maxdim)
 end
 
 # by popular demand (Stefano, I'm looking at you), I aliased `apply!` to `evolve!`
