@@ -44,9 +44,6 @@ export MPO
 
 export evolve!, expect, overlap
 
-include("Product.jl")
-export Product
-
 # reexports from EinExprs
 export einexpr, inds
 

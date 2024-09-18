@@ -162,41 +162,27 @@ end
     end
 end
 
-function isleftcanonical(ψ::MPS, site; atol::Real=1e-12)
-    right_ind = inds(ψ; at=site, dir=:right)
+function isisometry(ψ::MPS, site; dir, atol::Real=1e-12)
     tensor = tensors(ψ; at=site)
+    dirind = inds(ψ; at=site, dir)
 
-    # we are at right-most site, we need to add an extra dummy dimension to the tensor
-    if isnothing(right_ind)
-        right_ind = gensym(:dummy)
-        tensor = Tensor(reshape(parent(tensor), size(tensor)..., 1), (inds(tensor)..., right_ind))
+    if isnothing(dirind)
+        @show parent(contract(tensor, conj(tensor)))
+        return isapprox(parent(contract(tensor, conj(tensor))), fill(true); atol)
     end
 
-    # TODO is replace(conj(A)...) copying too much?
-    contracted = contract(tensor, replace(conj(tensor), right_ind => gensym(:new_ind)))
-    n = size(tensor, right_ind)
-    identity_matrix = Matrix(I, n, n)
+    inda, indb = gensym(:a), gensym(:b)
+    a = replace(tensor, dirind => inda)
+    b = replace(conj(tensor), dirind => indb)
 
-    return isapprox(contracted, identity_matrix; atol)
+    n = size(tensor, dirind)
+    contracted = contract(a, b; out=[inda, indb])
+
+    return isapprox(contracted, I(n); atol)
 end
 
-function isrightcanonical(ψ::MPS, site; atol::Real=1e-12)
-    left_ind = inds(ψ; at=site, dir=:left)
-    tensor = tensors(ψ; at=site)
-
-    # we are at left-most site, we need to add an extra dummy dimension to the tensor
-    if isnothing(left_ind)
-        left_ind = gensym(:dummy)
-        tensor = Tensor(reshape(parent(tensor), 1, size(tensor)...), (left_ind, inds(tensor)...))
-    end
-
-    #TODO is replace(conj(A)...) copying too much?
-    contracted = contract(tensor, replace(conj(tensor), left_ind => gensym(:new_ind)))
-    n = size(tensor, left_ind)
-    identity_matrix = Matrix(I, n, n)
-
-    return isapprox(contracted, identity_matrix; atol)
-end
+@deprecate isleftcanonical(ψ::MPS, site; atol::Real=1e-12) isisometry(ψ, site; dir=:right, atol)
+@deprecate isrightcanonical(ψ::MPS, site; atol::Real=1e-12) isisometry(ψ, site; dir=:left, atol)
 
 # NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
 function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
