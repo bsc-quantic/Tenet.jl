@@ -132,7 +132,7 @@ function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
         1:maxdim
     else
         1:something(findfirst(1:maxdim) do i
-                abs(spectrum[i]) < threshold
+            abs(spectrum[i]) < threshold
         end - 1, maxdim)
     end
 
