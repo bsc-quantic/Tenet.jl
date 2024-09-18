@@ -303,6 +303,6 @@ end
 # TODO normalize! methods
 function LinearAlgebra.normalize!(ψ::MPS, orthog_center=site"1")
     mixed_canonize!(ψ, orthog_center)
-    normalize!(tensors(tn; between=(Site(id(root) - 1), root)), 2)
+    normalize!(tensors(tn; between=(Site(id(orthog_center) - 1), orthog_center)), 2)
     return ψ
 end
