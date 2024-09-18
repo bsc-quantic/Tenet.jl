@@ -28,7 +28,7 @@ export socket, Scalar, State, Operator
 export boundary, Open, Periodic
 export form
 
-export canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
+export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
 export evolve!, expect, overlap
 
 # reexports from EinExprs
