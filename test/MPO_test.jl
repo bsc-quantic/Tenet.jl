@@ -10,13 +10,13 @@
     arrays = [rand(2, 4, 1), rand(2, 4, 1, 3), rand(2, 4, 3)] # Default order (:o :i, :l, :r)
     H = MPO(arrays)
 
-    @test size(tensors(H; at=Site(1))) == (2, 4, 1)
-    @test size(tensors(H; at=Site(2))) == (2, 4, 1, 3)
-    @test size(tensors(H; at=Site(3))) == (2, 4, 3)
+    @test size(tensors(H; at=site"1")) == (2, 4, 1)
+    @test size(tensors(H; at=site"2")) == (2, 4, 1, 3)
+    @test size(tensors(H; at=site"3")) == (2, 4, 3)
 
-    @test inds(H; at=Site(1), dir=:left) == inds(H; at=Site(3), dir=:right) === nothing
-    @test inds(H; at=Site(2), dir=:left) == inds(H; at=Site(1), dir=:right) !== nothing
-    @test inds(H; at=Site(3), dir=:left) == inds(H; at=Site(2), dir=:right) !== nothing
+    @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) === nothing
+    @test inds(H; at=site"2", dir=:left) == inds(H; at=site"1", dir=:right) !== nothing
+    @test inds(H; at=site"3", dir=:left) == inds(H; at=site"2", dir=:right) !== nothing
 
     for i in 1:length(arrays)
         @test size(H, inds(H; at=Site(i))) == 2
@@ -28,13 +28,13 @@
     ] # now we have (:r, :o, :l, :i)
     H = MPO(arrays; order=[:r, :o, :l, :i])
 
-    @test size(tensors(H; at=Site(1))) == (1, 2, 4)
-    @test size(tensors(H; at=Site(2))) == (3, 2, 1, 4)
-    @test size(tensors(H; at=Site(3))) == (2, 3, 4)
+    @test size(tensors(H; at=site"1")) == (1, 2, 4)
+    @test size(tensors(H; at=site"2")) == (3, 2, 1, 4)
+    @test size(tensors(H; at=site"3")) == (2, 3, 4)
 
-    @test inds(H; at=Site(1), dir=:left) == inds(H; at=Site(3), dir=:right) === nothing
-    @test inds(H; at=Site(2), dir=:left) == inds(H; at=Site(1), dir=:right) !== nothing
-    @test inds(H; at=Site(3), dir=:left) == inds(H; at=Site(2), dir=:right) !== nothing
+    @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) === nothing
+    @test inds(H; at=site"2", dir=:left) == inds(H; at=site"1", dir=:right) !== nothing
+    @test inds(H; at=site"3", dir=:left) == inds(H; at=site"2", dir=:right) !== nothing
 
     for i in 1:length(arrays)
         @test size(H, inds(H; at=Site(i))) == 2
@@ -44,14 +44,14 @@
     @testset "Site" begin
         H = MPO([rand(2, 2, 2), rand(2, 2, 2, 2), rand(2, 2, 2)])
 
-        @test isnothing(sites(H, Site(1); dir=:left))
-        @test isnothing(sites(H, Site(3); dir=:right))
+        @test isnothing(sites(H, site"1"; dir=:left))
+        @test isnothing(sites(H, site"3"; dir=:right))
 
-        @test sites(H, Site(2); dir=:left) == Site(1)
-        @test sites(H, Site(3); dir=:left) == Site(2)
+        @test sites(H, site"2"; dir=:left) == site"1"
+        @test sites(H, site"3"; dir=:left) == site"2"
 
-        @test sites(H, Site(2); dir=:right) == Site(3)
-        @test sites(H, Site(1); dir=:right) == Site(2)
+        @test sites(H, site"2"; dir=:right) == site"3"
+        @test sites(H, site"1"; dir=:right) == site"2"
     end
 
     @testset "norm" begin
