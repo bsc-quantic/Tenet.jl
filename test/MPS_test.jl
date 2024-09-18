@@ -49,15 +49,15 @@
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
         canonize_site!(ψ, Site(2); direction=:right, method=:svd)
 
-        @test_throws Tenet.MissingSchmidtCoefficientsException truncate!(ψ, [site"1", site"2"]; maxdim=1)
-        # @test_throws ArgumentError truncate!(ψ, [site"2", site"3"])
+        # @test_throws Tenet.MissingSchmidtCoefficientsException truncate!(ψ, [site"1", site"2"]; maxdim=1)
+        @test_throws ArgumentError truncate!(ψ, [site"1", site"2"]; maxdim=1)
 
-        truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
+        truncated = Tenet.truncate(ψ, [site"2", site"3"]; maxdim=1)
         @test size(truncated, inds(truncated; at=site"2", dir=:right)) == 1
         @test size(truncated, inds(truncated; at=site"3", dir=:left)) == 1
 
         singular_values = tensors(ψ; between=(site"2", site"3"))
-        truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
+        truncated = Tenet.truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
         @test size(truncated, inds(truncated; at=site"2", dir=:right)) == 1
         @test size(truncated, inds(truncated; at=site"3", dir=:left)) == 1
     end
