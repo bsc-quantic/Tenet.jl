@@ -48,7 +48,7 @@ export PEPO
 
 # `truncate` not exported because it clashes with `Base.truncate`
 export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!
-export isleftcanonical, isrightcanonical
+export isisometry, isleftcanonical, isrightcanonical
 export evolve!, expect, overlap, truncate!
 
 # reexports from EinExprs
