@@ -1,6 +1,36 @@
 using KeywordDispatch
 
 """
+    Socket
+
+Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
+"""
+abstract type Socket end
+
+"""
+    Scalar <: Socket
+
+Socket representing a scalar; i.e. a Tensor Network with no open sites.
+"""
+struct Scalar <: Socket end
+
+"""
+    State <: Socket
+
+Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
+"""
+@kwdef struct State <: Socket
+    dual::Bool = false
+end
+
+"""
+    Operator <: Socket
+
+Socket representing an operator; i.e. a Tensor Network with both input and output sites.
+"""
+struct Operator <: Socket end
+
+"""
     AbstractQuantum
 
 Abstract type for `Quantum`-derived types.
@@ -114,11 +144,13 @@ function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pai
     return tn
 end
 
-function reindex!(a::Quantum, ioa, b::Quantum, iob)
+function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
 
-    resetindex!(a)
-    resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+    if reset
+        resetindex!(a)
+        resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+    end
 
     sitesb = if iob === :inputs
         collect(sites(b; set=:inputs))
@@ -157,16 +189,21 @@ end
 
 Reindexes the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
 """
-macro reindex!(expr)
+macro reindex!(expr, reset=:(reset = true))
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
     Base.remove_linenums!(expr)
     a, b = expr.args[2:end]
+
+    @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset && reset.args[2] isa Bool
 
     @assert Meta.isexpr(a, :call)
     @assert Meta.isexpr(b, :call)
     ioa, ida = a.args
     iob, idb = b.args
-    return :((reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)))); $(esc(idb)))
+    return quote
+        reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)); $(esc(reset)))
+        $(esc(idb))
+    end
 end
 
 """
@@ -252,6 +289,24 @@ end
 end
 
 """
+    socket(q::Quantum)
+
+Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
+"""
+function socket(q::AbstractQuantum)
+    _sites = sites(q)
+    if isempty(_sites)
+        Scalar()
+    elseif all(!isdual, _sites)
+        State()
+    elseif all(isdual, _sites)
+        State(; dual=true)
+    else
+        Operator()
+    end
+end
+
+"""
     adjoint(q::Quantum)
 
 Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
@@ -304,54 +359,16 @@ function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
     return LinearAlgebra.norm2(ψ; kwargs...)
 end
 
-function LinearAlgebra.norm2(ψ::AbstractQuantum; kwargs...)
-    return abs(sqrt(only(contract(merge(Quantum(ψ), Quantum(ψ')); kwargs...))))
+LinearAlgebra.norm2(ψ::AbstractQuantum; kwargs...) = LinearAlgebra.norm2(socket(ψ), ψ; kwargs...)
+
+function LinearAlgebra.norm2(::State, ψ::AbstractQuantum; kwargs...)
+    return abs(sqrt(only(contract(merge(ψ, ψ'); kwargs...))))
 end
 
-"""
-    Socket
+function LinearAlgebra.norm2(::Operator, ψ::AbstractQuantum; kwargs...)
+    ψ, ϕ = Quantum(ψ), Quantum(ψ')
 
-Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-abstract type Socket end
-
-"""
-    Scalar <: Socket
-
-Socket representing a scalar; i.e. a Tensor Network with no open sites.
-"""
-struct Scalar <: Socket end
-
-"""
-    State <: Socket
-
-Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
-"""
-@kwdef struct State <: Socket
-    dual::Bool = false
-end
-
-"""
-    Operator <: Socket
-
-Socket representing an operator; i.e. a Tensor Network with both input and output sites.
-"""
-struct Operator <: Socket end
-
-"""
-    socket(q::Quantum)
-
-Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
-"""
-function socket(q::AbstractQuantum)
-    _sites = sites(q)
-    if isempty(_sites)
-        Scalar()
-    elseif all(!isdual, _sites)
-        State()
-    elseif all(isdual, _sites)
-        State(; dual=true)
-    else
-        Operator()
-    end
+    @reindex! outputs(ψ) => inputs(ϕ) reset = false
+    @reindex! inputs(ψ) => outputs(ϕ) reset = false
+    return abs(sqrt(only(contract(merge(TensorNetwork(ψ), TensorNetwork(ϕ)); kwargs...))))
 end
