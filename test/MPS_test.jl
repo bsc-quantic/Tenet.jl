@@ -53,13 +53,11 @@
         @test_throws ArgumentError truncate!(ψ, [site"1", site"2"]; maxdim=1)
 
         truncated = Tenet.truncate(ψ, [site"2", site"3"]; maxdim=1)
-        @test size(truncated, inds(truncated; at=site"2", dir=:right)) == 1
-        @test size(truncated, inds(truncated; at=site"3", dir=:left)) == 1
+        @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
 
         singular_values = tensors(ψ; between=(site"2", site"3"))
         truncated = Tenet.truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
-        @test size(truncated, inds(truncated; at=site"2", dir=:right)) == 1
-        @test size(truncated, inds(truncated; at=site"3", dir=:left)) == 1
+        @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
     end
 
     @testset "norm" begin
@@ -209,9 +207,8 @@
         end
 
         @testset "two sites" begin
-            i, j = 2, 3
             mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
+            gate = Dense(Tenet.Operator(), mat; sites=[site"2", site"3", site"2'", site"3'"])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
