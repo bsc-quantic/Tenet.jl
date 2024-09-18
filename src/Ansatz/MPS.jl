@@ -149,12 +149,12 @@ function sites(ψ::MPS, site::Site; dir)
 end
 
 @kwmethod function inds(ψ::MPS; at, dir)
-    if dir === :left && site == site"1"
+    if dir === :left && at == site"1"
         return nothing
-    elseif dir === :right && site == Site(nlanes(tn); dual=isdual(site))
+    elseif dir === :right && at == Site(nlanes(ψ); dual=isdual(at))
         return nothing
     elseif dir ∈ (:left, :right)
-        return inds(tn; bond=(site, sites(tn, site; dir)))
+        return inds(ψ; bond=(at, sites(ψ, at; dir)))
     else
         throw(ArgumentError("Unknown direction for MPS = :$dir"))
     end
