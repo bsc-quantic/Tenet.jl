@@ -1,6 +1,8 @@
 @testset "ChainRules" begin
     using Tenet: Tensor, contract
     using ChainRulesTestUtils
+    using Graphs
+    using MetaGraphsNext
 
     @testset "Tensor" begin
         test_frule(Tensor, ones(), Symbol[])
@@ -190,30 +192,9 @@
     end
 
     @testset "Ansatz" begin
-        @testset "Product" begin
-            tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j]), Tensor(ones(2), [:k])])
-            qtn = Quantum(tn, Dict([site"1" => :i, site"2" => :j, site"3" => :k]))
-
-            test_frule(Product, qtn)
-            test_rrule(Product, qtn)
-        end
-
-        @testset "Chain" begin
-            tn = Chain(State(), Open(), [ones(2, 2), ones(2, 2, 2), ones(2, 2)])
-            # test_frule(Chain, Quantum(tn), Open())
-            test_rrule(Chain, Quantum(tn), Open())
-
-            tn = Chain(State(), Periodic(), [ones(2, 2, 2), ones(2, 2, 2), ones(2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Periodic())
-            test_rrule(Chain, Quantum(tn), Periodic())
-
-            tn = Chain(Operator(), Open(), [ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Open())
-            test_rrule(Chain, Quantum(tn), Open())
-
-            tn = Chain(Operator(), Periodic(), [ones(2, 2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Periodic())
-            test_rrule(Chain, Quantum(tn), Periodic())
-        end
+        tn = Quantum(TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
+        lattice = MetaGraph(Graph(1), Pair{Site,Nothing}[site"1" => nothing], Pair{Tuple{Site,Site},Nothing}[])
+        test_frule(Ansatz, tn, lattice)
+        test_rrule(Ansatz, tn, lattice)
     end
 end
