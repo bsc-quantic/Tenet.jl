@@ -11,7 +11,8 @@ using OMEinsum
     include("Site_test.jl")
     include("Quantum_test.jl")
     include("Product_test.jl")
-    include("Chain_test.jl")
+    include("MPS_test.jl")
+    include("MPO_test.jl")
 end
 
 # CI hangs on these tests for some unknown reason on Julia 1.9
