@@ -285,17 +285,17 @@ and in the `orthog_center` there is a matrix with singular values.
 """
 function mixed_canonize!(tn::MPS, orthog_center)
     # left-to-right QR sweep (left-canonical tensors)
-    for i in 1:(id(center) - 1)
+    for i in 1:(id(orthog_center) - 1)
         canonize_site!(tn, Site(i); direction=:right, method=:qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
-    for i in nsites(tn):-1:(id(center) + 1)
+    for i in nsites(tn):-1:(id(orthog_center) + 1)
         canonize_site!(tn, Site(i); direction=:left, method=:qr)
     end
 
     # center SVD sweep to get singular values
-    canonize_site!(tn, center; direction=:left, method=:svd)
+    canonize_site!(tn, orthog_center; direction=:left, method=:svd)
 
     return tn
 end
