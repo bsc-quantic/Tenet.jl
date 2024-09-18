@@ -127,10 +127,16 @@ function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
     vind = inds(tn; bond)
 
     maxdim = isnothing(maxdim) ? size(tn, vind) : maxdim
-    threshold = isnothing(threshold) ? 1e-16 : threshold
 
-    extent = findfirst(1:maxdim) do i
-        abs(spectrum[i]) < threshold
+    extent = if isnothing(threshold)
+        1:maxdim
+    else
+        1:something(
+            findfirst(1:maxdim) do i
+                abs(spectrum[i]) < threshold
+            end,
+            maxdim,
+        )
     end
 
     slice!(tn, vind, extent)
