@@ -81,7 +81,15 @@ end
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-@kwmethod tensors(tn::AbstractAnsatz; bond) = tn[inds(tn; bond)]
+@kwmethod function tensors(tn::AbstractAnsatz; bond)
+    vind = inds(tn; bond)
+    return only(
+        tensors(tn, [vind]) do vinds, indices
+            indices == vinds
+        end,
+    )
+end
+
 @kwmethod function tensors(tn::AbstractAnsatz; between)
     Base.depwarn(
         "`tensors(tn; between)` is deprecated, use `tensors(tn; bond)` instead.",
