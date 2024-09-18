@@ -727,6 +727,10 @@ function Base.rand(::Type{TensorNetwork}, n::Integer, regularity::Integer; kwarg
     return rand(Random.default_rng(), TensorNetwork, n, regularity; kwargs...)
 end
 
+function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}
+    return rand(Random.default_rng(), T, args...; kwargs...)
+end
+
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)
     Serialization.writetag(s.io, Serialization.OBJECT_TAG)
     return serialize(s, tensors(obj))

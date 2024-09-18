@@ -79,9 +79,10 @@ Base.adjoint(tn::MPS) = MPS(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}, n, χ; eltype=Float64, physical_dim=2)
-    p = physical_dim
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
+    p = physdim
     T = eltype
+    χ = maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
