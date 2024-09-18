@@ -32,7 +32,7 @@ function Product(arrays::Vector{<:AbstractMatrix})
     gen = IndexCounter()
     symbols = [nextindex!(gen) for _ in 1:(2 * length(arrays))]
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i + n], symbols[i]], [])
+        Tensor(array, [symbols[i + n], symbols[i]])
     end
 
     sitemap = merge!(Dict(Site(i; dual=true) => symbols[i] for i in 1:n), Dict(Site(i) => symbols[i + n] for i in 1:n))
