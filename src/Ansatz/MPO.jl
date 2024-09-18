@@ -108,4 +108,28 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
 
+# TODO change it to `lanes`?
+# TODO refactor common code with `MPS`
+function sites(ψ::MPO, site::Site; dir)
+    if dir === :left
+        return site <= site"1" ? nothing : Site(id(site) - 1)
+    elseif dir === :right
+        return site >= Site(nlanes(ψ)) ? nothing : Site(id(site) + 1)
+    else
+        throw(ArgumentError("Unknown direction for MPO = :$dir"))
+    end
+end
+
+@kwmethod function inds(ψ::MPO; at, dir)
+    if dir === :left && at == site"1"
+        return nothing
+    elseif dir === :right && at == Site(nlanes(ψ); dual=isdual(at))
+        return nothing
+    elseif dir ∈ (:left, :right)
+        return inds(ψ; bond=(at, sites(ψ, at; dir)))
+    else
+        throw(ArgumentError("Unknown direction for MPO = :$dir"))
+    end
+end
+
 function evolve!(ψ::MPS, op::MPO; threshold=nothing, maxdim=nothing, renormalize=false) end
