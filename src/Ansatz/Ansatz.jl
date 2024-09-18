@@ -61,14 +61,10 @@ function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
     return ==(latice.((a, b))...) && isapprox(Quantum(a), Quantum(b); kwargs...)
 end
 
-function Graphs.neighbors(tn::AbstractAnsatz, site::Site)
-    # TODO
-    # return neighbors(lattice(tn), site)
-end
-
+Graphs.neighbors(tn::AbstractAnsatz, site::Site) = neighbor_labels(lattice(tn), site)
 function isneighbor(tn::AbstractAnsatz, a::Site, b::Site)
-    # TODO
-    # return isneighbor(lattice(tn), a, b)
+    lt = lattice(tn)
+    return has_edge(lt, MetaGraphsNext.code_for(lt, a), MetaGraphsNext.code_for(lt, b))
 end
 
 @kwmethod function inds(tn::AbstractAnsatz; bond)
