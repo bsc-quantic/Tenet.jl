@@ -1,16 +1,39 @@
+using Tenet: AbstractTensorNetwork, AbstractQuantum
+
 # `Tensor` constructor
 ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds) = T(data, inds), T(Δ, inds)
 
 # `TensorNetwork` constructor
 ChainRulesCore.frule((_, Δ), ::Type{TensorNetwork}, tensors) = TensorNetwork(tensors), TensorNetworkTangent(Δ)
 
+# `Quantum` constructor
+function ChainRulesCore.frule((_, ẋ, _), ::Type{Quantum}, x::TensorNetwork, sites)
+    return Quantum(x, sites), Tangent{Quantum}(; tn=ẋ, sites=NoTangent())
+end
+
+# `Ansatz` constructor
+function ChainRulesCore.frule((_, ẋ), ::Type{Ansatz}, x::Quantum, lattice)
+    return Ansatz(x, lattice), Tangent{Ansatz}(; tn=ẋ, lattice=NoTangent())
+end
+
+# `AbstractAnsatz`-subtype constructors
+ChainRulesCore.frule((_, ẋ), ::Type{Product}, x::Ansatz) = Product(x), Tangent{Product}(; tn=ẋ)
+ChainRulesCore.frule((_, ẋ), ::Type{Dense}, x::Ansatz) = Dense(x, form), Tangent{Dense}(; tn=ẋ)
+ChainRulesCore.frule((_, ẋ), ::Type{MPS}, x::Ansatz, form) = MPS(x, form), Tangent{MPS}(; tn=ẋ, lattice=NoTangent())
+ChainRulesCore.frule((_, ẋ), ::Type{MPO}, x::Ansatz, form) = MPO(x, form), Tangent{MPO}(; tn=ẋ, lattice=NoTangent())
+function ChainRulesCore.frule((_, ẋ), ::Type{PEPS}, x::Ansatz, form)
+    return PEPS(x, form), Tangent{PEPS}(; tn=ẋ, lattice=NoTangent())
+end
+
 # `Base.conj` methods
 ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::Tensor) = conj(tn), conj(Δ)
 
-ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::TensorNetwork) = conj(tn), conj(Δ)
+ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::AbstractTensorNetwork) = conj(tn), conj(Δ)
 
 # `Base.merge` methods
-ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(Base.merge), a::TensorNetwork, b::TensorNetwork) = merge(a, b), merge(ȧ, ḃ)
+function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(Base.merge), a::AbstractTensorNetwork, b::AbstractTensorNetwork)
+    return merge(a, b), merge(ȧ, ḃ)
+end
 
 # `contract` methods
 function ChainRulesCore.frule((_, ẋ), ::typeof(contract), x::Tensor; kwargs...)
@@ -21,16 +44,4 @@ function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(contract), a::Tensor, b::T
     c = contract(a, b; kwargs...)
     ċ = contract(ȧ, b; kwargs...) + contract(a, ḃ; kwargs...)
     return c, ċ
-end
-
-function ChainRulesCore.frule((_, ẋ, _), ::Type{Quantum}, x::TensorNetwork, sites)
-    y = Quantum(x, sites)
-    ẏ = Tangent{Quantum}(; tn=ẋ)
-    return y, ẏ
-end
-
-ChainRulesCore.frule((_, ẋ), ::Type{T}, x::Quantum) where {T<:Ansatz} = T(x), Tangent{T}(; super=ẋ)
-
-function ChainRulesCore.frule((_, ẋ, _), ::Type{T}, x::Quantum, boundary) where {T<:Ansatz}
-    return T(x, boundary), Tangent{T}(; super=ẋ, boundary=NoTangent())
 end
