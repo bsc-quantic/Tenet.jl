@@ -164,11 +164,12 @@ const apply! = evolve!
 
 function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, kwargs...)
     @assert issetequal(adjoint.(sites(gate; set=:inputs)), sites(gate; set=:outputs)) "Inputs of the gate must match outputs"
-    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     if nlanes(gate) == 1
         return simple_update_1site!(ψ, gate)
     end
+
+    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     return simple_update!(form(ψ), ψ, gate; kwargs...)
 end
