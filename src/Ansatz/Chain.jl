@@ -569,19 +569,20 @@ end
 function evolve_1site!(qtn::Chain, gate::Dense)
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
+    resetindex!(gate; init=ninds(qtn))
 
     contracting_index = gensym(:tmp)
     targetsite = only(sites(gate; set=:inputs))'
+
+    # reindex output of gate to match TN sitemap
+    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(qtn; at=targetsite))
 
     # reindex contracting index
     replace!(qtn, inds(qtn; at=targetsite) => contracting_index)
     replace!(gate, inds(gate; at=targetsite') => contracting_index)
 
-    # reindex output of gate to match TN sitemap
-    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(qtn; at=targetsite))
-
     # contract gate with TN
-    merge!(TensorNetwork(qtn), TensorNetwork(gate))
+    merge!(qtn, gate; reset=false)
     return contract!(qtn, contracting_index)
 end
 
