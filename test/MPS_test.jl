@@ -132,9 +132,8 @@
             if i == 1
                 @test isleftcanonical(canonized, Site(i))
             elseif i == 5 # in the limits of the chain, we get the norm of the state
+                normalize!(tensors(canonized; bond=(Site(i - 1), Site(i))))
                 contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
-                tensor = tensors(canonized; at=Site(i))
-                replace!(canonized, tensor => tensor / norm(canonized))
                 @test isleftcanonical(canonized, Site(i))
             else
                 contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
@@ -146,9 +145,8 @@
             canonized = canonize(ψ)
 
             if i == 1 # in the limits of the chain, we get the norm of the state
+                normalize!(tensors(canonized; bond=(Site(i), Site(i + 1))))
                 contract!(canonized; between=(Site(i), Site(i + 1)), direction=:left)
-                tensor = tensors(canonized; at=Site(i))
-                replace!(canonized, tensor => tensor / norm(canonized))
                 @test isrightcanonical(canonized, Site(i))
             elseif i == 5
                 @test isrightcanonical(canonized, Site(i))
