@@ -215,7 +215,7 @@ macro reindex!(expr, reset=:(reset = true))
     Base.remove_linenums!(expr)
     a, b = expr.args[2:end]
 
-    @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset && reset.args[2] isa Bool
+    @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset
 
     @assert Meta.isexpr(a, :call)
     @assert Meta.isexpr(b, :call)
@@ -350,26 +350,22 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
-Base.merge(tns::AbstractQuantum...) = foldl(merge, tns)
-Base.merge!(tns::AbstractQuantum...) = foldl(merge!, tns)
+Base.merge(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), copy.(tns))
+Base.merge!(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), tns)
 
-Base.merge(a::AbstractQuantum, b::AbstractQuantum) = merge!(copy(a), copy(b))
-
-function Base.merge!(a::AbstractQuantum, b::AbstractQuantum)
+function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
     @assert isdisjoint(setdiff(sites(b; set=:outputs), adjoint.(sites(b; set=:inputs))), sites(a; set=:outputs)) "b cannot create new sites where is not connected"
 
-    @reindex! outputs(a) => inputs(b)
+    @reindex! outputs(a) => inputs(b) reset = reset
     merge!(TensorNetwork(a), TensorNetwork(b))
 
-    mergedsites = Quantum(a).sites
-
     for site in sites(b; set=:inputs)
-        delete!(mergedsites, site')
+        rmsite!(a, site')
     end
 
     for site in sites(b; set=:outputs)
-        mergedsites[site] = inds(b; at=site)
+        addsite!(a, site, inds(b; at=site))
     end
 
     return a
