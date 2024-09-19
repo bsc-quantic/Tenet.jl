@@ -130,6 +130,22 @@ function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
     return tensor
 end
 
+function Base.replace!(tn::AbstractQuantum, old_new::Pair{Symbol,Symbol})
+    tn = Quantum(tn)
+
+    # replace indices in underlying Tensor Network
+    @invoke replace!(tn::AbstractTensorNetwork, old_new)
+
+    # replace indices in site information
+    site = sites(tn; at=first(old_new))
+    if !isnothing(site)
+        rmsite!(tn, site)
+        addsite!(tn, site, last(old_new))
+    end
+
+    return tn
+end
+
 # FIXME return type should be the original type, not `Quantum`
 function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
     tn = Quantum(tn)
