@@ -274,6 +274,9 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
+Base.merge(tns::AbstractQuantum...) = foldl(merge, tns)
+Base.merge!(tns::AbstractQuantum...) = foldl(merge!, tns)
+
 Base.merge(a::AbstractQuantum, b::AbstractQuantum) = merge!(copy(a), copy(b))
 
 function Base.merge!(a::AbstractQuantum, b::AbstractQuantum)
