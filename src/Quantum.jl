@@ -274,23 +274,26 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
-function Base.merge(a::AbstractQuantum, b::AbstractQuantum)
-    @assert issetequal(sites(a; set=:outputs), map(adjoint, sites(b; set=:inputs))) "Outputs of $a must match inputs of $b"
+Base.merge(a::AbstractQuantum, b::AbstractQuantum) = merge(copy(a), copy(b))
+
+function Base.merge!(a::AbstractQuantum, b::AbstractQuantum)
+    @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
+    @assert isdisjoint(setdiff(sites(b; set=:outputs), adjoint.(sites(b; set=:inputs))), sites(a; set=:outputs)) "b cannot create new sites where is not connected"
 
     @reindex! outputs(a) => inputs(b)
-    tn = merge(TensorNetwork(a), TensorNetwork(b))
+    merge!(TensorNetwork(a), TensorNetwork(b))
 
-    mergedsites = Dict{Site,Symbol}()
+    mergedsites = Quantum(a).sites
 
-    for site in sites(a; set=:inputs)
-        mergedsites[site] = inds(a; at=site)
+    for site in sites(b; set=:inputs)
+        delete!(mergedsites, site')
     end
 
     for site in sites(b; set=:outputs)
         mergedsites[site] = inds(b; at=site)
     end
 
-    return Quantum(tn, mergedsites)
+    return a
 end
 
 function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
