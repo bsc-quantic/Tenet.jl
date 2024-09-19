@@ -274,7 +274,7 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
-Base.merge(a::AbstractQuantum, b::AbstractQuantum) = merge(copy(a), copy(b))
+Base.merge(a::AbstractQuantum, b::AbstractQuantum) = merge!(copy(a), copy(b))
 
 function Base.merge!(a::AbstractQuantum, b::AbstractQuantum)
     @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
