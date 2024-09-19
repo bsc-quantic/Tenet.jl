@@ -174,6 +174,7 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
     return simple_update!(form(ψ), ψ, gate; kwargs...)
 end
 
+# TODO a lot of problems with merging... maybe we don't to merge manually
 function simple_update_1site!(ψ::AbstractAnsatz, gate)
     @assert nlanes(gate) == 1 "Gate must act only on one lane"
     @assert ninputs(gate) == 1 "Gate must have only one input"
@@ -181,19 +182,20 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
+    resetindex!(gate; init=ninds(ψ))
 
     contracting_index = gensym(:tmp)
     targetsite = only(sites(gate; set=:inputs))'
+
+    # reindex output of gate to match TN sitemap
+    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(ψ; at=targetsite))
 
     # reindex contracting index
     replace!(ψ, inds(ψ; at=targetsite) => contracting_index)
     replace!(gate, inds(gate; at=targetsite') => contracting_index)
 
-    # reindex output of gate to match TN sitemap
-    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(ψ; at=targetsite))
-
     # contract gate with TN
-    merge!(ψ, gate)
+    merge!(ψ, gate; reset=false)
     return contract!(ψ, contracting_index)
 end
 
