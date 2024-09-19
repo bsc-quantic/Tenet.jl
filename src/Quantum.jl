@@ -106,6 +106,10 @@ end
         return collect(values(Quantum(tn).sites))
     elseif set === :virtual
         return setdiff(inds(tn), values(Quantum(tn).sites))
+    elseif set ∈ (:inputs, :outputs)
+        return map(sites(tn; set)) do site
+            inds(tn; at=site)
+        end
     else
         return inds(TensorNetwork(tn); set)
     end
