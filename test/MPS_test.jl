@@ -197,7 +197,7 @@
             end
 
             @testset "arbitrary chain" begin
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14, iscanonical=false)
+                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(contract(evolved), contract(ψ))
@@ -218,7 +218,7 @@
             end
 
             @testset "arbitrary chain" begin
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14, iscanonical=false)
+                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
                 @test length(tensors(evolved)) == 5
                 @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(contract(evolved), contract(ψ))
