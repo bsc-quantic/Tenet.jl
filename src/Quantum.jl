@@ -130,6 +130,7 @@ function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
     return tensor
 end
 
+# FIXME return type should be the original type, not `Quantum`
 function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
     tn = Quantum(tn)
 

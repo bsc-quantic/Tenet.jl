@@ -376,6 +376,7 @@ Base.replace!(tn::AbstractTensorNetwork) = tn
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
+# FIXME return type should be the original type, not `TensorNetwork`
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
     tn = TensorNetwork(tn)
     old, new = old_new
