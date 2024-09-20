@@ -131,9 +131,14 @@ function MPS(boundary::Open, arrays::Vector{<:AbstractArray}, λ::Vector{Union{N
 
     mps = MPS(Quantum(TensorNetwork(_tensors), sitemap), boundary, λ[1:end-1], center)
 
-    for i in 1:n-1
-        λ[i] !== nothing && push!(TensorNetwork(mps), λ[i])
+    if id(center) ∈ 1:n
+        for i in collect(id(center))
+            push!(TensorNetwork(mps), λ[i])
+        end
     end
+
+    @show [isleftcanonical(mps, Site(i)) for i in 1:n]
+    @show [isrightcanonical(mps, Site(i)) for i in 1:n]
 
     # Check if the mps is in the proper canonical form
     𝟙ₗ = contract_env(mps, :left)
@@ -223,32 +228,37 @@ function Base.rand(rng::Random.AbstractRNG, sampler::MPSSampler, ::Type{Open})
 
     λ = Vector{Union{Nothing, Vector}}(nothing, n - 1)
 
-    # svd from right to left to get the right-canonical tensors
-    for i in n:-1:id(center) + 2
+    # Since all the tensors are left-canonical, we do a right-left SVD sweep to get right-canonical tensors and the singular values
+    for i in n:-1:1
         A = reshape(arrays[i], size(arrays[i], 1), size(arrays[i], 2), size(arrays[i], 3))
-        A = permutedims(A, (3, 2, 1))
-        A = reshape(A, size(A, 1) * size(A, 2), size(A, 3))
-        U, V = Matrix(qr(A).Q), Matrix(qr(A).R)
+        A = reshape(A, size(A, 1), size(A, 2) * size(A, 3))
+        F = svd!(A)
 
-        # if i > id(center) + 1
-        arrays[i] = reshape(U, size(arrays[i], 3), size(arrays[i], 2), size(arrays[i], 1))
-        arrays[i] = permutedims(arrays[i], (3, 2, 1))
-        new = reshape(arrays[i-1], size(arrays[i-1], 1) * size(arrays[i-1], 2), size(arrays[i-1], 3)) * V
-        arrays[i-1] = reshape(new, size(arrays[i-1], 1), size(arrays[i-1], 2), size(arrays[i-1], 3))
+        arrays[i] = reshape(F.Vt, size(arrays[i], 1), size(arrays[i], 2), size(arrays[i], 3))
+
+        S = F.S ./ norm(F.S)
+
+        if i > 1
+            λ[i-1] = S
+
+            new = reshape(arrays[i-1], size(arrays[i-1], 1) * size(arrays[i-1], 2), size(arrays[i-1], 3)) * F.U * Matrix(Diagonal(S))
+            arrays[i-1] = reshape(new, size(arrays[i-1], 1), size(arrays[i-1], 2), size(arrays[i-1], 3))
+        end
     end
 
-    # svd in the center to get the singular values
-    A = reshape(arrays[id(center)+1], size(arrays[id(center)+1], 1), size(arrays[id(center)+1], 2), size(arrays[id(center)+1], 3))
-    A = permutedims(A, (3, 2, 1))
-    A = reshape(A, size(A, 1) * size(A, 2), size(A, 3))
-    U, s, V = svd(A)
+    # Convert the right-canonical tensors to left-canonical tensors for i < id(center)
+    for i in 1:id(center)
+        B = arrays[i]
+        Λ⁻¹ = Matrix(Diagonal(vec(inv.(λ[i]))))
+        Γ = reshape(reshape(B, size(B, 1) * size(B, 2), size(B, 3)) * Λ⁻¹, size(B, 1), size(B, 2), size(B, 3))
 
-    λ[id(center)] = s
-
-    arrays[id(center)+1] = reshape(U, size(arrays[id(center)+1], 3), size(arrays[id(center)+1], 2), size(arrays[id(center)+1], 1))
-    arrays[id(center)+1] = permutedims(arrays[id(center)+1], (3, 2, 1))
-    new = reshape(arrays[id(center)], size(arrays[id(center)], 1) * size(arrays[id(center)], 2), size(arrays[id(center)], 3)) * V
-    arrays[id(center)] = reshape(new, size(arrays[id(center)], 1), size(arrays[id(center)], 2), size(arrays[id(center)], 3))
+        if i > 1
+            A = reshape(Matrix(Diagonal(λ[i-1])) * reshape(Γ, size(Γ, 1), size(Γ, 2) * size(Γ, 3)), size(Γ, 1), size(Γ, 2), size(Γ, 3))
+        else
+            A = Γ
+        end
+        arrays[i] = A
+    end
 
     # reshape boundary sites
     arrays[1] = reshape(arrays[1], p, p)
@@ -341,26 +351,20 @@ function contract_env(mps::MPS, direction::Symbol)
     return env
 end
 
-"""
-    compute_λ(tn::MPS)
+function convert_left_to_right(mps, i)
+    Ai = tensors(mps; at = Site(i))
+    inv_lambd_iminus1 = Tensor(Matrix(Diagonal(vec(inv.(vec(collect(parent(mps.λ[i-1]))))))), (:l, leftindex(mps, Site(i))))
+    gamma_i = contract(Ai, inv_lambd_iminus1)
+    B_i = contract(gamma_i, Tensor(Diagonal(parent(mps.λ[i])), (rightindex(mps, Site(i)), :r)))
+    contract(B_i, replace(conj(B_i), :l => gensym(:dummy)))
+end
 
-Compute the singular values of the MPS tensor network.
-"""
-function compute_λ(tn::MPS)
-    λ = Vector{Tensor}(undef, nsites(tn))
-
-    for i in 1:nsites(tn)
-        left = leftindex(tn, Site(i))
-        right = rightindex(tn, Site(i))
-
-        if left === nothing || right === nothing
-            λ[i] = Tensor([1], [gensym(:λ)])
-        else
-            λ[i] = contract(tensors(tn; at=Site(i)), tensors(tn; at=Site(i + 1)); dims=(right, left))
-        end
-    end
-
-    return λ
+function convert_right_to_left(mps, i)
+    Bi = tensors(mps; at = Site(i))
+    inv_lambd_i = Tensor(Matrix(Diagonal(vec(inv.(vec(collect(parent(mps.λ[i]))))))), (:r, rightindex(mps, Site(i))))
+    gamma_i = contract(Bi, inv_lambd_i)
+    Ai = contract(gamma_i, Tensor(Diagonal(parent(mps.λ[i-1])), (leftindex(mps, Site(i)), :l)))
+    contract(Ai, replace(conj(Ai), :r => gensym(:dummy)))
 end
 
 canonize_site(tn::MPS, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
