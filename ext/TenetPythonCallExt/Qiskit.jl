@@ -1,12 +1,4 @@
-module TenetPythonCallExt
-
-using Tenet
-using PythonCall
-using PythonCall.Core: pyisnone
-
-pyfullyqualname(pyobj) = join([pytype(pyobj).__module__, pytype(pyobj).__qualname__], '.')
-
-function Tenet.Quantum(pyobj::Py)
+function Tenet.Quantum(::Val{:qiskit}, pyobj::Py)
     pyclassname = pyfullyqualname(pyobj)
     if pyclassname != "qiskit.circuit.quantumcircuit.QuantumCircuit"
         throw(ArgumentError("Expected a Qiskit's QuantumCircuit object, got $pyclassname"))
@@ -53,6 +45,4 @@ function Tenet.Quantum(pyobj::Py)
     )
 
     return Quantum(tn, sites)
-end
-
 end
