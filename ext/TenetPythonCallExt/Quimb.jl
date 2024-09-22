@@ -1,7 +1,7 @@
 function Tenet.TensorNetwork(::Val{:quimb}, pyobj::Py)
     quimb = pyimport("quimb")
-    if pyissubclass(pytype(pyobj), quimb.tensor.tensor_core.TensorNetwork)
-        throw(ArgumentError("Expected a quimb's TensorNetwork object, got $(pyfullyqualname(pyobj))"))
+    if !pyissubclass(pytype(pyobj), quimb.tensor.tensor_core.TensorNetwork)
+        throw(ArgumentError("Expected a quimb.tensor.tensor_core.TensorNetwork object, got $(pyfullyqualname(pyobj))"))
     end
 
     ts = map(pyobj.tensors) do tensor
