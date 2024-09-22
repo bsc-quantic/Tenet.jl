@@ -25,6 +25,8 @@ if VERSION >= v"1.10"
         include("integration/Quac_test.jl")
         include("integration/ITensors_test.jl")
         include("integration/ITensorNetworks_test.jl")
+        include("integration/python/test_quimb.jl")
+        include("integration/python/test_qiskit.jl")
     end
 end
 
