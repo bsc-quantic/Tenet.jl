@@ -155,8 +155,7 @@ end
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
 function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    # TODO renormalize not yet implemented
-    return simple_update!(ψ, gate; threshold, maxdim)
+    return simple_update!(ψ, gate; threshold, maxdim, renormalize)
 end
 
 # by popular demand (Stefano, I'm looking at you), I aliased `apply!` to `evolve!`
@@ -174,7 +173,7 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
     return simple_update!(form(ψ), ψ, gate; kwargs...)
 end
 
-# TODO a lot of problems with merging... maybe we don't to merge manually
+# TODO a lot of problems with merging... maybe we shouldn't merge manually
 function simple_update_1site!(ψ::AbstractAnsatz, gate)
     @assert nlanes(gate) == 1 "Gate must act only on one lane"
     @assert ninputs(gate) == 1 "Gate must have only one input"
@@ -199,24 +198,45 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
     return contract!(ψ, contracting_index)
 end
 
-function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing)
+# TODO remove `renormalize` argument?
+function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
     @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
+    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
+    resetindex!(gate; init=ninds(ψ))
+    @reindex! outputs(gate) => inputs(gate)
 
-    merge!(ψ, gate)
+    # contract involved sites
+    bond = (sitel, siter) = extrema(lanes(gate))
+    vind = inds(ψ; bond)
+    linds = filter(==(vind), inds(tensors(ψ; at=sitel)))
+    rinds = filter(==(vind), inds(tensors(ψ; at=siter)))
+    contract!(ψ; bond)
+
+    # contract physical inds with gate
+    merge!(ψ, gate; reset=false)
     contract!(ψ, inds(gate; set=:inputs))
 
-    # TODO split
+    # decompose using SVD
+    svd!(ψ; left_inds=linds, right_inds=rinds, virtualind=vind)
+
+    # truncate virtual index
+    if any(!isnothing, (threshold, maxdim))
+        truncate!(ψ, bond; threshold, maxdim)
+        renormalize && normalize!(ψ, bond[1])
+    end
 
     return ψ
 end
 
-# TODO move non-canonical code to method above
-# TODO remove `renormalize` argument
+# TODO remove `renormalize` argument?
 # TODO refactor code
-function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false, iscanonical=false)
+function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
+    @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
+    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
+
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
@@ -226,7 +246,7 @@ function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim
 
     virtualind::Symbol = inds(ψ; bond=bond)
 
-    iscanonical ? contract_2sitewf!(ψ, bond) : contract!(TensorNetwork(ψ), virtualind)
+    contract_2sitewf!(ψ, bond)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in sites(gate; set=:inputs)]
@@ -267,22 +287,12 @@ function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim
     push!(left_inds, inds(ψ; at=sitel))
     push!(right_inds, inds(ψ; at=siter))
 
-    if iscanonical
-        unpack_2sitewf!(ψ, bond, left_inds, right_inds, virtualind)
-    else
-        svd!(ψ; left_inds, right_inds, virtualind)
-    end
+    unpack_2sitewf!(ψ, bond, left_inds, right_inds, virtualind)
+
     # truncate virtual index
     if any(!isnothing, [threshold, maxdim])
         truncate!(ψ, bond; threshold, maxdim)
-
-        # renormalize the bond
-        if renormalize && iscanonical
-            λ = tensors(ψ; between=bond)
-            replace!(ψ, λ => normalize(λ)) # TODO this can be replaced by `normalize!(λ)`
-        elseif renormalize && !iscanonical
-            normalize!(ψ, bond[1])
-        end
+        renormalize && normalize!(tensors(ψ; between=bond))
     end
 
     return ψ
