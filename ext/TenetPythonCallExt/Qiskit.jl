@@ -1,7 +1,11 @@
 function Tenet.Quantum(::Val{:qiskit}, pyobj::Py)
-    pyclassname = pyfullyqualname(pyobj)
-    if pyclassname != "qiskit.circuit.quantumcircuit.QuantumCircuit"
-        throw(ArgumentError("Expected a Qiskit's QuantumCircuit object, got $pyclassname"))
+    qiskit = pyimport("qiskit")
+    if !pyissubclass(pytype(pyobj), qiskit.circuit.quantumcircuit.QuantumCircuit)
+        throw(
+            ArgumentError(
+                "Expected a qiskit.circuit.quantumcircuit.QuantumCircuit object, got $(pyfullyqualname(pyobj))"
+            ),
+        )
     end
 
     n = length(pyobj.qregs[0])
