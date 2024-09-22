@@ -7,8 +7,8 @@
     @test boundary(H) == Open()
     @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) == nothing
 
-    arrays = [rand(2, 4, 1), rand(2, 4, 1, 3), rand(2, 4, 3)] # Default order (:o :i, :l, :r)
-    H = MPO(arrays)
+    # Default order (:o :i, :l, :r)
+    H = MPO([rand(2, 4, 1), rand(2, 4, 1, 3), rand(2, 4, 3)])
 
     @test size(tensors(H; at=site"1")) == (2, 4, 1)
     @test size(tensors(H; at=site"2")) == (2, 4, 1, 3)
@@ -23,10 +23,15 @@
         @test size(H, inds(H; at=Site(i; dual=true))) == 4
     end
 
-    arrays = [
-        permutedims(arrays[1], (3, 1, 2)), permutedims(arrays[2], (4, 1, 3, 2)), permutedims(arrays[3], (1, 3, 2))
-    ] # now we have (:r, :o, :l, :i)
-    H = MPO(arrays; order=[:r, :o, :l, :i])
+    # now we have (:r, :o, :l, :i)
+    H = MPO(
+        [
+            permutedims(arrays(H)[1], (3, 1, 2)),
+            permutedims(arrays(H)[2], (4, 1, 3, 2)),
+            permutedims(arrays(H)[3], (1, 3, 2)),
+        ];
+        order=[:r, :o, :l, :i],
+    )
 
     @test size(tensors(H; at=site"1")) == (1, 2, 4)
     @test size(tensors(H; at=site"2")) == (3, 2, 1, 4)
