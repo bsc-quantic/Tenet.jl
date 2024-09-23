@@ -28,7 +28,7 @@ end
 
 function Tenet.Quantum(::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGenVector")}, pyobj::Py)
     tn = TensorNetwork(pyobj)
-    sitedict = Dict(Site(i) => Symbol(pyobj.lower_ind(i)) for i in pyobj.sites)
+    sitedict = Dict(Site(pyconvert(Int, i)) => pyconvert(Symbol, pyobj.site_ind(i)) for i in pyobj.sites)
     return Quantum(tn, sitedict)
 end
 
@@ -36,8 +36,8 @@ function Tenet.Quantum(::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGe
     tn = TensorNetwork(pyobj)
 
     sitedict = merge!(
-        Dict(Site(i) => Symbol(pyobj.lower_ind(i)) for i in pyobj.sites),
-        Dict(Site(i; dual=true) => Symbol(pyobj.upper_ind(i)) for i in pyobj.sites),
+        Dict(Site(pyconvert(Int, i)) => pyconvert(Symbol, pyobj.lower_ind(i)) for i in pyobj.sites),
+        Dict(Site(pyconvert(Int, i); dual=true) => pyconvert(Symbol, pyobj.upper_ind(i)) for i in pyobj.sites),
     )
 
     return Quantum(tn, sitedict)
