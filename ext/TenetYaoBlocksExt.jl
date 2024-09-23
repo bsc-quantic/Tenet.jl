@@ -26,7 +26,13 @@ function Tenet.Quantum(circuit::AbstractBlock)
             continue
         end
 
-        operator = content(gate)
+        # NOTE `Yao.mat` on m-site qubits still returns the operator on the full Hilbert space
+        operator = if gate isa Yao.ControlBlock
+            m = length(occupied_locs(gate))
+            control((1:(m - 1))..., m => content(gate))(m)
+        else
+            content(gate)
+        end
         array = reshape(mat(operator), fill(2, 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
@@ -37,13 +43,14 @@ function Tenet.Quantum(circuit::AbstractBlock)
             end,
         )
 
-        tensor = Tensor(array, tuple(inds...))
+        tensor = Tensor(array, inds)
         push!(tensors, tensor)
     end
 
+    # if a wire has only one index, no gates have been applied to it
     sites = merge(
-        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire)]),
-        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire)]),
+        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire) if length(index) > 1]),
+        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire) if length(index) > 1]),
     )
 
     return Quantum(Tenet.TensorNetwork(tensors), sites)
