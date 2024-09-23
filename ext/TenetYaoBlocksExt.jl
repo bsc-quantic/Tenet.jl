@@ -1,11 +1,11 @@
-module TenetYaoExt
+module TenetYaoBlocksExt
 
 using Tenet
-using Yao
+using YaoBlocks
 
 function flatten_circuit(x)
     if any(i -> i isa ChainBlock, subblocks(x))
-        flatten_circuit(Yao.Optimise.eliminate_nested(x))
+        flatten_circuit(YaoBlocks.Optimise.eliminate_nested(x))
     else
         x
     end
@@ -24,8 +24,8 @@ function Tenet.Quantum(circuit::AbstractBlock)
             continue
         end
 
-        # NOTE `Yao.mat` on m-site qubits still returns the operator on the full Hilbert space
-        operator = if gate isa Yao.ControlBlock
+        # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
+        operator = if gate isa YaoBlocks.ControlBlock
             m = length(occupied_locs(gate))
             control((1:(m - 1))..., m => content(gate))(m)
         else
