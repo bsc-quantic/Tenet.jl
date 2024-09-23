@@ -1,0 +1,5 @@
+[deps]
+qiskit = ""
+
+[pip.deps]
+quimb = ""
