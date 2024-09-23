@@ -5,6 +5,7 @@ using Makie
 const Graphs = GraphMakie.Graphs
 using Tenet
 using Combinatorics: combinations
+const NetworkLayout = GraphMakie.NetworkLayout
 
 """
     graphplot(tn::TensorNetwork; kwargs...)
@@ -129,6 +130,7 @@ function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels=
     end
     get!(() -> repeat([:black], Graphs.ne(graph)), kwargs, :elabels_color)
     get!(() -> repeat([17], Graphs.ne(graph)), kwargs, :elabels_textsize)
+    get!(() -> NetworkLayout.Stress(), kwargs, :layout)
 
     # plot graph
     return graphplot!(ax, graph; kwargs...)
