@@ -1,4 +1,4 @@
-using OMEinsum
+using TensorOperations
 using LinearAlgebra
 using UUIDs: uuid4
 using SparseArrays
@@ -13,10 +13,6 @@ end
 function Base.literal_pow(f, a::Tensor{T,0}, ::Val{p}) where {T,p}
     return Tensor(fill(Base.literal_pow(f, only(a), Val(p))))
 end
-
-# NOTE used for marking non-differentiability
-# NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
-__omeinsum_sym2str(x) = String[string(i) for i in x]
 
 function Base.:(+)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
@@ -46,9 +42,8 @@ function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothin
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a, b)
+    data = tensorcontract(Tuple(ic), parent(a), Tuple(inds(a)), false, parent(b), Tuple(inds(b)), false)
+    return Tensor(data, ic)
 end
 
 function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
@@ -61,9 +56,9 @@ function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a)
+    # TODO might fail on partial trace
+    data = tensortrace(Tuple(ic), parent(a), Tuple(inds(a)), false)
+    return Tensor(data, ic)
 end
 
 contract(a::Union{T,AbstractArray{T,0}}, b::Tensor{T}) where {T} = contract(Tensor(a), b)
@@ -73,22 +68,14 @@ contract(a::Number, b::Number) = contract(fill(a), fill(b))
 contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs...), tensors)
 
 function contract!(c::Tensor, a::Tensor, b::Tensor)
-    ixs = (inds(a), inds(b))
-    iy = inds(c)
-    xs = (parent(a), parent(b))
-    y = parent(c)
-    size_dict = merge!(Dict{Symbol,Int}.([inds(a) .=> size(a), inds(b) .=> size(b)])...)
-
-    einsum!(ixs, iy, xs, y, true, false, size_dict)
+    pA, pB, pAB = contract_indices(Tuple(inds(a)), Tuple(inds(b)), Tuple(inds(c)))
+    tensorcontract!(parent(c), parent(a), pA, false, parent(b), pB, false, pAB)
     return c
 end
 
 function contract!(y::Tensor, x::Tensor)
-    ixs = (inds(x),)
-    iy = inds(y)
-    size_dict = Dict{Symbol,Int}(inds(x) .=> size(x))
-
-    einsum!(ixs, iy, (parent(x),), parent(y), true, false, size_dict)
+    p, q = TensorOperations.trace_indices(Tuple(inds(x)), Tuple(inds(y)))
+    tensortrace!(parent(y), parent(x), p, q, false)
     return y
 end
 
