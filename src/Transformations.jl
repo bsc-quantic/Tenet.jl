@@ -1,6 +1,5 @@
 using DeltaArrays
 using EinExprs
-using OMEinsum
 using UUIDs: uuid4
 using Tenet: parenttype
 using Combinatorics: combinations

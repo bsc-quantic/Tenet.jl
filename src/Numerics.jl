@@ -1,4 +1,4 @@
-using OMEinsum
+using TensorOperations
 using LinearAlgebra
 using UUIDs: uuid4
 using SparseArrays
@@ -46,14 +46,7 @@ Perform a binary tensor contraction operation.
     - `dims`: indices to contract over. Defaults to the set intersection of the indices of `a` and `b`.
     - `out`: indices of the output tensor. Defaults to the set difference of the indices of `a` and `b`.
 """
-function contract(a::Tensor, b::Tensor; kwargs...)
-    c = allocate_result(contract, a, b; kwargs...)
-    return contract!(c, a, b)
-end
-
-function allocate_result(
-    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(inds(a), inds(b))), out=nothing
-)
+function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothing)
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
@@ -64,7 +57,7 @@ function allocate_result(
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero)
+    data = tensorcontract(Tuple(ic), parent(a), Tuple(inds(a)), false, parent(b), Tuple(inds(b)), false)
     return Tensor(data, ic)
 end
 
@@ -78,12 +71,7 @@ Perform a unary tensor contraction operation.
     - `dims`: indices to contract over. Defaults to the repeated indices.
     - `out`: indices of the output tensor. Defaults to the unique indices.
 """
-function contract(a::Tensor; kwargs...)
-    c = allocate_result(contract, a; kwargs...)
-    return contract!(c, a)
-end
-
-function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(inds(a)), out=nothing)
+function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -93,7 +81,8 @@ function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=non
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero)
+    # TODO might fail on partial trace
+    data = tensortrace(Tuple(ic), parent(a), Tuple(inds(a)), false)
     return Tensor(data, ic)
 end
 
@@ -109,13 +98,8 @@ contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs
 Perform a binary tensor contraction operation between `a` and `b` and store the result in `c`.
 """
 function contract!(c::Tensor, a::Tensor, b::Tensor)
-    ixs = (inds(a), inds(b))
-    iy = inds(c)
-    xs = (parent(a), parent(b))
-    y = parent(c)
-    size_dict = merge!(Dict{Symbol,Int}.([inds(a) .=> size(a), inds(b) .=> size(b)])...)
-
-    einsum!(ixs, iy, xs, y, true, false, size_dict)
+    pA, pB, pAB = contract_indices(Tuple(inds(a)), Tuple(inds(b)), Tuple(inds(c)))
+    tensorcontract!(parent(c), parent(a), pA, false, parent(b), pB, false, pAB)
     return c
 end
 
@@ -125,11 +109,8 @@ end
 Perform a unary tensor contraction operation on `a` and store the result in `c`.
 """
 function contract!(y::Tensor, x::Tensor)
-    ixs = (inds(x),)
-    iy = inds(y)
-    size_dict = Dict{Symbol,Int}(inds(x) .=> size(x))
-
-    einsum!(ixs, iy, (parent(x),), parent(y), true, false, size_dict)
+    p, q = TensorOperations.trace_indices(Tuple(inds(x)), Tuple(inds(y)))
+    tensortrace!(parent(y), parent(x), p, q, false)
     return y
 end
 
