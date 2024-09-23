@@ -12,8 +12,6 @@ function flatten_circuit(x)
 end
 
 function Tenet.Quantum(circuit::AbstractBlock)
-    @assert nlevel(circuit) == 2 "Only support 2-level qubits"
-
     n = nqubits(circuit)
     gen = Tenet.IndexCounter()
     wire = [[Tenet.nextindex!(gen)] for _ in 1:n]
@@ -33,7 +31,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
         else
             content(gate)
         end
-        array = reshape(mat(operator), fill(2, 2 * nqubits(operator))...)
+        array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l
