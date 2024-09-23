@@ -2,7 +2,8 @@
     using PythonCall
     qtn = pyimport("quimb.tensor")
 
-    qc = qtn.Circuit(3)
+    # NOTE quimb.circuit.Circuit splits gates by default
+    qc = qtn.Circuit(3; gate_opts=Dict(["contract" => false]))
     gates = [("H", 0), ("H", 1), ("CNOT", 1, 2), ("CNOT", 0, 2), ("H", 0), ("H", 1), ("H", 2)]
     qc.apply_gates(gates)
 
