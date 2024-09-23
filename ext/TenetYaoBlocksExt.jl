@@ -1,19 +1,17 @@
-module TenetYaoExt
+module TenetYaoBlocksExt
 
 using Tenet
-using Yao
+using YaoBlocks
 
 function flatten_circuit(x)
     if any(i -> i isa ChainBlock, subblocks(x))
-        flatten_circuit(Yao.Optimise.eliminate_nested(x))
+        flatten_circuit(YaoBlocks.Optimise.eliminate_nested(x))
     else
         x
     end
 end
 
 function Tenet.Quantum(circuit::AbstractBlock)
-    @assert nlevel(circuit) == 2 "Only support 2-level qubits"
-
     n = nqubits(circuit)
     gen = Tenet.IndexCounter()
     wire = [[Tenet.nextindex!(gen)] for _ in 1:n]
@@ -26,8 +24,14 @@ function Tenet.Quantum(circuit::AbstractBlock)
             continue
         end
 
-        operator = content(gate)
-        array = reshape(mat(operator), fill(2, 2 * nqubits(operator))...)
+        # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
+        operator = if gate isa YaoBlocks.ControlBlock
+            m = length(occupied_locs(gate))
+            control((1:(m - 1))..., m => content(gate))(m)
+        else
+            content(gate)
+        end
+        array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l
@@ -37,13 +41,14 @@ function Tenet.Quantum(circuit::AbstractBlock)
             end,
         )
 
-        tensor = Tensor(array, tuple(inds...))
+        tensor = Tensor(array, inds)
         push!(tensors, tensor)
     end
 
+    # if a wire has only one index, no gates have been applied to it
     sites = merge(
-        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire)]),
-        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire)]),
+        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire) if length(index) > 1]),
+        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire) if length(index) > 1]),
     )
 
     return Quantum(Tenet.TensorNetwork(tensors), sites)
