@@ -1,5 +1,3 @@
-using Pkg.Artifacts
-
 # const echarts = read(joinpath(artifact"echarts", "node_modules", "echarts", "dist", "echarts.js"), String)
 const echarts_url = "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
 
