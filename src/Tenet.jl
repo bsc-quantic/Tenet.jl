@@ -41,6 +41,8 @@ export MPS, MPO
 
 export evolve!, expect, overlap
 
+include("Visualization.jl")
+
 # reexports from EinExprs
 export einexpr, inds
 
