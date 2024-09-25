@@ -31,6 +31,7 @@ function graph_representation(tn::AbstractTensorNetwork)
     return tn, graph, tensormap, hypermap, hypernodes, ghostnodes
 end
 
+Base.show(io::IO, ::MIME"text/html", @nospecialize(tn::AbstractTensorNetwork)) = show(io, MIME"juliavscode/html"(), tn)
 function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractTensorNetwork))
     tn, graph, tensormap, hypermap, hypernodes, ghostnodes = graph_representation(tn)
     hypermap = Dict(Iterators.flatten([[i => v for i in k] for (k, v) in hypermap]))
