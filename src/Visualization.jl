@@ -1,5 +1,5 @@
 using ECharts_jll
-using Graphs
+using Graphs: Graphs, vertices, edges
 
 function graph_representation(tn::AbstractTensorNetwork)
     hypermap = Tenet.hyperflatten(tn)
