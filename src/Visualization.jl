@@ -1,12 +1,41 @@
 using ECharts_jll
+using Graphs
+
+function graph_representation(tn::AbstractTensorNetwork)
+    hypermap = Tenet.hyperflatten(tn)
+    if !isempty(hypermap)
+        tn = transform(tn, Tenet.HyperFlatten)
+    end
+    tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
+
+    graph = Graphs.SimpleGraph(length(tensors(tn)))
+    for i in setdiff(inds(tn; set=:inner), inds(tn; set=:hyper))
+        a, b = tensors(tn; intersects=i)
+        Graphs.add_edge!(graph, tensormap[a], tensormap[b])
+    end
+
+    # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
+    hypernodes = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
+    ghostnodes = map(inds(tn; set=:open)) do index
+        # create new ghost node
+        Graphs.add_vertex!(graph)
+        node = Graphs.nv(graph)
+
+        # connect ghost node
+        tensor = only(tn.indexmap[index])
+        Graphs.add_edge!(graph, node, tensormap[tensor])
+
+        return node
+    end
+
+    return tn, graph, tensormap, hypermap, hypernodes, ghostnodes
+end
 
 function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractTensorNetwork))
-    tn = transform(tn, Tenet.HyperFlatten)
+    tn, graph, tensormap, hypermap, hypernodes, ghostnodes = graph_representation(tn)
+    hypermap = Dict(Iterators.flatten([[i => v for i in k] for (k, v) in hypermap]))
+
     appid = gensym("tenet-graph")
-    tensormap = IdDict([tensor => i for (i, tensor) in enumerate(tensors(tn))])
-
-    nodes = collect(values(tensormap))
-
     return print(
         io,
         """
@@ -15,7 +44,7 @@ function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractT
             )</script>
             <div id="$appid" style="width: 600px; height: 600px;"></div>
             <script>
-                var chart = echarts.init(document.getElementById('$appid'));
+                var chart = echarts.init(document.getElementById('$appid'), null, {renderer: 'svg'});
 
                 option = {
                     series: [
@@ -23,22 +52,42 @@ function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractT
                             type: 'graph',
                             layout: 'force',
                             animation: false,
-                            left: '0%',
-                            top: '0%',
-                            width: '100%',
-                            height: '100%',
+                            darkMode: 'auto',
+                            left: '5%',
+                            top: '5%',
+                            width: '95%',
+                            height: '95%',
                             draggable: true,
                             force: {
-                                // initLayout: 'circular'
-                                gravity: 0.1,
+                                gravity: 0,
                                 repulsion: 100,
-                                edgeLength: 3
+                                edgeLength: 4
                             },
-                            data: $nodes,
+                            data: [$(join(map(vertices(graph)) do v
+                                return "{ " *
+                                    "name: '$v', " *
+                                    "symbol: $(if v ∈ ghostnodes
+                                        "'none'"
+                                        elseif v ∈ hypernodes
+                                            "'diamond'"
+                                        else
+                                            "'circle'"
+                                        end), " *
+                                    "symbolSize: $(v ∈ ghostnodes ? "0" : "8")" *
+                                " }"
+                            end, ", "))],
                             edges: [$(join(
-                                map(inds(tn; set=:inner)) do i
-                                    a,b = tensors(tn; intersects=i)
-                                    return "{ source: $(tensormap[a]), target: $(tensormap[b]), name: '$i' }"
+                                map(inds(tn)) do i
+                                    nodes = tensors(tn; intersects=i)
+                                    if length(nodes) == 1
+                                        # TODO
+                                        v = tensormap[only(nodes)]
+                                        return "{ source: '$v', target: '$v', name: '$i' }"
+                                    elseif length(nodes) == 2
+                                        a, b = nodes
+                                        index = get(hypermap, i, i)
+                                        return "{ source: '$(tensormap[a])', target: '$(tensormap[b])', name: '$index' }"
+                                    end
                                 end
                             , ','))],
                             edgeLabel: {
@@ -48,8 +97,10 @@ function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractT
                                 }
                             },
                             emphasis: {
+                                label: false,
                                 edgeLabel: {
-                                    show: true
+                                    show: true,
+                                    fontSize: 20,
                                 },
                                 lineStyle: {
                                     width: 3

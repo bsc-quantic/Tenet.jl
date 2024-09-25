@@ -1,9 +1,9 @@
 module TenetGraphMakieExt
 
+using Tenet
 using GraphMakie
 using Makie
-const Graphs = GraphMakie.Graphs
-using Tenet
+using Graphs
 using Combinatorics: combinations
 const NetworkLayout = GraphMakie.NetworkLayout
 
@@ -46,34 +46,7 @@ function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::TensorNetwork;
 end
 
 function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels=false, kwargs...)
-    hypermap = Tenet.hyperflatten(tn)
-    tn = transform(tn, Tenet.HyperFlatten)
-
-    tensormap = IdDict(tensor => i for (i, tensor) in enumerate(tensors(tn)))
-
-    graph = Graphs.SimpleGraph(length(tensors(tn)))
-    for i in setdiff(inds(tn; set=:inner), inds(tn; set=:hyper))
-        edge_tensors = tensors(tn; intersects=i)
-
-        @assert length(edge_tensors) == 2
-        a, b = edge_tensors
-
-        Graphs.add_edge!(graph, tensormap[a], tensormap[b])
-    end
-
-    # TODO recognise `copytensors` by using `DeltaArray` or `Diagonal` representations
-    copytensors = findall(tensor -> any(flatinds -> issetequal(inds(tensor), flatinds), keys(hypermap)), tensors(tn))
-    ghostnodes = map(inds(tn; set=:open)) do index
-        # create new ghost node
-        Graphs.add_vertex!(graph)
-        node = Graphs.nv(graph)
-
-        # connect ghost node
-        tensor = only(tn.indexmap[index])
-        Graphs.add_edge!(graph, node, tensormap[tensor])
-
-        return node
-    end
+    tn, graph, _, hypermap, copytensors, ghostnodes = graph_representation(tn)
 
     # configure graphics
     # TODO refactor hardcoded values into constants
