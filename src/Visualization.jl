@@ -1,7 +1,5 @@
-# const echarts = read(joinpath(artifact"echarts", "node_modules", "echarts", "dist", "echarts.js"), String)
-const echarts_url = "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+using ECharts_jll
 
-Base.show(io::IO, ::MIME"text/html", tn::AbstractTensorNetwork) = show(io, MIME"juliavscode/html", tn)
 function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractTensorNetwork))
     tn = transform(tn, Tenet.HyperFlatten)
     appid = gensym("tenet-graph")
@@ -12,7 +10,9 @@ function Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractT
     return print(
         io,
         """
-            <script type="text/javascript" src="$echarts_url"></script>
+            <script type="text/javascript">$(
+                read(joinpath(dirname(ECharts_jll.echarts), "echarts.min.js"), String)
+            )</script>
             <div id="$appid" style="width: 600px; height: 600px;"></div>
             <script>
                 var chart = echarts.init(document.getElementById('$appid'));
