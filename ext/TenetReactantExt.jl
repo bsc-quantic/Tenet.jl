@@ -38,14 +38,14 @@ end
 
 # TODO try rely on generic fallback for ansatzes
 function Reactant.make_tracer(seen::IdDict, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-    tracequantum = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-    return Tenet.Product(tracequantum)
+    tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+    return Tenet.Product(tracetn)
 end
 
 for A in (MPS, MPO)
     @eval function Reactant.make_tracer(seen::IdDict, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-        tracequantum = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-        return $A(tracequantum, form(prev))
+        tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+        return $A(tracetn, form(prev))
     end
 end
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
