@@ -9,6 +9,38 @@ TensorNetwork_pullback(Δ::TensorNetworkTangent) = (NoTangent(), tensors(Δ))
 TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
 ChainRulesCore.rrule(::Type{TensorNetwork}, tensors) = TensorNetwork(tensors), TensorNetwork_pullback
 
+# `Quantum` constructor
+Quantum_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+Quantum_pullback(ȳ::AbstractArray) = (NoTangent(), ȳ, NoTangent())
+Quantum_pullback(ȳ::AbstractThunk) = Quantum_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Quantum}, x::TensorNetwork, sites) = Quantum(x, sites), Quantum_pullback
+
+# `Ansatz` constructor
+Ansatz_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Ansatz}, x::Quantum, lattice) = Ansatz(x, lattice), Ansatz_pullback
+
+# `AbstractAnsatz`-subtype constructors
+Product_pullback(ȳ) = (NoTangent(), ȳ.tn)
+Product_pullback(ȳ::AbstractThunk) = Product_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Product}, x::Ansatz) = Product(x), Product_pullback
+
+Dense_pullback(ȳ) = (NoTangent(), ȳ.tn)
+Dense_pullback(ȳ::AbstractThunk) = Dense_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Dense}, x::Ansatz) = Dense(x), Dense_pullback
+
+MPS_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+MPS_pullback(ȳ::AbstractThunk) = MPS_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{MPS}, x::Ansatz, form) = MPS(x, form), MPS_pullback
+
+MPO_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+MPO_pullback(ȳ::AbstractThunk) = MPO_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{MPO}, x::Ansatz, form) = MPO(x, form), MPO_pullback
+
+PEPS_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+PEPS_pullback(ȳ::AbstractThunk) = PEPS_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{PEPS}, x::Ansatz, form) = PEPS(x, form), PEPS_pullback
+
 # `Base.conj` methods
 conj_pullback(Δ::Tensor) = (NoTangent(), conj(Δ))
 conj_pullback(Δ::Tangent{Tensor}) = (NoTangent(), conj(Δ))
@@ -91,33 +123,6 @@ function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs..
     contract_pullback(c̄::AbstractThunk) = contract_pullback(unthunk(c̄))
 
     return c, contract_pullback
-end
-
-Quantum_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
-Quantum_pullback(ȳ::AbstractArray) = (NoTangent(), ȳ, NoTangent())
-Quantum_pullback(ȳ::AbstractThunk) = Quantum_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{Quantum}, x::TensorNetwork, sites) = Quantum(x, sites), Quantum_pullback
-
-Ansatz_pullback(ȳ) = (NoTangent(), ȳ.super)
-Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
-function ChainRulesCore.rrule(::Type{T}, x::Quantum) where {T<:Ansatz}
-    y = T(x)
-    return y, Ansatz_pullback
-end
-
-Ansatz_boundary_pullback(ȳ) = (NoTangent(), ȳ.super, NoTangent())
-Ansatz_boundary_pullback(ȳ::AbstractThunk) = Ansatz_boundary_pullback(unthunk(ȳ))
-function ChainRulesCore.rrule(::Type{T}, x::Quantum, boundary) where {T<:Ansatz}
-    return T(x, boundary), Ansatz_boundary_pullback
-end
-
-Ansatz_from_arrays_pullback(ȳ) = (NoTangent(), NoTangent(), NoTangent(), parent.(tensors(ȳ.super.tn)))
-Ansatz_from_arrays_pullback(ȳ::AbstractThunk) = Ansatz_from_arrays_pullback(unthunk(ȳ))
-function ChainRulesCore.rrule(
-    ::Type{T}, socket::Tenet.Socket, boundary::Tenet.Boundary, arrays; kwargs...
-) where {T<:Ansatz}
-    y = T(socket, boundary, arrays; kwargs...)
-    return y, Ansatz_from_arrays_pullback
 end
 
 copy_pullback(ȳ) = (NoTangent(), ȳ)

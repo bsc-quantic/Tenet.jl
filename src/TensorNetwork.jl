@@ -6,6 +6,7 @@ using LinearAlgebra
 using ScopedValues
 using Serialization
 using KeywordDispatch
+using Graphs
 
 mutable struct CachedField{T}
     isvalid::Bool
@@ -181,7 +182,8 @@ end
     return tensors(!isdisjoint, TensorNetwork(tn), intersects)
 end
 
-function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+function tensors(selector, tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol})
+    tn = TensorNetwork(tn)
     return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
 end
 
@@ -475,7 +477,7 @@ Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(o
 Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init=self)
 Base.merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = merge!(copy(self), others...)
 
-function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
         Tenet.tensors(tn; intersects=index)
@@ -484,7 +486,7 @@ function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     return tensors
 end
 
-function neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
     tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
@@ -724,6 +726,10 @@ end
 
 function Base.rand(::Type{TensorNetwork}, n::Integer, regularity::Integer; kwargs...)
     return rand(Random.default_rng(), TensorNetwork, n, regularity; kwargs...)
+end
+
+function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}
+    return rand(Random.default_rng(), T, args...; kwargs...)
 end
 
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)

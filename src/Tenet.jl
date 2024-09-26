@@ -26,6 +26,7 @@ include("Ansatz/Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
+export form
 
 include("Ansatz/Product.jl")
 export Product
@@ -33,18 +34,22 @@ export Product
 include("Ansatz/Dense.jl")
 export Dense
 
-include("Ansatz/Chain.jl")
-export Chain
-export MPS, pMPS, MPO, pMPO
-export leftindex, rightindex, isleftcanonical, isrightcanonical
-export canonize_site, canonize_site!, truncate!
-export canonize, canonize!, mixed_canonize, mixed_canonize!
+include("Ansatz/MPS.jl")
+export MPS
 
-include("Ansatz/Grid.jl")
-export Grid
-export PEPS, pPEPS, PEPO, pPEPO
+include("Ansatz/MPO.jl")
+export MPO
 
-export evolve!, expect, overlap
+include("Ansatz/PEPS.jl")
+export PEPS
+
+include("Ansatz/PEPO.jl")
+export PEPO
+
+# `truncate` not exported because it clashes with `Base.truncate`
+export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!
+export isisometry, isleftcanonical, isrightcanonical
+export evolve!, expect, overlap, truncate!
 
 # reexports from EinExprs
 export einexpr, inds
