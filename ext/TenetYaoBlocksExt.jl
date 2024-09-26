@@ -31,7 +31,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
         else
             content(gate)
         end
-        array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
+        array = reshape(transpose(mat(operator)), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l
