@@ -34,7 +34,7 @@ function PEPS(arrays::Matrix{<:AbstractArray}; order=defaultorder(PEPS))
 
     m, n = size(arrays)
 
-    predicate = all(eachindex(arrays)) do I
+    predicate = all(eachindex(IndexCartesian(), arrays)) do I
         i, j = Tuple(I)
         array = arrays[i, j]
 
@@ -54,19 +54,21 @@ function PEPS(arrays::Matrix{<:AbstractArray}; order=defaultorder(PEPS))
     vvinds = [nextindex!(gen) for _ in 1:(m - 1), _ in 1:n]
     hvinds = [nextindex!(gen) for _ in 1:m, _ in 1:(n - 1)]
 
-    _tensors = map(eachindex(IndexCartesian(), arrays)) do I
-        i, j = Tuple(I)
+    tn = TensorNetwork(
+        map(eachindex(IndexCartesian(), arrays)) do I
+            i, j = Tuple(I)
 
-        array = arrays[i, j]
-        pind = pinds[i, j]
-        up = i == 1 ? missing : vvinds[i - 1, j]
-        down = i == m ? missing : vvinds[i, j]
-        left = j == 1 ? missing : hvinds[i, j - 1]
-        right = j == n ? missing : hvinds[i, j]
+            array = arrays[i, j]
+            pind = pinds[i, j]
+            up = i == 1 ? missing : vvinds[i - 1, j]
+            down = i == m ? missing : vvinds[i, j]
+            left = j == 1 ? missing : hvinds[i, j - 1]
+            right = j == n ? missing : hvinds[i, j]
 
-        # TODO customize order
-        Tensor(array, collect(skipmissing([pind, up, down, left, right])))
-    end
+            # TODO customize order
+            Tensor(array, collect(skipmissing([pind, up, down, left, right])))
+        end,
+    )
 
     sitemap = Dict(Site(i, j) => pinds[i, j] for i in 1:m, j in 1:n)
     qtn = Quatum(tn, sitemap)
