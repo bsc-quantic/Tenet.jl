@@ -44,8 +44,8 @@ end
 
 for A in (MPS, MPO)
     @eval function Reactant.make_tracer(seen::IdDict, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-        tracequantum = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-        return $A(tracequantum, form(prev))
+        tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+        return $A(tracetn, form(prev))
     end
 end
 
