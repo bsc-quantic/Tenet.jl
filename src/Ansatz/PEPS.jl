@@ -34,20 +34,20 @@ function PEPS(arrays::Matrix{<:AbstractArray}; order=defaultorder(PEPS))
 
     m, n = size(arrays)
 
-    predicate = all(eachindex(IndexCartesian(), arrays)) do I
-        i, j = Tuple(I)
-        array = arrays[i, j]
+    # predicate = all(eachindex(IndexCartesian(), arrays)) do I
+    #     i, j = Tuple(I)
+    #     array = arrays[i, j]
 
-        N = ndims(array) - 1
-        (i == 1 || i == m) && (N -= 1)
-        (j == 1 || j == n) && (N -= 1)
+    #     N = ndims(array) - 1
+    #     (i == 1 || i == m) && (N -= 1)
+    #     (j == 1 || j == n) && (N -= 1)
 
-        N > 0
-    end
+    #     N > 0
+    # end
 
-    if !predicate
-        throw(DimensionMismatch())
-    end
+    # if !predicate
+    #     throw(DimensionMismatch())
+    # end
 
     gen = IndexCounter()
     pinds = map(_ -> nextindex!(gen), arrays)
