@@ -281,7 +281,7 @@ function mixed_canonize!(tn::MPS, orthog_center)
     end
 
     # center SVD sweep to get singular values
-    canonize_site!(tn, orthog_center; direction=:left, method=:svd)
+    # canonize_site!(tn, orthog_center; direction=:left, method=:svd)
 
     return tn
 end
@@ -289,6 +289,6 @@ end
 # TODO normalize! methods
 function LinearAlgebra.normalize!(ψ::MPS, orthog_center=site"1")
     mixed_canonize!(ψ, orthog_center)
-    normalize!(tensors(ψ; between=(Site(id(orthog_center) - 1), orthog_center)), 2)
+    normalize!(tensors(ψ; at=orthog_center), 2)
     return ψ
 end
