@@ -43,7 +43,7 @@ function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reac
 end
 
 for A in (MPS, MPO)
-    @eval function Reactant.make_tracer(seen::IdDict, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    @eval function Reactant.make_tracer(seen, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
         tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
         return $A(tracetn, form(prev))
     end
