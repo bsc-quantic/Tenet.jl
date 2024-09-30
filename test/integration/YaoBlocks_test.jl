@@ -22,4 +22,21 @@
         SV_Yao = apply!(zero_state(n_qubits), circuit_GHZ) # circuit|000>
         @test only(statevec(ArrayReg(bit"111"))' * statevec(SV_Yao)) ≈ 1 / √2
     end
+
+    @testset "two-qubit gate" begin
+        U = matblock(rand(ComplexF64, 4, 4); tag="U")
+        circuit = chain(2, put((1, 2)=>U))
+        psi = zero_state(2)
+        apply!(psi, circuit)
+
+        quantum_circuit = Quantum(circuit)
+        zeros = Quantum(Product(fill([1, 0], 2))) #|00>
+        ones = Quantum(Product(fill([0, 1], 2))) #|11>
+
+        expected_value = Tenet.contract(merge(zeros, quantum_circuit, ones')) # <11|circuit|00>
+
+        SV_Yao = apply!(zero_state(2), circuit) # circuit|00>
+
+        @test only(expected_value) ≈ only(statevec(ArrayReg(bit"11"))' * statevec(SV_Yao))
+    end
 end
