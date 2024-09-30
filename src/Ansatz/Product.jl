@@ -22,7 +22,8 @@ function Product(arrays::Vector{<:AbstractVector})
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
-    lattice = MetaGraph(Graph(n), Pair{Site,Nothing}[Site(i) => nothing for i in 1:n], Pair{Tuple{Site,Site},Nothing}[])
+    graph = Graph(n)
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end
@@ -37,7 +38,8 @@ function Product(arrays::Vector{<:AbstractMatrix})
 
     sitemap = merge!(Dict(Site(i; dual=true) => symbols[i] for i in 1:n), Dict(Site(i) => symbols[i + n] for i in 1:n))
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
-    lattice = MetaGraph(Graph(n), Pair{Site,Nothing}[Site(i) => nothing for i in 1:n], Pair{Tuple{Site,Site},Nothing}[])
+    graph = Graph(n)
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end

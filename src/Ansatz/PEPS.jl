@@ -74,7 +74,7 @@ function PEPS(arrays::Matrix{<:AbstractArray}; order=defaultorder(PEPS))
     qtn = Quatum(tn, sitemap)
     graph = grid((m, n))
     # TODO fix this
-    lattice = MetaGraph(graph, Site.(vertices(graph)) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return PEPS(ansatz, NonCanonical())
 end

@@ -27,11 +27,8 @@ function Dense(::State, array::AbstractArray; sites=Site.(1:ndims(array)))
 
     tn = TensorNetwork([tensor])
     qtn = Quantum(tn, sitemap)
-    lattice = MetaGraph(
-        complete_graph(nlanes(qtn)),
-        Pair{Site,Nothing}[i => nothing for i in lanes(qtn)],
-        Pair{Tuple{Site,Site},Nothing}[(i, j) => nothing for (i, j) in combinations(lanes(qtn), 2)],
-    )
+    graph = complete_graph(nlanes(qtn))
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return Dense(ansatz)
 end
@@ -49,11 +46,8 @@ function Dense(::Operator, array::AbstractArray; sites)
 
     sitemap = Dict{Site,Symbol}(map(splat(Pair), zip(sites, tensor_inds)))
     qtn = Quantum(tn, sitemap)
-    lattice = MetaGraph(
-        complete_graph(nlanes(qtn)),
-        Pair{Site,Nothing}[i => nothing for i in lanes(qtn)],
-        Pair{Tuple{Site,Site},Nothing}[(i, j) => nothing for (i, j) in combinations(lanes(qtn), 2)],
-    )
+    graph = complete_graph(nlanes(qtn))
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return Dense(ansatz)
 end
