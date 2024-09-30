@@ -25,7 +25,7 @@
 
     @testset "two-qubit gate" begin
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
-        circuit = chain(2, put((1, 2)=>U))
+        circuit = chain(2, put((1, 2) => U))
         psi = zero_state(2)
         apply!(psi, circuit)
 
