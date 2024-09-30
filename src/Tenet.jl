@@ -46,6 +46,8 @@ export PEPS, pPEPS, PEPO, pPEPO
 
 export evolve!, expect, overlap
 
+include("Visualization.jl")
+
 # reexports from EinExprs
 export einexpr, inds
 

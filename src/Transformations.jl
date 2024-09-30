@@ -46,7 +46,7 @@ See also: [`HyperGroup`](@ref).
 """
 struct HyperFlatten <: Transformation end
 
-function hyperflatten(tn::TensorNetwork)
+function hyperflatten(tn::AbstractTensorNetwork)
     return Dict(
         map(inds(tn; set=:hyper)) do hyperindex
             n = length(tensors(tn; intersects=hyperindex))
