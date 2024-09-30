@@ -59,7 +59,7 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
     qtn = Quantum(tn, sitemap)
     graph = path_graph(n)
-    lattice = MetaGraph(graph, Site.(vertices(graph)) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
     ansatz = Ansatz(qtn, lattice)
     return MPO(ansatz, NonCanonical())
 end
