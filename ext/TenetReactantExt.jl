@@ -78,9 +78,9 @@ function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), resu
 end
 
 for A in (MPS, MPO)
-    @eval function Reactant.create_result(tocopy::$A, @nospecialize(path), result_stores)
+    @eval function Reactant.create_result(tocopy::A, @nospecialize(path), result_stores) where {A<:$A}
         tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-        return :($A($tn, form(tocopy)))
+        return :($A($tn, $(Tenet.form(tocopy))))
     end
 end
 
