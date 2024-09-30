@@ -37,9 +37,11 @@ function Reactant.make_tracer(seen, prev::Ansatz, path::Tuple, mode::Reactant.Tr
 end
 
 # TODO try rely on generic fallback for ansatzes
-function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-    tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-    return Tenet.Product(tracetn)
+for A in (Product, Dense)
+    @eval function Reactant.make_tracer(seen, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+        tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+        return $A(tracetn)
+    end
 end
 
 for A in (MPS, MPO)
@@ -48,6 +50,7 @@ for A in (MPS, MPO)
         return $A(tracetn, form(prev))
     end
 end
+
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
     return :($Tensor($data, $(inds(tocopy))))
@@ -71,9 +74,11 @@ function Reactant.create_result(tocopy::Ansatz, @nospecialize(path), result_stor
 end
 
 # TODO try rely on generic fallback for ansatzes
-function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
-    tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-    return :($(Tenet.Product)($tn))
+for A in (Product, Dense)
+    @eval function Reactant.create_result(tocopy::A, @nospecialize(path), result_stores) where {A<:$A}
+        tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+        return :($A($tn))
+    end
 end
 
 for A in (MPS, MPO)
