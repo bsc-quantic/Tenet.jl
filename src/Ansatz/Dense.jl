@@ -51,3 +51,22 @@ function Dense(::Operator, array::AbstractArray; sites)
     ansatz = Ansatz(qtn, lattice)
     return Dense(ansatz)
 end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{Dense}, ::State; n, eltype=Float64, physdim=2)
+    array = rand(rng, eltype, fill(physdim, n)...)
+    normalize!(array)
+    return Dense(State(), array; sites=Site.(1:n))
+end
+
+function LinearAlgebra.normalize!(ψ::Dense)
+    normalize!(only(arrays(ψ)))
+    return ψ
+end
+
+function overlap(ϕ::Dense, ψ::Dense)
+    @assert lanes(ϕ) == lanes(ψ)
+    @assert socket(ϕ) == State() && socket(ψ) == State()
+    ψ = copy(ψ)
+    @reindex! outputs(ϕ) => outputs(ψ)
+    return contract(only(tensors(ϕ)), only(tensors(ψ)))
+end
