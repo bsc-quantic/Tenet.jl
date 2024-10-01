@@ -691,6 +691,7 @@ end
 
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)
     Serialization.writetag(s.io, Serialization.OBJECT_TAG)
+    serialize(s, TensorNetwork)
     return serialize(s, tensors(obj))
 end
 
