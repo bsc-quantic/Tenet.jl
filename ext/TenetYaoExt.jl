@@ -33,7 +33,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
             map(occupied_locs(gate)) do l
                 from, to = last(wire[l]), Tenet.nextindex!(gen)
                 push!(wire[l], to)
-                (from, to)
+                (to, from)
             end,
         )
 
