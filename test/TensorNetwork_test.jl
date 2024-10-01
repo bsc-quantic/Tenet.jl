@@ -741,7 +741,7 @@
         content = read(buffer)
 
         # Deserialize
-        read_buffer  = IOBuffer(content)
+        read_buffer = IOBuffer(content)
         tn2 = deserialize(read_buffer)
 
         @test tn == tn2
