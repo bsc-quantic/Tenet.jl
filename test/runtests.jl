@@ -1,6 +1,6 @@
 using Test
 using Tenet
-using OMEinsum
+using TensorOperations
 
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
