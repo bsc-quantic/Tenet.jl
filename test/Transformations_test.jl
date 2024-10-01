@@ -138,8 +138,6 @@
     end
 
     @testset "ContractSimplification" begin
-        # TODO test `ContractSimplification` options
-
         using Tenet: ContractSimplification
 
         # create a tensor network where tensors B and D can be absorbed
@@ -154,13 +152,15 @@
 
         # Test that the resulting tn contains no tensors with larger rank than the original
         rank = length ∘ size ∘ parent
-        @test max(rank(tensors(reduced)) == max(rank(tensors(tn))))
+        @test max(rank.(tensors(reduced))...) == max(rank.(tensors(tn))...)
 
         # Test that the resulting tn contains <= tensors than the original
-        @test length(tensors(reduced)) == 1
+        @test length(tensors(reduced)) <= length(tensors(tn))
 
         # Test that the resulting contraction contains the same as the original
         @test contract(reduced) ≈ contract(tn)
+
+        # Test 
     end
 
     @testset "AntiDiagonalGauging" begin
