@@ -1,4 +1,6 @@
 @testset "TensorNetwork" begin
+    using Serialization
+
     @testset "Constructors" begin
         @testset "empty" begin
             tn = TensorNetwork()
@@ -727,5 +729,21 @@
 
         @test issetequal(Set(parent.([P, L, U])), Set(arrays(ctn)))
         @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
+    end
+
+    @testset "Serialization" begin
+        tn = rand(TensorNetwork, 10, 3)
+
+        # Serialize
+        buffer = IOBuffer()
+        serialize(buffer, tn)
+        seekstart(buffer)
+        content = read(buffer)
+
+        # Deserialize
+        read_buffer = IOBuffer(content)
+        tn2 = deserialize(read_buffer)
+
+        @test tn == tn2
     end
 end

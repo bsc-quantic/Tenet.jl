@@ -121,7 +121,7 @@ function inds end
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
         throw(ArgumentError("""
-          Unknown query: set=$(set) 
+          Unknown query: set=$(set)
           Possible options are:
             - :all (default)
             - :open
@@ -728,6 +728,7 @@ end
 
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)
     Serialization.writetag(s.io, Serialization.OBJECT_TAG)
+    serialize(s, TensorNetwork)
     return serialize(s, tensors(obj))
 end
 
