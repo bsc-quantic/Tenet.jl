@@ -29,6 +29,7 @@ if VERSION >= v"1.10"
         @testset "Python" begin
             include("integration/python/test_quimb.jl")
             include("integration/python/test_qiskit.jl")
+            include("integration/python/test_qibo.jl")
         end
     end
 end
