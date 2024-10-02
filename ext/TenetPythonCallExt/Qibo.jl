@@ -1,11 +1,7 @@
 function Tenet.Quantum(::Val{:qibo}, pyobj::Py)
     qibo = pyimport("qibo")
     if !pyissubclass(pytype(pyobj), qibo.models.circuit.Circuit)
-        throw(
-            ArgumentError(
-                "Expected a qibo.models.circuit.Circuit object, got $(pyfullyqualname(pyobj))"
-            ),
-        )
+        throw(ArgumentError("Expected a qibo.models.circuit.Circuit object, got $(pyfullyqualname(pyobj))"))
     end
 
     n = pyconvert(Int, pyobj.nqubits)
