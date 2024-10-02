@@ -1,6 +1,6 @@
 @testset "qibo" begin
     using PythonCall
-    qiskit = pyimport("qibo")
+    qibo = pyimport("qibo")
 
     circuit = qibo.Circuit(3)
     circuit.add(qibo.gates.H(0))
