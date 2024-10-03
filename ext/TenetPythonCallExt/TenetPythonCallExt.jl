@@ -18,5 +18,6 @@ end
 
 include("Qiskit.jl")
 include("Quimb.jl")
+include("Qibo.jl")
 
 end
