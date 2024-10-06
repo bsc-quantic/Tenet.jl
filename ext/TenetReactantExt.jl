@@ -205,4 +205,9 @@ function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) 
     return Tensor(data, ic)
 end
 
+Tenet.contract(a::Tensor, b::Tensor{T,N,Reactant.TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
+function Tenet.contract(a::Tensor{Ta,Na,Reactant.TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb}; kwargs...) where {Ta,Na,Tb,Nb}
+    return contract(a, Reactant.promote_to(Reactant.TracedRArray{Tb,Nb}, b); kwargs...)
+end
+
 end
