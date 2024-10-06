@@ -3,7 +3,7 @@ module TenetReactantExt
 using Tenet
 using EinExprs
 using Reactant
-using Reactant: @reactant_override
+using Reactant: @reactant_override, TracedRArray
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
@@ -148,7 +148,7 @@ end
 
 function Tenet.contract(
     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; dims=(∩(inds(a), inds(b))), out=nothing
-) where {Ta,Na,Aa<:Reactant.TracedRArray,Tb,Nb,Ab<:Reactant.TracedRArray}
+) where {Ta,Na,Aa<:TracedRArray,Tb,Nb,Ab<:TracedRArray}
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
@@ -177,12 +177,12 @@ function Tenet.contract(
 
     result = Reactant.MLIR.IR.result(stablehlo.einsum(op_a, op_b; result_0, einsum_config))
 
-    data = Reactant.TracedRArray{T,length(ic)}((), result, rsize)
+    data = TracedRArray{T,length(ic)}((), result, rsize)
     _res = Tensor(data, ic)
     return _res
 end
 
-function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where {T,N,A<:Reactant.TracedRArray}
+function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where {T,N,A<:TracedRArray}
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -201,13 +201,13 @@ function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) 
 
     result = Reactant.MLIR.IR.result(stablehlo.unary_einsum(operand; result_0, einsum_config))
 
-    data = Reactant.TracedRArray{T,length(ic)}((), result, rsize)
+    data = TracedRArray{T,length(ic)}((), result, rsize)
     return Tensor(data, ic)
 end
 
-Tenet.contract(a::Tensor, b::Tensor{T,N,Reactant.TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
-function Tenet.contract(a::Tensor{Ta,Na,Reactant.TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb}; kwargs...) where {Ta,Na,Tb,Nb}
-    return contract(a, Tensor(Reactant.promote_to(Reactant.TracedRArray{Tb,Nb}, parent(b)), inds(b)); kwargs...)
+Tenet.contract(a::Tensor, b::Tensor{T,N,TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
+function Tenet.contract(a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb}; kwargs...) where {Ta,Na,Tb,Nb}
+    return contract(a, Tensor(Reactant.promote_to(TracedRArray{Tb,Nb}, parent(b)), inds(b)); kwargs...)
 end
 
 end
