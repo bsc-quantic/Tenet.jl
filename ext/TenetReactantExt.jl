@@ -147,8 +147,8 @@ end
 end
 
 function Tenet.contract(
-    a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; dims=(∩(inds(a), inds(b))), out=nothing
-) where {Ta,Na,Aa<:TracedRArray,Tb,Nb,Ab<:TracedRArray}
+    a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb,TracedRArray{Tb,Nb}}; dims=(∩(inds(a), inds(b))), out=nothing
+) where {Ta,Na,Tb,Nb}
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
@@ -182,7 +182,7 @@ function Tenet.contract(
     return _res
 end
 
-function Tenet.contract(a::Tensor{T,N,A}; dims=nonunique(inds(a)), out=nothing) where {T,N,A<:TracedRArray}
+function Tenet.contract(a::Tensor{T,N,TracedRArray{T,N}}; dims=nonunique(inds(a)), out=nothing) where {T,N}
     ia = inds(a)
     i = ∩(dims, ia)
 
