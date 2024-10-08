@@ -119,6 +119,72 @@ function factorinds(tensor, left_inds, right_inds)
     return left_inds, right_inds
 end
 
+# TODO is this an `AbstractTensorNetwork`?
+# TODO add fancier `show` method
+struct TensorEigen{T,V,Nᵣ,S<:AbstractVector{V},U<:AbstractArray{T,Nᵣ}} <: Factorization{T}
+    values::Tensor{V,1,S}
+    vectors::Tensor{T,Nᵣ,U}
+    right_inds::Vector{Symbol}
+end
+
+function Base.getproperty(obj::TensorEigen, name::Symbol)
+    if name === :U
+        return obj.vectors
+    elseif name === :Λ
+        return obj.values
+    elseif name ∈ [:Uinv, :U⁻¹]
+        U = reshape(parent(obj.vectors), prod(size(obj.vectors)[1:(end - 1)]), size(obj.vectors)[end])
+        Uinv = inv(U)
+        return Tensor(Uinv, [only(inds(obj.values)), obj.right_inds...])
+    end
+    return getfield(obj, name)
+end
+
+function Base.inv(F::TensorEigen)
+    U = reshape(parent(F.vectors), prod(size(F.vectors)[1:(end - 1)]), size(F.vectors)[end])
+    return Tensor(U * inv(Diagonal(F.values)) / U, [F.left_inds..., F.right_inds...])
+end
+LinearAlgebra.det(x::TensorEigen) = prod(x.values)
+
+Base.iterate(x::TensorEigen) = (x.values, :vectors)
+Base.iterate(x::TensorEigen, state) = state == :vectors ? (x.vectors, nothing) : nothing
+
+LinearAlgebra.eigen(t::Tensor{<:Any,2}; kwargs...) = @invoke eigen(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
+function LinearAlgebra.eigen(tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), kwargs...)
+    left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
+
+    virtualind ∉ inds(tensor) ||
+        throw(ArgumentError("new virtual bond name ($virtualind) cannot be already be present"))
+
+    # permute array
+    left_sizes = map(Base.Fix1(size, tensor), left_inds)
+    right_sizes = map(Base.Fix1(size, tensor), right_inds)
+    tensor = permutedims(tensor, [left_inds..., right_inds...])
+    data = reshape(parent(tensor), prod(left_sizes), prod(right_sizes))
+
+    # compute eigendecomposition
+    Λ, U = eigen(data; kwargs...)
+
+    # tensorify results
+    Λ = Tensor(Λ, [virtualind])
+    U = Tensor(reshape(U, left_sizes..., size(U, 2)), [left_inds..., virtualind])
+
+    return TensorEigen(Λ, U, right_inds)
+end
+
+# TODO document when it returns a `Tensor` and when returns an `Array`
+LinearAlgebra.eigvals(t::Tensor{<:Any,2}; kwargs...) = eigvals(parent(t); kwargs...)
+function LinearAlgebra.eigvals(tensor::Tensor; left_inds=(), right_inds=(), kwargs...)
+    F = eigen(tensor; left_inds, right_inds, kwargs...)
+    return parent(F.values)
+end
+
+LinearAlgebra.eigvecs(t::Tensor{<:Any,2}; kwargs...) = eigvecs(parent(t); kwargs...)
+function LinearAlgebra.eigvecs(tensor::Tensor; left_inds=(), right_inds=(), kwargs...)
+    F = eigen(tensor; left_inds, right_inds, kwargs...)
+    return F.vectors
+end
+
 LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
 
 """
