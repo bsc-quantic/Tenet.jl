@@ -643,6 +643,13 @@ contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwar
     return contract(intermediates...; dims=suminds(path))
 end
 
+function LinearAlgebra.eigen!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = tn[left_inds ∪ right_inds...]
+    (; U, Λ, U⁻¹) = eigen(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => TensorNetwork([U, Λ, U⁻¹]))
+    return tn
+end
+
 function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
     U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
