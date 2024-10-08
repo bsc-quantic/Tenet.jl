@@ -160,7 +160,24 @@
         # Test that the resulting contraction contains the same as the original
         @test contract(reduced) ≈ contract(tn)
 
-        # Test 
+        # Options (for non-recursive)
+        # Test that a non-recursive contraction is an intermediate simplification
+        reduced_nonrecursive = transform(tn, ContractSimplification(:length, false))
+        @test length(tensors(tn)) > length(tensors(reduced_nonrecursive)) > length(tensors(reduced))
+
+        # 2nd-stage simplification result in full simplification for this TN
+        reduced_full = transform(reduced_nonrecursive, ContractSimplification(:length, false))
+        @test length(tensors(reduced)) == length(tensors(reduced_full))
+
+        @test contract(reduced) ≈ contract(tn)
+
+        # Options (minimization by rank)
+        # Test that the resulting tn contains no tensors with larger rank than the original
+        reduced_byrank = transform(tn, ContractSimplification(:rank, true)) 
+        @test max(rank.(tensors(reduced_byrank))...) <= max(rank.(tensors(tn))...)
+
+        # Test
+        @test length(tensors(reduced_byrank)) > length(tensors(reduced))
     end
 
     @testset "AntiDiagonalGauging" begin
