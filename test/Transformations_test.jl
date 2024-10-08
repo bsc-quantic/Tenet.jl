@@ -152,7 +152,7 @@
 
         # Test that the resulting tn contains no tensors with larger rank than the original
         rank = length ∘ size ∘ parent
-        @test max(rank.(tensors(reduced))...) == max(rank.(tensors(tn))...)
+        @test max(rank.(tensors(reduced))...) <= max(rank.(tensors(tn))...)
 
         # Test that the resulting tn contains <= tensors than the original
         @test length(tensors(reduced)) <= length(tensors(tn))
@@ -176,7 +176,7 @@
         reduced_byrank = transform(tn, ContractSimplification(:rank, true)) 
         @test max(rank.(tensors(reduced_byrank))...) <= max(rank.(tensors(tn))...)
 
-        # Test
+        # Test that the resulting number of tensors is bigger for a reduction by rank than for length
         @test length(tensors(reduced_byrank)) > length(tensors(reduced))
     end
 
