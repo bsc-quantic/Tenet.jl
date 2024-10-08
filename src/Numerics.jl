@@ -142,7 +142,8 @@ end
 
 function Base.inv(F::TensorEigen)
     U = reshape(parent(F.vectors), prod(size(F.vectors)[1:(end - 1)]), size(F.vectors)[end])
-    return Tensor(U * inv(Diagonal(F.values)) / U, [F.left_inds..., F.right_inds...])
+    left_inds = inds(F.vectors)[1:(end - 1)]
+    return Tensor(U * inv(Diagonal(F.values)) / U, [left_inds..., F.right_inds...])
 end
 LinearAlgebra.det(x::TensorEigen) = prod(x.values)
 
