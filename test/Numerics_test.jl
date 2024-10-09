@@ -138,6 +138,43 @@
         end
     end
 
+    @testset "eigen" begin
+        A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l))
+
+        # throw if index is not present
+        @test_throws ArgumentError eigen(A, left_inds=[:z])
+        @test_throws ArgumentError eigen(A, right_inds=[:z])
+
+        # throw if no inds left
+        @test_throws ArgumentError eigen(A, left_inds=(:i, :j, :k, :l))
+        @test_throws ArgumentError eigen(A, right_inds=(:i, :j, :k, :l))
+
+        # throw if chosen virtual index already present
+        @test_throws ArgumentError eigen(A, left_inds=(:i,), virtualind=:j)
+
+        F = eigen(A; left_inds=[:i, :j], virtualind=:x)
+
+        # iteration deconstruction support
+        @test try
+            Λ, U = F
+            true
+        catch
+            false
+        end
+
+        (; Λ, U, U⁻¹) = F
+
+        @test inds(U) == [:i, :j, :x]
+        @test inds(Λ) == [:x]
+        @test inds(U⁻¹) == [:k, :l, :x]
+
+        @test size(U) == (2, 2, 2)
+        @test size(Λ) == (2,)
+        @test size(U⁻¹) == (2, 2, 2)
+
+        @test isapprox(contract(contract(U, Λ; out=inds(U)), U⁻¹), A)
+    end
+
     @testset "svd" begin
         data = rand(ComplexF64, 2, 4, 6, 8)
         tensor = Tensor(data, (:i, :j, :k, :l))
