@@ -30,7 +30,7 @@
         ([2, 4], [5, 4, 3], [2, 3]),
         [(2, 4), (5, 4, 3), (2, 3)],
         ((2, 4), (5, 4, 3), (2, 3)),
-        [[2, 4], [5, 4, 3], [2, 3]]
+        [[2, 4], [5, 4, 3], [2, 3]],
     ]
     for arraysdims in dispatch_arraysdims
         ψ = MPS(arraysdims) # Default order (:o, :l, :r)
