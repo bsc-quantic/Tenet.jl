@@ -62,12 +62,17 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(ansatz, NonCanonical())
 end
 
-MPS(arraysdims::NTuple{N,<:Vector{Int}}; order=defaultorder(MPS)) where {N} = MPS(collect(arraysdims); order=order)
-MPS(arraysdims::Vector{<:Tuple{Vararg{Int}}}; order=defaultorder(MPS)) = MPS(collect.(arraysdims); order=order)
-function MPS(arraysdims::NTuple{N,Tuple{Vararg{Int}}}; order=defaultorder(MPS)) where {N}
-    return MPS(collect(collect.(arraysdims)); order=order)
-end
-function MPS(arraysdims::Vector{<:Vector{Int}}; order=defaultorder(MPS))
+"""
+    Base.identity(::Type{MPS}, arraysdims; order=defaultorder(MPS))
+
+Returns an [`MPS`](@ref) whose tensors are initialized to the identity with the specified 
+dimensions from `arraysdims`.
+
+# Keyword Arguments
+
+  - `order` Tensors' indices order. Default: output - left - right (:o, :l, :r).
+"""
+function Base.identity(::Type{MPS}, arraysdims; order=defaultorder(MPS))
     @assert length(arraysdims[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ length, arraysdims[2:(end - 1)]) "All arrays must have 3 dimensions"
     @assert length(arraysdims[end]) == 2 "Last array must have 2 dimensions"
