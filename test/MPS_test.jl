@@ -25,7 +25,7 @@
     @test inds(ψ; at=site"2", dir=:left) == inds(ψ; at=site"1", dir=:right) !== nothing
     @test inds(ψ; at=site"3", dir=:left) == inds(ψ; at=site"2", dir=:right) !== nothing
     @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
-    
+
     @testset "Base.identity" begin
         arraysdims = [(2, 4), (5, 4, 3), (2, 3)]
         ψ = identity(MPS, arraysdims) # Default order (:o, :l, :r)

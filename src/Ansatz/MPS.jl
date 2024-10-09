@@ -65,7 +65,7 @@ end
 """
     Base.identity(::Type{MPS}, arraysdims; order=defaultorder(MPS))
 
-Returns an [`MPS`](@ref) whose tensors are initialized to the identity with the specified 
+Returns an [`MPS`](@ref) whose tensors are initialized to the identity with the specified
 dimensions from `arraysdims`.
 
 # Keyword Arguments
