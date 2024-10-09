@@ -173,7 +173,7 @@
 
         # Options (minimization by rank)
         # Test that the resulting tn contains no tensors with larger rank than the original
-        reduced_byrank = transform(tn, ContractSimplification(:rank, true)) 
+        reduced_byrank = transform(tn, ContractSimplification(:rank, true))
         @test max(rank.(tensors(reduced_byrank))...) <= max(rank.(tensors(tn))...)
 
         # Test that the resulting number of tensors is bigger for a reduction by rank than for length
