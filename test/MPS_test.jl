@@ -26,6 +26,28 @@
     @test inds(ψ; at=site"3", dir=:left) == inds(ψ; at=site"2", dir=:right) !== nothing
     @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
 
+    dispatch_arraysdims = [
+        ([2, 4], [5, 4, 3], [2, 3]),
+        [(2, 4), (5, 4, 3), (2, 3)],
+        ((2, 4), (5, 4, 3), (2, 3)),
+        [[2, 4], [5, 4, 3], [2, 3]]
+    ]
+    for arraysdims in dispatch_arraysdims
+        ψ = MPS(arraysdims) # Default order (:o, :l, :r)
+        @test size(tensors(ψ; at=site"1")) == (2, 4)
+        @test size(tensors(ψ; at=site"2")) == (5, 4, 3)
+        @test size(tensors(ψ; at=site"3")) == (2, 3)
+        t1 = tensors(ψ; at=site"1")
+        @test t1[1, 1] == t1[2, 2] == 1
+        @test sum(t1) == 2
+        t2 = tensors(ψ; at=site"2")
+        @test t2[1, 1, 1] == t2[2, 2, 2] == t2[3, 3, 3] == 1
+        @test sum(t2) == 3
+        t3 = tensors(ψ; at=site"3")
+        @test t3[1, 1] == t3[2, 2] == 1
+        @test sum(t3) == 2
+    end
+
     @testset "Site" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
