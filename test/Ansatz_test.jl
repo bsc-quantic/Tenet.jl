@@ -1,2 +1,1 @@
-@testset "Ansatz" begin
-end
+@testset "Ansatz" begin end
