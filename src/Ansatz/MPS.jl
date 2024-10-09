@@ -62,6 +62,30 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(ansatz, NonCanonical())
 end
 
+MPS(arraysdims::NTuple{N,<:Vector{Int}}; order=defaultorder(MPS)) where {N} = MPS(collect(arraysdims); order=order)
+MPS(arraysdims::Vector{<:Tuple{Vararg{Int}}}; order=defaultorder(MPS)) = MPS(collect.(arraysdims); order=order)
+function MPS(arraysdims::NTuple{N,Tuple{Vararg{Int}}}; order=defaultorder(MPS)) where {N}
+    return MPS(collect(collect.(arraysdims)); order=order)
+end
+function MPS(arraysdims::Vector{<:Vector{Int}}; order=defaultorder(MPS))
+    @assert length(arraysdims[1]) == 2 "First array must have 2 dimensions"
+    @assert all(==(3) ∘ length, arraysdims[2:(end - 1)]) "All arrays must have 3 dimensions"
+    @assert length(arraysdims[end]) == 2 "Last array must have 2 dimensions"
+    issetequal(order, defaultorder(MPS)) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
+
+    return MPS(
+        map(arraysdims) do arrdims
+            mindim = minimum(arrdims)
+            arr = zeros(ComplexF64, arrdims...)
+            deltas = ntuple(x -> ntuple(_ -> x, length(arrdims)), mindim)
+            broadcast(delta -> arr[delta...] = 1.0, deltas)
+            arr
+        end;
+        order=order,
+    )
+end
+
 function Base.convert(::Type{MPS}, tn::Product)
     @assert socket(tn) == State()
 
