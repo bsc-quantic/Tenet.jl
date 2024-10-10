@@ -1,4 +1,3 @@
-using OMEinsum
 using LinearAlgebra
 using UUIDs: uuid4
 using SparseArrays

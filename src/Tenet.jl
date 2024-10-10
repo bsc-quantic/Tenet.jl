@@ -7,6 +7,7 @@ include("Helpers.jl")
 include("Tensor.jl")
 export Tensor, contract, dim, expand
 
+include("Einsum.jl")
 include("Numerics.jl")
 
 include("TensorNetwork.jl")

@@ -1,6 +1,5 @@
 using Test
 using Tenet
-using OMEinsum
 
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
