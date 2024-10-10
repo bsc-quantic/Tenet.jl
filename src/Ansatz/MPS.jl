@@ -62,6 +62,45 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(ansatz, NonCanonical())
 end
 
+"""
+    Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=MPS.defaultorder(MPS))
+
+Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity attending to the
+physical dimension `physdim` and the maximum dimension `maxdim`.
+
+# Keyword Arguments
+
+  - `physdim` The physical or output dimension of each site. Default is 2
+  - `maxdim` The maximum bond dimension. Default is `physdim^(n ÷ 2)`.
+  - `order` Tensors' indices order. Default: output - left - right `(:o, :l, :r)`.
+"""
+function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=defaultorder(MPS))
+    issetequal(order, defaultorder(MPS)) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
+
+    # Create bond dimensions until the middle of the MPS considering maxdim
+    virtualdims = physdim .^ collect(1:(n ÷ 2))
+    virtualdims = ifelse.((virtualdims .> maxdim), maxdim, virtualdims)
+    # Complete the bond dimensions of the other half of the MPS
+    virtualdims = vcat(virtualdims, reverse(n % 2 == 1 ? virtualdims : virtualdims[1:(end - 1)]))
+
+    # Create each site dimensions in default order (:o, :l, :r)
+    arraysdims = [[physdim, virtualdims[1]]]
+    append!(arraysdims, [[physdim, virtualdims[i], virtualdims[i + 1]] for i in 1:(length(virtualdims) - 1)])
+    push!(arraysdims, [physdim, virtualdims[end]])
+
+    # Create the MPS with copy-tensors according to the tensors dimensions
+    return MPS(
+        map(arraysdims) do arrdims
+            arr = zeros(ComplexF64, arrdims...)
+            deltas = [fill(i, length(arrdims)) for i in 1:physdim]
+            broadcast(delta -> arr[delta...] = 1.0, deltas)
+            arr
+        end;
+        order=order,
+    )
+end
+
 function Base.convert(::Type{MPS}, tn::Product)
     @assert socket(tn) == State()
 
