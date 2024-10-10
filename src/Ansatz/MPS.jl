@@ -77,14 +77,14 @@ function Base.identity(::Type{MPS}, n; physdim=2, maxdim=physdim^(n ÷ 2), order
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
 
     # Create bond dimensions until the middle of the MPS considering maxdim
-    virtualdims = physdim .^ collect(1:n ÷ 2)
+    virtualdims = physdim .^ collect(1:(n ÷ 2))
     virtualdims = ifelse.((virtualdims .> maxdim), maxdim, virtualdims)
     # Complete the bond dimensions of the other half of the MPS
-    virtualdims = vcat(virtualdims, reverse(n % 2 == 1 ? virtualdims : virtualdims[1:end-1]))
+    virtualdims = vcat(virtualdims, reverse(n % 2 == 1 ? virtualdims : virtualdims[1:(end - 1)]))
 
     # Create each site dimensions in default order (:o, :l, :r)
     arraysdims = [[physdim, virtualdims[1]]]
-    append!(arraysdims, [[physdim, virtualdims[i], virtualdims[i+1]] for i in 1:(length(virtualdims)-1)])
+    append!(arraysdims, [[physdim, virtualdims[i], virtualdims[i + 1]] for i in 1:(length(virtualdims) - 1)])
     push!(arraysdims, [physdim, virtualdims[end]])
 
     # Create the MPS with copy-tensors according to the tensors dimensions
