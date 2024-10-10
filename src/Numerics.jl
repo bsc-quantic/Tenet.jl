@@ -151,6 +151,18 @@ Base.iterate(x::TensorEigen) = (x.values, :vectors)
 Base.iterate(x::TensorEigen, state) = state == :vectors ? (x.vectors, nothing) : nothing
 
 LinearAlgebra.eigen(t::Tensor{<:Any,2}; kwargs...) = @invoke eigen(t::Tensor; left_inds=(first(inds(t)),), kwargs...)
+
+"""
+    LinearAlgebra.eigen(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
+
+Perform Eigendecomposition on a tensor.
+
+# Keyword arguments
+
+  - `left_inds`: left indices to be used in the eigendecomposition. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the eigendecomposition. Defaults to all indices of `t` except `left_inds`.
+  - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+"""
 function LinearAlgebra.eigen(tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), kwargs...)
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
@@ -173,14 +185,37 @@ function LinearAlgebra.eigen(tensor::Tensor; left_inds=(), right_inds=(), virtua
     return TensorEigen(Λ, U, right_inds)
 end
 
-# TODO document when it returns a `Tensor` and when returns an `Array`
 LinearAlgebra.eigvals(t::Tensor{<:Any,2}; kwargs...) = eigvals(parent(t); kwargs...)
+
+# TODO document when it returns a `Tensor` and when returns an `Array`
+"""
+    LinearAlgebra.eigvals(tensor::Tensor; left_inds, right_inds, kwargs...)
+
+Perform Eigendecomposition on a tensor and return the eigenvalues.
+
+# Keyword arguments
+
+  - `left_inds`: left indices to be used in the eigendecomposition. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the eigendecomposition. Defaults to all indices of `t` except `left_inds`.
+"""
 function LinearAlgebra.eigvals(tensor::Tensor; left_inds=(), right_inds=(), kwargs...)
     F = eigen(tensor; left_inds, right_inds, kwargs...)
     return parent(F.values)
 end
 
 LinearAlgebra.eigvecs(t::Tensor{<:Any,2}; kwargs...) = eigvecs(parent(t); kwargs...)
+
+"""
+    LinearAlgebra.eigvecs(tensor::Tensor; left_inds, right_inds, kwargs...)
+
+Perform Eigendecomposition on a tensor and return the eigenvectors.
+
+# Keyword arguments
+
+  - `left_inds`: left indices to be used in the eigendecomposition. Defaults to all indices of `t` except `right_inds`.
+  - `right_inds`: right indices to be used in the eigendecomposition. Defaults to all indices of `t` except `left_inds`.
+  - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
+"""
 function LinearAlgebra.eigvecs(tensor::Tensor; left_inds=(), right_inds=(), kwargs...)
     F = eigen(tensor; left_inds, right_inds, kwargs...)
     return F.vectors
