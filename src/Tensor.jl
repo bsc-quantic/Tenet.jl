@@ -243,3 +243,7 @@ function __expand_repeat(array, axis, size)
 end
 
 LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
+
+LinearAlgebra.det(x::Tensor{T,2}) where {T} = det(parent(x))
+LinearAlgebra.logdet(x::Tensor{T,2}) where {T} = logdet(parent(x))
+LinearAlgebra.tr(x::Tensor{T,2}) where {T} = tr(parent(x))
