@@ -27,24 +27,42 @@
     @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
 
     @testset "Base.identity" begin
-        arraysdims = [(2, 4), (5, 4, 3), (2, 3)]
-        ψ = identity(MPS, arraysdims) # Default order (:o, :l, :r)
+        nsites_cases = [6, 7, 6, 7]
+        physdim_cases = [3, 2, 3, 2]
+        maxdim_cases = [nothing, nothing, 9, 4] # nothing means default
+        expected_tensorsizes_cases = [
+            [(3,3), (3,3,9), (3,9,27), (3,27,9), (3,9,3), (3,3)], 
+            [(2,2), (2,2,4), (2,4,8), (2,8,8), (2,8,4), (2,4,2), (2,2)],
+            [(3,3), (3,3,9), (3,9,9), (3,9,9), (3,9,3), (3,3)], 
+            [(2,2), (2,2,4), (2,4,4), (2,4,4), (2,4,4), (2,4,2), (2,2)]
+        ]
 
-        @test size(tensors(ψ; at=site"1")) == arraysdims[1]
-        @test size(tensors(ψ; at=site"2")) == arraysdims[2]
-        @test size(tensors(ψ; at=site"3")) == arraysdims[3]
+        for (nsites, physdim, expected_tensorsizes, maxdim) in zip(nsites_cases, physdim_cases, expected_tensorsizes_cases, maxdim_cases)
+            ψ = isnothing(maxdim) ? identity(MPS, nsites; physdim=physdim) : identity(MPS, nsites; physdim=physdim, maxdim=maxdim)
+            # Test the tensor dimensions
+            obtained_tensorsizes = size.(tensors(ψ))
+            @test obtained_tensorsizes == expected_tensorsizes
 
-        t1 = tensors(ψ; at=site"1")
-        @test t1[1, 1] == t1[2, 2] == 1
-        @test sum(t1) == 2
+            # Test whether all tensors are the identity
+            alltns = tensors(ψ)
+            # - Test extreme tensors (2D) equal identity
+            diagonal_2D = [fill(i, 2) for i in 1:physdim]
+            @test all(delta -> alltns[1][delta...] == 1, diagonal_2D)
+            @test sum(alltns[1]) == physdim
+            @test all(delta -> alltns[end][delta...] == 1, diagonal_2D)
+            @test sum(alltns[end]) == physdim
+            # - Test middle tensors (3D) equal identity
+            diagonal_3D = [fill(i, 3) for i in 1:physdim]
+            @test all(tns -> all(delta -> tns[delta...] == 1, diagonal_3D), alltns[2:end-1])
+            @test all(tns -> sum(tns) == physdim, alltns[2:end-1])
 
-        t2 = tensors(ψ; at=site"2")
-        @test t2[1, 1, 1] == t2[2, 2, 2] == t2[3, 3, 3] == 1
-        @test sum(t2) == 3
+            # Test whether the contraction gives the identity
+            contracted_ψ = contract(ψ)
+            diagonal_nsitesD = [fill(i, nsites) for i in 1:physdim]
+            @test all(delta -> contracted_ψ[delta...] == 1, diagonal_nsitesD)
+            @test sum(contracted_ψ) == physdim
+        end
 
-        t3 = tensors(ψ; at=site"3")
-        @test t3[1, 1] == t3[2, 2] == 1
-        @test sum(t3) == 2
     end
 
     @testset "Site" begin

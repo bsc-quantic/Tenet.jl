@@ -72,18 +72,26 @@ dimensions from `arraysdims`.
 
   - `order` Tensors' indices order. Default: output - left - right (:o, :l, :r).
 """
-function Base.identity(::Type{MPS}, arraysdims; order=defaultorder(MPS))
-    @assert length(arraysdims[1]) == 2 "First array must have 2 dimensions"
-    @assert all(==(3) ∘ length, arraysdims[2:(end - 1)]) "All arrays must have 3 dimensions"
-    @assert length(arraysdims[end]) == 2 "Last array must have 2 dimensions"
+function Base.identity(::Type{MPS}, n; physdim=2, maxdim=physdim^(n ÷ 2), order=defaultorder(MPS))
     issetequal(order, defaultorder(MPS)) ||
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
 
+    # Create bond dimensions until the middle of the MPS considering maxdim
+    virtualdims = physdim .^ collect(1:n ÷ 2)
+    virtualdims = ifelse.((virtualdims .> maxdim), maxdim, virtualdims)
+    # Complete the bond dimensions of the other half of the MPS
+    virtualdims = vcat(virtualdims, reverse(n % 2 == 1 ? virtualdims : virtualdims[1:end-1]))
+
+    # Create each site dimensions in default order (:o, :l, :r)
+    arraysdims = [[physdim, virtualdims[1]]]
+    append!(arraysdims, [[physdim, virtualdims[i], virtualdims[i+1]] for i in 1:(length(virtualdims)-1)])
+    push!(arraysdims, [physdim, virtualdims[end]])
+
+    # Create the MPS with copy-tensors according to the tensors dimensions
     return MPS(
         map(arraysdims) do arrdims
-            mindim = minimum(arrdims)
             arr = zeros(ComplexF64, arrdims...)
-            deltas = ntuple(x -> ntuple(_ -> x, length(arrdims)), mindim)
+            deltas = [fill(i, length(arrdims)) for i in 1:physdim]
             broadcast(delta -> arr[delta...] = 1.0, deltas)
             arr
         end;
