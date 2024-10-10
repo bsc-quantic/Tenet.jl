@@ -63,16 +63,18 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
 end
 
 """
-    Base.identity(::Type{MPS}, arraysdims; order=defaultorder(MPS))
+    Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=MPS.defaultorder(MPS))
 
-Returns an [`MPS`](@ref) whose tensors are initialized to the identity with the specified
-dimensions from `arraysdims`.
+Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity attending to the
+physical dimension `physdim` and the maximum dimension `maxdim`.
 
 # Keyword Arguments
 
-  - `order` Tensors' indices order. Default: output - left - right (:o, :l, :r).
+  - `physdim` The physical or output dimension of each site. Default is 2
+  - `maxdim` The maximum bond dimension. Default is `physdim^(n ÷ 2)`.
+  - `order` Tensors' indices order. Default: output - left - right `(:o, :l, :r)`.
 """
-function Base.identity(::Type{MPS}, n; physdim=2, maxdim=physdim^(n ÷ 2), order=defaultorder(MPS))
+function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=defaultorder(MPS))
     issetequal(order, defaultorder(MPS)) ||
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
 
