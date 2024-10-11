@@ -45,12 +45,17 @@ struct TensorNetwork <: AbstractTensorNetwork
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
 
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
-            # TODO check for inconsistent dimensions?
             for index in inds(tensor)
                 # TODO use lambda? `Tensor[]` might be reused
                 push!(get!(dict, index, Tensor[]), tensor)
             end
             dict
+        end
+
+        # Check for inconsistent index dimensions
+        for ind in keys(indexmap)
+            dims = map(tns -> size(tns)[findfirst(==(ind), tensormap[tns])], indexmap[ind])
+            length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
         end
 
         return new(indexmap, tensormap, CachedField{Vector{Tensor}}())
