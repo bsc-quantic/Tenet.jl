@@ -54,7 +54,7 @@ struct TensorNetwork <: AbstractTensorNetwork
 
         # Check for inconsistent index dimensions
         for ind in keys(indexmap)
-            dims = map(tns -> size(tns)[findfirst(==(ind), tensormap[tns])], indexmap[ind])
+            dims = map(tensor -> size(tensor, ind), indexmap[ind])
             length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
         end
 
