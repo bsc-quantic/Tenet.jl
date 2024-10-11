@@ -23,7 +23,7 @@
         @testset "TensorNetwork with tensors of different dimensions" begin
             tensor1 = Tensor(zeros(2, 2), (:i, :j))
             tensor2 = Tensor(zeros(3, 3), (:j, :k))
-            @test_skip @test_throws DimensionMismatch tn = TensorNetwork([tensor1, tensor2])
+            @test_throws DimensionMismatch tn = TensorNetwork([tensor1, tensor2])
         end
     end
 
