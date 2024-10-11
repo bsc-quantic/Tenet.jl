@@ -44,21 +44,21 @@
             else
                 identity(MPS, nsites; physdim=physdim, maxdim=maxdim)
             end
-            
+
             # Test the tensor dimensions
             obtained_tensorsizes = size.(tensors(ψ))
             @test obtained_tensorsizes == expected_tensorsizes
 
             # Test whether all tensors are the identity
             alltns = tensors(ψ)
-            
+
             # - Test extreme tensors (2D) equal identity
             diagonal_2D = [fill(i, 2) for i in 1:physdim]
             @test all(delta -> alltns[1][delta...] == 1, diagonal_2D)
             @test sum(alltns[1]) == physdim
             @test all(delta -> alltns[end][delta...] == 1, diagonal_2D)
             @test sum(alltns[end]) == physdim
-            
+
             # - Test bulk tensors (3D) equal identity
             diagonal_3D = [fill(i, 3) for i in 1:physdim]
             @test all(tns -> all(delta -> tns[delta...] == 1, diagonal_3D), alltns[2:(end - 1)])
