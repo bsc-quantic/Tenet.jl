@@ -63,21 +63,18 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
 end
 
 """
-    Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=MPS.defaultorder(MPS))
+    Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
 
-Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity attending to the
-physical dimension `physdim` and the maximum bond dimension `maxdim`.
+Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity
+in default order `(:o, :l, :r)` attending to the physical dimension `physdim` and
+the maximum bond dimension `maxdim`.
 
 # Keyword Arguments
 
   - `physdim` The physical or output dimension of each site. Default is 2
   - `maxdim` The maximum bond dimension. Default is `physdim^(n ÷ 2)`.
-  - `order` Tensors' indices order. Default: output - left - right `(:o, :l, :r)`.
 """
-function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=defaultorder(MPS))
-    issetequal(order, defaultorder(MPS)) ||
-        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
-
+function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
     # Create bond dimensions until the middle of the MPS considering maxdim
     virtualdims = min.(maxdim, physdim .^ (1:(n ÷ 2)))
 
@@ -97,7 +94,7 @@ function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 
             broadcast(delta -> arr[delta...] = 1.0, deltas)
             arr
         end;
-        order=order,
+        order=defaultorder(MPS),
     )
 end
 
