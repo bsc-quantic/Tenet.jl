@@ -80,6 +80,7 @@ function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 
 
     # Create bond dimensions until the middle of the MPS considering maxdim
     virtualdims = min.(maxdim, physdim .^ (1:(n ÷ 2)))
+
     # Complete the bond dimensions of the other half of the MPS
     virtualdims = vcat(virtualdims, virtualdims[(isodd(n) ? end : end - 1):-1:1])
 
