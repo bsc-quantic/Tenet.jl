@@ -62,6 +62,39 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(ansatz, NonCanonical())
 end
 
+"""
+    MPS(::typeof(identity), n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
+
+Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to COPY-tensors.
+
+# Keyword Arguments
+
+  - `physdim` The physical or output dimension of each site. Defaults to 2.
+  - `maxdim` The maximum bond dimension. Defaults to `physdim^(n ÷ 2)`.
+"""
+function MPS(::typeof(identity), n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
+    # Create bond dimensions until the middle of the MPS considering maxdim
+    virtualdims = min.(maxdim, physdim .^ (1:(n ÷ 2)))
+
+    # Complete the bond dimensions of the other half of the MPS
+    virtualdims = vcat(virtualdims, virtualdims[(isodd(n) ? end : end - 1):-1:1])
+
+    # Create each site dimensions in default order (:o, :l, :r)
+    arraysdims = [[physdim, virtualdims[1]]]
+    append!(arraysdims, [[physdim, virtualdims[i], virtualdims[i + 1]] for i in 1:(length(virtualdims) - 1)])
+    push!(arraysdims, [physdim, virtualdims[end]])
+
+    # Create the MPS with copy-tensors according to the tensors dimensions
+    return MPS(
+        map(arraysdims) do arrdims
+            arr = zeros(ComplexF64, arrdims...)
+            deltas = [fill(i, length(arrdims)) for i in 1:physdim]
+            broadcast(delta -> arr[delta...] = 1.0, deltas)
+            arr
+        end,
+    )
+end
+
 function Base.convert(::Type{MPS}, tn::Product)
     @assert socket(tn) == State()
 
