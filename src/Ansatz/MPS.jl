@@ -91,8 +91,7 @@ function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 
             deltas = [fill(i, length(arrdims)) for i in 1:physdim]
             broadcast(delta -> arr[delta...] = 1.0, deltas)
             arr
-        end;
-        order=defaultorder(MPS),
+        end,
     )
 end
 
