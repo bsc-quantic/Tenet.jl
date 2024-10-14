@@ -66,7 +66,7 @@ end
     Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2), order=MPS.defaultorder(MPS))
 
 Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity attending to the
-physical dimension `physdim` and the maximum dimension `maxdim`.
+physical dimension `physdim` and the maximum bond dimension `maxdim`.
 
 # Keyword Arguments
 
@@ -79,10 +79,9 @@ function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
 
     # Create bond dimensions until the middle of the MPS considering maxdim
-    virtualdims = physdim .^ collect(1:(n ÷ 2))
-    virtualdims = ifelse.((virtualdims .> maxdim), maxdim, virtualdims)
+    virtualdims = min.(maxdim, physdim .^ (1:(n ÷ 2)))
     # Complete the bond dimensions of the other half of the MPS
-    virtualdims = vcat(virtualdims, reverse(n % 2 == 1 ? virtualdims : virtualdims[1:(end - 1)]))
+    virtualdims = vcat(virtualdims, virtualdims[(isodd(n) ? end : end - 1):-1:1])
 
     # Create each site dimensions in default order (:o, :l, :r)
     arraysdims = [[physdim, virtualdims[1]]]
