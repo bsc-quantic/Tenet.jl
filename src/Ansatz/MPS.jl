@@ -65,14 +65,12 @@ end
 """
     Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
 
-Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to the identity
-in default order `(:o, :l, :r)` attending to the physical dimension `physdim` and
-the maximum bond dimension `maxdim`.
+Returns an [`MPS`](@ref) of `n` sites whose tensors are initialized to COPY-tensors.
 
 # Keyword Arguments
 
-  - `physdim` The physical or output dimension of each site. Default is 2
-  - `maxdim` The maximum bond dimension. Default is `physdim^(n ÷ 2)`.
+  - `physdim` The physical or output dimension of each site. Defaults to 2.
+  - `maxdim` The maximum bond dimension. Defaults to `physdim^(n ÷ 2)`.
 """
 function Base.identity(::Type{MPS}, n::Integer; physdim=2, maxdim=physdim^(n ÷ 2))
     # Create bond dimensions until the middle of the MPS considering maxdim
