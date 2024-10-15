@@ -138,8 +138,6 @@
     end
 
     @testset "ContractSimplification" begin
-        # TODO test `ContractSimplification` options
-
         using Tenet: ContractSimplification
 
         # create a tensor network where tensors B and D can be absorbed
@@ -153,14 +151,32 @@
         reduced = transform(tn, ContractSimplification)
 
         # Test that the resulting tn contains no tensors with larger rank than the original
-        rank = length ∘ size ∘ parent
-        @test max(rank(tensors(reduced)) == max(rank(tensors(tn))))
+        @test maximum(ndims, tensors(reduced)) <= maximum(ndims, tensors(tn))
 
         # Test that the resulting tn contains <= tensors than the original
-        @test length(tensors(reduced)) == 1
+        @test Tenet.ntensors(reduced) <= Tenet.ntensors(tn)
 
         # Test that the resulting contraction contains the same as the original
         @test contract(reduced) ≈ contract(tn)
+
+        # Options (for non-recursive)
+        # Test that a non-recursive contraction is an intermediate simplification
+        reduced_nonrecursive = transform(tn, ContractSimplification(:length, false))
+        @test Tenet.ntensors(tn) > Tenet.ntensors(reduced_nonrecursive) > Tenet.ntensors(reduced)
+
+        # 2nd-stage simplification result in full simplification for this TN
+        reduced_full = transform(reduced_nonrecursive, ContractSimplification(:length, false))
+        @test Tenet.ntensors(reduced) == Tenet.ntensors(reduced_full)
+
+        @test contract(reduced) ≈ contract(tn)
+
+        # Options (minimization by rank)
+        # Test that the resulting tn contains no tensors with larger rank than the original
+        reduced_byrank = transform(tn, ContractSimplification(:rank, true))
+        @test maximum(ndims, tensors(reduced_byrank)) <= maximum(ndims, tensors(tn))
+
+        # Test that the resulting number of tensors is bigger for a reduction by rank than for length
+        @test Tenet.ntensors(reduced_byrank) > Tenet.ntensors(reduced)
     end
 
     @testset "AntiDiagonalGauging" begin
