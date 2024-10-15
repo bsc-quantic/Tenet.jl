@@ -151,7 +151,6 @@
         reduced = transform(tn, ContractSimplification)
 
         # Test that the resulting tn contains no tensors with larger rank than the original
-        rank = length ∘ size ∘ parent
         @test maximum(ndims, tensors(reduced)) <= maximum(ndims, tensors(tn))
 
         # Test that the resulting tn contains <= tensors than the original
