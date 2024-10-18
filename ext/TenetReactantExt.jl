@@ -10,6 +10,7 @@ const stablehlo = MLIR.Dialects.stablehlo
 const Enzyme = Reactant.Enzyme
 
 Reactant.traced_type(::Type{T}, _, _) where {T<:Tenet.AbstractTensorNetwork} = T
+Reactant.traced_getfield(x::TensorNetwork, i::Int) = tensors(x)[i]
 
 function Reactant.make_tracer(
     seen, @nospecialize(prev::RT), path::Tuple, mode::Reactant.TraceMode; kwargs...
@@ -25,8 +26,6 @@ function Reactant.make_tracer(seen, prev::TensorNetwork, path::Tuple, mode::Reac
     end
     return TensorNetwork(tracetensors)
 end
-
-Reactant.traced_getfield(x::TensorNetwork, i::Int) = tensors(x)[i]
 
 function Reactant.make_tracer(seen, prev::Quantum, path::Tuple, mode::Reactant.TraceMode; kwargs...)
     tracetn = Reactant.make_tracer(seen, TensorNetwork(prev), Reactant.append_path(path, :tn), mode; kwargs...)
