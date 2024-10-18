@@ -393,7 +393,7 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real}=nothing, max
 
     # remove 0s from spectrum
     if isnothing(threshold)
-        threshold = 1e-16
+        threshold = eps(eltype(qtn))
     end
 
     filter!(extent) do i
