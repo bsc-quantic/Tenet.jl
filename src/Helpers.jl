@@ -44,3 +44,7 @@ function nextindex!(gen::IndexCounter)
     return letter(Threads.atomic_add!(gen.counter, 1))
 end
 resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
+
+# eps wrapper so it handles Complex numbers
+# if is Complex, extract the parametric type and get the eps of that
+wrap_eps(eltype) = eltype <: Real ? eps(eltype) : eps(first(eltype.parameters))
