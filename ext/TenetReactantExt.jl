@@ -9,6 +9,8 @@ const stablehlo = MLIR.Dialects.stablehlo
 
 const Enzyme = Reactant.Enzyme
 
+Reactant.traced_type(::Type{T}, _, _) where {T<:Tenet.AbstractTensorNetwork} = T
+
 function Reactant.make_tracer(
     seen, @nospecialize(prev::RT), path::Tuple, mode::Reactant.TraceMode; kwargs...
 ) where {RT<:Tensor}
