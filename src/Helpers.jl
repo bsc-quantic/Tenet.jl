@@ -47,4 +47,5 @@ resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
 
 # eps wrapper so it handles Complex numbers
 # if is Complex, extract the parametric type and get the eps of that
-wrap_eps(eltype) = eltype <: Real ? eps(eltype) : eps(first(eltype.parameters))
+wrap_eps(x) = eps(x)
+wrap_eps(::Type{Complex{T}}) = eps(T)
