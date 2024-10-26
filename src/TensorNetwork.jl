@@ -215,8 +215,8 @@ Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
 This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
 """
-Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = tensor ∈ keys(tn.tensormap)
-Base.in(index::Symbol, tn::AbstractTensorNetwork) = index ∈ keys(tn.indexmap)
+Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = tensor ∈ keys(TensorNetwork(tn).tensormap)
+Base.in(index::Symbol, tn::AbstractTensorNetwork) = index ∈ keys(TensorNetwork(tn).indexmap)
 
 Base.size(tn::AbstractTensorNetwork, args...) = size(TensorNetwork(tn), args...)
 """
