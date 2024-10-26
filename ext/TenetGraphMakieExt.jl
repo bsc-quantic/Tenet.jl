@@ -19,7 +19,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
   - The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
-function GraphMakie.graphplot(tn::TensorNetwork; kwargs...)
+function GraphMakie.graphplot(tn::Tenet.AbstractTensorNetwork; kwargs...)
     f = Figure()
     ax, p = graphplot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
@@ -28,7 +28,7 @@ end
 # NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
 __networklayout_dim(x) = first(typeof(x).super.parameters)
 
-function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::TensorNetwork; kwargs...)
+function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::Tenet.AbstractTensorNetwork; kwargs...)
     ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
         Axis3(f[1, 1])
     else
@@ -45,7 +45,8 @@ function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::TensorNetwork;
     return Makie.AxisPlot(ax, p)
 end
 
-function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::TensorNetwork; labels=false, kwargs...)
+function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::Tenet.AbstractTensorNetwork; labels=false, kwargs...)
+    tn = TensorNetwork(tn)
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperFlatten)
 
