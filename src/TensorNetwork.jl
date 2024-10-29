@@ -186,7 +186,8 @@ end
     return tensors(!isdisjoint, TensorNetwork(tn), intersects)
 end
 
-function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
+function tensors(selector, tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol})
+    tn = TensorNetwork(tn)
     return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
 end
 
