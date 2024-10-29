@@ -38,7 +38,7 @@ abstract type AbstractAnsatz <: AbstractQuantum end
 """
 struct Ansatz <: AbstractAnsatz
     tn::Quantum
-    lattice::MetaGraph{Int,G,Site{1},Nothing} where {G<:Graphs.AbstractGraph{Int}}
+    lattice::MetaGraph
 
     function Ansatz(tn, lattice)
         if !issetequal(lanes(tn), labels(lattice))
