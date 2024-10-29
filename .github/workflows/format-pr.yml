@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: julia-actions/setup-julia@v1
         with:
-          version: 'lts'
+          version: '1.10'
 
       - uses: actions/checkout@v4
         with:
