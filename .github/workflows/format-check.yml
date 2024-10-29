@@ -13,7 +13,7 @@ jobs:
     strategy:
         matrix:
           version:
-            - '1.9'
+            - 'lts'
           os:
             - ubuntu-latest
           arch:
