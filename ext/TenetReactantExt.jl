@@ -60,17 +60,17 @@ function Reactant.create_result(tocopy::Ansatz, @nospecialize(path), result_stor
 end
 
 # TODO try rely on generic fallback for ansatzes
-function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
-    tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-    return :($(Tenet.Product)($tn))
-end
+# function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
+#     tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+#     return :($(Tenet.Product)($tn))
+# end
 
-for A in (MPS, MPO)
-    @eval function Reactant.create_result(tocopy::$A, @nospecialize(path), result_stores)
-        tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-        return :($A($tn, form(tocopy)))
-    end
-end
+# for A in (MPS, MPO)
+#     @eval function Reactant.create_result(tocopy::$A, @nospecialize(path), result_stores)
+#         tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+#         return :($A($tn, form(tocopy)))
+#     end
+# end
 
 function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
     @assert length(path) == 2

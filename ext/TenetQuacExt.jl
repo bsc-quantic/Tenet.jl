@@ -3,13 +3,13 @@ module TenetQuacExt
 using Tenet
 using Quac: Gate, Circuit, lanes, arraytype, Swap
 
-function Tenet.Dense(gate::Gate)
-    return Tenet.Dense(
-        Operator(), arraytype(gate)(gate); sites=Site[Site.(lanes(gate))..., Site.(lanes(gate); dual=true)...]
-    )
-end
+# function Tenet.Dense(gate::Gate)
+#     return Tenet.Dense(
+#         Operator(), arraytype(gate)(gate); sites=Site[Site.(lanes(gate))..., Site.(lanes(gate); dual=true)...]
+#     )
+# end
 
-Tenet.evolve!(qtn::Ansatz, gate::Gate; kwargs...) = evolve!(qtn, Tenet.Dense(gate); kwargs...)
+# Tenet.evolve!(qtn::Ansatz, gate::Gate; kwargs...) = evolve!(qtn, Tenet.Dense(gate); kwargs...)
 
 function Tenet.Quantum(circuit::Circuit)
     n = lanes(circuit)
