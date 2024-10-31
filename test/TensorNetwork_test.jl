@@ -486,7 +486,7 @@
                 end
             end
 
-            @testset "TensorNetwork with tensors with equal indices" begin
+            @testset "TensorNetwork with tensors of equal indices" begin
                 A = Tensor(rand(2, 2), (:u, :w))
                 B = Tensor(rand(2, 2), (:u, :w))
                 tn = TensorNetwork([A, B])
@@ -503,7 +503,7 @@
                 @test issetequal(tensors(tn), [new_tensor, B])
             end
 
-            @testset "Chain of replacements" begin
+            @testset "Sequence of replacements" begin
                 A = Tensor(zeros(2, 2), (:i, :j))
                 B = Tensor(zeros(2, 2), (:j, :k))
                 C = Tensor(zeros(2, 2), (:k, :l))
@@ -518,7 +518,7 @@
                 @test issetequal(tensors(tn), [new_tensor2, B, C])
             end
 
-            @testset "Same Tensor in pair argument" begin
+            @testset "Replace with itself" begin
                 A = Tensor(rand(2, 2), (:i, :j))
                 B = Tensor(rand(2, 2), (:j, :k))
                 C = Tensor(rand(2, 2), (:k, :l))
