@@ -335,26 +335,12 @@ end
 
 Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
 """
-function Base.adjoint(tn::AbstractQuantum)
-    tn = conj(tn)
+Base.adjoint(tn::AbstractQuantum) = adjoint_sites!(conj(tn))
 
-    # update site information
-    oldsites = copy(Quantum(tn).sites)
-    empty!(Quantum(tn).sites)
-    for (site, index) in oldsites
-        addsite!(tn, site', index)
-    end
+LinearAlgebra.adjoint!(tn::AbstractQuantum) = adjoint_sites!(conj!(tn))
 
-    # rename inner indices
-    replace!(tn, map(i -> i => Symbol(i, "'"), inds(tn; set=:virtual)))
-
-    return tn
-end
-
-function LinearAlgebra.adjoint!(tn::AbstractQuantum)
-    conj!(tn)
-
-    # update site information
+# update site information and rename inner indices
+function adjoint_sites!(tn::AbstractQuantum)
     oldsites = copy(Quantum(tn).sites)
     empty!(Quantum(tn).sites)
     for (site, index) in oldsites

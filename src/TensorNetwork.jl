@@ -94,7 +94,7 @@ Return a copy of the [`AbstractTensorNetwork`](@ref) with all tensors conjugated
 """
 function Base.conj(tn::AbstractTensorNetwork)
     tn = copy(tn)
-    replace!(tn, Pair.(tensors(tn), conj.(tensors(tn))))
+    replace!(tn, tensors(tn) .=> conj.(tensors(tn)))
     return tn
 end
 
