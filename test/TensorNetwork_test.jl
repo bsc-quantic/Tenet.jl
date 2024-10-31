@@ -643,6 +643,14 @@
         @test issetequal(inds(projvirttn), [:i, :k])
     end
 
+    @testset "Base.conj" begin
+        tensor1 = Tensor(rand(ComplexF64, 3, 4), (:i, :j))
+        tensor2 = Tensor(rand(ComplexF64, 4, 5), (:j, :k))
+        complextn = TensorNetwork([tensor1, tensor2])
+
+        @test -imag.(tensors(complextn)) == imag.(tensors(conj(complextn)))
+    end
+
     @testset "Base.conj!" begin
         @testset "for complex" begin
             tensor1 = Tensor(rand(ComplexF64, 3, 4), (:i, :j))

@@ -55,6 +55,25 @@
     @test_throws ErrorException Quantum(tn, Dict(site"1" => :j))
     @test_throws ErrorException Quantum(tn, Dict(site"1" => :i))
 
+    @testset "Base.adjoint" begin
+        _tensors = Tensor[
+            Tensor(rand(ComplexF64, 2, 4, 2), [:i, :link, :j]), Tensor(rand(ComplexF64, 2, 4, 2), [:k, :link, :l])
+        ]
+        tn = TensorNetwork(_tensors)
+        qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :k, site"1'" => :j, site"2'" => :l))
+
+        adjoint_qtn = adjoint(qtn)
+
+        @test nsites(adjoint_qtn; set=:inputs) == nsites(adjoint_qtn; set=:outputs) == 2
+        @test issetequal(sites(adjoint_qtn), [site"1", site"2", site"1'", site"2'"])
+        @test socket(adjoint_qtn) == Operator()
+        @test inds(adjoint_qtn; at=site"1'") == :i # now the indices are flipped
+        @test inds(adjoint_qtn; at=site"1") == :j
+        @test inds(adjoint_qtn; at=site"2'") == :k
+        @test inds(adjoint_qtn; at=site"2") == :l
+        @test isapprox(tensors(adjoint_qtn), replace.(conj.(_tensors), :link => Symbol(:link, "'")))
+    end
+
     @testset "reindex!" begin
         @testset "manual indices" begin
             # mps-like tensor network
