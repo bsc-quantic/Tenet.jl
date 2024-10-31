@@ -478,41 +478,52 @@
             @test new_tensor === only(filter(t -> issetequal(inds(t), [:l, :m]), tensors(tn)))
 
             # Check if connections are maintained
-            # for label in inds(new_tensor)
-            #     index = tn.inds[label]
-            #     @test new_tensor in index.links
-            #     @test !(old_tensor in index.links)
-            # end
+            for ind in inds(new_tensor)
+                tensors_with_ind = tn.indexmap[ind]
+                @test new_tensor ∈ tensors_with_ind
+                @test !(old_tensor ∈ tensors_with_ind)
+            end
 
             # New tensor network with two tensors with the same inds
-            # A = Tensor(rand(2, 2), (:u, :w))
-            # B = Tensor(rand(2, 2), (:u, :w))
-            # tn = TensorNetwork([A, B])
+            A = Tensor(rand(2, 2), (:u, :w))
+            B = Tensor(rand(2, 2), (:u, :w))
+            tn = TensorNetwork([A, B])
 
-            # new_tensor = Tensor(rand(2, 2), (:u, :w))
+            new_tensor = Tensor(rand(2, 2), (:u, :w))
 
-            # replace!(tn, B => new_tensor)
-            # @test A === tensors(tn)[1]
-            # @test new_tensor === tensors(tn)[2]
+            replace!(tn, B => new_tensor)
+            @test A ∈ tensors(tn)
+            @test new_tensor ∈ tensors(tn)
 
-            # tn = TensorNetwork([A, B])
-            # replace!(tn, A => new_tensor)
+            tn = TensorNetwork([A, B])
+            replace!(tn, A => new_tensor)
 
-            # @test issetequal(tensors(tn), [new_tensor, B])
+            @test issetequal(tensors(tn), [new_tensor, B])
 
-            # # Test chain of replacements
-            # A = Tensor(zeros(2, 2), (:i, :j))
-            # B = Tensor(zeros(2, 2), (:j, :k))
-            # C = Tensor(zeros(2, 2), (:k, :l))
-            # tn = TensorNetwork([A, B, C])
+            # Test chain of replacements
+            A = Tensor(zeros(2, 2), (:i, :j))
+            B = Tensor(zeros(2, 2), (:j, :k))
+            C = Tensor(zeros(2, 2), (:k, :l))
+            tn = TensorNetwork([A, B, C])
 
-            # @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
+            @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
 
-            # new_tensor = Tensor(rand(2, 2), (:i, :j))
-            # new_tensor2 = Tensor(ones(2, 2), (:i, :j))
+            new_tensor = Tensor(rand(2, 2), (:i, :j))
+            new_tensor2 = Tensor(ones(2, 2), (:i, :j))
 
-            # replace!(tn, A => new_tensor, new_tensor => new_tensor2)
-            # @test issetequal(tensors(tn), [new_tensor2, B, C])
+            replace!(tn, A => new_tensor, new_tensor => new_tensor2)
+            @test issetequal(tensors(tn), [new_tensor2, B, C])
+
+            @testset "Same Tensor in pair argument" begin
+                A = Tensor(rand(2, 2), (:i, :j))
+                B = Tensor(rand(2, 2), (:j, :k))
+                C = Tensor(rand(2, 2), (:k, :l))
+                tn = TensorNetwork([A, B, C])
+
+                replace!(tn, A => A)
+
+                @test issetequal(tensors(tn), [A, B, C])
+            end
         end
 
         @testset "replace tensors by tensor network" begin
