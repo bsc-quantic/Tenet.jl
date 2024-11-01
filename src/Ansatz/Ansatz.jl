@@ -141,15 +141,16 @@ function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
     return tn
 end
 
-function expect(ψ::AbstractAnsatz, observables; bra=copy(ψ))
+function expect(ψ::AbstractAnsatz, observable; bra=copy(ψ))
     ϕ = bra
-
-    # TODO is this ok?
-    for observable in observables
-        evolve!(ϕ, observable)
-    end
-
+    evolve!(ϕ, observable)
     return overlap(ϕ, ψ)
+end
+
+function expect(ψ::AbstractAnsatz, observables; bra=copy(ψ))
+    sum(observables) do observable
+        expect(ψ, observable; bra=copy(bra))
+    end
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
