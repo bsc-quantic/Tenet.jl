@@ -14,23 +14,20 @@ using OMEinsum
     include("Chain_test.jl")
 end
 
-# CI hangs on these tests for some unknown reason on Julia 1.9
-if VERSION >= v"1.10"
-    @testset "Integration tests" verbose = true begin
-        include("integration/ChainRules_test.jl")
-        # include("integration/BlockArray_test.jl")
-        include("integration/Dagger_test.jl")
-        include("integration/Makie_test.jl")
-        include("integration/KrylovKit_test.jl")
-        include("integration/Quac_test.jl")
-        include("integration/ITensors_test.jl")
-        include("integration/ITensorNetworks_test.jl")
+@testset "Integration tests" verbose = true begin
+    include("integration/ChainRules_test.jl")
+    # include("integration/BlockArray_test.jl")
+    include("integration/Dagger_test.jl")
+    include("integration/Makie_test.jl")
+    include("integration/KrylovKit_test.jl")
+    include("integration/Quac_test.jl")
+    include("integration/ITensors_test.jl")
+    include("integration/ITensorNetworks_test.jl")
 
-        @testset "Python" begin
-            include("integration/python/test_quimb.jl")
-            include("integration/python/test_qiskit.jl")
-            include("integration/python/test_qibo.jl")
-        end
+    @testset "Python" begin
+        include("integration/python/test_quimb.jl")
+        include("integration/python/test_qiskit.jl")
+        include("integration/python/test_qibo.jl")
     end
 end
 
