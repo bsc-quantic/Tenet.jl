@@ -1,6 +1,7 @@
 module Tenet
 
 import EinExprs: inds
+import Graphs: contract
 
 include("Helpers.jl")
 
