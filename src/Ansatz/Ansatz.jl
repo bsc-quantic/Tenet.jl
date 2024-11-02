@@ -40,7 +40,7 @@ struct Ansatz <: AbstractAnsatz
     lattice::Lattice
 
     function Ansatz(tn, lattice)
-        if !issetequal(lanes(tn), labels(lattice))
+        if !issetequal(lanes(tn), vertices(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end
         return new(tn, lattice)
