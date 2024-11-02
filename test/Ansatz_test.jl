@@ -13,7 +13,7 @@ using Graphs
         ansatz = Ansatz(qtn, lattice)
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
-        @test lattice(ansatz) == lattice
+        @test Tenet.lattice(ansatz) == lattice
         @test isempty(neighbors(ansatz, site"1"))
         @test !Tenet.has_edge(ansatz, site"1", site"2")
 
@@ -35,7 +35,7 @@ using Graphs
         ansatz = Ansatz(qtn, lattice)
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
-        @test lattice(ansatz) == lattice
+        @test Tenet.lattice(ansatz) == lattice
 
         @test issetequal(neighbors(ansatz, site"1"), [site"2"])
         @test issetequal(neighbors(ansatz, site"2"), [site"1"])
@@ -43,7 +43,7 @@ using Graphs
         @test Tenet.has_edge(ansatz, site"1", site"2")
         @test Tenet.has_edge(ansatz, site"2", site"1")
 
-        @test inds(ansatz; bond=(site"1", site"2")) == :j
+        @test inds(ansatz; bond=(site"1", site"2")) == :i
 
         # the following methods will throw a AssertionError in here, but it's not a hard API requirement
         @test_throws Exception tensors(ansatz; bond=(site"1", site"2"))
