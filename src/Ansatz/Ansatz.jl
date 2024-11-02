@@ -1,7 +1,6 @@
 using KeywordDispatch
 using LinearAlgebra
 using Graphs
-using MetaGraphsNext
 
 # Traits
 abstract type Boundary end
@@ -38,7 +37,7 @@ abstract type AbstractAnsatz <: AbstractQuantum end
 """
 struct Ansatz <: AbstractAnsatz
     tn::Quantum
-    lattice::MetaGraph
+    lattice::Lattice
 
     function Ansatz(tn, lattice)
         if !issetequal(lanes(tn), labels(lattice))
@@ -61,18 +60,15 @@ function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
     return ==(latice.((a, b))...) && isapprox(Quantum(a), Quantum(b); kwargs...)
 end
 
-Graphs.neighbors(tn::AbstractAnsatz, site::Site) = neighbor_labels(lattice(tn), site)
-function isneighbor(tn::AbstractAnsatz, a::Site, b::Site)
-    lt = lattice(tn)
-    return has_edge(lt, MetaGraphsNext.code_for(lt, a), MetaGraphsNext.code_for(lt, b))
-end
+Graphs.neighbors(tn::AbstractAnsatz, site::Site) = neighbors(lattice(tn), site)
+Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = has_edge(lattice(tn), a, b)
 
 @kwmethod function inds(tn::AbstractAnsatz; bond)
     (site1, site2) = bond
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
-    @assert isneighbor(tn, site1, site2) "Sites must be neighbors"
+    @assert has_edge(tn, site1, site2) "Sites must be neighbors"
 
     tensor1 = tensors(tn; at=site1)
     tensor2 = tensors(tn; at=site2)
@@ -169,7 +165,7 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
         return simple_update_1site!(ψ, gate)
     end
 
-    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
+    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     return simple_update!(form(ψ), ψ, gate; kwargs...)
 end
@@ -202,7 +198,7 @@ end
 # TODO remove `renormalize` argument?
 function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
     @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
-    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
+    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
@@ -236,7 +232,7 @@ end
 # TODO refactor code
 function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
     @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
-    @assert isneighbor(ψ, lanes(gate)...) "Gate must act on neighboring sites"
+    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)

@@ -22,6 +22,8 @@ export Site, @site_str, isdual
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, nsites
 
+include("Lattice.jl")
+
 include("Ansatz/Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
