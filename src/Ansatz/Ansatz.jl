@@ -50,6 +50,9 @@ end
 Ansatz(tn::Ansatz) = tn
 Quantum(tn::AbstractAnsatz) = Ansatz(tn).tn
 
+# default form
+form(tn::AbstractAnsatz) = NonCanonical()
+
 Base.copy(tn::Ansatz) = Ansatz(copy(Quantum(tn)), copy(lattice(tn)))
 Base.similar(tn::Ansatz) = Ansatz(similar(Quantum(tn)), copy(lattice(tn)))
 Base.zero(tn::Ansatz) = Ansatz(zero(Quantum(tn)), copy(lattice(tn)))
