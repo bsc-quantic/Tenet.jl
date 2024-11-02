@@ -36,7 +36,6 @@ function Reactant.make_tracer(seen, prev::Ansatz, path::Tuple, mode::Reactant.Tr
     return Ansatz(tracetn, copy(Tenet.lattice(prev)))
 end
 
-end
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
     return :($Tensor($data, $(inds(tocopy))))
