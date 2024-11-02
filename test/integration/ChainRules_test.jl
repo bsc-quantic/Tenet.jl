@@ -1,7 +1,8 @@
 @testset "ChainRules" begin
-    using Tenet: Tensor, contract
+    using Tenet: Tensor, contract, Lattice
     using ChainRulesTestUtils
     using Graphs
+    using BijectiveDicts: BijectiveIdDict
 
     @testset "Tensor" begin
         test_frule(Tensor, ones(), Symbol[])
@@ -190,9 +191,11 @@
         test_rrule(Quantum, TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
     end
 
-    @testset_skip "Ansatz" begin
+    @testset "Ansatz" begin
         tn = Quantum(TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
-        lattice = MetaGraph(Graph(1), Pair{Site,Nothing}[site"1" => nothing], Pair{Tuple{Site,Site},Nothing}[])
+        graph = Graph(1)
+        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site"1" => 1])
+        lattice = Lattice(mapping, graph)
         test_frule(Ansatz, tn, lattice)
         test_rrule(Ansatz, tn, lattice)
     end
