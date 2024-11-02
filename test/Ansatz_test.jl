@@ -4,7 +4,8 @@ using BijectiveDicts: BijectiveIdDict
 using Graphs
 
 @testset "Ansatz" begin
-    @testset "No connectivity" let tn = TensorNetwork([Tensor(zeros(2), [:i]), Tensor(zeros(2), [:j])]),
+    # No connectivity
+    @testset let tn = TensorNetwork([Tensor(zeros(2), [:i]), Tensor(zeros(2), [:j])]),
         qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j)),
         graph = Graph(2),
         mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:2]),
@@ -24,7 +25,8 @@ using Graphs
         # TODO test `expect`, `overlap`, `evolve!`, `simple_update!`
     end
 
-    @testset_skip "Complete connectivity" let n = 2,
+    # Complete connectivity
+    @testset let n = 2,
         graph = Graphs.complete_graph(2),
         mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:n]),
         lattice = Lattice(mapping, graph),
