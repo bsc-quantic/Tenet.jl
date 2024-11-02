@@ -6,20 +6,19 @@ Skip a testset
 
 Use `@testset_skip` to replace `@testset` for some tests which should be skipped.
 
-Usage
------
+## Usage
+
 Replace `@testset` with `@testset "reason"` where `"reason"` is a string saying why the
 test should be skipped (which should come before the description string, if that is
 present).
 """
 macro testset_skip(args...)
     isempty(args) && error("No arguments to @testset_skip")
-    length(args) < 2 && error("First argument to @testset_skip giving reason for "
-                              * "skipping is required")
+    length(args) < 2 && error("First argument to @testset_skip giving reason for " * "skipping is required")
 
     skip_reason = args[1]
 
-    desc, testsettype, options = Test.parse_testset_args(args[2:end-1])
+    desc, testsettype, options = Test.parse_testset_args(args[2:(end - 1)])
 
     ex = quote
         # record the reason for the skip in the description, and mark the tests as
