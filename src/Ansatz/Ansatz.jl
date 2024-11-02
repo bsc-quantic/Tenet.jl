@@ -142,11 +142,7 @@ end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
-function expect(ψ::AbstractAnsatz, observable; bra=copy(ψ))
-    ϕ = bra
-    evolve!(ϕ, observable)
-    return overlap(ϕ, ψ)
-end
+expect(ψ::AbstractAnsatz, observable; bra=copy(ψ)) = contract(merge(ψ, observable, bra'))
 
 function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ))
     sum(observables) do observable
