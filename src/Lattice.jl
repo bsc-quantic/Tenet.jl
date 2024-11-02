@@ -21,6 +21,7 @@ struct Lattice <: AbstractGraph{Site}
     graph::Graphs.SimpleGraph{Int}
 end
 
+Base.copy(lattice::Lattice) = Lattice(copy(lattice.mapping), copy(lattice.graph))
 Base.:(==)(a::Lattice, b::Lattice) = a.mapping == b.mapping && a.graph == b.graph
 
 Base.zero(::Type{Lattice}) = Lattice(BijectiveIdDict{Site,Int}(), zero(Graphs.SimpleGraph{Int}))
