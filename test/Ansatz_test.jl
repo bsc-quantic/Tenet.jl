@@ -30,7 +30,7 @@ using Graphs
         graph = Graphs.complete_graph(2),
         mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:n]),
         lattice = Lattice(mapping, graph),
-        tn = TensorNetwork([Tensor(ones(2, 2, 2), [:s1, :i]), Tensor(ones(2, 2, 2), [:s2, :i])]),
+        tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])]),
         qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2)),
         ansatz = Ansatz(qtn, lattice)
 
