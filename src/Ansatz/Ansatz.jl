@@ -137,6 +137,8 @@ function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
     return tn
 end
 
+overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
+
 function expect(ψ::AbstractAnsatz, observable; bra=copy(ψ))
     ϕ = bra
     evolve!(ϕ, observable)
@@ -148,8 +150,6 @@ function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ
         expect(ψ, observable; bra=copy(bra))
     end
 end
-
-overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
 function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
     return simple_update!(ψ, gate; threshold, maxdim, renormalize)
