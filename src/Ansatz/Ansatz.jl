@@ -143,7 +143,7 @@ function expect(ψ::AbstractAnsatz, observable; bra=copy(ψ))
     return overlap(ϕ, ψ)
 end
 
-function expect(ψ::AbstractAnsatz, observables; bra=copy(ψ))
+function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ))
     sum(observables) do observable
         expect(ψ, observable; bra=copy(bra))
     end
