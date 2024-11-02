@@ -14,7 +14,7 @@ using Graphs
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
         @test lattice(ansatz) == lattice
-        @test isempty(neighbors(ansatz; at=site"1"))
+        @test isempty(neighbors(ansatz, site"1"))
         @test !Tenet.has_edge(ansatz, site"1", site"2")
 
         # the following methods will throw a AssertionError in here, but it's not a hard API requirement
@@ -37,8 +37,8 @@ using Graphs
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
         @test lattice(ansatz) == lattice
 
-        @test issetequal(neighbors(ansatz; at=site"1"), [site"2"])
-        @test issetequal(neighbors(ansatz; at=site"2"), [site"1"])
+        @test issetequal(neighbors(ansatz, site"1"), [site"2"])
+        @test issetequal(neighbors(ansatz, site"2"), [site"1"])
 
         @test Tenet.has_edge(ansatz, site"1", site"2")
         @test Tenet.has_edge(ansatz, site"2", site"1")
