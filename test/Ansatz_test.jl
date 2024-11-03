@@ -5,12 +5,12 @@ using Graphs
 using LinearAlgebra
 
 @testset "Ansatz" begin
-    # No connectivity
-    @testset let tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j])]),
-        qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j)),
-        graph = Graph(2),
-        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:2]),
-        lattice = Lattice(mapping, graph),
+    @testset "No connectivity" begin
+        tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j])])
+        qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j))
+        graph = Graph(2)
+        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:2])
+        lattice = Lattice(mapping, graph)
         ansatz = Ansatz(qtn, lattice)
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
@@ -32,15 +32,13 @@ using LinearAlgebra
         @test overlap(ansatz, ansatz) ≈ 4.0
         @test norm(ansatz) ≈ 2.0
 
-        @testset "1-local gate" begin
-            gate = Quantum(TensorNetwork([Tensor([1 0; 0 0], [:a, :b])]), Dict(site"1'" => :a, site"1" => :b))
-            @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 0], [:i])
-            @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 0], [:i])
+        @testset let gate = Quantum(TensorNetwork([Tensor([1 0; 0 0], [:a, :b])]), Dict(site"1'" => :a, site"1" => :b))
+            @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1, 0], [:i])
+            @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1, 0], [:i])
             @test expect(ansatz, gate) ≈ 2.0
         end
 
-        @testset "2-local gate" begin
-            gate = Quantum(
+        @testset let gate = Quantum(
                 TensorNetwork([Tensor([1 0; 0 0;;; 0 0; 0 0;;;; 0 0; 0 0;;; 0 0; 0 0], [:a1, :a2, :b1, :b2])]),
                 Dict(site"1'" => :a1, site"2'" => :a2, site"1" => :b1, site"2" => :b2),
             )
@@ -50,13 +48,13 @@ using LinearAlgebra
         end
     end
 
-    # Complete connectivity
-    @testset let n = 2,
-        graph = Graphs.complete_graph(2),
-        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:n]),
-        lattice = Lattice(mapping, graph),
-        tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])]),
-        qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2)),
+    @testset "Complete connectivity" begin
+        n = 2
+        graph = Graphs.complete_graph(2)
+        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:n])
+        lattice = Lattice(mapping, graph)
+        tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])])
+        qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2))
         ansatz = Ansatz(qtn, lattice)
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
@@ -77,15 +75,13 @@ using LinearAlgebra
         @test overlap(ansatz, ansatz) ≈ 16.0
         @test norm(ansatz) ≈ 4.0
 
-        @testset "1-local gate" begin
-            gate = Quantum(TensorNetwork([Tensor([1 0; 0 0], [:a, :b])]), Dict(site"1'" => :a, site"1" => :b))
-            @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 0], [:i])
-            @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 0], [:i])
-            @test expect(ansatz, gate) ≈ 2.0
+        @testset let gate = Quantum(TensorNetwork([Tensor([1 0; 0 0], [:a, :b])]), Dict(site"1'" => :a, site"1" => :b))
+            @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
+            @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
+            @test expect(ansatz, gate) ≈ 8.0
         end
 
-        @testset "2-local gate" begin
-            gate = Quantum(
+        @testset let gate = Quantum(
                 TensorNetwork([Tensor([1 0; 0 0;;; 0 0; 0 0;;;; 0 0; 0 0;;; 0 0; 0 0], [:a1, :a2, :b1, :b2])]),
                 Dict(site"1'" => :a1, site"2'" => :a2, site"1" => :b1, site"2" => :b2),
             )
