@@ -85,9 +85,12 @@ using LinearAlgebra
                 TensorNetwork([Tensor([1 0; 0 0;;; 0 0; 0 0;;;; 0 0; 0 0;;; 0 0; 0 0], [:a1, :a2, :b1, :b2])]),
                 Dict(site"1'" => :a1, site"2'" => :a2, site"1" => :b1, site"2" => :b2),
             )
-            @test_broken simple_update!(copy(ansatz), gate)
-            @test_broken evolve!(copy(ansatz), gate)
+            @test simple_update!(copy(ansatz), gate)
+            @test evolve!(copy(ansatz), gate)
             @test expect(ansatz, gate) ≈ 4.0
+            @testset let ψ = simple_update!(copy(ansatz), gate)
+                @test tensors(simple_update!(copy(ansatz), gate); bond=(site"1", site"2")) ≈ Tensor([2, 0], [:i])
+            end
         end
     end
 end
