@@ -330,17 +330,17 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
-    resetindex!(gate; init=ninds(ψ))
-    @reindex! outputs(gate) => inputs(gate)
 
     # contract involved sites
     bond = (sitel, siter) = extrema(lanes(gate))
     vind = inds(ψ; bond)
-    linds = filter(==(vind), inds(tensors(ψ; at=sitel)))
-    rinds = filter(==(vind), inds(tensors(ψ; at=siter)))
+    linds = filter(!=(vind), inds(tensors(ψ; at=sitel)))
+    rinds = filter(!=(vind), inds(tensors(ψ; at=siter)))
     contract!(ψ; bond)
 
     # contract physical inds with gate
+    @reindex! outputs(ψ) => outputs(gate) reset = false
+    @reindex! inputs(gate) => outputs(ψ) reset = false
     merge!(ψ, gate; reset=false)
     contract!(ψ, inds(gate; set=:inputs))
 
