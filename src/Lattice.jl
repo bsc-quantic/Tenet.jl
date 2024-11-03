@@ -16,6 +16,11 @@ Base.show(io::IO, edge::LatticeEdge) = write(io, "LatticeEdge $(src(edge)) → $
 Pair(e::LatticeEdge) = src(e) => dst(e)
 Tuple(e::LatticeEdge) = (src(e), dst(e))
 
+"""
+    Lattice
+
+A lattice is a graph where the vertices are [`Site`](@ref)s and the edges are virtual bonds.
+"""
 struct Lattice <: AbstractGraph{Site}
     mapping::BijectiveIdDict{Site,Int}
     graph::Graphs.SimpleGraph{Int}

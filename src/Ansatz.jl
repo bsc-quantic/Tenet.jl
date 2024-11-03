@@ -3,19 +3,64 @@ using LinearAlgebra
 using Graphs
 
 # Traits
+"""
+    Boundary
+
+Abstract type representing the boundary condition trait of a [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 abstract type Boundary end
+
+"""
+    Open
+
+[`Boundary`](@ref) trait representing an open boundary condition.
+"""
 struct Open <: Boundary end
+
+"""
+    Periodic
+
+[`Boundary`](@ref) trait representing a periodic boundary condition.
+"""
 struct Periodic <: Boundary end
 
 function boundary end
 
+"""
+    Form
+
+Abstract type representing the canonical form trait of a [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 abstract type Form end
+
+"""
+    NonCanonical
+
+[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in non-canonical form.
+"""
 struct NonCanonical <: Form end
+
+"""
+    MixedCanonical
+
+[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
+"""
 struct MixedCanonical <: Form
     orthogonality_center::Union{Site,Vector{Site}}
 end
+
+"""
+    Canonical
+
+[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in canonical form or Vidal gauge.
+"""
 struct Canonical <: Form end
 
+"""
+    form(tn::AbstractAnsatz)
+
+Return the canonical form of the [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 function form end
 
 struct MissingSchmidtCoefficientsException <: Base.Exception
@@ -28,12 +73,18 @@ function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
     return print(io, "Can't access the spectrum on bond $(e.bond)")
 end
 
+"""
+    AbstractAnsatz
+
+Abstract type for [`Ansatz`](@ref)-derived types.
+Its subtypes must implement conversion or extraction to the underlying [`Ansatz`](@ref).
+"""
 abstract type AbstractAnsatz <: AbstractQuantum end
 
 """
     Ansatz
 
-[`AbstractQuantum`](@ref) Tensor Network with a preserving structure.
+[`AbstractQuantum`](@ref) Tensor Network together with a [`Lattice`](@ref) for connectivity information between [`Site`](@ref)s.
 """
 struct Ansatz <: AbstractAnsatz
     tn::Quantum
@@ -48,6 +99,12 @@ struct Ansatz <: AbstractAnsatz
 end
 
 Ansatz(tn::Ansatz) = tn
+
+"""
+    Quantum(tn::AbstractAnsatz)
+
+Return the underlying [`Quantum`](@ref) Tensor Network of an [`AbstractAnsatz`](@ref).
+"""
 Quantum(tn::AbstractAnsatz) = Ansatz(tn).tn
 
 # default form
@@ -57,15 +114,36 @@ Base.copy(tn::Ansatz) = Ansatz(copy(Quantum(tn)), copy(lattice(tn)))
 Base.similar(tn::Ansatz) = Ansatz(similar(Quantum(tn)), copy(lattice(tn)))
 Base.zero(tn::Ansatz) = Ansatz(zero(Quantum(tn)), copy(lattice(tn)))
 
+"""
+    lattice(tn::AbstractAnsatz)
+
+Return the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 lattice(tn::AbstractAnsatz) = Ansatz(tn).lattice
 
 function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
     return ==(latice.((a, b))...) && isapprox(Quantum(a), Quantum(b); kwargs...)
 end
 
+"""
+    neighbors(tn::AbstractAnsatz, site::Site)
+
+Return the neighboring sites of a given [`Site`](@ref) in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 Graphs.neighbors(tn::AbstractAnsatz, site::Site) = neighbors(lattice(tn), site)
+
+"""
+    has_edge(tn::AbstractAnsatz, a::Site, b::Site)
+
+Check whether there is an edge between two [`Site`](@ref)s in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = has_edge(lattice(tn), a, b)
 
+"""
+    inds(tn::AbstractAnsatz; bond)
+
+Return the index of the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 @kwmethod function inds(tn::AbstractAnsatz; bond)
     (site1, site2) = bond
     @assert site1 ∈ sites(tn) "Site $site1 not found"
@@ -80,13 +158,23 @@ Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = has_edge(lattice(tn), a,
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
+"""
+    tensors(tn::AbstractAnsatz; bond)
+
+Return the [`Tensor`](@ref) in a virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+
+# Notes
+
+  - If the [`AbstractAnsatz`](@ref) Tensor Network is in the canonical form, Tenet stores the Schmidt coefficients of the bond in a vector connected to the bond hyperedge between the two sites and the vector.
+  - If the bond contains no Schmidt coefficients, this method will throw a `MissingSchmidtCoefficientsException`.
+"""
 @kwmethod function tensors(tn::AbstractAnsatz; bond)
     vind = inds(tn; bond)
-    return only(
-        tensors(tn, [vind]) do vinds, indices
-            indices == vinds
-        end,
-    )
+    tensor = tensors(tn, [vind]) do vinds, indices
+        indices == vinds
+    end
+    isempty(tensor) && throw(MissingSchmidtCoefficientsException(bond))
+    return only(tensor)
 end
 
 @kwmethod function tensors(tn::AbstractAnsatz; between)
@@ -97,6 +185,11 @@ end
     return tensors(tn; bond=between)
 end
 
+"""
+    contract!(tn::AbstractAnsatz; bond)
+
+Contract the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+"""
 @kwmethod contract!(tn::AbstractAnsatz; bond) = contract!(tn, inds(tn; bond))
 
 canonize(tn::AbstractAnsatz, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
@@ -142,6 +235,20 @@ end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
+"""
+    expect(ψ::AbstractAnsatz, observable)
+
+Compute the expectation value of an observable on a [`AbstractAnsatz`](@ref) Tensor Network.
+
+# Arguments
+
+  - `ψ`: Tensor Network representing the state.
+  - `observable`: The observable to compute the expectation value. If a `Vector` or `Tuple` of observables is provided, the sum of the expectation values is returned.
+
+# Keyword Arguments
+
+  - `bra`: The bra state. Defaults to a copy of `ψ`.
+"""
 expect(ψ::AbstractAnsatz, observable; bra=copy(ψ)) = contract(merge(ψ, observable, bra'))
 
 function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ))
@@ -150,6 +257,28 @@ function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ
     end
 end
 
+"""
+    evolve!(ψ::AbstractAnsatz, gate; threshold = nothing, maxdim = nothing, renormalize = false)
+
+Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` operator.
+
+# Arguments
+
+  - `ψ`: Tensor Network representing the state.
+  - `gate`: The gate operator to evolve the state with.
+
+# Keyword Arguments
+
+  - `threshold`: The threshold to truncate the bond dimension.
+  - `maxdim`: The maximum bond dimension to keep.
+  - `renormalize`: Whether to renormalize the state after truncation.
+
+# Notes
+
+  - The gate must act on neighboring sites according to the [`Lattice`](@ref) of the Tensor Network.
+  - The gate must have the same number of inputs and outputs.
+  - Currently only the "Simple Update" algorithm is used and the gate must be a 1-site or 2-site operator.
+"""
 function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
     return simple_update!(ψ, gate; threshold, maxdim, renormalize)
 end
