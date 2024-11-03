@@ -26,7 +26,6 @@ function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Quantum)
     return Tangent{Quantum}(; tn=rand_tangent(rng, TensorNetwork(tn)), sites=NoTangent())
 end
 
-# WARN type-piracy,  used in `Quantum` constructor
 ChainRulesTestUtils.rand_tangent(::AbstractRNG, tn::Dict{<:Site,Symbol}) = NoTangent()
 
 function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Ansatz)
