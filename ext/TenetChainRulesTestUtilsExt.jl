@@ -34,12 +34,6 @@ function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Ansatz)
 end
 
 ChainRulesTestUtils.rand_tangent(::AbstractRNG, lattice::Tenet.Lattice) = NoTangent()
-
-# WARN not really type-piracy but almost, used when testing `Ansatz`
-# function ChainRulesTestUtils.test_approx(
-#     actual::G, expected::G, msg; kwargs...
-# ) where {G<:MetaGraph{Int64,SimpleGraph{Int64},<:Site}}
-#     return actual == expected
-# end
+ChainRulesTestUtils.test_approx(actual::Lattice, expected::Lattice, msg; kwargs...) = actual == expected
 
 end
