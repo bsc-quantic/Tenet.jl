@@ -33,8 +33,7 @@ function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Ansatz)
     return Tangent{Ansatz}(; tn=rand_tangent(rng, Quantum(tn)), lattice=NoTangent())
 end
 
-# WARN not really type-piracy but almost, used in `Ansatz` constructor
-# ChainRulesTestUtils.rand_tangent(::AbstractRNG, tn::T) where {V,T<:MetaGraph{V,SimpleGraph{V},<:Site}} = NoTangent()
+ChainRulesTestUtils.rand_tangent(::AbstractRNG, lattice::Lattice) = NoTangent()
 
 # WARN not really type-piracy but almost, used when testing `Ansatz`
 # function ChainRulesTestUtils.test_approx(
