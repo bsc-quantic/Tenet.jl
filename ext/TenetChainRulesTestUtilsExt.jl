@@ -33,6 +33,6 @@ function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Ansatz)
 end
 
 ChainRulesTestUtils.rand_tangent(::AbstractRNG, lattice::Tenet.Lattice) = NoTangent()
-ChainRulesTestUtils.test_approx(actual::Lattice, expected::Lattice, msg; kwargs...) = actual == expected
+ChainRulesTestUtils.test_approx(actual::Tenet.Lattice, expected::Tenet.Lattice, msg; kwargs...) = actual == expected
 
 end
