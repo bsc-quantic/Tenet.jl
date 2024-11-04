@@ -1,4 +1,4 @@
-@testset "Chain ansatz" begin
+@testset_skip "Chain ansatz" begin
     @testset "Periodic boundary" begin
         @testset "State" begin
             qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])

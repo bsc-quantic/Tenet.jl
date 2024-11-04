@@ -2,6 +2,8 @@ using Test
 using Tenet
 using OMEinsum
 
+include("Utils.jl")
+
 @testset "Unit tests" verbose = true begin
     include("Helpers_test.jl")
     include("Tensor_test.jl")
@@ -10,6 +12,8 @@ using OMEinsum
     include("Transformations_test.jl")
     include("Site_test.jl")
     include("Quantum_test.jl")
+    include("Lattice_test.jl")
+    include("Ansatz_test.jl")
     include("Product_test.jl")
     include("Chain_test.jl")
 end

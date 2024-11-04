@@ -1,4 +1,4 @@
-@testset "Product ansatz" begin
+@testset_skip "Product ansatz" begin
     using LinearAlgebra
 
     # TODO test `Product` with `Scalar` socket

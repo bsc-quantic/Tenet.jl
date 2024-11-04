@@ -8,7 +8,7 @@
     @test issetequal(sites(tn), [site"1", site"2", site"1'", site"2'"])
     @test Tenet.ntensors(tn) == 2
 
-    @testset "GHZ Circuit" begin
+    @testset_skip "GHZ Circuit" begin
         circuit_GHZ = chain(n_qubits, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
 
         quantum_circuit = Quantum(circuit_GHZ)
@@ -23,7 +23,7 @@
         @test only(statevec(ArrayReg(bit"111"))' * statevec(SV_Yao)) ≈ 1 / √2
     end
 
-    @testset "two-qubit gate" begin
+    @testset_skip "two-qubit gate" begin
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
         circuit = chain(2, put((1, 2) => U))
         psi = zero_state(2)

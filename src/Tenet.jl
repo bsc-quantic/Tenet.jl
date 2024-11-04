@@ -1,6 +1,7 @@
 module Tenet
 
 import EinExprs: inds
+import Graphs: contract
 
 include("Helpers.jl")
 
@@ -22,28 +23,15 @@ export Site, @site_str, isdual
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, nsites
 
-include("Ansatz/Ansatz.jl")
+include("Lattice.jl")
+
+include("Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
+export form
 
-include("Ansatz/Product.jl")
-export Product
-
-include("Ansatz/Dense.jl")
-export Dense
-
-include("Ansatz/Chain.jl")
-export Chain
-export MPS, pMPS, MPO, pMPO
-export leftindex, rightindex, isleftcanonical, isrightcanonical
-export canonize_site, canonize_site!, truncate!
-export canonize, canonize!, mixed_canonize, mixed_canonize!
-
-include("Ansatz/Grid.jl")
-export Grid
-export PEPS, pPEPS, PEPO, pPEPO
-
+export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
 export evolve!, expect, overlap
 
 # reexports from EinExprs
