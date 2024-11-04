@@ -205,15 +205,41 @@ truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args.
 """
     truncate!(tn::AbstractAnsatz, bond; threshold = nothing, maxdim = nothing)
 
-Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Network by keeping only the `maxdim` largest Schmidt coefficients or those larger than`threshold`.
+Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Network. Dispatches to the appropriate method based on the [`form`](@ref) of the Tensor Network:
+
+  - If the Tensor Network is in the `MixedCanonical` form, the bond is truncated by moving the orthogonality center to the bond and keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`.
+  - If the Tensor Network is in the `Canonical` form, the bond is truncated by keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`, and then recanonizing the Tensor Network.
+  - If the Tensor Network is in the `NonCanonical` form, the bond is truncated by contracting the bond, performing an SVD and keeping the `maxdim` largest **singular values** or those larger than `threshold`.
 
 # Notes
 
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
-  - The bond must contain the Schmidt coefficients, i.e. a site canonization must be performed before calling `truncate!`.
 """
 function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
-    @assert isnothing(maxdim) ⊻ isnothing(threshold) "Either `threshold` or `maxdim` must be provided"
+    return truncate!(form(tn), tn, bond; threshold, maxdim)
+end
+
+"""
+    truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+
+Truncate the dimension of the virtual `bond` of a [`NonCanonical`](@ref) Tensor Network by contracting the bond, performing an SVD and keeping the `maxdim` largest **singular values** or those larger than `threshold`.
+
+# Arguments
+
+  - `tn`: The [`AbstractAnsatz`](@ref) Tensor Network.
+  - `bond`: The bond to truncate.
+
+# Keyword Arguments
+
+    - `threshold`: The threshold to truncate the bond dimension.
+    - `maxdim`: The maximum bond dimension to keep.
+    - `compute_local_svd`: Whether to compute the local SVD of the bond. If `true`, it will contract the bond and perform a SVD to get the local singular values. Defaults to `true`.
+"""
+function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+    if compute_local_svd
+        contract!(tn; bond)
+        svd!(tn; virtualind=inds(tn; bond))
+    end
 
     spectrum = parent(tensors(tn; bond))
     vind = inds(tn; bond)
@@ -231,6 +257,18 @@ function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
     slice!(tn, vind, extent)
 
     return tn
+end
+
+function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim)
+    # move orthogonality center to bond
+    mixed_canonize!(tn, bond)
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+end
+
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
+    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+    # requires a sweep to recanonize the TN
+    return canonize!(tn, bond)
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
