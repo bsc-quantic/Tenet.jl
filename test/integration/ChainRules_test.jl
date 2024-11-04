@@ -199,4 +199,10 @@
         test_frule(Ansatz, tn, lattice)
         test_rrule(Ansatz, tn, lattice)
     end
+
+    @testset "Product" begin
+        tn = Product([ones(2), ones(2), ones(2)])
+        test_frule(Product, Ansatz(tn))
+        test_rrule(Product, Ansatz(tn))
+    end
 end

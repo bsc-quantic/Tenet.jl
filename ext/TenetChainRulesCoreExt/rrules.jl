@@ -20,6 +20,11 @@ Ansatz_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
 Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
 ChainRulesCore.rrule(::Type{Ansatz}, x::Quantum, lattice) = Ansatz(x, lattice), Ansatz_pullback
 
+# `AbstractAnsatz`-subtype constructors
+Product_pullback(ȳ) = (NoTangent(), ȳ.tn)
+Product_pullback(ȳ::AbstractThunk) = Product_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{Product}, x::Ansatz) = Product(x), Product_pullback
+
 # `Base.conj` methods
 conj_pullback(Δ::Tensor) = (NoTangent(), conj(Δ))
 conj_pullback(Δ::Tangent{Tensor}) = (NoTangent(), conj(Δ))

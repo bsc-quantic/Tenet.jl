@@ -16,6 +16,9 @@ function ChainRulesCore.frule((_, ẋ), ::Type{Ansatz}, x::Quantum, lattice)
     return Ansatz(x, lattice), Tangent{Ansatz}(; tn=ẋ, lattice=NoTangent())
 end
 
+# `AbstractAnsatz`-subtype constructors
+ChainRulesCore.frule((_, ẋ), ::Type{Product}, x::Ansatz) = Product(x), Tangent{Product}(; tn=ẋ)
+
 # `Base.conj` methods
 ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::Tensor) = conj(tn), conj(Δ)
 
