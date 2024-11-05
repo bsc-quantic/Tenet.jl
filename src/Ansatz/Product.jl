@@ -52,14 +52,6 @@ function Product(arrays::AbstractArray{<:AbstractMatrix})
     return Product(ansatz)
 end
 
-function Base.zeros(::Type{Product}, n::Integer; p::Int=2, eltype=Bool)
-    return Product(fill(append!([one(eltype)], collect(Iterators.repeated(zero(eltype), p - 1))), n))
-end
-
-function Base.ones(::Type{Product}, n::Integer; p::Int=2, eltype=Bool)
-    return Product(fill(append!([zero(eltype), one(eltype)], collect(Iterators.repeated(zero(eltype), p - 2))), n))
-end
-
 LinearAlgebra.norm(tn::Product, p::Real=2) = LinearAlgebra.norm(socket(tn), tn, p)
 function LinearAlgebra.norm(::Union{State,Operator}, tn::Product, p::Real)
     return mapreduce(*, tensors(tn)) do tensor
