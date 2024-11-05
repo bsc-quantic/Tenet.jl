@@ -37,9 +37,10 @@ function Reactant.make_tracer(seen, prev::Ansatz, path::Tuple, mode::Reactant.Tr
 
 # TODO try rely on generic fallback for ansatzes
 function Reactant.make_tracer(seen::IdDict, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-    tracequantum = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-    return Tenet.Product(tracequantum)
+    tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+    return Tenet.Product(tracetn)
 end
+
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
     return :($Tensor($data, $(inds(tocopy))))
