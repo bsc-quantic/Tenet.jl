@@ -94,7 +94,7 @@ Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 Return a copy of the [`AbstractTensorNetwork`](@ref) with all tensors conjugated.
 """
 function Base.conj(tn::AbstractTensorNetwork)
-    tn = copy(tn)
+    tn = deepcopy(tn)
     replace!(tn, tensors(tn) .=> conj.(tensors(tn)))
     return tn
 end
