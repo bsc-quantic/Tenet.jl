@@ -1,4 +1,4 @@
-using Tenet: AbstractTensorNetwork, AbstractQuantum
+using Tenet: AbstractTensorNetwork, AbstractQuantum, Product
 
 # `Tensor` constructor
 ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds) = T(data, inds), T(Δ, inds)
