@@ -1,6 +1,5 @@
 using LinearAlgebra
 using Graphs
-using MetaGraphsNext
 
 struct Product <: AbstractAnsatz
     tn::Ansatz
@@ -12,34 +11,43 @@ Base.copy(x::Product) = Product(copy(Ansatz(x)))
 Base.similar(x::Product) = Product(similar(Ansatz(x)))
 Base.zero(x::Product) = Product(zero(Ansatz(x)))
 
-function Product(arrays::Vector{<:AbstractVector})
+function Product(arrays::AbstractArray{<:AbstractVector})
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex!(gen) for _ in 1:n]
-    _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i]])
+    symbols = map(arrays) do _
+        nextindex!(gen)
+    end
+    _tensors = map(eachindex(arrays)) do i
+        Tensor(arrays[i], [symbols[i]])
     end
 
-    sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
+    sitemap = Dict(Site(i) => symbols[i] for i in eachindex(arrays))
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
     graph = Graph(n)
-    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for i in enumerate(lanes(qtn))])
+    lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end
 
-function Product(arrays::Vector{<:AbstractMatrix})
+function Product(arrays::AbstractArray{<:AbstractMatrix})
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex!(gen) for _ in 1:(2 * length(arrays))]
-    _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i + n], symbols[i]])
+    symbols = map(arrays) do _
+        (nextindex!(gen), nextindex!(gen))
+    end
+    _tensors = map(eachindex(arrays)) do i
+        Tensor(arrays[i], [symbols[i][1], symbols[i][2]])
     end
 
-    sitemap = merge!(Dict(Site(i; dual=true) => symbols[i] for i in 1:n), Dict(Site(i) => symbols[i + n] for i in 1:n))
+    sitemap = merge!(
+        Dict(Site(i; dual=true) => symbols[i][1] for i in eachindex(arrays)),
+        Dict(Site(i) => symbols[i][2] for i in eachindex(arrays)),
+    )
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
     graph = Graph(n)
-    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for i in enumerate(lanes(qtn))])
+    lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end
