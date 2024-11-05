@@ -34,6 +34,7 @@ end
 function Reactant.make_tracer(seen, prev::Ansatz, path::Tuple, mode::Reactant.TraceMode; kwargs...)
     tracetn = Reactant.make_tracer(seen, Quantum(prev), Reactant.append_path(path, :tn), mode; kwargs...)
     return Ansatz(tracetn, copy(Tenet.lattice(prev)))
+end
 
 # TODO try rely on generic fallback for ansatzes
 function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
