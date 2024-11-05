@@ -35,6 +35,7 @@ export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed
 export evolve!, expect, overlap
 
 include("Ansatz/Product.jl")
+export Product
 
 # reexports from EinExprs
 export einexpr, inds
