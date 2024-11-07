@@ -139,5 +139,3 @@ end
         throw(ArgumentError("Unknown direction for MPO = :$dir"))
     end
 end
-
-function evolve!(ψ::MPS, op::MPO; threshold=nothing, maxdim=nothing, renormalize=false) end
