@@ -25,6 +25,14 @@ Product_pullback(ȳ) = (NoTangent(), ȳ.tn)
 Product_pullback(ȳ::AbstractThunk) = Product_pullback(unthunk(ȳ))
 ChainRulesCore.rrule(::Type{Product}, x::Ansatz) = Product(x), Product_pullback
 
+MPS_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+MPS_pullback(ȳ::AbstractThunk) = MPS_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{MPS}, x::Ansatz, form) = MPS(x, form), MPS_pullback
+
+MPO_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+MPO_pullback(ȳ::AbstractThunk) = MPO_pullback(unthunk(ȳ))
+ChainRulesCore.rrule(::Type{MPO}, x::Ansatz, form) = MPO(x, form), MPO_pullback
+
 # `Base.conj` methods
 conj_pullback(Δ::Tensor) = (NoTangent(), conj(Δ))
 conj_pullback(Δ::Tangent{Tensor}) = (NoTangent(), conj(Δ))
