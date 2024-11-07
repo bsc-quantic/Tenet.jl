@@ -4,6 +4,11 @@ using BijectiveDicts: BijectiveIdDict
 
 abstract type AbstractMPO <: AbstractAnsatz end
 
+"""
+    MPO <: AbstractAnsatz
+
+A Matrix Product Operator (MPO) [`Ansatz`](@ref) Tensor Network.
+"""
 struct MPO <: AbstractAnsatz
     tn::Ansatz
     form::Form

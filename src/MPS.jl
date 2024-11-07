@@ -5,6 +5,11 @@ using BijectiveDicts: BijectiveIdDict
 
 abstract type AbstractMPS <: AbstractAnsatz end
 
+"""
+    MPS <: AbstractAnsatz
+
+A Matrix Product State [`Ansatz`](@ref) Tensor Network.
+"""
 mutable struct MPS <: AbstractMPS
     const tn::Ansatz
     form::Form
