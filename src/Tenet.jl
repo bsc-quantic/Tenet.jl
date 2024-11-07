@@ -34,6 +34,9 @@ export form
 export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
 export evolve!, expect, overlap
 
+include("Product.jl")
+export Product
+
 # reexports from EinExprs
 export einexpr, inds
 

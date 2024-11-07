@@ -36,6 +36,12 @@ function Reactant.make_tracer(seen, prev::Ansatz, path::Tuple, mode::Reactant.Tr
     return Ansatz(tracetn, copy(Tenet.lattice(prev)))
 end
 
+# TODO try rely on generic fallback for ansatzes
+function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+    tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+    return Tenet.Product(tracetn)
+end
+
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
     return :($Tensor($data, $(inds(tocopy))))
@@ -56,6 +62,12 @@ end
 function Reactant.create_result(tocopy::Ansatz, @nospecialize(path), result_stores)
     tn = Reactant.create_result(Quantum(tocopy), Reactant.append_path(path, :tn), result_stores)
     return :($Ansatz($tn, $(copy(Tenet.lattice(tocopy)))))
+end
+
+# TODO try rely on generic fallback for ansatzes
+function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
+    tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+    return :($(Tenet.Product)($tn))
 end
 
 # TODO try rely on generic fallback for ansatzes
