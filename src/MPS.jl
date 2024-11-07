@@ -1,5 +1,7 @@
 using Random
 using LinearAlgebra
+using Graphs
+using BijectiveDicts: BijectiveIdDict
 
 abstract type AbstractMPS <: AbstractAnsatz end
 
@@ -57,7 +59,8 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     qtn = Quantum(tn, sitemap)
     graph = path_graph(n)
-    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return MPS(ansatz, NonCanonical())
 end

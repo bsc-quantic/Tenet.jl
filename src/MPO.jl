@@ -1,4 +1,6 @@
 using Random
+using Graphs
+using BijectiveDicts: BijectiveIdDict
 
 abstract type AbstractMPO <: AbstractAnsatz end
 
@@ -59,7 +61,8 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
     qtn = Quantum(tn, sitemap)
     graph = path_graph(n)
-    lattice = MetaGraph(graph, lanes(qtn) .=> nothing, map(x -> Site.(Tuple(x)) => nothing, edges(graph)))
+    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return MPO(ansatz, NonCanonical())
 end
