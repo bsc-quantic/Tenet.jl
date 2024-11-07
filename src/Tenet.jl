@@ -36,10 +36,10 @@ export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed
 include("Product.jl")
 export Product
 
-include("Ansatz/MPS.jl")
+include("MPS.jl")
 export MPS
 
-include("Ansatz/MPO.jl")
+include("MPO.jl")
 export MPO
 
 export evolve!, expect, overlap
