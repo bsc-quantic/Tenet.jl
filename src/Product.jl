@@ -1,6 +1,16 @@
 using LinearAlgebra
 using Graphs
 
+"""
+    Product <: AbstractAnsatz
+
+An [`Ansatz`](@ref) represented as a tensor product.
+
+# Constructors
+
+If you pass an `Abstract{<:AbstractVector}` to the constructor, it will create a [`State`](@ref).
+If you pass an `Abstract{<:AbstractMatrix}` to the constructor, it will create an [`Operator`](@ref).
+"""
 struct Product <: AbstractAnsatz
     tn::Ansatz
 end
