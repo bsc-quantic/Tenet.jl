@@ -42,6 +42,13 @@ function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reac
     return Tenet.Product(tracetn)
 end
 
+for A in (MPS, MPO)
+    @eval function Reactant.make_tracer(seen::IdDict, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
+        tracequantum = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+        return $A(tracequantum, form(prev))
+    end
+end
+
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
     return :($Tensor($data, $(inds(tocopy))))
@@ -68,6 +75,13 @@ end
 function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
     tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
     return :($(Tenet.Product)($tn))
+end
+
+for A in (MPS, MPO)
+    @eval function Reactant.create_result(tocopy::$A, @nospecialize(path), result_stores)
+        tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+        return :($A($tn, form(tocopy)))
+    end
 end
 
 # TODO try rely on generic fallback for ansatzes
