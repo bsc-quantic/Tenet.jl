@@ -1,3 +1,5 @@
+using Tenet: canonize_site, canonize_site!
+
 @testset "MPS" begin
     ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
     @test socket(ψ) == State()
