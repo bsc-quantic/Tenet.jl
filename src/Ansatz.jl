@@ -225,9 +225,10 @@ mixed_canonize(tn::AbstractAnsatz, args...; kwargs...) = mixed_canonize!(deepcop
 canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 
 """
-    isisometry(tn::AbstractAnsatz, site; kwargs...)
+    isisometry(tn::AbstractAnsatz, site; dir, kwargs...)
 
 Check if the tensor at a given [`Site`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
+The `dir` keyword argument specifies the direction of the isometry to check.
 """
 function isisometry end
 
