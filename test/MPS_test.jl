@@ -40,9 +40,9 @@
         for (nsites, physdim, expected_tensorsizes, maxdim) in
             zip(nsites_cases, physdim_cases, expected_tensorsizes_cases, maxdim_cases)
             ψ = if isnothing(maxdim)
-                MPS(typeof(identity), nsites; physdim=physdim)
+                MPS(identity, nsites; physdim=physdim)
             else
-                MPS(typeof(identity), nsites; physdim=physdim, maxdim=maxdim)
+                MPS(identity, nsites; physdim=physdim, maxdim=maxdim)
             end
 
             # Test the tensor dimensions
