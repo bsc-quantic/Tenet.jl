@@ -199,6 +199,20 @@ Base.adjoint(tn::T) where {T<:AbstractMPO} = T(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
+# TODO add form information
+"""
+    Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
+
+Create a random [`MPS`](@ref) Tensor Network.
+In order to avoid norm explosion issues, the tensors are orthogonalized by QR factorization so its normalized and mixed canonized to the last site.
+
+# Keyword Arguments
+
+  - `n` The number of sites.
+  - `maxdim` The maximum bond dimension.
+  - `eltype` The element type of the tensors. Defaults to `Float64`.
+  - `physdim` The physical or output dimension of each site. Defaults to 2.
+"""
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
     p = physdim
     T = eltype
@@ -228,6 +242,19 @@ end
 
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
+"""
+    Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float64, physdim=2)
+
+Create a random [`MPO`](@ref) Tensor Network.
+In order to avoid norm explosion issues, the tensors are orthogonalized by QR factorization so its normalized and mixed canonized to the last site.
+
+# Keyword Arguments
+
+  - `n` The number of sites.
+  - `maxdim` The maximum bond dimension.
+  - `eltype` The element type of the tensors. Defaults to `Float64`.
+  - `physdim` The physical or output dimension of each site. Defaults to 2.
+"""
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float64, physdim=2)
     T = eltype
     ip = op = physdim
