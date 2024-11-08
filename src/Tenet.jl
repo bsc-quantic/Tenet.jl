@@ -37,10 +37,7 @@ include("Product.jl")
 export Product
 
 include("MPS.jl")
-export MPS
-
-include("MPO.jl")
-export MPO
+export MPS, MPO
 
 export evolve!, expect, overlap
 
