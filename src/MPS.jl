@@ -452,15 +452,17 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     return tn
 end
 
-LinearAlgebra.normalize!(ψ::AbstractMPO) = normalize!(form(ψ), ψ)
+LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
 
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
-    return tensors(ψ; at) ./= norm(ψ)
+    tensor = tensors(ψ; at)
+    tensor ./= norm(ψ)
+    return ψ
 end
 
-function LinearAlgebra.normalize!(orthog_center::MixedCanonical, ψ::AbstractMPO, orthog_center=site"1")
-    mixed_canonize!(ψ, orthog_center)
-    normalize!(tensors(ψ; at=orthog_center), 2)
+function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
+    mixed_canonize!(config, ψ, orthog_center)
+    normalize!(tensors(ψ; at), 2)
     return ψ
 end
 
