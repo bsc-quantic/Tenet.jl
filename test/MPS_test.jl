@@ -221,7 +221,7 @@
     @testset "expect" begin
         i, j = 2, 3
         mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-        gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
+        gate = Quantum(mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
         @test isapprox(expect(ψ, [gate]), norm(ψ)^2)
@@ -231,7 +231,7 @@
         @testset "one site" begin
             i = 2
             mat = reshape(LinearAlgebra.I(2), 2, 2)
-            gate = Dense(Tenet.Operator(), mat; sites=[Site(i), Site(i; dual=true)])
+            gate = Quantum(mat; sites=[Site(i), Site(i; dual=true)])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
@@ -252,7 +252,7 @@
 
         @testset "two sites" begin
             mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-            gate = Dense(Tenet.Operator(), mat; sites=[site"2", site"3", site"2'", site"3'"])
+            gate = Quantum(TensorNetwork([Tensor(mat, [...])]), ; sites=[site"2", site"3", site"2'", site"3'"])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin

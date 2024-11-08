@@ -74,6 +74,29 @@ end
 Quantum(tn::Quantum) = tn
 
 """
+    Quantum(array, sites)
+
+Constructs a [`Quantum`](@ref) Tensor Network from an array and a list of sites. Useful for simple operators like gates.
+"""
+function Quantum(array, sites)
+    if ndims(array) != length(sites)
+        throw(ArgumentError("Number of sites must match number of dimensions of array"))
+    end
+
+    gen = IndexCounter()
+    symbols = map(_ -> nextindex!(gen), sites)
+    sitemap = Dict{Site,Symbol}(
+        map(sites, 1:ndims(array)) do site, i
+            site => symbols[i]
+        end,
+    )
+    tensor = Tensor(array, symbols)
+    tn = TensorNetwork([tensor])
+    qtn = Quantum(tn, sitemap)
+    return qtn
+end
+
+"""
     TensorNetwork(q::AbstractQuantum)
 
 Returns the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
