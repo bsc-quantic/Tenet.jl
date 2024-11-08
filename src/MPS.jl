@@ -38,6 +38,15 @@ Base.zero(x::T) where {T<:Union{MPS,MPO}} = T(zero(Ansatz(x)), form(x))
 defaultorder(::Type{AbstractMPS}) = (:o, :l, :r)
 defaultorder(::Type{AbstractMPO}) = (:o, :i, :l, :r)
 
+"""
+    MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
+
+Create a [`NonCanonical`](@ref) [`MPS`](@ref) from a vector of arrays.
+
+# Keyword Arguments
+
+  - `order` The order of the indices in the arrays. Defaults to `(:o, :l, :r)`.
+"""
 function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 3 dimensions"
@@ -83,6 +92,15 @@ function MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
     return MPS(ansatz, NonCanonical())
 end
 
+"""
+    MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
+
+Create a [`NonCanonical`](@ref) [`MPO`](@ref) from a vector of arrays.
+
+# Keyword Arguments
+
+  - `order` The order of the indices in the arrays. Defaults to `(:o, :i, :l, :r)`.
+"""
 function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 4 dimensions"
