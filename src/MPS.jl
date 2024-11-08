@@ -35,8 +35,8 @@ Base.copy(x::T) where {T<:Union{MPS,MPO}} = T(copy(Ansatz(x)), form(x))
 Base.similar(x::T) where {T<:Union{MPS,MPO}} = T(similar(Ansatz(x)), form(x))
 Base.zero(x::T) where {T<:Union{MPS,MPO}} = T(zero(Ansatz(x)), form(x))
 
-defaultorder(::Type{AbstractMPS}) = (:o, :l, :r)
-defaultorder(::Type{AbstractMPO}) = (:o, :i, :l, :r)
+defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
+defaultorder(::Type{<:AbstractMPO}) = (:o, :i, :l, :r)
 
 """
     MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
@@ -195,6 +195,7 @@ function Base.convert(::Type{T}, tn::Product) where {T<:AbstractMPO}
     return T(arrs)
 end
 
+# TODO can this be better written? or even generalized to AbstractAnsatz?
 Base.adjoint(tn::T) where {T<:AbstractMPO} = T(adjoint(Ansatz(tn)), form(tn))
 
 # TODO different input/output physical dims
@@ -284,14 +285,14 @@ end
 
 # TODO deprecate contract(; between) and generalize it to AbstractAnsatz
 """
-    Tenet.contract!(tn::MPS; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
+    Tenet.contract!(tn::AbstractMPO; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
 
-For a given [`MPS`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
+For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values Λ between two sites `site1` and `site2`.
 The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
 specifies whether to delete the singular values tensor after the contraction.
 """
-@kwmethod contract(tn::MPS; between, direction, delete_Λ) = contract!(copy(tn); between, direction, delete_Λ)
-@kwmethod function contract!(tn::MPS; between, direction, delete_Λ)
+@kwmethod contract(tn::AbstractMPO; between, direction, delete_Λ) = contract!(copy(tn); between, direction, delete_Λ)
+@kwmethod function contract!(tn::AbstractMPO; between, direction, delete_Λ)
     site1, site2 = between
     Λᵢ = tensors(tn; between)
     Λᵢ === nothing && return tn
@@ -310,10 +311,10 @@ specifies whether to delete the singular values tensor after the contraction.
 
     return tn
 end
-@kwmethod contract(tn::MPS; between) = contract(tn; between, direction=:left, delete_Λ=true)
-@kwmethod contract!(tn::MPS; between) = contract!(tn; between, direction=:left, delete_Λ=true)
-@kwmethod contract(tn::MPS; between, direction) = contract(tn; between, direction, delete_Λ=true)
-@kwmethod contract!(tn::MPS; between, direction) = contract!(tn; between, direction, delete_Λ=true)
+@kwmethod contract(tn::AbstractMPO; between) = contract(tn; between, direction=:left, delete_Λ=true)
+@kwmethod contract!(tn::AbstractMPO; between) = contract!(tn; between, direction=:left, delete_Λ=true)
+@kwmethod contract(tn::AbstractMPO; between, direction) = contract(tn; between, direction, delete_Λ=true)
+@kwmethod contract!(tn::AbstractMPO; between, direction) = contract!(tn; between, direction, delete_Λ=true)
 
 # TODO change it to `lanes`?
 # TODO refactor to use `Lattice`
@@ -340,7 +341,7 @@ end
     end
 end
 
-function isisometry(ψ::MPS, site; dir, atol::Real=1e-12)
+function isisometry(ψ::AbstractMPO, site; dir, atol::Real=1e-12)
     tensor = tensors(ψ; at=site)
     dirind = inds(ψ; at=site, dir)
 
@@ -359,9 +360,10 @@ function isisometry(ψ::MPS, site; dir, atol::Real=1e-12)
     return isapprox(contracted, I(n); atol)
 end
 
-@deprecate isleftcanonical(ψ::MPS, site; atol::Real=1e-12) isisometry(ψ, site; dir=:right, atol)
-@deprecate isrightcanonical(ψ::MPS, site; atol::Real=1e-12) isisometry(ψ, site; dir=:left, atol)
+@deprecate isleftcanonical(ψ::AbstractMPO, site; atol::Real=1e-12) isisometry(ψ, site; dir=:right, atol)
+@deprecate isrightcanonical(ψ::AbstractMPO, site; atol::Real=1e-12) isisometry(ψ, site; dir=:left, atol)
 
+# TODO generalize to AbstractAnsatz
 # NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
 function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
     left_inds = Symbol[]
@@ -433,7 +435,7 @@ function canonize!(ψ::AbstractMPO)
 end
 
 # TODO mixed_canonize! at bond
-function mixed_canonize!(tn::MPS, orthog_center)
+function mixed_canonize!(tn::AbstractMPO, orthog_center)
     # left-to-right QR sweep (left-canonical tensors)
     for i in 1:(id(orthog_center) - 1)
         canonize_site!(tn, Site(i); direction=:right, method=:qr)
@@ -462,4 +464,4 @@ function LinearAlgebra.normalize!(orthog_center::MixedCanonical, ψ::AbstractMPO
     return ψ
 end
 
-# TODO function LinearAlgebra.normalize!(::Canonical, ψ::MPS) end
+# TODO function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO) end
