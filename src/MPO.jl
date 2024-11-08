@@ -9,8 +9,8 @@ abstract type AbstractMPO <: AbstractAnsatz end
 
 A Matrix Product Operator (MPO) [`Ansatz`](@ref) Tensor Network.
 """
-struct MPO <: AbstractAnsatz
-    tn::Ansatz
+mutable struct MPO <: AbstractAnsatz
+    const tn::Ansatz
     form::Form
 end
 
