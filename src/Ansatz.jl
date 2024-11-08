@@ -192,13 +192,49 @@ Contract the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@r
 """
 @kwmethod contract!(tn::AbstractAnsatz; bond) = contract!(tn, inds(tn; bond))
 
+"""
+    canonize!(tn::AbstractAnsatz)
+
+Transform an [`AbstractAnsatz`](@ref) Tensor Network into the canonical form (aka Vidal gauge); i.e. the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
+"""
+function canonize! end
+
+"""
+    canonize(tn::AbstractAnsatz)
+
+Like [`canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
+"""
 canonize(tn::AbstractAnsatz, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
+
+"""
+    mixed_canonize!(tn::AbstractAnsatz, orthog_center)
+
+Transform an [`AbstractAnsatz`](@ref) Tensor Network into the mixed-canonical form, that is,
+for `i < orthog_center` the tensors are left-canonical and for `i >= orthog_center` the tensors are right-canonical,
+and in the `orthog_center` there is a tensor with the Schmidt coefficients in it.
+"""
+function mixed_canonize! end
+
+"""
+    mixed_canonize(tn::AbstractAnsatz, orthog_center)
+
+Like [`mixed_canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
+"""
+mixed_canonize(tn::AbstractAnsatz, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
+
 canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
+
+"""
+    isisometry(tn::AbstractAnsatz, site; kwargs...)
+
+Check if the tensor at a given [`Site`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
+"""
+function isisometry end
 
 """
     truncate(tn::AbstractAnsatz, bond; threshold = nothing, maxdim = nothing)
 
-Like [`truncate!`](@ref), but returns a new tensor network instead of modifying the original one.
+Like [`truncate!`](@ref), but returns a new Tensor Network instead of modifying the original one.
 """
 truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
 

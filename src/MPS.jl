@@ -402,12 +402,7 @@ function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
     return ψ
 end
 
-"""
-    canonize!(tn::MPS)
-
-Transform a [`MPS`](@ref) tensor network into the canonical form (Vidal form); i.e. the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
-"""
-function canonize!(ψ::MPS)
+function canonize!(ψ::AbstractMPO)
     Λ = Tensor[]
 
     # right-to-left QR sweep, get right-canonical tensors
@@ -437,16 +432,7 @@ function canonize!(ψ::MPS)
     return ψ
 end
 
-mixed_canonize(tn::MPS, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
-
 # TODO mixed_canonize! at bond
-"""
-    mixed_canonize!(tn::MPS, orthog_center)
-
-Transform a [`MPS`](@ref) tensor network into the mixed-canonical form, that is,
-for `i < orthog_center` the tensors are left-canonical and for `i >= orthog_center` the tensors are right-canonical,
-and in the `orthog_center` there is a matrix with singular values.
-"""
 function mixed_canonize!(tn::MPS, orthog_center)
     # left-to-right QR sweep (left-canonical tensors)
     for i in 1:(id(orthog_center) - 1)
