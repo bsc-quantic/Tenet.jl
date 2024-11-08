@@ -252,7 +252,7 @@
 
         @testset "two sites" begin
             mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-            gate = Quantum(TensorNetwork([Tensor(mat, [...])]), ; sites=[site"2", site"3", site"2'", site"3'"])
+            gate = Quantum(mat, [site"2", site"3", site"2'", site"3'"])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
