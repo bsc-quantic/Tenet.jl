@@ -207,15 +207,15 @@
         ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
         canonized = mixed_canonize(ψ, site"3")
 
-        @test length(tensors(canonized)) == length(tensors(ψ)) + 1
+        @test form(canonized) isa MixedCanonical
+        @test form(canonized).orthog_center == site"3"
 
-        @test isleftcanonical(canonized, site"1")
-        @test isleftcanonical(canonized, site"2")
-        @test isrightcanonical(canonized, site"3")
-        @test isrightcanonical(canonized, site"4")
-        @test isrightcanonical(canonized, site"5")
+        @test isisometry(canonized, site"1"; dir=:right)
+        @test isisometry(canonized, site"2"; dir=:right)
+        @test isisometry(canonized, site"4"; dir=:left)
+        @test isisometry(canonized, site"5"; dir=:left)
 
-        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
+        @test contract(canonized) ≈ contract(ψ)
     end
 
     @testset "expect" begin
