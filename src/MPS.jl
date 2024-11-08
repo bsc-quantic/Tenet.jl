@@ -431,6 +431,8 @@ function canonize!(ψ::AbstractMPO)
         push!(ψ, Λᵢ)
     end
 
+    ψ.form = Canonical()
+
     return ψ
 end
 
@@ -448,6 +450,8 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
 
     # center SVD sweep to get singular values
     # canonize_site!(tn, orthog_center; direction=:left, method=:svd)
+
+    tn.form = MixedCanonical(orthog_center)
 
     return tn
 end

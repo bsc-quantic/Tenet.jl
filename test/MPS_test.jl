@@ -164,6 +164,8 @@
         ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
         canonized = canonize(ψ)
 
+        @test form(canonized) isa Canonical
+
         @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
         @test isapprox(norm(ψ), norm(canonized))
