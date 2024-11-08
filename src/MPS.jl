@@ -450,9 +450,16 @@ function mixed_canonize!(tn::MPS, orthog_center)
     return tn
 end
 
-# TODO normalize! methods
-function LinearAlgebra.normalize!(ψ::MPS, orthog_center=site"1")
+LinearAlgebra.normalize!(ψ::AbstractMPO) = normalize!(form(ψ), ψ)
+
+function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
+    return tensors(ψ; at) ./= norm(ψ)
+end
+
+function LinearAlgebra.normalize!(orthog_center::MixedCanonical, ψ::AbstractMPO, orthog_center=site"1")
     mixed_canonize!(ψ, orthog_center)
     normalize!(tensors(ψ; at=orthog_center), 2)
     return ψ
 end
+
+# TODO function LinearAlgebra.normalize!(::Canonical, ψ::MPS) end
