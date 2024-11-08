@@ -77,7 +77,8 @@ struct TensorNetwork <: AbstractTensorNetwork
         if check_index_sizes
             for ind in keys(indexmap)
                 dims = map(tensor -> size(tensor, ind), indexmap[ind])
-                length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
+                length(unique(dims)) == 1 ||
+                    throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
             end
         end
 
@@ -357,7 +358,7 @@ macro unsafe_region(tn_sym, block)
                     pop!(Tenet._unsafe_context_stack[])
                 end
             end
-        end
+        end,
     )
 end
 
