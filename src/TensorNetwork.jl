@@ -41,6 +41,7 @@ struct TensorNetwork <: AbstractTensorNetwork
     tensormap::IdDict{Tensor,Vector{Symbol}}
 
     sorted_tensors::CachedField{Vector{Tensor}}
+    check_index_sizes::Ref{Bool}
 
     function TensorNetwork(tensors)
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
@@ -59,12 +60,65 @@ struct TensorNetwork <: AbstractTensorNetwork
             length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
         end
 
-        return new(indexmap, tensormap, CachedField{Vector{Tensor}}())
+        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(true))
     end
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
 TensorNetwork(tn::TensorNetwork) = tn
+
+struct UnsafeContext
+    refs::Vector{WeakRef}  # List of weak references
+
+    UnsafeContext() = new(Vector{WeakRef}())
+end
+
+# Global stack to manage nested unsafe contexts
+const _unsafe_context_stack = Ref{Vector{UnsafeContext}}(Vector{UnsafeContext}())
+
+# Function to get the current UnsafeContext
+function current_unsafe_context()
+    if isempty(Tenet._unsafe_context_stack[])  # Fixed typo here
+        return nothing
+    else
+        return Tenet._unsafe_context_stack[][end]
+    end
+end
+
+# Define the @unsafe_region macro
+macro unsafe_region(tn_sym, block)
+    return esc(quote
+        # Create a new UnsafeContext and push it onto the stack
+        local _uc = Tenet.UnsafeContext()
+        push!(Tenet._unsafe_context_stack[], _uc)
+
+        # Set check_index_sizes to false for the passed tensor network
+        $tn_sym.check_index_sizes[] = false
+
+        # Register the tensor network in the context
+        push!(_uc.refs, WeakRef($tn_sym))
+
+        try
+            # Execute the user-provided block
+            $(block)
+        finally
+            # Perform checks of registered tensor networks
+            for ref in _uc.refs
+                tn = ref.value
+                if tn !== nothing
+                    if !Tenet.__check_index_sizes(tn)
+                        throw(DimensionMismatch("Inconsistent size of indices"))
+                    else
+                        println("tn $tn is consistent")
+                    end
+                end
+            end
+
+            # Pop the UnsafeContext from the stack
+            pop!(Tenet._unsafe_context_stack[])
+        end
+    end)
+end
 
 """
     copy(tn::TensorNetwork)
@@ -72,6 +126,20 @@ TensorNetwork(tn::TensorNetwork) = tn
 Return a shallow copy of a [`TensorNetwork`](@ref).
 """
 Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
+
+function Base.copy(tn::TensorNetwork)
+    new_tn = TensorNetwork(tensors(tn))
+
+    # Check if there's an active UnsafeContext
+    uc = current_unsafe_context()
+    if uc !== nothing
+        # Set check_index_sizes to false
+        new_tn.check_index_sizes[] = false
+
+        # Register the new copy in the UnsafeContext
+        push!(uc.refs, WeakRef(new_tn))
+    end
+end
 
 Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
@@ -261,25 +329,25 @@ function __check_index_sizes(tn)
     return true
 end
 
-const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
+# const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
 
-macro unsafe_region(tn, block)
-    return esc(
-        quote
-            local old = copy($tn)
-            try
-                $with($is_unsafe_region => true) do
-                    $block
-                end
-            finally
-                if !Tenet.__check_index_sizes($tn)
-                    tn = old
-                    throw(DimensionMismatch("Inconsistent size of indices"))
-                end
-            end
-        end,
-    )
-end
+# macro unsafe_region(tn, block)
+#     return esc(
+#         quote
+#             local old = copy($tn)
+#             try
+#                 $with($is_unsafe_region => true) do
+#                     $block
+#                 end
+#             finally
+#                 if !Tenet.__check_index_sizes($tn)
+#                     tn = old
+#                     throw(DimensionMismatch("Inconsistent size of indices"))
+#                 end
+#             end
+#         end,
+#     )
+# end
 
 """
     push!(tn::AbstractTensorNetwork, tensor::Tensor)
