@@ -460,6 +460,8 @@ function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsite
     return ψ
 end
 
+LinearAlgebra.normalize!(ψ::AbstractMPO, site::Site) = normalize!(mixed_canonize!(ψ, site); at=site)
+
 function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
     mixed_canonize!(config, ψ, orthog_center)
     normalize!(tensors(ψ; at), 2)
