@@ -29,9 +29,9 @@ include("Ansatz.jl")
 export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
-export form
+export form, NonCanonical, MixedCanonical, Canonical
 
-export canonize_site, canonize_site!, canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!
+export canonize, canonize!, mixed_canonize, mixed_canonize!, truncate!, isisometry
 
 include("Product.jl")
 export Product
