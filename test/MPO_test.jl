@@ -18,7 +18,7 @@
     @test inds(H; at=site"2", dir=:left) == inds(H; at=site"1", dir=:right) !== nothing
     @test inds(H; at=site"3", dir=:left) == inds(H; at=site"2", dir=:right) !== nothing
 
-    for i in 1:length(arrays)
+    for i in 1:Tenet.ntensors(H)
         @test size(H, inds(H; at=Site(i))) == 2
         @test size(H, inds(H; at=Site(i; dual=true))) == 4
     end

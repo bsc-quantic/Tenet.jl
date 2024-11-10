@@ -93,18 +93,18 @@ using Tenet: canonize_site, canonize_site!
         @test isapprox(contract(ψ), conj(contract(ψ')))
     end
 
-    @testset "truncate" begin
+    @testset "truncate!" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
         canonize_site!(ψ, Site(2); direction=:right, method=:svd)
 
         # @test_throws Tenet.MissingSchmidtCoefficientsException truncate!(ψ, [site"1", site"2"]; maxdim=1)
         @test_throws ArgumentError truncate!(ψ, [site"1", site"2"]; maxdim=1)
 
-        truncated = Tenet.truncate(ψ, [site"2", site"3"]; maxdim=1)
+        truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
         @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
 
         singular_values = tensors(ψ; between=(site"2", site"3"))
-        truncated = Tenet.truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
+        truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
         @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
     end
 
