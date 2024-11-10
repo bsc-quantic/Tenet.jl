@@ -438,6 +438,7 @@ end
 
 # TODO mixed_canonize! at bond
 # TODO dispatch on form
+# TODO generalize to AbstractAnsatz
 function mixed_canonize!(tn::AbstractMPO, orthog_center)
     # left-to-right QR sweep (left-canonical tensors)
     for i in 1:(id(orthog_center) - 1)
