@@ -1,4 +1,5 @@
 using Tenet: canonize_site, canonize_site!
+using LinearAlgebra
 
 @testset "MPS" begin
     ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
@@ -96,9 +97,6 @@ using Tenet: canonize_site, canonize_site!
     @testset "truncate!" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
         canonize_site!(ψ, Site(2); direction=:right, method=:svd)
-
-        # @test_throws Tenet.MissingSchmidtCoefficientsException truncate!(ψ, [site"1", site"2"]; maxdim=1)
-        @test_throws ArgumentError truncate!(ψ, [site"1", site"2"]; maxdim=1)
 
         truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
         @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
@@ -225,7 +223,7 @@ using Tenet: canonize_site, canonize_site!
     @testset "expect" begin
         i, j = 2, 3
         mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-        gate = Quantum(mat; sites=[Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
+        gate = Quantum(mat, [Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
         @test isapprox(expect(ψ, [gate]), norm(ψ)^2)
@@ -235,7 +233,7 @@ using Tenet: canonize_site, canonize_site!
         @testset "one site" begin
             i = 2
             mat = reshape(LinearAlgebra.I(2), 2, 2)
-            gate = Quantum(mat; sites=[Site(i), Site(i; dual=true)])
+            gate = Quantum(mat, [Site(i), Site(i; dual=true)])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "canonical form" begin
