@@ -46,7 +46,7 @@ struct NonCanonical <: Form end
 [`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
 """
 struct MixedCanonical <: Form
-    orthogonality_center::Union{Site,Vector{Site}}
+    orthog_center::Union{Site,Vector{Site}}
 end
 
 """
