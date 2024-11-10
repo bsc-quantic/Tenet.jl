@@ -437,6 +437,7 @@ function canonize!(ψ::AbstractMPO)
 end
 
 # TODO mixed_canonize! at bond
+# TODO dispatch on form
 function mixed_canonize!(tn::AbstractMPO, orthog_center)
     # left-to-right QR sweep (left-canonical tensors)
     for i in 1:(id(orthog_center) - 1)
@@ -467,7 +468,7 @@ end
 LinearAlgebra.normalize!(ψ::AbstractMPO, site::Site) = normalize!(mixed_canonize!(ψ, site); at=site)
 
 function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
-    mixed_canonize!(config, ψ, orthog_center)
+    mixed_canonize!(ψ, at)
     normalize!(tensors(ψ; at), 2)
     return ψ
 end
