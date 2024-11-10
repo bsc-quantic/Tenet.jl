@@ -376,7 +376,7 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
 
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
-    return simple_update!(form(ψ), ψ, gate; kwargs...)
+    return simple_update!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
 end
 
 # TODO a lot of problems with merging... maybe we shouldn't merge manually
@@ -447,8 +447,8 @@ function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim
     gate = copy(gate)
 
     bond = sitel, siter = minmax(sites(gate; set=:outputs)...)
-    left_inds::Vector{Symbol} = !isnothing(leftindex(ψ, sitel)) ? [leftindex(ψ, sitel)] : Symbol[]
-    right_inds::Vector{Symbol} = !isnothing(rightindex(ψ, siter)) ? [rightindex(ψ, siter)] : Symbol[]
+    left_inds::Vector{Symbol} = !isnothing(inds(ψ; at=sitel, dir=:left)) ? [inds(ψ; at=sitel, dir=:left)] : Symbol[]
+    right_inds::Vector{Symbol} = !isnothing(inds(ψ; at=siter, dir=:right)) ? [inds(ψ; at=siter, dir=:right)] : Symbol[]
 
     virtualind::Symbol = inds(ψ; bond=bond)
 
