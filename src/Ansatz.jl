@@ -237,7 +237,7 @@ function isisometry end
 
 Like [`truncate!`](@ref), but returns a new Tensor Network instead of modifying the original one.
 """
-truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
+Base.truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
 
 """
     truncate!(tn::AbstractAnsatz, bond; threshold = nothing, maxdim = nothing)
