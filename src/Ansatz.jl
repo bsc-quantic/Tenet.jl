@@ -273,15 +273,21 @@ Truncate the dimension of the virtual `bond` of a [`NonCanonical`](@ref) Tensor 
     - `compute_local_svd`: Whether to compute the local SVD of the bond. If `true`, it will contract the bond and perform a SVD to get the local singular values. Defaults to `true`.
 """
 function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+    virtualind = inds(tn; bond)
+
     if compute_local_svd
+        tₗ = tensors(tn; at=min(bond...))
+        tᵣ = tensors(tn; at=max(bond...))
         contract!(tn; bond)
-        svd!(tn; virtualind=inds(tn; bond))
+
+        left_inds = filter(!=(virtualind), inds(tₗ))
+        right_inds = filter(!=(virtualind), inds(tᵣ))
+        svd!(tn; left_inds, right_inds, virtualind=virtualind)
     end
 
     spectrum = parent(tensors(tn; bond))
-    vind = inds(tn; bond)
 
-    maxdim = isnothing(maxdim) ? size(tn, vind) : maxdim
+    maxdim = isnothing(maxdim) ? size(tn, virtualind) : maxdim
 
     extent = if isnothing(threshold)
         1:maxdim
@@ -291,7 +297,7 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
         end - 1, maxdim)
     end
 
-    slice!(tn, vind, extent)
+    slice!(tn, virtualind, extent)
 
     return tn
 end
