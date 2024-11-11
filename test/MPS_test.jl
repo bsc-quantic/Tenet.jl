@@ -288,7 +288,9 @@ using LinearAlgebra
             Bᵢ = tensors(contract_some; at=Site(i))
 
             @test isapprox(contract(contract_some), contract(ψ))
-            @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; between=(Site(i), Site(i + 1)))
+            @test_throws Tenet.MissingSchmidtCoefficientsException tensors(
+                contract_some; between=(Site(i), Site(i + 1))
+            )
 
             @test isrightcanonical(contract_some, Site(i))
             @test isleftcanonical(contract(canonized; between=(Site(i), Site(i + 1)), direction=:right), Site(i + 1))
