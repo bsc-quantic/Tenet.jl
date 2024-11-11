@@ -43,7 +43,7 @@ struct TensorNetwork <: AbstractTensorNetwork
     sorted_tensors::CachedField{Vector{Tensor}}
     check_index_sizes::Ref{Bool}
 
-    function TensorNetwork(tensors)
+    function TensorNetwork(tensors; check_index_sizes::Union{Nothing,Bool}=nothing)
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
 
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
@@ -54,40 +54,27 @@ struct TensorNetwork <: AbstractTensorNetwork
             dict
         end
 
-        # Check for inconsistent index dimensions
-        for ind in keys(indexmap)
-            dims = map(tensor -> size(tensor, ind), indexmap[ind])
-            length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
-        end
-
-        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(true))
-    end
-
-    function TensorNetwork(tensors, check_index_sizes::Bool)
-        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
-
-        indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
-            for index in inds(tensor)
-                # TODO use lambda? `Tensor[]` might be reused
-                push!(get!(dict, index, Tensor[]), tensor)
-            end
-            dict
-        end
-
-        if check_index_sizes
-            for ind in keys(indexmap)
+        if check_index_sizes !== nothing && check_index_sizes !== false
+            for ind in keys(indexmap) # Check for inconsistent index dimensions
                 dims = map(tensor -> size(tensor, ind), indexmap[ind])
                 length(unique(dims)) == 1 ||
                     throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
             end
+
+            return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(true))
         end
 
-        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(check_index_sizes))
+        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(false))
     end
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
 TensorNetwork(tn::TensorNetwork) = tn
+
+function set_unsafe_context!(tn::TensorNetwork, uc::Bool)
+    tn.check_index_sizes[] = uc
+    return tn
+end
 
 """
     copy(tn::TensorNetwork)
@@ -95,7 +82,7 @@ TensorNetwork(tn::TensorNetwork) = tn
 Return a shallow copy of a [`TensorNetwork`](@ref).
 """
 function Base.copy(tn::TensorNetwork)
-    new_tn = TensorNetwork(tensors(tn), tn.check_index_sizes[])
+    new_tn = TensorNetwork(tensors(tn); check_index_sizes=tn.check_index_sizes[])
 
     # Check if there's an active UnsafeContext with tn in it
     uc = current_unsafe_context()
@@ -305,7 +292,7 @@ Base.values(uc::UnsafeContext) = map(x -> x.value, uc.refs)
 # Global stack to manage nested unsafe contexts
 const _unsafe_context_stack = Ref{Vector{UnsafeContext}}(Vector{UnsafeContext}())
 
-Base.in(tn::TensorNetwork, tnstack::Vector{TensorNetwork}) = any(tn_ -> tn === tn_, tnstack)
+Base.in(tn::TensorNetwork, tnstack::Vector{TensorNetwork}) = any(tn_ -> tn == tn_, tnstack)
 Base.in(tn::TensorNetwork, ucstack::Vector{UnsafeContext}) = any(uc -> tn ∈ values(uc), ucstack)
 Base.in(tn::TensorNetwork, uc::UnsafeContext) = tn ∈ values(uc)
 
@@ -329,7 +316,8 @@ macro unsafe_region(tn_sym, block)
             push!(Tenet._unsafe_context_stack[], _uc)
 
             # Set check_index_sizes to false for the passed tensor network
-            $tn_sym.check_index_sizes[] = false
+            Tenet.set_unsafe_context!($tn_sym, false)
+            # $tn_sym.check_index_sizes[] = false
 
             # Register the tensor network in the context
             push!(_uc.refs, WeakRef($tn_sym))
