@@ -54,7 +54,7 @@ struct TensorNetwork <: AbstractTensorNetwork
             dict
         end
 
-        if check_index_sizes === nothing && check_index_sizes == true
+        if check_index_sizes === nothing || check_index_sizes == true
             for ind in keys(indexmap) # Check for inconsistent index dimensions
                 dims = map(tensor -> size(tensor, ind), indexmap[ind])
                 length(unique(dims)) == 1 ||
