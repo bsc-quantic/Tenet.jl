@@ -311,7 +311,7 @@ end
 function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
     truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
     # requires a sweep to recanonize the TN
-    return canonize!(tn, bond)
+    return canonize!(tn)
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
