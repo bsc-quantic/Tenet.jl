@@ -207,22 +207,18 @@
     end
 
     @testset "MPS" begin
-        tn = MPS([ones(2, 2), ones(2, 2, 2), ones(2, 2)])
-        # test_frule(MPS, Ansatz(tn), form(tn))
-        test_rrule(MPS, Ansatz(tn), form(tn))
+        @testset "Open" begin
+            tn = MPS([ones(2, 2), ones(2, 2, 2), ones(2, 2)])
+            # test_frule(MPS, Ansatz(tn), form(tn))
+            test_rrule(MPS, Ansatz(tn), form(tn))
+        end
+    end
 
-        # TODO reenable periodic MPS
-        # tn = MPS([ones(2, 2, 2), ones(2, 2, 2), ones(2, 2, 2)])
-        # test_frule(Chain, Quantum(tn), Periodic())
-        # test_rrule(Chain, Quantum(tn), Periodic())
-
-        tn = MPO([ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
-        # test_frule(MPO, Ansatz(tn), form(tn))
-        test_rrule(MPO, Ansatz(tn), form(tn))
-
-        # TODO reenable periodic MPO
-        # tn = Chain(Operator(), Periodic(), [ones(2, 2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2, 2)])
-        # test_frule(Chain, Quantum(tn), Periodic())
-        # test_rrule(Chain, Quantum(tn), Periodic())
+    @testset "MPO" begin
+        @testset "Open" begin
+            tn = MPO([ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
+            # test_frule(MPO, Ansatz(tn), form(tn))
+            test_rrule(MPO, Ansatz(tn), form(tn))
+        end
     end
 end
