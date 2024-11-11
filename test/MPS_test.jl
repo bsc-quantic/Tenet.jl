@@ -236,34 +236,38 @@ using LinearAlgebra
             gate = Quantum(mat, [Site(i), Site(i; dual=true)])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
-            @testset "NonCanonical" let ψ = deepcopy(ψ)
-                evolve!(ψ, gate; threshold=1e-14)
-                @test length(tensors(ψ)) == 5
-                @test issetequal(size.(tensors(ψ)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(contract(ψ), contract(ψ))
+            @testset "NonCanonical" begin
+                ϕ = deepcopy(ψ)
+                evolve!(ϕ, gate; threshold=1e-14)
+                @test length(tensors(ϕ)) == 5
+                @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
+                @test isapprox(contract(ϕ), contract(ψ))
             end
 
-            @testset "Canonical" let ψ = deepcopy(ψ)
-                canonize!(ψ)
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
-                @test isapprox(contract(evolved), contract(ψ))
-                @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+            @testset "Canonical" begin
+                ϕ = deepcopy(ψ)
+                canonize!(ϕ)
+                evolve!(ϕ, gate; threshold=1e-14)
+                @test issetequal(size.(tensors(ϕ)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+                @test isapprox(contract(ϕ), contract(ψ))
             end
         end
 
         @testset "two sites" begin
-            mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
+            mat = reshape(LinearAlgebra.I(4), 2, 2, 2, 2)
             gate = Quantum(mat, [site"2", site"3", site"2'", site"3'"])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
-            @testset "NonCanonical" let ψ = deepcopy(ψ)
-                evolve!(deepcopy(ψ), gate; threshold=1e-14)
-                @test length(tensors(evolved)) == 5
-                @test issetequal(size.(tensors(evolved)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(contract(evolved), contract(ψ))
+            @testset "NonCanonical" begin
+                ϕ = deepcopy(ψ)
+                evolve!(ϕ, gate; threshold=1e-14)
+                @test length(tensors(ϕ)) == 5
+                @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
+                @test isapprox(contract(ϕ), contract(ψ))
             end
 
-            @testset "Canonical" let ψ = deepcopy(ψ), _ = canonize!(ψ)
+            @testset "Canonical" begin
+                ψ = deepcopy(ψ)
                 canonize!(ψ)
                 evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
                 @test isapprox(contract(evolved), contract(ψ))
