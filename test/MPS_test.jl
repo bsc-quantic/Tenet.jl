@@ -29,7 +29,7 @@ using LinearAlgebra
     @test inds(ψ; at=site"3", dir=:left) == inds(ψ; at=site"2", dir=:right) !== nothing
     @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
 
-    @testset "Identity constructor" begin
+    @testset "identity constructor" begin
         nsites_cases = [6, 7, 6, 7]
         physdim_cases = [3, 2, 3, 2]
         maxdim_cases = [nothing, nothing, 9, 4] # nothing means default
