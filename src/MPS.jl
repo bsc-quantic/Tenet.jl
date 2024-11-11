@@ -346,7 +346,6 @@ function isisometry(ψ::AbstractMPO, site; dir, atol::Real=1e-12)
     dirind = inds(ψ; at=site, dir)
 
     if isnothing(dirind)
-        @show parent(contract(tensor, conj(tensor)))
         return isapprox(parent(contract(tensor, conj(tensor))), fill(true); atol)
     end
 
