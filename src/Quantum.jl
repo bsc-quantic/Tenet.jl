@@ -74,6 +74,29 @@ end
 Quantum(tn::Quantum) = tn
 
 """
+    Quantum(array, sites)
+
+Constructs a [`Quantum`](@ref) Tensor Network from an array and a list of sites. Useful for simple operators like gates.
+"""
+function Quantum(array, sites)
+    if ndims(array) != length(sites)
+        throw(ArgumentError("Number of sites must match number of dimensions of array"))
+    end
+
+    gen = IndexCounter()
+    symbols = map(_ -> nextindex!(gen), sites)
+    sitemap = Dict{Site,Symbol}(
+        map(sites, 1:ndims(array)) do site, i
+            site => symbols[i]
+        end,
+    )
+    tensor = Tensor(array, symbols)
+    tn = TensorNetwork([tensor])
+    qtn = Quantum(tn, sitemap)
+    return qtn
+end
+
+"""
     TensorNetwork(q::AbstractQuantum)
 
 Returns the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
@@ -166,11 +189,17 @@ function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pai
 end
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
-    ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
-
     if reset
         resetindex!(a)
         resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+    end
+
+    sitesa = if ioa === :inputs
+        collect(sites(a; set=:inputs))
+    elseif ioa === :outputs
+        collect(sites(a; set=:outputs))
+    else
+        error("Invalid argument: $(Meta.quot(ioa))")
     end
 
     sitesb = if iob === :inputs
@@ -178,11 +207,16 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     elseif iob === :outputs
         collect(sites(b; set=:outputs))
     else
-        error("Invalid argument: :$iob")
+        error("Invalid argument: :$(Meta.quot(iob))")
     end
 
-    replacements = map(sitesb) do site
-        inds(b; at=site) => inds(a; at=ioa != iob ? site' : site)
+    # TODO select sites to reindex
+    targetsites = (ioa === :inputs ? adjoint.(sitesa) : sitesa) ∩ (iob === :inputs ? adjoint.(sitesb) : sitesb)
+
+    replacements = map(targetsites) do site
+        siteb = iob === :inputs ? site' : site
+        sitea = ioa === :inputs ? site' : site
+        inds(b; at=siteb) => inds(a; at=sitea)
     end
 
     if issetequal(first.(replacements), last.(replacements))

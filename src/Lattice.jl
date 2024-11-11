@@ -29,8 +29,10 @@ end
 Base.copy(lattice::Lattice) = Lattice(copy(lattice.mapping), copy(lattice.graph))
 Base.:(==)(a::Lattice, b::Lattice) = a.mapping == b.mapping && a.graph == b.graph
 
+# TODO these where needed by ChainRulesTestUtils, do we still need them?
 Base.zero(::Type{Lattice}) = Lattice(BijectiveIdDict{Site,Int}(), zero(Graphs.SimpleGraph{Int}))
 Base.zero(::Lattice) = zero(Lattice)
+
 Graphs.is_directed(::Type{Lattice}) = false
 
 function Graphs.vertices(lattice::Lattice)

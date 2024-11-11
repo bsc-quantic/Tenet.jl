@@ -46,7 +46,7 @@ struct NonCanonical <: Form end
 [`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
 """
 struct MixedCanonical <: Form
-    orthogonality_center::Union{Site,Vector{Site}}
+    orthog_center::Union{Site,Vector{Site}}
 end
 
 """
@@ -192,15 +192,52 @@ Contract the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@r
 """
 @kwmethod contract!(tn::AbstractAnsatz; bond) = contract!(tn, inds(tn; bond))
 
+"""
+    canonize!(tn::AbstractAnsatz)
+
+Transform an [`AbstractAnsatz`](@ref) Tensor Network into the canonical form (aka Vidal gauge); i.e. the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
+"""
+function canonize! end
+
+"""
+    canonize(tn::AbstractAnsatz)
+
+Like [`canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
+"""
 canonize(tn::AbstractAnsatz, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
+
+"""
+    mixed_canonize!(tn::AbstractAnsatz, orthog_center)
+
+Transform an [`AbstractAnsatz`](@ref) Tensor Network into the mixed-canonical form, that is,
+for `i < orthog_center` the tensors are left-canonical and for `i >= orthog_center` the tensors are right-canonical,
+and in the `orthog_center` there is a tensor with the Schmidt coefficients in it.
+"""
+function mixed_canonize! end
+
+"""
+    mixed_canonize(tn::AbstractAnsatz, orthog_center)
+
+Like [`mixed_canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
+"""
+mixed_canonize(tn::AbstractAnsatz, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
+
 canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
+
+"""
+    isisometry(tn::AbstractAnsatz, site; dir, kwargs...)
+
+Check if the tensor at a given [`Site`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
+The `dir` keyword argument specifies the direction of the isometry to check.
+"""
+function isisometry end
 
 """
     truncate(tn::AbstractAnsatz, bond; threshold = nothing, maxdim = nothing)
 
-Like [`truncate!`](@ref), but returns a new tensor network instead of modifying the original one.
+Like [`truncate!`](@ref), but returns a new Tensor Network instead of modifying the original one.
 """
-truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
+Base.truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
 
 """
     truncate!(tn::AbstractAnsatz, bond; threshold = nothing, maxdim = nothing)
@@ -236,15 +273,21 @@ Truncate the dimension of the virtual `bond` of a [`NonCanonical`](@ref) Tensor 
     - `compute_local_svd`: Whether to compute the local SVD of the bond. If `true`, it will contract the bond and perform a SVD to get the local singular values. Defaults to `true`.
 """
 function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+    virtualind = inds(tn; bond)
+
     if compute_local_svd
+        tₗ = tensors(tn; at=min(bond...))
+        tᵣ = tensors(tn; at=max(bond...))
         contract!(tn; bond)
-        svd!(tn; virtualind=inds(tn; bond))
+
+        left_inds = filter(!=(virtualind), inds(tₗ))
+        right_inds = filter(!=(virtualind), inds(tᵣ))
+        svd!(tn; left_inds, right_inds, virtualind=virtualind)
     end
 
     spectrum = parent(tensors(tn; bond))
-    vind = inds(tn; bond)
 
-    maxdim = isnothing(maxdim) ? size(tn, vind) : maxdim
+    maxdim = isnothing(maxdim) ? size(tn, virtualind) : maxdim
 
     extent = if isnothing(threshold)
         1:maxdim
@@ -254,7 +297,7 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
         end - 1, maxdim)
     end
 
-    slice!(tn, vind, extent)
+    slice!(tn, virtualind, extent)
 
     return tn
 end
@@ -268,7 +311,7 @@ end
 function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
     truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
     # requires a sweep to recanonize the TN
-    return canonize!(tn, bond)
+    return canonize!(tn)
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
@@ -333,7 +376,7 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
 
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
-    return simple_update!(form(ψ), ψ, gate; kwargs...)
+    return simple_update!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
 end
 
 # TODO a lot of problems with merging... maybe we shouldn't merge manually
@@ -376,9 +419,19 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
     rinds = filter(!=(vind), inds(tensors(ψ; at=siter)))
     contract!(ψ; bond)
 
+    # TODO replace for `merge!` when #243 is fixed
+    # reindex contracting indices to temporary names to avoid issues
+    oinds = Dict(site => inds(ψ; at=site) for site in sites(gate; set=:outputs))
+    tmpinds = Dict(site => gensym(:tmp) for site in sites(gate; set=:inputs))
+    replace!(gate, [inds(gate; at=site) => i for (site, i) in tmpinds])
+    replace!(ψ, [inds(ψ; at=site') => i for (site, i) in tmpinds])
+
+    # NOTE `replace!` is getting confused when a index is already there even if it would be overriden
+    # TODO fix this to be handled in one call -> replace when #244 is fixed
+    replace!(gate, [inds(gate; at=site) => gensym() for (site, i) in oinds])
+    replace!(gate, [inds(gate; at=site) => i for (site, i) in oinds])
+
     # contract physical inds with gate
-    @reindex! outputs(ψ) => outputs(gate) reset = false
-    @reindex! inputs(gate) => outputs(ψ) reset = false
     merge!(ψ, gate; reset=false)
     contract!(ψ, inds(gate; set=:inputs))
 
@@ -395,129 +448,8 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
 end
 
 # TODO remove `renormalize` argument?
-# TODO refactor code
+# TODO optimize correctly -> avoid recanonization + use lateral Λs
 function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
-    @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
-    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
-
-    # shallow copy to avoid problems if errors in mid execution
-    gate = copy(gate)
-
-    bond = sitel, siter = minmax(sites(gate; set=:outputs)...)
-    left_inds::Vector{Symbol} = !isnothing(leftindex(ψ, sitel)) ? [leftindex(ψ, sitel)] : Symbol[]
-    right_inds::Vector{Symbol} = !isnothing(rightindex(ψ, siter)) ? [rightindex(ψ, siter)] : Symbol[]
-
-    virtualind::Symbol = inds(ψ; bond=bond)
-
-    contract_2sitewf!(ψ, bond)
-
-    # reindex contracting index
-    contracting_inds = [gensym(:tmp) for _ in sites(gate; set=:inputs)]
-    replace!(
-        ψ,
-        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
-            inds(ψ; at=site') => contracting_index
-        end,
-    )
-    replace!(
-        gate,
-        map(zip(sites(gate; set=:inputs), contracting_inds)) do (site, contracting_index)
-            inds(gate; at=site) => contracting_index
-        end,
-    )
-
-    # replace output indices of the gate for gensym indices
-    output_inds = [gensym(:out) for _ in sites(gate; set=:outputs)]
-    replace!(
-        gate,
-        map(zip(sites(gate; set=:outputs), output_inds)) do (site, out)
-            inds(gate; at=site) => out
-        end,
-    )
-
-    # reindex output of gate to match TN sitemap
-    for site in sites(gate; set=:outputs)
-        if inds(ψ; at=site) != inds(gate; at=site)
-            replace!(gate, inds(gate; at=site) => inds(ψ; at=site))
-        end
-    end
-
-    # contract physical inds
-    merge!(ψ, gate)
-    contract!(ψ, contracting_inds)
-
-    # decompose using SVD
-    push!(left_inds, inds(ψ; at=sitel))
-    push!(right_inds, inds(ψ; at=siter))
-
-    unpack_2sitewf!(ψ, bond, left_inds, right_inds, virtualind)
-
-    # truncate virtual index
-    if any(!isnothing, [threshold, maxdim])
-        truncate!(ψ, bond; threshold, maxdim)
-        renormalize && normalize!(tensors(ψ; between=bond))
-    end
-
-    return ψ
-end
-
-# TODO refactor code
-"""
-    contract_2sitewf!(ψ::AbstractAnsatz, bond)
-
-For a given [`AbstractAnsatz`](@ref) in the canonical form, creates the two-site wave function θ with Λᵢ₋₁Γᵢ₋₁ΛᵢΓᵢΛᵢ₊₁,
-where i is the `bond`, and replaces the Γᵢ₋₁ΛᵢΓᵢ tensors with θ.
-"""
-function contract_2sitewf!(ψ::AbstractAnsatz, bond)
-    @assert form(ψ) == Canonical() "The tensor network must be in canonical form"
-
-    sitel, siter = bond # TODO Check if bond is valid
-    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
-        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
-
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
-    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
-
-    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
-
-    contract!(ψ, inds(ψ; bond=bond))
-
-    return ψ
-end
-
-# TODO refactor code
-"""
-    unpack_2sitewf!(ψ::AbstractAnsatz, bond)
-
-For a given [`AbstractAnsatz`](@ref) that contains a two-site wave function θ in a bond, it decomposes θ into the canonical
-form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
-"""
-function unpack_2sitewf!(ψ::AbstractAnsatz, bond, left_inds, right_inds, virtualind)
-    @assert form(ψ) == Canonical() "The tensor network must be in canonical form"
-
-    sitel, siter = bond # TODO Check if bond is valid
-    (0 < id(sitel) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
-        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
-
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
-    Λᵢ₊₁ = id(siter) == nsites(ψ) ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
-
-    # do svd of the θ tensor
-    θ = tensors(ψ; at=sitel)
-    U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
-
-    # contract with the inverse of Λᵢ and Λᵢ₊₂
-    Γᵢ₋₁ =
-        isnothing(Λᵢ₋₁) ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)); atol=1e-32)), inds(Λᵢ₋₁)); dims=())
-    Γᵢ =
-        isnothing(Λᵢ₊₁) ? Vt : contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)); atol=1e-32)), inds(Λᵢ₊₁)), Vt; dims=())
-
-    delete!(ψ, θ)
-
-    push!(ψ, Γᵢ₋₁)
-    push!(ψ, s)
-    push!(ψ, Γᵢ)
-
-    return ψ
+    simple_update!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
+    return canonize!(ψ)
 end

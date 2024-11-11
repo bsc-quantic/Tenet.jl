@@ -15,7 +15,8 @@ include("Utils.jl")
     include("Lattice_test.jl")
     include("Ansatz_test.jl")
     include("Product_test.jl")
-    include("Chain_test.jl")
+    include("MPS_test.jl")
+    include("MPO_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin

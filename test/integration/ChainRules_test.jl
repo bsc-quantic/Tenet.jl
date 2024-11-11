@@ -205,4 +205,20 @@
         test_frule(Product, Ansatz(tn))
         test_rrule(Product, Ansatz(tn))
     end
+
+    @testset "MPS" begin
+        @testset "Open" begin
+            tn = MPS([ones(2, 2), ones(2, 2, 2), ones(2, 2)])
+            # test_frule(MPS, Ansatz(tn), form(tn))
+            test_rrule(MPS, Ansatz(tn), form(tn))
+        end
+    end
+
+    @testset "MPO" begin
+        @testset "Open" begin
+            tn = MPO([ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
+            # test_frule(MPO, Ansatz(tn), form(tn))
+            test_rrule(MPO, Ansatz(tn), form(tn))
+        end
+    end
 end

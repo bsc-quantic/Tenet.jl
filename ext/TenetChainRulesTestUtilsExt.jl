@@ -33,6 +33,11 @@ function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, tn::Ansatz)
 end
 
 ChainRulesTestUtils.rand_tangent(::AbstractRNG, lattice::Tenet.Lattice) = NoTangent()
+ChainRulesTestUtils.test_approx(::AbstractZero, form::Tenet.Lattice, msg=""; kwargs...) = true
 ChainRulesTestUtils.test_approx(actual::Tenet.Lattice, expected::Tenet.Lattice, msg; kwargs...) = actual == expected
+
+ChainRulesTestUtils.rand_tangent(::AbstractRNG, form::Tenet.Form) = NoTangent()
+ChainRulesTestUtils.test_approx(::AbstractZero, form::Tenet.Form, msg=""; kwargs...) = true
+ChainRulesTestUtils.test_approx(actual::Tenet.Form, expected::Tenet.Form, msg; kwargs...) = actual == expected
 
 end
