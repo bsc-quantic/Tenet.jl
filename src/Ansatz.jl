@@ -419,9 +419,19 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
     rinds = filter(!=(vind), inds(tensors(ψ; at=siter)))
     contract!(ψ; bond)
 
+    # TODO replace for `merge!` when #243 is fixed
+    # reindex contracting indices to temporary names to avoid issues
+    oinds = Dict(site => inds(ψ; at=site) for site in sites(gate; set=:outputs))
+    tmpinds = Dict(site => gensym(:tmp) for site in sites(gate; set=:inputs))
+    replace!(gate, [inds(gate; at=site) => i for (site, i) in tmpinds])
+    replace!(ψ, [inds(ψ; at=site') => i for (site, i) in tmpinds])
+
+    # NOTE `replace!` is getting confused when a index is already there even if it would be overriden
+    # TODO fix this to be handled in one call -> replace when #244 is fixed
+    replace!(gate, [inds(gate; at=site) => gensym() for (site, i) in oinds])
+    replace!(gate, [inds(gate; at=site) => i for (site, i) in oinds])
+
     # contract physical inds with gate
-    @reindex! outputs(ψ) => outputs(gate) reset = false
-    @reindex! inputs(gate) => outputs(ψ) reset = false
     merge!(ψ, gate; reset=false)
     contract!(ψ, inds(gate; set=:inputs))
 
