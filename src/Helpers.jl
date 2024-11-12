@@ -51,7 +51,7 @@ wrap_eps(x) = eps(x)
 wrap_eps(::Type{Complex{T}}) where {T} = eps(T)
 
 struct UnsafeScope
-    refs::Vector{WeakRef} # List of weak references
+    refs::Vector{WeakRef}
 
     UnsafeScope() = new(Vector{WeakRef}())
 end
