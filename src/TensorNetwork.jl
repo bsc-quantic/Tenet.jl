@@ -41,9 +41,10 @@ struct TensorNetwork <: AbstractTensorNetwork
     tensormap::IdDict{Tensor,Vector{Symbol}}
 
     sorted_tensors::CachedField{Vector{Tensor}}
-    check_index_sizes::Ref{Bool}
+    unsafe::Ref{Union{Nothing,UnsafeContext}}
 
-    function TensorNetwork(tensors; check_index_sizes::Union{Nothing,Bool}=nothing)
+    # TODO: Find a way to remove the `unsafe` keyword argument from the constructor
+    function TensorNetwork(tensors; unsafe::Union{Nothing,UnsafeContext}=nothing)
         tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
 
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
@@ -54,25 +55,25 @@ struct TensorNetwork <: AbstractTensorNetwork
             dict
         end
 
-        if check_index_sizes === nothing || check_index_sizes == true
+        if isnothing(unsafe) # If there is not an active UnsafeContext, check for index sizes
             for ind in keys(indexmap) # Check for inconsistent index dimensions
                 dims = map(tensor -> size(tensor, ind), indexmap[ind])
                 length(unique(dims)) == 1 ||
                     throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
             end
 
-            return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(true))
+            return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref{Union{Nothing,UnsafeContext}}(nothing))
         end
 
-        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref(false))
+        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref{Union{Nothing,UnsafeContext}}(unsafe))
     end
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
 TensorNetwork(tn::TensorNetwork) = tn
 
-function set_unsafe_context!(tn::TensorNetwork, uc::Bool)
-    tn.check_index_sizes[] = uc
+function set_unsafe_context!(tn::TensorNetwork, uc::Union{Nothing,UnsafeContext})
+    tn.unsafe[] = uc
     return tn
 end
 
@@ -82,12 +83,11 @@ end
 Return a shallow copy of a [`TensorNetwork`](@ref).
 """
 function Base.copy(tn::TensorNetwork)
-    new_tn = TensorNetwork(tensors(tn); check_index_sizes=tn.check_index_sizes[])
+    new_tn = TensorNetwork(tensors(tn); unsafe=tn.unsafe[])
 
-    # Check if there's an active UnsafeContext with tn in it
-    uc = current_unsafe_context()
-    if uc !== nothing && tn ∈ uc
-        push!(uc.refs, WeakRef(new_tn)) # Register the new copy in the UnsafeContext
+    # Check if there's an active UnsafeContext in the current tn
+    if !isnothing(tn.unsafe[])
+        push!(tn.unsafe[].refs, WeakRef(new_tn)) # Register the new copy in the UnsafeContext
     end
 
     return new_tn
@@ -281,18 +281,6 @@ function __check_index_sizes(tn)
     return true
 end
 
-struct UnsafeContext
-    refs::Vector{WeakRef}  # List of weak references
-
-    UnsafeContext() = new(Vector{WeakRef}())
-end
-
-Base.values(uc::UnsafeContext) = map(x -> x.value, uc.refs)
-
-# Global stack to manage nested unsafe contexts
-const _unsafe_context_stack = Ref{Vector{UnsafeContext}}(Vector{UnsafeContext}())
-
-Base.in(tn::TensorNetwork, tnstack::Vector{TensorNetwork}) = any(tn_ -> tn == tn_, tnstack)
 Base.in(tn::TensorNetwork, ucstack::Vector{UnsafeContext}) = any(uc -> tn ∈ values(uc), ucstack)
 Base.in(tn::TensorNetwork, uc::UnsafeContext) = tn ∈ values(uc)
 
@@ -311,16 +299,12 @@ macro unsafe_region(tn_sym, block)
         quote
             local old = copy($tn_sym)
 
-            # Create a new UnsafeContext and push it onto the stack
+            # Create a new UnsafeContext and set it to the current tn
             local _uc = Tenet.UnsafeContext()
-            push!(Tenet._unsafe_context_stack[], _uc)
-
-            # Set check_index_sizes to false for the passed tensor network
-            Tenet.set_unsafe_context!($tn_sym, false)
-            # $tn_sym.check_index_sizes[] = false
+            Tenet.set_unsafe_context!($tn_sym, _uc)
 
             # Register the tensor network in the context
-            push!(_uc.refs, WeakRef($tn_sym))
+            push!($tn_sym.unsafe[].refs, WeakRef($tn_sym))
 
             e = nothing
             try
@@ -331,19 +315,19 @@ macro unsafe_region(tn_sym, block)
             finally
                 if e === nothing
                     # Perform checks of registered tensor networks
-                    for ref in _uc.refs
+                    for ref in $tn_sym.unsafe[].refs
                         tn = ref.value
-                        if tn !== nothing
+                        if tn !== nothing && tn ∈ values($tn_sym.unsafe[])
                             if !Tenet.__check_index_sizes(tn)
                                 $(tn_sym) = old
-                                pop!(Tenet._unsafe_context_stack[])
+
+                                # Set `unsafe` field to `nothing`
+                                Tenet.set_unsafe_context!($tn_sym, nothing)
+
                                 throw(DimensionMismatch("Inconsistent size of indices"))
                             end
                         end
                     end
-
-                    # Pop the UnsafeContext from the stack
-                    pop!(Tenet._unsafe_context_stack[])
                 end
             end
         end,
@@ -361,9 +345,8 @@ function Base.push!(tn::AbstractTensorNetwork, tensor::Tensor)
     tn = TensorNetwork(tn)
     tensor ∈ keys(tn.tensormap) && return tn
 
-    # Check if there's an active UnsafeContext with tn in it
-    uc = current_unsafe_context()
-    if uc === nothing || tn ∉ uc  # Only check index sizes if we are not in an unsafe region
+    # Check if there's an active UnsafeContext in the tn
+    if isnothing(tn.unsafe[]) # Only check index sizes if we are not in an unsafe region
         for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
             throw(
                 DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))")
