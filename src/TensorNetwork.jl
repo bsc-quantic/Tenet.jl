@@ -281,7 +281,6 @@ function __check_index_sizes(tn)
     return true
 end
 
-Base.in(tn::TensorNetwork, ucstack::Vector{UnsafeContext}) = any(uc -> tn ∈ values(uc), ucstack)
 Base.in(tn::TensorNetwork, uc::UnsafeContext) = tn ∈ values(uc)
 
 # Function to get the current UnsafeContext
