@@ -49,3 +49,11 @@ resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
 # if is Complex, extract the parametric type and get the eps of that
 wrap_eps(x) = eps(x)
 wrap_eps(::Type{Complex{T}}) where {T} = eps(T)
+
+struct UnsafeScope
+    refs::Vector{WeakRef}
+
+    UnsafeScope() = new(Vector{WeakRef}())
+end
+
+Base.values(uc::UnsafeScope) = map(x -> x.value, uc.refs)
