@@ -55,7 +55,7 @@ struct TensorNetwork <: AbstractTensorNetwork
             dict
         end
 
-                # Check index size consistency if not inside an `UnsafeScope`
+        # Check index size consistency if not inside an `UnsafeScope`
         if isnothing(unsafe) # If there is not an active UnsafeScope, check for index sizes
             for ind in keys(indexmap)
                 dims = map(tensor -> size(tensor, ind), indexmap[ind])
