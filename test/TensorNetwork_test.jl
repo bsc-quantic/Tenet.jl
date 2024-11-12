@@ -731,6 +731,17 @@
                     pop!(tn, tensor)
                 end
 
+                # Double copy should also throw an error:
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    tn3 = copy(tn2)
+                    push!(tn3, tensor)
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
                 Tenet.@unsafe_region tn begin # This should not throw an error
                     tensor = Tensor(ones(3, 2), [:c, :d])
                     push!(tn, tensor)
