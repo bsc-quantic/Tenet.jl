@@ -715,6 +715,7 @@
                 @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
                     tensor = Tensor(ones(3, 2), [:c, :d])
                     push!(tn, tensor)
+                    tn2 = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
                     push!(tn2, tensor) # tn2 is not specified in @unsafe_region argument
                     @test length(tensors(tn)) == 3
                     pop!(tn, tensor)
@@ -725,7 +726,7 @@
                     tensor = Tensor(ones(3, 2), [:c, :d])
                     push!(tn, tensor)
                     tn2 = copy(tn)
-                    push!(tn2, tensor)  # tn2 is not specified in @unsafe_region
+                    push!(tn2, tensor)
                     @test length(tensors(tn)) == 3
                     pop!(tn, tensor)
                 end
