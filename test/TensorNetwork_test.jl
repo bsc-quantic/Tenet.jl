@@ -708,6 +708,38 @@
                 @test tensors(tn)[1] === a
                 @test tensors(tn)[2] === b
             end
+
+            @testset "copy inside unsafe region" begin
+                tn = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    push!(tn2, tensor) # tn2 is not specified in @unsafe_region argument
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
+                # Here still errors since at the end `tn2` is inconsistent:
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    push!(tn2, tensor)  # tn2 is not specified in @unsafe_region
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
+                Tenet.@unsafe_region tn begin # This should not throw an error
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    push!(tn2, tensor)  # tn2 is not specified in @unsafe_region
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                    pop!(tn2, tensor)
+                end
+            end
         end
     end
 
