@@ -179,10 +179,13 @@ function transform!(tn::TensorNetwork, config::Truncate)
         for (dim, index) in enumerate(inds(tensor))
             index ∈ skip_inds && continue
 
-            zeroslices = iszero.(eachslice(tensor; dims=dim))
-            any(zeroslices) || continue
+            # Use atol to determine small slices
+            small_slices = [maximum(abs.(s)) < config.atol for s in eachslice(tensor; dims=dim)]
+            any(small_slices) || continue
 
-            slice!(tn, index, count(!, zeroslices) == 1 ? findfirst(!, zeroslices) : findall(!, zeroslices))
+            # Keep slices where the maximum absolute value is greater than or equal to atol
+            slices_to_keep = count(!, small_slices) == 1 ? findfirst(!, small_slices) : findall(!, small_slices)
+            slice!(tn, index, slices_to_keep)
         end
     end
 
