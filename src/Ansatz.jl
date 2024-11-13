@@ -46,7 +46,7 @@ struct NonCanonical <: Form end
 [`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
 
   - The orthogonality center is a [`Site`](@ref) or a vector of [`Site`](@ref)s. The tensors to the
-left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
+    left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
 """
 struct MixedCanonical <: Form
     orthog_center::Union{Site,Vector{Site}}

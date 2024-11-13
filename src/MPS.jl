@@ -38,8 +38,20 @@ Base.zero(x::T) where {T<:Union{MPS,MPO}} = T(zero(Ansatz(x)), form(x))
 defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
 defaultorder(::Type{<:AbstractMPO}) = (:o, :i, :l, :r)
 
-MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS), form::Form=NonCanonical(), check_canonical_form = true) = MPS(form, arrays; order=order, check_canonical_form=check_canonical_form)
-MPS(arrays::Vector{<:AbstractArray}, λ::Vector{<:AbstractArray}; order=defaultorder(MPS), form::Form=Canonical(), check_canonical_form = true) = MPS(form, arrays, λ; order=order, check_canonical_form=check_canonical_form)
+function MPS(
+    arrays::Vector{<:AbstractArray}; order=defaultorder(MPS), form::Form=NonCanonical(), check_canonical_form=true
+)
+    return MPS(form, arrays; order=order, check_canonical_form=check_canonical_form)
+end
+function MPS(
+    arrays::Vector{<:AbstractArray},
+    λ::Vector{<:AbstractArray};
+    order=defaultorder(MPS),
+    form::Form=Canonical(),
+    check_canonical_form=true,
+)
+    return MPS(form, arrays, λ; order=order, check_canonical_form=check_canonical_form)
+end
 
 """
     MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
@@ -50,7 +62,7 @@ Create a [`NonCanonical`](@ref) [`MPS`](@ref) from a vector of arrays.
 
   - `order` The order of the indices in the arrays. Defaults to `(:o, :l, :r)`.
 """
-function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check_canonical_form = true)
+function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check_canonical_form=true)
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
@@ -95,7 +107,7 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check_canonical_fo
     return MPS(ansatz, NonCanonical())
 end
 
-function MPS(form::MixedCanonical, arrays; order=defaultorder(MPS), check_canonical_form = true)
+function MPS(form::MixedCanonical, arrays; order=defaultorder(MPS), check_canonical_form=true)
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
@@ -141,20 +153,20 @@ function MPS(form::MixedCanonical, arrays; order=defaultorder(MPS), check_canoni
 
     # Check that for site start to orthog_center-1 the tensors are left-canonical
     if check_canonical_form
-        for i in 1:id(form.orthog_center) - 1
-            isisometry(mps, Site(i); dir = :right) || throw(ArgumentError("Tensors are not left-canonical"))
+        for i in 1:(id(form.orthog_center) - 1)
+            isisometry(mps, Site(i); dir=:right) || throw(ArgumentError("Tensors are not left-canonical"))
         end
 
         # Check that for site orthog_center+1 to end the tensors are right-canonical
-        for i in id(form.orthog_center) + 1:nsites(mps)
-            isisometry(mps, Site(i); dir = :left) || throw(ArgumentError("Tensors are not right-canonical"))
+        for i in (id(form.orthog_center) + 1):nsites(mps)
+            isisometry(mps, Site(i); dir=:left) || throw(ArgumentError("Tensors are not right-canonical"))
         end
     end
 
     return mps
 end
 
-function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check_canonical_form = true)
+function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check_canonical_form=true)
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
@@ -211,7 +223,7 @@ function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check_canonical_f
     if check_canonical_form
         for i in 1:nsites(mps)
             if i > 1
-                isisometry(contract(mps; between=(Site(i-1), Site(i)), direction=:right), Site(i); dir=:right) ||
+                isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right) ||
                     throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
             end
 
