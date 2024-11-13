@@ -232,33 +232,55 @@
         using Tenet: Truncate
 
         @testset "range" begin
+            # Create tensor data with small values less than the default atol (1e-12)
             data = rand(3, 3, 3)
-            data[:, 1:2, :] .= 0
+            data[:, 1:2, :] .= 1e-13
 
             A = Tensor(data, (:i, :j, :k))
             B = Tensor(rand(3, 3), (:j, :l))
             C = Tensor(rand(3, 3), (:j, :m))
 
             tn = TensorNetwork([A, B, C])
-            reduced = transform(tn, Truncate)
 
+            # Apply Truncate transformation with default atol (1e-12)
+            reduced = transform(tn, Truncate())
+
+            # Test that index :j is removed because all its slices are below atol
             @test :j ∉ inds(reduced)
             @test contract(reduced) ≈ contract(tn)
+
+            # Now, apply Truncate with a smaller atol (1e-14) so slices are not truncated
+            reduced_no_trunc = transform(tn, Truncate(atol=1e-14))
+
+            # Test that index :j is still present
+            @test :j ∈ inds(reduced_no_trunc)
+            @test contract(reduced_no_trunc) ≈ contract(tn)
         end
 
         @testset "int" begin
+            # Create tensor data with one slice having small values less than default atol
             data = rand(3, 3, 3)
-            data[:, 2, :] .= 0
+            data[:, 2, :] .= 1e-13
 
             A = Tensor(data, (:i, :j, :k))
             B = Tensor(rand(3, 3), (:j, :l))
             C = Tensor(rand(3, 3), (:j, :m))
 
             tn = TensorNetwork([A, B, C])
-            reduced = transform(tn, Truncate)
 
+            # Apply Truncate transformation with default atol (1e-12)
+            reduced = transform(tn, Truncate())
+
+            # Test that size of index :j is reduced by 1
             @test size(reduced, :j) == 2
             @test contract(reduced) ≈ contract(tn)
+
+            # Now, apply Truncate with a smaller atol (1e-14) so the slice is not truncated
+            reduced_no_trunc = transform(tn, Truncate(atol=1e-14))
+
+            # Test that size of index :j remains the same
+            @test size(reduced_no_trunc, :j) == 3
+            @test contract(reduced_no_trunc) ≈ contract(tn)
         end
     end
 
