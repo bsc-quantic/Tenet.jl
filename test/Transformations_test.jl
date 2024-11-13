@@ -250,7 +250,7 @@
             @test contract(reduced) ≈ contract(tn)
 
             # Now, apply Truncate with a smaller atol (1e-14) so slices are not truncated
-            reduced_no_trunc = transform(tn, Truncate(atol=1e-14))
+            reduced_no_trunc = transform(tn, Truncate(; atol=1e-14))
 
             # Test that index :j is still present
             @test :j ∈ inds(reduced_no_trunc)
@@ -276,7 +276,7 @@
             @test contract(reduced) ≈ contract(tn)
 
             # Now, apply Truncate with a smaller atol (1e-14) so the slice is not truncated
-            reduced_no_trunc = transform(tn, Truncate(atol=1e-14))
+            reduced_no_trunc = transform(tn, Truncate(; atol=1e-14))
 
             # Test that size of index :j remains the same
             @test size(reduced_no_trunc, :j) == 3
