@@ -38,19 +38,9 @@ Base.zero(x::T) where {T<:Union{MPS,MPO}} = T(zero(Ansatz(x)), form(x))
 defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
 defaultorder(::Type{<:AbstractMPO}) = (:o, :i, :l, :r)
 
-function MPS(
-    arrays::Vector{<:AbstractArray}; order=defaultorder(MPS), form::Form=NonCanonical(), check_canonical_form=true
-)
-    return MPS(form, arrays; order=order, check_canonical_form=check_canonical_form)
-end
-function MPS(
-    arrays::Vector{<:AbstractArray},
-    λ::Vector{<:AbstractArray};
-    order=defaultorder(MPS),
-    form::Form=Canonical(),
-    check_canonical_form=true,
-)
-    return MPS(form, arrays, λ; order=order, check_canonical_form=check_canonical_form)
+MPS(arrays; form::Form=NonCanonical(), kwargs...) = MPS(form, arrays; kwargs...)
+function MPS(arrays, λ; form::Form=Canonical(), kwargs...)
+    return MPS(form, arrays, λ; kwargs...)
 end
 
 """
