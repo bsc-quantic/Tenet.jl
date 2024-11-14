@@ -339,7 +339,7 @@ Base.adjoint(tn::T) where {T<:AbstractMPO} = T(adjoint(Ansatz(tn)), form(tn))
 """
     Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
 
-Create a random [`MPS`](@ref) Tensor Network.
+Create a random [`MPS`](@ref) Tensor Network where all tensors are left-canonical (MixedCanonical(Site(0))).
 In order to avoid norm explosion issues, the tensors are orthogonalized by QR factorization so its normalized and mixed canonized to the last site.
 
 # Keyword Arguments
