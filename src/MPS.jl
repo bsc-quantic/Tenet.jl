@@ -102,7 +102,7 @@ function MPS(form::MixedCanonical, arrays; order=defaultorder(MPS), check=true)
     mps.form = form
 
     # Check mixed canonical form
-    check && check_form(form, mps)
+    check && check_form(mps)
 
     return mps
 end
@@ -121,13 +121,15 @@ function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check=true)
     end
 
     # Check canonical form by contracting Γ and λ tensors and checking their orthogonality
-    check && check_form(Canonical(), mps)
+    check && check_form(mps)
 
     return mps
 end
 
-function check_form(::MixedCanonical, mps::AbstractMPO)
-    orthog_center = form(mps).orthog_center
+check_form(mps::AbstractMPO) = check_form(form(mps), mps)
+
+function check_form(config::MixedCanonical, mps::AbstractMPO)
+    orthog_center = config.orthog_center
     for i in 1:nsites(mps)
         if i < id(orthog_center) # Check left-canonical tensors
             isisometry(mps, Site(i); dir=:right) || throw(ArgumentError("Tensors are not left-canonical"))
@@ -142,13 +144,13 @@ end
 function check_form(::Canonical, mps::AbstractMPO)
     for i in 1:nsites(mps)
         if i > 1
-            isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right) ||
-                throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
+            !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right)
+            throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
         end
 
-        if i < nsites(mps)
-            isisometry(contract(mps; between=(Site(i), Site(i + 1)), direction=:left), Site(i); dir=:left) ||
-                throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
+        if i < nsites(mps) &&
+            !isisometry(contract(mps; between=(Site(i), Site(i + 1)), direction=:left), Site(i); dir=:left)
+            throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
 
@@ -267,8 +269,8 @@ Base.adjoint(tn::T) where {T<:AbstractMPO} = T(adjoint(Ansatz(tn)), form(tn))
 """
     Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
 
-Create a random [`MPS`](@ref) Tensor Network where all tensors are left-canonical (MixedCanonical(Site(0))).
-In order to avoid norm explosion issues, the tensors are orthogonalized by QR factorization so its normalized and mixed canonized to the last site.
+Create a random [`MPS`](@ref) Tensor Network in the MixedCanonical form where all tensors are right-canonical (ortogonality
+center at the first site). In order to avoid norm explosion issues, the tensors are orthogonalized by LQ factorization.
 
 # Keyword Arguments
 
