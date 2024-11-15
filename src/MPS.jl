@@ -303,8 +303,7 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float
     arrays[1] = reshape(arrays[1], p, p)
     arrays[n] = reshape(arrays[n], p, p)
 
-    return MPS(arrays; order=(:l, :o, :r), form=MixedCanonical(Site(0)))
-    # return MPS(arrays; order=(:l, :o, :r))
+    return MPS(arrays; order=(:l, :o, :r), form=MixedCanonical(Site(1)))
 end
 
 # TODO different input/output physical dims
