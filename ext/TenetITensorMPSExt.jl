@@ -89,7 +89,7 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
 
     # Map llim and rlim to your MPS's orthogonality center(s)
     mps_form = if llim + 1 == rlim - 1
-        Tenet.MixedCanonical(Tenet.Site(n = llim + 1))
+        Tenet.MixedCanonical(Tenet.Site(; n=llim + 1))
     elseif llim + 1 < rlim - 1
         Tenet.MixedCanonical([Tenet.Site(j) for j in (llim + 1):(rlim - 1)])
     else
