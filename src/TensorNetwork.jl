@@ -202,7 +202,7 @@ function tensors end
 @kwmethod function tensors(tn::AbstractTensorNetwork;)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
-        sort!(collect(keys(tn.tensormap)); by=inds)
+        sort!(collect(keys(tn.tensormap)); by=sort ∘ inds)
     end
 end
 
