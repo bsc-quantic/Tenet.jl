@@ -777,10 +777,12 @@
 
         F = qr(M)
         ctn = TensorNetwork([Tensor(M, indsM)])
+        qr!(ctn; left_inds, right_inds, virtualind=:k)
 
-        qr!(ctn; left_inds, right_inds)
-        @test isapprox([F.R, Matrix(F.Q)], tensors(ctn); rtol=1e-9)
-        @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
+        # `LinearAlgebra.qr` decomposition is full, but we truncate when matrix is not square in Tenet
+        @test F.Q[:, 1:3] ≈ parent(ctn[:i, :k])
+        @test F.R ≈ parent(ctn[:k, :j])
+        @test M ≈ parent(permutedims(contract(ctn), indsM))
     end
 
     @testset "LinearAlgebra.lu!" begin
