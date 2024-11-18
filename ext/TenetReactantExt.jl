@@ -3,7 +3,7 @@ module TenetReactantExt
 using Tenet
 using EinExprs
 using Reactant
-using Reactant: @reactant_override, TracedRArray
+using Reactant: TracedRArray
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
@@ -148,12 +148,12 @@ end
 #     return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
 # end
 
-# TODO why is the override not working?
-@reactant_override function Base.:(-)(a::Tenet.Tensor, b::Tenet.Tensor)
-    issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
-    perm = __find_index_permutation(inds(a), inds(b))
-    return Tensor(parent(a) - permutedims(parent(b), perm), inds(a))
-end
+# NOTE `@reactant_override` no longer exists
+# @reactant_override function Base.:(-)(a::Tenet.Tensor, b::Tenet.Tensor)
+#     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
+#     perm = __find_index_permutation(inds(a), inds(b))
+#     return Tensor(parent(a) - permutedims(parent(b), perm), inds(a))
+# end
 
 function Tenet.contract(
     a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb,TracedRArray{Tb,Nb}}; dims=(∩(inds(a), inds(b))), out=nothing
