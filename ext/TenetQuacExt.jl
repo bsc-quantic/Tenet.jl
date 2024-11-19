@@ -4,7 +4,7 @@ using Tenet
 using Quac: Gate, Circuit, lanes, arraytype, Swap
 
 function Tenet.Quantum(gate::Gate)
-    return Tenet.Quantum(arraytype(gate)(gate), [Site.(lanes(gate))..., Site.(lanes(gate); dual=true)...])
+    return Tenet.Quantum(arraytype(gate)(gate), Site[Site.(lanes(gate))..., Site.(lanes(gate); dual=true)...])
 end
 
 Tenet.evolve!(qtn::Ansatz, gate::Gate; kwargs...) = evolve!(qtn, Quantum(gate); kwargs...)
