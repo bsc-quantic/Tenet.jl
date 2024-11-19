@@ -104,6 +104,10 @@ using LinearAlgebra
         singular_values = tensors(ψ; between=(site"2", site"3"))
         truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
         @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+
+        # If maxdim > size(spectrum), the bond dimension is not truncated
+        truncated = truncate(ψ, [site"2", site"3"]; maxdim=4)
+        @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
     end
 
     @testset "norm" begin

@@ -290,14 +290,18 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
 
     spectrum = parent(tensors(tn; bond))
 
-    maxdim = isnothing(maxdim) ? size(tn, virtualind) : maxdim
+    maxdim = isnothing(maxdim) ? size(tn, virtualind) : min(maxdim, length(spectrum))
 
     extent = if isnothing(threshold)
         1:maxdim
     else
-        1:something(findfirst(1:maxdim) do i
+        # Find the first index where the condition is met
+        found_index = findfirst(1:maxdim) do i
             abs(spectrum[i]) < threshold
-        end - 1, maxdim)
+        end
+
+        # If no index is found, return 1:length(spectrum), otherwise calculate the range
+        1:(isnothing(found_index) ? maxdim : found_index - 1)
     end
 
     slice!(tn, virtualind, extent)
@@ -312,9 +316,7 @@ function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim
 end
 
 function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
-    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
-    # requires a sweep to recanonize the TN
-    return canonize!(tn)
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
