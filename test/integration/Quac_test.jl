@@ -1,6 +1,19 @@
 @testset "Quac" begin
     using Quac
 
+    @testset "Gate" begin
+        n = 3
+        id_gate = n - 1
+        gate = Quac.Z(id_gate)
+
+        qgate = Quantum(gate)
+
+        @test nsites(qgate; set=:inputs) == 1
+        @test nsites(qgate; set=:outputs) == 1
+        @test issetequal(sites(qgate), [Site(id_gate), Site(id_gate; dual=true)])
+        @test socket(qgate) == Operator()
+    end
+
     @testset "QFT" begin
         n = 3
         qftcirc = Quac.Algorithms.QFT(n)
