@@ -387,11 +387,11 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
 
     if nlanes(gate) == 1
         return simple_update_1site!(ψ, gate)
+    elseif nlanes(gate) == 2
+        return simple_update_2site!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
+    else
+        throw(ArgumentError("Only 1-site and 2-site gates are currently supported"))
     end
-
-    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
-
-    return simple_update!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
 end
 
 # TODO a lot of problems with merging... maybe we shouldn't merge manually
@@ -420,8 +420,9 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
 end
 
 # TODO remove `renormalize` argument?
-function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
+function simple_update_2site!(
+    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false
+)
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
@@ -463,8 +464,30 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
 end
 
 # TODO remove `renormalize` argument?
-# TODO optimize correctly -> avoid recanonization + use lateral Λs
-function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
-    simple_update!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
-    return canonize!(ψ)
+function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
+    # Contract the exterior Λ tensors
+    sitel, siter = extrema(lanes(gate))
+    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
+
+    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
+
+    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
+
+    # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
+    U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
+    Γᵢ₋₁ =
+        isnothing(Λᵢ₋₁) ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)); atol=1e-32)), inds(Λᵢ₋₁)); dims=())
+    Γᵢ =
+        isnothing(Λᵢ₊₁) ? Vt : contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)); atol=1e-32)), inds(Λᵢ₊₁)), Vt; dims=())
+
+    # Update the tensors in the tensor network
+    replace!(ψ, tensors(ψ; at=sitel) => Γᵢ₋₁)
+    replace!(ψ, tensors(ψ; at=siter) => Γᵢ)
+
+    return ψ
 end

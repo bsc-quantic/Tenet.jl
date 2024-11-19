@@ -481,7 +481,7 @@ function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
     return ψ
 end
 
-function canonize!(ψ::AbstractMPO)
+function canonize!(ψ::AbstractMPO; normalize=false)
     Λ = Tensor[]
 
     # right-to-left QR sweep, get right-canonical tensors
@@ -495,6 +495,7 @@ function canonize!(ψ::AbstractMPO)
 
         # extract the singular values and contract them with the next tensor
         Λᵢ = pop!(ψ, tensors(ψ; between=(Site(i), Site(i + 1))))
+        normalize && (Λᵢ ./= norm(Λᵢ))
         Aᵢ₊₁ = tensors(ψ; at=Site(i + 1))
         replace!(ψ, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
         push!(Λ, Λᵢ)
@@ -556,4 +557,4 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-# TODO function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO) end
+LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO) = canonize!(ψ; normalize=true)

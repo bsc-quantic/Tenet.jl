@@ -306,11 +306,16 @@ using LinearAlgebra
             end
 
             @testset "Canonical" begin
-                ψ = deepcopy(ψ)
-                canonize!(ψ)
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
-                @test isapprox(contract(evolved), contract(ψ))
-                @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+                ψ = rand(MPS; n=5, maxdim=20)
+                ϕ = deepcopy(ψ)
+                ϕ.form = NonCanonical()
+                canonize!(ψ; normalize=false)
+                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-24)
+
+                @test isapprox(contract(evolved), contract(ϕ))
+                # @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+
+                @test contract(evolve!(ϕ, gate; threshold=1e-14)) ≈ contract(ψ)
             end
         end
     end
