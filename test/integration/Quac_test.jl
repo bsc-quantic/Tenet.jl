@@ -2,8 +2,7 @@
     using Quac
 
     @testset "Gate" begin
-        n = 3
-        id_gate = n - 1
+        id_gate = 2
         gate = Quac.Z(id_gate)
 
         qgate = Quantum(gate)
