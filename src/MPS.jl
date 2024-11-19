@@ -525,9 +525,9 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     end
 
     # center SVD sweep to get singular values
-    for i in (left + 1):(right - 1)
-        canonize_site!(tn, Site(i); direction=:left, method=:svd)
-    end
+    # for i in (left + 1):(right - 1)
+    #     canonize_site!(tn, Site(i); direction=:left, method=:svd)
+    # end
 
     tn.form = MixedCanonical(orthog_center)
 

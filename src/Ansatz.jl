@@ -312,7 +312,7 @@ end
 function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim)
     # move orthogonality center to bond
     mixed_canonize!(tn, bond)
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true)
 end
 
 function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
