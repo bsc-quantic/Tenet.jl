@@ -308,13 +308,12 @@ using LinearAlgebra
             @testset "Canonical" begin
                 ψ = rand(MPS; n=5, maxdim=20)
                 ϕ = deepcopy(ψ)
-                ϕ.form = NonCanonical()
-                canonize!(ψ; normalize=false)
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-24)
+                canonize!(ψ)
+                evolved = evolve!(deepcopy(ψ), gate)
 
-                @test isapprox(contract(evolved), contract(ϕ))
-                # @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+                @test isapprox(contract(evolved), contract(ϕ)) # Identity gate should not change the state
 
+                # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
                 @test contract(evolve!(ϕ, gate; threshold=1e-14)) ≈ contract(ψ)
             end
         end
