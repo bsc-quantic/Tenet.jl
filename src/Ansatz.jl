@@ -324,7 +324,7 @@ Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Net
 function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
     truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
 
-    recanonize && canonize!(tn)
+    recanonize && canonize!(tn; normalize=true)
 
     return tn
 end
