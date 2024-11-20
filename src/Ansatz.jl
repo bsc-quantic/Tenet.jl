@@ -49,7 +49,7 @@ struct NonCanonical <: Form end
     left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
 """
 struct MixedCanonical <: Form
-    orthog_center::Union{Site,Vector{Site}}
+    orthog_center::Union{Site,Vector{<:Site}}
 end
 
 """

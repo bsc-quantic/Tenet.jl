@@ -130,10 +130,17 @@ check_form(mps::AbstractMPO) = check_form(form(mps), mps)
 
 function check_form(config::MixedCanonical, mps::AbstractMPO)
     orthog_center = config.orthog_center
+
+    left, right = if orthog_center isa Site
+        id(orthog_center) .+ (0, 0)
+    elseif orthog_center isa Vector{<:Site}
+        extrema(id.(orthog_center))
+    end
+
     for i in 1:nsites(mps)
-        if i < id(orthog_center) # Check left-canonical tensors
+        if i < left # Check left-canonical tensors
             isisometry(mps, Site(i); dir=:right) || throw(ArgumentError("Tensors are not left-canonical"))
-        elseif i > id(orthog_center) # Check right-canonical tensors
+        elseif i > right # Check right-canonical tensors
             isisometry(mps, Site(i); dir=:left) || throw(ArgumentError("Tensors are not right-canonical"))
         end
     end
@@ -504,14 +511,12 @@ end
 # TODO dispatch on form
 # TODO generalize to AbstractAnsatz
 function mixed_canonize!(tn::AbstractMPO, orthog_center)
-    if orthog_center isa Site
-        left = id(orthog_center) - 1
-        right = id(orthog_center) + 1
+    left, right = if orthog_center isa Site
+        id(orthog_center) .+ (-1, 1)
+    elseif orthog_center isa Vector{<:Site}
+        extrema(id.(orthog_center)) .+ (-1, 1)
     else
-        values = [id(site) for site in orthog_center]
-        orthog_center = Vector{Site}(orthog_center)
-
-        left, right = extrema(values) .+ (-1, 1)
+        throw(ArgumentError("`orthog_center` must be a `Site` or a `Vector{Site}`"))
     end
 
     # left-to-right QR sweep (left-canonical tensors)
@@ -523,11 +528,6 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     for i in nsites(tn):-1:right
         canonize_site!(tn, Site(i); direction=:left, method=:qr)
     end
-
-    # center SVD sweep to get singular values
-    # for i in (left + 1):(right - 1)
-    #     canonize_site!(tn, Site(i); direction=:left, method=:svd)
-    # end
 
     tn.form = MixedCanonical(orthog_center)
 
