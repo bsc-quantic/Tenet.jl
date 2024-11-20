@@ -1,8 +1,3 @@
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.develop(; path=joinpath(@__DIR__, ".."))
-Pkg.instantiate()
-
 using Documenter
 using DocumenterVitepress
 using DocumenterCitations
@@ -19,19 +14,24 @@ makedocs(;
     modules=[Tenet, Base.get_extension(Tenet, :TenetGraphMakieExt)],
     sitename="Tenet.jl",
     authors="Sergio Sánchez Ramírez and contributors",
-    pages=Any[
+    pages=[
         "Home" => "index.md",
-        "Tensors" => "tensors.md",
-        "Tensor Networks" => "tensor-network.md",
-        "Contraction" => "contraction.md",
-        "Transformations" => "transformations.md",
-        "Quantum" => [
-            "Introduction" => "quantum.md",
-            "Ansatzes" => ["`Product` ansatz" => "ansatz/product.md", "`Chain` ansatz" => "ansatz/chain.md"],
+        "📖 Manual" => [
+            "Tensors" => "manual/tensors.md",
+            "Tensor Networks" => "manual/tensor-network.md",
+            "Contraction" => "manual/contraction.md",
+            "Transformations" => "manual/transformations.md",
+            "Quantum" => "manual/quantum.md",
+            "Ansatz" => [
+                "Introduction" => "manual/ansatz/index.md",
+                "Product ansatz" => "manual/ansatz/product.md",
+                "MPS/MPO ansatz" => "manual/ansatz/mps.md",
+            ],
         ],
         "Visualization" => "visualization.md",
         "Alternatives" => "alternatives.md",
-        "References" => "references.md",
+        # "References" => "references.md",
+        "API Reference" => "api.md",
         "⚒️ Developer Reference" => ["`TensorNetwork` type hierarchy" => "developer/type-hierarchy.md"],
     ],
     pagesonly=true,
