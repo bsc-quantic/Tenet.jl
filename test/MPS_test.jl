@@ -230,6 +230,7 @@ using LinearAlgebra
         @testset "single Site" begin
             ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(ψ, site"3")
+            @test Tenet.check_form(canonized)
 
             @test form(canonized) isa MixedCanonical
             @test form(canonized).orthog_center == site"3"
@@ -246,6 +247,7 @@ using LinearAlgebra
             ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(ψ, [site"2", site"3"])
 
+            @test Tenet.check_form(canonized)
             @test form(canonized) isa MixedCanonical
             @test form(canonized).orthog_center == [site"2", site"3"]
 
