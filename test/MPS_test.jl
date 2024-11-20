@@ -112,11 +112,11 @@ using LinearAlgebra
         end
 
         @testset "Canonical" begin
-            ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+            ψ = rand(MPS; n=5, maxdim=16)
             canonize!(ψ)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
         end
 
         @testset "MixedCanonical" begin
