@@ -419,8 +419,11 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
     return contract!(ψ, contracting_index)
 end
 
-simple_update_2site!(::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false) =
-    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
+function simple_update_2site!(
+    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false
+)
+    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
+end
 
 # TODO remove `renormalize` argument?
 function simple_update_2site!(
