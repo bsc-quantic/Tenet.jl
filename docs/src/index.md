@@ -19,12 +19,12 @@ hero:
       link: https://github.com/bsc-quantic/Tenet.jl
   image:
     src: /logo.svg
-    alt: Reactant.jl
+    alt: Tenet.jl
 
 features:
   - icon: 🚀
     title: Fast & Device Agnostic
-    details: Its deep integration with Reactant.jl and carefully developed code, make it go brrrr
+    details: Its deep integration with Reactant.jl and carefully developed code, makes it go brrrr
     link: /introduction
 
   - icon: ∂
@@ -33,17 +33,16 @@ features:
     link: /introduction
 
   - icon: 🧩
-    title: Composable
-    details: Executes and optimizes generic Julia code without requiring special rewriting
+    title: Carefully crafted
+    details: 
     link: /introduction
 
   - icon: 🫂
-    title: Compatible with other libraries
+    title: Compatible with friends
     details: 
-    link: /introduction
+    link: /alternatives
 ---
 ```
-
 
 !!! info "BSC-Quantic's Registry"
     `Tenet` and some of its dependencies are located in our [own Julia registry](https://github.com/bsc-quantic/Registry).
@@ -53,22 +52,6 @@ features:
     using Pkg
     pkg"registry add https://github.com/bsc-quantic/Registry"
     ```
-
-<!--
-A Julia library for **_Ten_**sor **_Net_**works. `Tenet` can be executed both at local environments and on large supercomputers. Its goals are,
-
-- **Expressiveness** _Simple to use_ 👶
-- **Flexibility** _Extend it to your needs_ 🔧
-- **Performance** _Goes brr... fast_ 🏎️
-
-A video of its presentation at JuliaCon 2023 can be seen here:
-
-```@raw html
-<div class="youtube-video">
-<iframe class="youtube-video" width="560" src="https://www.youtube-nocookie.com/embed/8BHGtm6FRMk?si=bPXB6bPtK695HFIR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-</div>
-```
- -->
 
 ## Features
 

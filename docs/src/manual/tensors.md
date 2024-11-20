@@ -4,6 +4,8 @@
 using Tenet
 ```
 
+If you have reached here, you probably know wha a tensor is. Nevertheless, we are gonna give a brief remainder.
+
 There are many jokes[^1] about how to define a _tensor_. The definition we are giving here might not be the most correct one, but it is good enough for our use case (don't kill me please, mathematicians).
 A tensor $T$ of order[^2] $n$ is a multilinear[^3] application between $n$ vector spaces over a field $\mathcal{F}$.
 
@@ -22,10 +24,6 @@ T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \in \mathcal{F} \qquad\qquad \f
 ```
 
 Tensor algebra is a higher-order generalization of linear algebra, where scalar numbers can be viewed as _order-0 tensors_, vectors as _order-1 tensors_, matrices as _order-2 tensors_, ...
-
-<!-- ```@raw html
-<img src="assets/tensor.excalidraw.svg" class="invert-on-dark"/>
-``` -->
 
 Letters are used to identify each of the vector spaces the tensor relates to.
 In computer science, you would intuitively think of tensors as "_n-dimensional arrays with named dimensions_".
@@ -46,28 +44,8 @@ Tᵢⱼₖ = Tensor(rand(3,5,2), (:i,:j,:k))
 
 The _dimensionality_ or size of each index can be consulted using the `size` function.
 
-```@docs
-Base.size(::Tensor)
-```
-
 ```@repl tensor
 size(Tᵢⱼₖ)
 size(Tᵢⱼₖ, :j)
 length(Tᵢⱼₖ)
-```
-
-## Operations
-
-### Contraction
-
-```@docs
-Tenet.contract(::Tensor, ::Tensor)
-```
-
-### Factorizations
-
-```@docs
-LinearAlgebra.svd(::Tensor)
-LinearAlgebra.qr(::Tensor)
-LinearAlgebra.lu(::Tensor)
 ```
