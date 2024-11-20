@@ -255,8 +255,8 @@ Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Netw
 
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
 """
-function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
-    return truncate!(form(tn), tn, bond; threshold, maxdim)
+function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing, kwargs...)
+    return truncate!(form(tn), tn, bond; threshold, maxdim, kwargs...)
 end
 
 """
@@ -315,8 +315,18 @@ function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim
     return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true)
 end
 
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+"""
+    truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
+
+Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
+**Schmidt coefficients** or those larger than `threshold`, and then recanonizes the Tensor Network if `recanonize` is `true`.
+"""
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
+    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+
+    recanonize && canonize!(tn)
+
+    return tn
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
