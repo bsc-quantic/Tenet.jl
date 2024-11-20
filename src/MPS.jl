@@ -126,14 +126,26 @@ function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check=true)
     return mps
 end
 
+"""
+    check_form(mps::AbstractMPO)
+
+Check if the tensors in the mps are in the proper [`Form`](@ref).
+"""
 check_form(mps::AbstractMPO) = check_form(form(mps), mps)
 
 function check_form(config::MixedCanonical, mps::AbstractMPO)
     orthog_center = config.orthog_center
+
+    left, right = if orthog_center isa Site
+        id(orthog_center) .+ (0, 0) # So left and right get the same value
+    elseif orthog_center isa Vector{<:Site}
+        extrema(id.(orthog_center))
+    end
+
     for i in 1:nsites(mps)
-        if i < id(orthog_center) # Check left-canonical tensors
+        if i < left # Check left-canonical tensors
             isisometry(mps, Site(i); dir=:right) || throw(ArgumentError("Tensors are not left-canonical"))
-        elseif i > id(orthog_center) # Check right-canonical tensors
+        elseif i > right # Check right-canonical tensors
             isisometry(mps, Site(i); dir=:left) || throw(ArgumentError("Tensors are not right-canonical"))
         end
     end
@@ -143,8 +155,7 @@ end
 
 function check_form(::Canonical, mps::AbstractMPO)
     for i in 1:nsites(mps)
-        if i > 1
-            !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right)
+        if i > 1 && !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right)
             throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
         end
 
@@ -156,6 +167,8 @@ function check_form(::Canonical, mps::AbstractMPO)
 
     return true
 end
+
+check_form(::NonCanonical, mps::AbstractMPO) = true
 
 """
     MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
@@ -504,18 +517,23 @@ end
 # TODO dispatch on form
 # TODO generalize to AbstractAnsatz
 function mixed_canonize!(tn::AbstractMPO, orthog_center)
+    left, right = if orthog_center isa Site
+        id(orthog_center) .+ (-1, 1)
+    elseif orthog_center isa Vector{<:Site}
+        extrema(id.(orthog_center)) .+ (-1, 1)
+    else
+        throw(ArgumentError("`orthog_center` must be a `Site` or a `Vector{Site}`"))
+    end
+
     # left-to-right QR sweep (left-canonical tensors)
-    for i in 1:(id(orthog_center) - 1)
+    for i in 1:left
         canonize_site!(tn, Site(i); direction=:right, method=:qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
-    for i in nsites(tn):-1:(id(orthog_center) + 1)
+    for i in nsites(tn):-1:right
         canonize_site!(tn, Site(i); direction=:left, method=:qr)
     end
-
-    # center SVD sweep to get singular values
-    # canonize_site!(tn, orthog_center; direction=:left, method=:svd)
 
     tn.form = MixedCanonical(orthog_center)
 

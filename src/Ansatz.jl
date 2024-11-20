@@ -49,7 +49,7 @@ struct NonCanonical <: Form end
     left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
 """
 struct MixedCanonical <: Form
-    orthog_center::Union{Site,Vector{Site}}
+    orthog_center::Union{Site,Vector{<:Site}}
 end
 
 """
@@ -255,8 +255,8 @@ Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Netw
 
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
 """
-function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing)
-    return truncate!(form(tn), tn, bond; threshold, maxdim)
+function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing, kwargs...)
+    return truncate!(form(tn), tn, bond; threshold, maxdim, kwargs...)
 end
 
 """
@@ -290,14 +290,18 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
 
     spectrum = parent(tensors(tn; bond))
 
-    maxdim = isnothing(maxdim) ? size(tn, virtualind) : maxdim
+    maxdim = isnothing(maxdim) ? size(tn, virtualind) : min(maxdim, length(spectrum))
 
     extent = if isnothing(threshold)
         1:maxdim
     else
-        1:something(findfirst(1:maxdim) do i
+        # Find the first index where the condition is met
+        found_index = findfirst(1:maxdim) do i
             abs(spectrum[i]) < threshold
-        end - 1, maxdim)
+        end
+
+        # If no index is found, return 1:length(spectrum), otherwise calculate the range
+        1:(isnothing(found_index) ? maxdim : found_index - 1)
     end
 
     slice!(tn, virtualind, extent)
@@ -308,13 +312,21 @@ end
 function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim)
     # move orthogonality center to bond
     mixed_canonize!(tn, bond)
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true)
 end
 
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim)
+"""
+    truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
+
+Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
+**Schmidt coefficients** or those larger than `threshold`, and then recanonizes the Tensor Network if `recanonize` is `true`.
+"""
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
     truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
-    # requires a sweep to recanonize the TN
-    return canonize!(tn)
+
+    recanonize && canonize!(tn)
+
+    return tn
 end
 
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))

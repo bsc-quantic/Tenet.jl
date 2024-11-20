@@ -95,15 +95,36 @@ using LinearAlgebra
     end
 
     @testset "truncate!" begin
-        ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-        canonize_site!(ψ, Site(2); direction=:right, method=:svd)
+        @testset "NonCanonical" begin
+            ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+            canonize_site!(ψ, Site(2); direction=:right, method=:svd)
 
-        truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
-        @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
 
-        singular_values = tensors(ψ; between=(site"2", site"3"))
-        truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
-        @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+            singular_values = tensors(ψ; between=(site"2", site"3"))
+            truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+
+            # If maxdim > size(spectrum), the bond dimension is not truncated
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=4)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+        end
+
+        @testset "Canonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+            canonize!(ψ)
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+        end
+
+        @testset "MixedCanonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 3
+        end
     end
 
     @testset "norm" begin
@@ -206,18 +227,36 @@ using LinearAlgebra
     end
 
     @testset "mixed_canonize!" begin
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        canonized = mixed_canonize(ψ, site"3")
+        @testset "single Site" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonized = mixed_canonize(ψ, site"3")
+            @test Tenet.check_form(canonized)
 
-        @test form(canonized) isa MixedCanonical
-        @test form(canonized).orthog_center == site"3"
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == site"3"
 
-        @test isisometry(canonized, site"1"; dir=:right)
-        @test isisometry(canonized, site"2"; dir=:right)
-        @test isisometry(canonized, site"4"; dir=:left)
-        @test isisometry(canonized, site"5"; dir=:left)
+            @test isisometry(canonized, site"1"; dir=:right)
+            @test isisometry(canonized, site"2"; dir=:right)
+            @test isisometry(canonized, site"4"; dir=:left)
+            @test isisometry(canonized, site"5"; dir=:left)
 
-        @test contract(canonized) ≈ contract(ψ)
+            @test contract(canonized) ≈ contract(ψ)
+        end
+
+        @testset "multiple Sites" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonized = mixed_canonize(ψ, [site"2", site"3"])
+
+            @test Tenet.check_form(canonized)
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == [site"2", site"3"]
+
+            @test isisometry(canonized, site"1"; dir=:right)
+            @test isisometry(canonized, site"4"; dir=:left)
+            @test isisometry(canonized, site"5"; dir=:left)
+
+            @test contract(canonized) ≈ contract(ψ)
+        end
     end
 
     @testset "expect" begin
