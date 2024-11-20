@@ -127,11 +127,9 @@ function MPS(::Canonical, arrays, λ; order=defaultorder(MPS), check=true)
 end
 
 """
-
     check_form(mps::AbstractMPO)
 
 Check if the tensors in the mps are in the proper [`Form`](@ref).
-
 """
 check_form(mps::AbstractMPO) = check_form(form(mps), mps)
 
