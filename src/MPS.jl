@@ -137,7 +137,7 @@ function check_form(config::MixedCanonical, mps::AbstractMPO)
     orthog_center = config.orthog_center
 
     left, right = if orthog_center isa Site
-        id(orthog_center) .+ (0, 0)
+        id(orthog_center) .+ (0, 0) # So left and right get the same value
     elseif orthog_center isa Vector{<:Site}
         extrema(id.(orthog_center))
     end
