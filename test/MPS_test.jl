@@ -115,8 +115,9 @@ using LinearAlgebra
             ψ = rand(MPS; n=5, maxdim=16)
             canonize!(ψ)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=true)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            @test Tenet.check_form(truncated)
         end
 
         @testset "MixedCanonical" begin
@@ -311,6 +312,7 @@ using LinearAlgebra
                 canonize!(ψ)
                 evolved = evolve!(deepcopy(ψ), gate)
 
+                @test Tenet.check_form(evolved)
                 @test isapprox(contract(evolved), contract(ϕ)) # Identity gate should not change the state
 
                 # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
