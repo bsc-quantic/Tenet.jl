@@ -408,6 +408,8 @@ function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     return a
 end
 
+LinearAlgebra.normalize(ψ::AbstractQuantum; kwargs...) = normalize!(copy(ψ); kwargs...)
+
 function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
     p == 2 || throw(ArgumentError("only L2-norm is implemented yet"))
     return LinearAlgebra.norm2(ψ; kwargs...)
