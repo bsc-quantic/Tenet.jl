@@ -328,7 +328,7 @@ end
 Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
 **Schmidt coefficients** or those larger than `threshold`, and then recanonizes the Tensor Network if `recanonize` is `true`.
 """
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true, renormalize=false)
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=false, renormalize=false)
     truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false, renormalize=renormalize)
 
     recanonize && canonize!(tn)
@@ -382,8 +382,8 @@ Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` op
   - The gate must have the same number of inputs and outputs.
   - Currently only the "Simple Update" algorithm is used and the gate must be a 1-site or 2-site operator.
 """
-function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    return simple_update!(ψ, gate; threshold, maxdim, renormalize)
+function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false, kwargs...)
+    return simple_update!(ψ, gate; threshold, maxdim, renormalize, kwargs...)
 end
 
 # by popular demand (Stefano, I'm looking at you), I aliased `apply!` to `evolve!`
@@ -469,15 +469,16 @@ function simple_update_2site!(
 
     # truncate virtual index
     if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, collect(bond); threshold, maxdim)
-        renormalize && normalize!(ψ, bond)
+        truncate!(ψ, collect(bond); threshold, maxdim, renormalize)
     end
 
     return ψ
 end
 
 # TODO remove `renormalize` argument?
-function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
+function simple_update_2site!(
+    ::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false, recanonize=true
+)
     # Contract the exterior Λ tensors
     sitel, siter = extrema(lanes(gate))
     (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
@@ -489,7 +490,7 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
     !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
 
-    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
+    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize=false)
 
     # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
     U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
@@ -501,6 +502,12 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     # Update the tensors in the tensor network
     replace!(ψ, tensors(ψ; at=sitel) => Γᵢ₋₁)
     replace!(ψ, tensors(ψ; at=siter) => Γᵢ)
+
+    if recanonize
+        canonize!(ψ; normalize=renormalize)
+    else
+        renormalize && normalize!(ψ, collect((sitel, siter)))
+    end
 
     return ψ
 end
