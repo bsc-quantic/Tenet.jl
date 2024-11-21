@@ -274,8 +274,11 @@ Truncate the dimension of the virtual `bond` of a [`NonCanonical`](@ref) Tensor 
     - `threshold`: The threshold to truncate the bond dimension.
     - `maxdim`: The maximum bond dimension to keep.
     - `compute_local_svd`: Whether to compute the local SVD of the bond. If `true`, it will contract the bond and perform a SVD to get the local singular values. Defaults to `true`.
+    - `renormalize`: Whether to renormalize the state at the bond after truncation. Defaults to `false`.
 """
-function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+function truncate!(
+    ::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true, renormalize=false
+)
     virtualind = inds(tn; bond)
 
     if compute_local_svd
@@ -305,14 +308,18 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
     end
 
     slice!(tn, virtualind, extent)
+    sliced_bond = tensors(tn; bond)
+
+    renormalize && replace!(tn, sliced_bond => sliced_bond ./ norm(tn))
 
     return tn
 end
 
-function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim)
+function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, renormalize=false)
     # move orthogonality center to bond
     mixed_canonize!(tn, bond)
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true)
+
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true, renormalize=renormalize)
 end
 
 """
@@ -321,10 +328,10 @@ end
 Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
 **Schmidt coefficients** or those larger than `threshold`, and then recanonizes the Tensor Network if `recanonize` is `true`.
 """
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=false)
-    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=false, renormalize=renormalize)
+    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false, renormalize=renormalize)
 
-    recanonize && canonize!(tn; normalize=true)
+    recanonize && canonize!(tn)
 
     return tn
 end
