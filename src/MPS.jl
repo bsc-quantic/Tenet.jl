@@ -541,7 +541,11 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     return tn
 end
 
+LinearAlgebra.normalize(ψ::AbstractMPO; kwargs...) = normalize!(copy(ψ); kwargs...)
+LinearAlgebra.normalize(ψ::AbstractMPO, site::Site) = normalize!(copy(ψ), site)
+
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
+LinearAlgebra.normalize!(ψ::AbstractMPO, site::Site) = normalize!(form(ψ), ψ; at=site)
 
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
     tensor = tensors(ψ; at)
@@ -549,7 +553,7 @@ function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsite
     return ψ
 end
 
-LinearAlgebra.normalize!(ψ::AbstractMPO, site::Site) = normalize!(mixed_canonize!(ψ, site); at=site)
+LinearAlgebra.normalize!(config::NonCanonical, ψ::AbstractMPO; at=site) = normalize!(MixedCanonical(at), ψ; at)
 
 function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
     mixed_canonize!(ψ, at)
@@ -557,4 +561,9 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO) = canonize!(ψ; normalize=true)
+function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
+    λ = tensors(ψ; between=(at, Site(id(at) + 1)))
+    replace!(ψ, λ => λ ./ norm(ψ))
+
+    return ψ
+end
