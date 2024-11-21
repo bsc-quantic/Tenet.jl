@@ -145,7 +145,7 @@ using LinearAlgebra
     end
 
     @testset "normalize!" begin
-        using LinearAlgebra: normalize!
+        using LinearAlgebra: normalize, normalize!
 
         @testset "NonCanonical" begin
             ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
@@ -160,6 +160,10 @@ using LinearAlgebra
         @testset "MixedCanonical" begin
             ψ = rand(MPS; n=5, maxdim=16)
 
+            # Perturb the state to make it non-normalized
+            t = tensors(ψ; at=site"3")
+            replace!(ψ, t => Tensor(rand(size(t)...), inds(t)))
+
             normalized = normalize(ψ)
             @test norm(normalized) ≈ 1.0
 
@@ -168,13 +172,13 @@ using LinearAlgebra
         end
 
         @testset "Canonical" begin
-            ψ = rand(MPS; n=5, maxdim=16)
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonize!(ψ)
 
             normalized = normalize(ψ)
             @test norm(normalized) ≈ 1.0
 
-            normalize!(ψ, Site(3))
+            normalize!(ψ, (Site(3), Site(4)))
             @test norm(ψ) ≈ 1.0
         end
     end
