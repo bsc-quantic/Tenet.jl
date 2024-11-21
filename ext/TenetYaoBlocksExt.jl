@@ -34,7 +34,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
         array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
-            map(occupied_locs(gate)) do l
+            map(reverse(occupied_locs(gate))) do l
                 from, to = last(wire[l]), Tenet.nextindex!(gen)
                 push!(wire[l], to)
                 (to, from)
