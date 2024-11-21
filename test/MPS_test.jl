@@ -109,15 +109,10 @@ using LinearAlgebra
             # If maxdim > size(spectrum), the bond dimension is not truncated
             truncated = truncate(ψ, [site"2", site"3"]; maxdim=4)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
-        end
 
-        @testset "Canonical" begin
-            ψ = rand(MPS; n=5, maxdim=16)
-            canonize!(ψ)
-
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=true)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
-            @test Tenet.check_form(truncated)
+            normalize!(ψ)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1, renormalize=true)
+            @test norm(truncated) ≈ 1.0
         end
 
         @testset "MixedCanonical" begin
@@ -125,6 +120,22 @@ using LinearAlgebra
 
             truncated = truncate(ψ, [site"2", site"3"]; maxdim=3)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 3
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3, renormalize=true)
+            @test norm(truncated) ≈ 1.0
+        end
+
+        @testset "Canonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+            canonize!(ψ)
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=true, renormalize=true)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            @test Tenet.check_form(truncated)
+            @test norm(truncated) ≈ 1.0
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=false, renormalize=true)
+            @test norm(truncated) ≈ 1.0
         end
     end
 
