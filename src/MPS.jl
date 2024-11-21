@@ -558,9 +558,16 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=(Site(nsites(ψ) ÷ 2), Site(nsites(ψ) ÷ 2 + 1)))
-    λ = tensors(ψ; between=at)
-    replace!(ψ, λ => λ ./ norm(ψ))
+function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=nothing)
+    if isnothing(at) # Normalize all λ tensors
+        for i in 1:nsites(ψ)-1
+            λ = tensors(ψ; between=(Site(i), Site(i + 1)))
+            replace!(ψ, λ => λ ./ norm(ψ))
+        end
+    else
+        λ = tensors(ψ; between=at)
+        replace!(ψ, λ => λ ./ norm(ψ))
+    end
 
     return ψ
 end
