@@ -560,9 +560,11 @@ end
 
 function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=nothing)
     if isnothing(at) # Normalize all λ tensors
+        normalizer = (norm(ψ))^(1/(nsites(ψ)-1))
+
         for i in 1:(nsites(ψ) - 1)
             λ = tensors(ψ; between=(Site(i), Site(i + 1)))
-            replace!(ψ, λ => λ ./ norm(ψ))
+            replace!(ψ, λ => λ ./ normalizer)
         end
     else
         λ = tensors(ψ; between=at)
