@@ -32,8 +32,11 @@ makedocs(;
         "Alternatives" => "alternatives.md",
         "API" => "api.md",
         "⚒️ Developer Reference" => [
-            "Inheritance and Traits" => "developer/type-hierarchy.md",
-            "Unsafe regions" => "developer/unsafe-region.md",
+            "Hypergraph representation of `TensorNetwork`" => "developer/hypergraph.md",
+            "Type Hierarchy" => "developer/type-hierarchy.md",
+            "Unsafe region" => "developer/unsafe-region.md",
+            "Cached field" => "developer/cached-field.md",
+            "Keyword Dispatch" => "developer/keyword-dispatch.md",
         ],
     ],
     pagesonly=true,
