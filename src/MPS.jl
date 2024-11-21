@@ -549,7 +549,7 @@ LinearAlgebra.normalize!(ψ::AbstractMPO, site) = normalize!(form(ψ), ψ; at=si
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
     if at isa Site
         tensor = tensors(ψ; at)
-        tensor ./= norm(ψ)
+        replace!(ψ, tensor => tensor ./ norm(ψ))
     else
         normalize!(mixed_canonize!(ψ, at))
     end
