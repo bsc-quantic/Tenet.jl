@@ -462,8 +462,8 @@ function simple_update_2site!(
 
     # truncate virtual index
     if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, [bond...]; threshold, maxdim)
-        renormalize && normalize!(ψ, bond[1])
+        truncate!(ψ, collect(bond); threshold, maxdim)
+        renormalize && normalize!(ψ, bond)
     end
 
     return ψ
