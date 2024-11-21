@@ -547,8 +547,13 @@ LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; 
 LinearAlgebra.normalize!(ψ::AbstractMPO, site) = normalize!(form(ψ), ψ; at=site)
 
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
-    tensor = tensors(ψ; at)
-    tensor ./= norm(ψ)
+    if at isa Site
+        tensor = tensors(ψ; at)
+        tensor ./= norm(ψ)
+    else
+        normalize!(mixed_canonize!(ψ, at))
+    end
+
     return ψ
 end
 
@@ -560,15 +565,13 @@ end
 
 function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=nothing)
     if isnothing(at) # Normalize all λ tensors
-        normalizer = (norm(ψ))^(1 / (nsites(ψ) - 1))
-
         for i in 1:(nsites(ψ) - 1)
             λ = tensors(ψ; between=(Site(i), Site(i + 1)))
-            replace!(ψ, λ => λ ./ normalizer)
+            replace!(ψ, λ => λ ./ norm(λ)^(1 / (nsites(ψ) - 1)))
         end
     else
         λ = tensors(ψ; between=at)
-        replace!(ψ, λ => λ ./ norm(ψ))
+        replace!(ψ, λ => λ ./ norm(λ))
     end
 
     return ψ
