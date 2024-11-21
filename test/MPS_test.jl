@@ -147,9 +147,36 @@ using LinearAlgebra
     @testset "normalize!" begin
         using LinearAlgebra: normalize!
 
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        normalize!(ψ, Site(3))
-        @test isapprox(norm(ψ), 1.0)
+        @testset "NonCanonical" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, Site(3))
+            @test norm(ψ) ≈ 1.0
+        end
+
+        @testset "MixedCanonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, Site(3))
+            @test norm(ψ) ≈ 1.0
+        end
+
+        @testset "Canonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+            canonize!(ψ)
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, Site(3))
+            @test norm(ψ) ≈ 1.0
+        end
     end
 
     @testset "canonize_site!" begin
