@@ -346,19 +346,32 @@ using LinearAlgebra
                 @test length(tensors(ϕ)) == 5
                 @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(contract(ϕ), contract(ψ))
+
+                evolved = evolve!(normalize(ψ), gate; maxdim=1, renormalize=true)
+                @test norm(evolved) ≈ 1.0
             end
 
             @testset "Canonical" begin
-                ψ = rand(MPS; n=5, maxdim=20)
+                ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
+                normalize!(ψ)
                 ϕ = deepcopy(ψ)
-                canonize!(ψ)
-                evolved = evolve!(deepcopy(ψ), gate)
 
+                canonize!(ψ)
+
+                evolved = evolve!(deepcopy(ψ), gate)
                 @test Tenet.check_form(evolved)
                 @test isapprox(contract(evolved), contract(ϕ)) # Identity gate should not change the state
 
                 # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
-                @test contract(evolve!(ϕ, gate; threshold=1e-14)) ≈ contract(ψ)
+                @test contract(ψ) ≈ contract(evolve!(ϕ, gate; threshold=1e-14))
+
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, renormalize=true, recanonize=true)
+                @test norm(evolved) ≈ 1.0
+                @test Tenet.check_form(evolved)
+
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, renormalize=true, recanonize=false)
+                @test norm(evolved) ≈ 1.0
+                @test_throws ArgumentError Tenet.check_form(evolved)
             end
         end
     end
