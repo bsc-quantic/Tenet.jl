@@ -18,12 +18,13 @@ export default defineConfig({
     math: true,
     config(md) {
       md.use(tabsMarkdownPlugin),
-      md.use(mathjax3),
-      md.use(footnote)
+        md.use(mathjax3),
+        md.use(footnote)
     },
     theme: {
       light: "github-light",
-      dark: "github-dark"}
+      dark: "github-dark"
+    }
   },
   themeConfig: {
     outline: 'deep',
