@@ -111,7 +111,7 @@ using LinearAlgebra
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
 
             normalize!(ψ)
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1, renormalize=true)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
 
@@ -121,7 +121,7 @@ using LinearAlgebra
             truncated = truncate(ψ, [site"2", site"3"]; maxdim=3)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 3
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3, renormalize=true)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
 
@@ -129,12 +129,12 @@ using LinearAlgebra
             ψ = rand(MPS; n=5, maxdim=16)
             canonize!(ψ)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=true, renormalize=true)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=true, normalize=true)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
             @test Tenet.check_form(truncated)
             @test norm(truncated) ≈ 1.0
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, recanonize=false, renormalize=true)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=false, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
     end
@@ -347,7 +347,7 @@ using LinearAlgebra
                 @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(contract(ϕ), contract(ψ))
 
-                evolved = evolve!(normalize(ψ), gate; maxdim=1, renormalize=true)
+                evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
                 @test norm(evolved) ≈ 1.0
             end
 
@@ -365,11 +365,11 @@ using LinearAlgebra
                 # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
                 @test contract(ψ) ≈ contract(evolve!(ϕ, gate; threshold=1e-14))
 
-                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, renormalize=true, recanonize=true)
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=true)
                 @test norm(evolved) ≈ 1.0
                 @test Tenet.check_form(evolved)
 
-                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, renormalize=true, recanonize=false)
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=false)
                 @test norm(evolved) ≈ 1.0
                 @test_throws ArgumentError Tenet.check_form(evolved)
             end

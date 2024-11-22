@@ -541,11 +541,11 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     return tn
 end
 
-LinearAlgebra.normalize(ψ::AbstractMPO, site) = normalize!(copy(ψ), site)
-
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
-LinearAlgebra.normalize!(ψ::AbstractMPO, site) = normalize!(form(ψ), ψ; at=site)
+LinearAlgebra.normalize!(ψ::AbstractMPO, at::Site) = normalize!(form(ψ), ψ; at)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Site}) = normalize!(form(ψ), ψ; bond)
 
+# NOTE: Normalize in place should use less memory
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
     if at isa Site
         tensor = tensors(ψ; at)
@@ -563,14 +563,14 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; at=nothing)
-    if isnothing(at) # Normalize all λ tensors
+function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothing)
+    if isnothing(bond) # Normalize all λ tensors
         for i in 1:(nsites(ψ) - 1)
             λ = tensors(ψ; between=(Site(i), Site(i + 1)))
             replace!(ψ, λ => λ ./ norm(λ)^(1 / (nsites(ψ) - 1)))
         end
     else
-        λ = tensors(ψ; between=at)
+        λ = tensors(ψ; between=bond)
         replace!(ψ, λ => λ ./ norm(λ))
     end
 
