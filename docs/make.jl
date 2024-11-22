@@ -30,7 +30,12 @@ makedocs(;
             "Visualization" => "visualization.md",
         ],
         "Alternatives" => "alternatives.md",
-        "API" => "api.md",
+        "API" => [
+            "Tensor" => "api/tensor.md",
+            "TensorNetwork" => "api/tensornetwork.md",
+            "Quantum" => "api/quantum.md",
+            "Ansatz" => "api/ansatz.md",
+        ],
         "⚒️ Developer Reference" => [
             "Hypergraph representation of `TensorNetwork`" => "developer/hypergraph.md",
             "Type Hierarchy" => "developer/type-hierarchy.md",
