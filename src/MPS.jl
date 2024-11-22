@@ -545,7 +545,7 @@ LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; 
 LinearAlgebra.normalize!(ψ::AbstractMPO, at::Site) = normalize!(form(ψ), ψ; at)
 LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Site}) = normalize!(form(ψ), ψ; bond)
 
-# NOTE: Normalize in place should use less memory
+# NOTE: Inplace normalization of the arrays should be faster, but currently lead to problems for `copy` TensorNetworks
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
     if at isa Site
         tensor = tensors(ψ; at)
