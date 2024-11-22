@@ -17,25 +17,11 @@ Our approach is based in [gray2021hyper](@cite), which can also be found in [qui
 
 In Tenet, we provide a set of predefined transformations which you can apply to your `TensorNetwork` using both the `transform`/`transform!` functions.
 
-```@docs
-transform
-transform!
-```
-
 ## Available transformations
 
 ### Hyperindex converter
 
-```@docs
-Tenet.HyperFlatten
-Tenet.HyperGroup
-```
-
 ### Contraction simplification
-
-```@docs
-Tenet.ContractSimplification
-```
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
@@ -59,10 +45,6 @@ fig #hide
 ```
 
 ### Diagonal reduction
-
-```@docs
-Tenet.DiagonalReduction
-```
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
@@ -95,15 +77,7 @@ fig #hide
 
 ### Anti-diagonal reduction
 
-```@docs
-Tenet.AntiDiagonalGauging
-```
-
 ### Dimension truncation
-
-```@docs
-Tenet.Truncate
-```
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
@@ -129,10 +103,6 @@ fig #hide
 ```
 
 ### Split simplification
-
-```@docs
-Tenet.SplitSimplification
-```
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
