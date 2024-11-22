@@ -7,11 +7,15 @@ import footnote from "markdown-it-footnote";
 export default defineConfig({
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
   title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
-  description: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+  description: 'Documentation of Tenet.jl library',
   lastUpdated: true,
   cleanUrls: true,
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
-  head: [['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ["script", { src: `/versions.js` }],
+    ["script", { src: `${baseTemp.base}siteinfo.js` }],
+  ],
   ignoreDeadLinks: true,
 
   markdown: {
@@ -28,7 +32,10 @@ export default defineConfig({
   },
   themeConfig: {
     outline: 'deep',
-    logo: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+    logo: {
+      light: '/logo.svg',
+      dark: '/logo-dark.svg',
+    },
     search: {
       provider: 'local',
       options: {
@@ -39,11 +46,11 @@ export default defineConfig({
     sidebar: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     editLink: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     socialLinks: [
-      { icon: 'github', link: 'REPLACE_ME_DOCUMENTER_VITEPRESS' }
+      { icon: 'github', link: 'https://github.com/bsc-quantic/Tenet.jl' }
     ],
     footer: {
       message: 'Made with <a href="https://luxdl.github.io/DocumenterVitepress.jl/dev/" target="_blank"><strong>DocumenterVitepress.jl</strong></a><br>',
-      copyright: `© Copyright ${new Date().getUTCFullYear()}.`
+      copyright: `© Copyright ${new Date().getUTCFullYear()} Barcelona Supercomputing Center - Centro Nacional de Supercomputación`
     }
   }
 })
