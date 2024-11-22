@@ -109,14 +109,10 @@ using LinearAlgebra
             # If maxdim > size(spectrum), the bond dimension is not truncated
             truncated = truncate(ψ, [site"2", site"3"]; maxdim=4)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
-        end
 
-        @testset "Canonical" begin
-            ψ = rand(MPS; n=5, maxdim=16)
-            canonize!(ψ)
-
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            normalize!(ψ)
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1, normalize=true)
+            @test norm(truncated) ≈ 1.0
         end
 
         @testset "MixedCanonical" begin
@@ -124,6 +120,22 @@ using LinearAlgebra
 
             truncated = truncate(ψ, [site"2", site"3"]; maxdim=3)
             @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 3
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3, normalize=true)
+            @test norm(truncated) ≈ 1.0
+        end
+
+        @testset "Canonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+            canonize!(ψ)
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=true, normalize=true)
+            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            @test Tenet.check_form(truncated)
+            @test norm(truncated) ≈ 1.0
+
+            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=false, normalize=true)
+            @test norm(truncated) ≈ 1.0
         end
     end
 
@@ -144,11 +156,42 @@ using LinearAlgebra
     end
 
     @testset "normalize!" begin
-        using LinearAlgebra: normalize!
+        using LinearAlgebra: normalize, normalize!
 
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        normalize!(ψ, Site(3))
-        @test isapprox(norm(ψ), 1.0)
+        @testset "NonCanonical" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, Site(3))
+            @test norm(ψ) ≈ 1.0
+        end
+
+        @testset "MixedCanonical" begin
+            ψ = rand(MPS; n=5, maxdim=16)
+
+            # Perturb the state to make it non-normalized
+            t = tensors(ψ; at=site"3")
+            replace!(ψ, t => Tensor(rand(size(t)...), inds(t)))
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, Site(3))
+            @test norm(ψ) ≈ 1.0
+        end
+
+        @testset "Canonical" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonize!(ψ)
+
+            normalized = normalize(ψ)
+            @test norm(normalized) ≈ 1.0
+
+            normalize!(ψ, (Site(3), Site(4)))
+            @test norm(ψ) ≈ 1.0
+        end
     end
 
     @testset "canonize_site!" begin
@@ -303,14 +346,32 @@ using LinearAlgebra
                 @test length(tensors(ϕ)) == 5
                 @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
                 @test isapprox(contract(ϕ), contract(ψ))
+
+                evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
+                @test norm(evolved) ≈ 1.0
             end
 
             @testset "Canonical" begin
-                ψ = deepcopy(ψ)
+                ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
+                normalize!(ψ)
+                ϕ = deepcopy(ψ)
+
                 canonize!(ψ)
-                evolved = evolve!(deepcopy(ψ), gate; threshold=1e-14)
-                @test isapprox(contract(evolved), contract(ψ))
-                @test issetequal(size.(tensors(evolved)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
+
+                evolved = evolve!(deepcopy(ψ), gate)
+                @test Tenet.check_form(evolved)
+                @test isapprox(contract(evolved), contract(ϕ)) # Identity gate should not change the state
+
+                # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
+                @test contract(ψ) ≈ contract(evolve!(ϕ, gate; threshold=1e-14))
+
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=true)
+                @test norm(evolved) ≈ 1.0
+                @test Tenet.check_form(evolved)
+
+                evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=false)
+                @test norm(evolved) ≈ 1.0
+                @test_throws ArgumentError Tenet.check_form(evolved)
             end
         end
     end
