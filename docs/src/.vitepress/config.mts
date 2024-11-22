@@ -14,7 +14,7 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ["script", { src: `/versions.js` }],
-    ["script", { src: `${baseTemp.base}siteinfo.js` }],
+    // ["script", { src: `${baseTemp.base}siteinfo.js` }],
   ],
   ignoreDeadLinks: true,
 
