@@ -1,6 +1,6 @@
-# Alternatives
+# Friends
 
-`Tenet` is strongly opinionated. We acknowledge that it may not suit all cases (although we try 🙂). If your case doesn't fit `Tenet`'s design, you can try the following libraries:
+If `Tenet`'s design doesn't fit your case, ¡no problem!. There are other nice libraries in the wild, of which we recommend to take a look at:
 
 - [quimb](https://github.com/jcmgray/quimb) Flexible Tensor Network written in Python. Main source of inspiration for `Tenet`.
 - [tenpy](https://github.com/tenpy/tenpy) Tensor Network library written in Python with a strong focus on physics.

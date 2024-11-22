@@ -29,7 +29,7 @@ makedocs(;
             ],
             "Visualization" => "visualization.md",
         ],
-        "Alternatives" => "alternatives.md",
+        "Friends" => "friends.md",
         "API" => [
             "Tensor" => "api/tensor.md",
             "TensorNetwork" => "api/tensornetwork.md",
