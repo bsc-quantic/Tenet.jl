@@ -29,8 +29,8 @@ makedocs(;
             ],
             "Visualization" => "visualization.md",
         ],
-        "Friends" => "friends.md",
-        "API" => [
+        "🫂 Friends" => "friends.md",
+        "🧭 API" => [
             "Tensor" => "api/tensor.md",
             "TensorNetwork" => "api/tensornetwork.md",
             "Quantum" => "api/quantum.md",
