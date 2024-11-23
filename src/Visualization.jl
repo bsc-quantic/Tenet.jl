@@ -1,6 +1,7 @@
 using Graphs: Graphs, vertices, edges
 
 function graph_representation(tn::AbstractTensorNetwork)
+    tn = TensorNetwork(tn)
     hypermap = Tenet.hyperflatten(tn)
     if !isempty(hypermap)
         tn = transform(tn, Tenet.HyperFlatten)
