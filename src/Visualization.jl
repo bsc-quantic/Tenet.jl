@@ -30,15 +30,13 @@ function graph_representation(tn::AbstractTensorNetwork)
     return tn, graph, tensormap, hypermap, hypernodes, ghostnodes
 end
 
-# TODO use `Base.ENV["VSCODE_PID"]` to detect if running in vscode notebook
-# Base.show(io::IO, ::MIME"text/html", @nospecialize(tn::AbstractTensorNetwork)) = draw(io, tn)
-# Base.show(io::IO, ::MIME"juliavscode/html", @nospecialize(tn::AbstractTensorNetwork)) = draw(io, tn)
-
-for v in ["application/vnd.vegalite.v3+json", "application/vnd.vegalite.v4+json", "application/vnd.vegalite.v5+json"]
-    @eval Base.Multimedia.istextmime(::MIME{$(Symbol(v))}) = true
+# TODO use `Base.ENV["VSCODE_PID"]` to detect if running in vscode notebook?
+# TODO move this to VSCodeServer.jl
+function Base.Multimedia.istextmime(::MIME"application/vnd.vega.v5+json")
+    return true
 end
 
-Base.show(io::IO, ::MIME"application/vnd.vegalite.v5+json", @nospecialize(tn::AbstractTensorNetwork)) = draw(io, tn)
+Base.show(io::IO, ::MIME"application/vnd.vega.v5+json", @nospecialize(tn::AbstractTensorNetwork)) = draw(io, tn)
 function draw(io::IO, @nospecialize(tn::AbstractTensorNetwork))
     tn, graph, tensormap, hypermap, hypernodes, ghostnodes = graph_representation(tn)
     hypermap = Dict(Iterators.flatten([[i => v for i in k] for (k, v) in hypermap]))
