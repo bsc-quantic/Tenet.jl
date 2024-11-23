@@ -76,14 +76,19 @@ function draw(io::IO, @nospecialize(tn::AbstractTensorNetwork))
                         join(map(inds(tn)) do i
                             # NOTE Vega uses 0-indexing
                             nodes = tensors(tn; intersects=i)
-                            if length(nodes) == 1
-                                # TODO
-                                v = tensormap[only(nodes)] - 1
-                                return "{ \"source\": $v, \"target\": $v, \"value\": \"$i\" }"
-                            elseif length(nodes) == 2
+
+                            # regular nodes
+                            if length(nodes) == 2
                                 a, b = nodes
                                 index = get(hypermap, i, i)
                                 return "{ \"source\": $(tensormap[a] - 1), \"target\": $(tensormap[b] - 1), \"value\": \"$index\" }"
+
+                            # nodes with open indices
+                            elseif length(nodes) == 1
+                                vertex = tensormap[only(nodes)] - 1
+                                # TODO is this correct? what if more than 1 open index (e.g. MPO)
+                                ghost = ntensors(tn) + vertex
+                                return "{ \"source\": $vertex, \"target\": $ghost, \"value\": \"$i\" }"
                             end
                         end,
                         ",\n\t\t")
