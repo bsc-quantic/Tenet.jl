@@ -110,8 +110,8 @@ function draw(io::IOContext, @nospecialize(tn::AbstractTensorNetwork))
     vmarks[:transform] = [
         OrderedDict(
             :type => "force",
-            :static => false,
-            :iterations => 1000,
+            :static => get(io, :(var"force.static"), false),
+            :iterations => get(io, :(var"force.iterations"), 10000),
             :forces => [
                 OrderedDict(
                     :force => "center",
@@ -119,9 +119,14 @@ function draw(io::IOContext, @nospecialize(tn::AbstractTensorNetwork))
                     :y => OrderedDict(:signal => "center.y", :__collapse => true),
                     :__collapse => true,
                 ),
-                OrderedDict(:force => "collide", :radius => 10, :__collapse => true),
-                OrderedDict(:force => "nbody", :strength => -100, :__collapse => true),
-                OrderedDict(:force => "link", :links => "edge-data", :distance => 100, :__collapse => true),
+                OrderedDict(:force => "collide", :radius => get(io, :(var"force.radius"), 1), :__collapse => true),
+                OrderedDict(:force => "nbody", :strength => get(io, :(var"force.strength"), -10), :__collapse => true),
+                OrderedDict(
+                    :force => "link",
+                    :links => "edge-data",
+                    :distance => get(io, :(var"force.distance"), 10),
+                    :__collapse => true,
+                ),
             ],
         ),
     ]
@@ -139,11 +144,20 @@ function draw(io::IOContext, @nospecialize(tn::AbstractTensorNetwork))
             :targetY => "datum.target.y",
         ),
     ]
+    emarks[:encode] = OrderedDict(
+        :update => OrderedDict(
+            :stroke => OrderedDict(:value => "#ccc", :__collapse => true),
+            :strokeWidth => OrderedDict(:value => get(io, :(var"edge.width"), 2), :__collapse => true),
+            :tooltip => OrderedDict(:field => "value", :__collapse => true),
+        ),
+    )
 
     return print_json(io, spec)
 end
 
-function print_json(io::IO, spec; indent::Int=0)
+print_json(io::IOContext, spec::AbstractString) = print(io, "\"" * spec * "\"")
+function print_json(io::IOContext, spec::AbstractDict)
+    indent = get(io, :indent, 0)
     spec = copy(spec)
     collapse = get(spec, :__collapse, false)
     delete!(spec, :__collapse)
@@ -154,13 +168,13 @@ function print_json(io::IO, spec; indent::Int=0)
         print(io, (collapse ? "" : '\t'^(indent + 1)) * "\"$key\": ")
 
         if isa(value, AbstractDict)
-            print_json(io, value; indent=0)
+            print_json(IOContext(io, :indent => 0), value)
 
         elseif isa(value, Vector)
             print(io, "[")
             for (j, v) in enumerate(value)
                 print(io, collapse ? "" : "\n")
-                print_json(io, v; indent=indent + 2)
+                print_json(IOContext(io, :indent => indent + 2), v)
 
                 islast = j == length(value)
                 print(io, (islast ? "" : ","))
