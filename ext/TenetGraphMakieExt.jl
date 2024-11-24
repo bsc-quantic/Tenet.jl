@@ -46,7 +46,7 @@ function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::Tenet.Abstract
 end
 
 function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::Tenet.AbstractTensorNetwork; labels=false, kwargs...)
-    tn, graph, _, hypermap, copytensors, ghostnodes = graph_representation(tn)
+    tn, graph, _, hypermap, copytensors, ghostnodes = Tenet.graph_representation(tn)
 
     # configure graphics
     # TODO refactor hardcoded values into constants
