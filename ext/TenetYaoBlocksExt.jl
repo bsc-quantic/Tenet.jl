@@ -34,7 +34,7 @@ function Tenet.Quantum(circuit::AbstractBlock)
 
         # NOTE dim permutation fixes array layout of Yao
         perm = collect(Iterators.flatten([m:-1:1, (2m):-1:(m + 1)]))
-        array = permutedims(reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...), perm)
+        array = reshape(collect(mat(operator)), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l
