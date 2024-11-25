@@ -33,6 +33,8 @@ Abstract type representing the canonical form trait of a [`AbstractAnsatz`](@ref
 """
 abstract type Form end
 
+Base.copy(x::Form) = x
+
 """
     NonCanonical
 
@@ -51,6 +53,8 @@ struct NonCanonical <: Form end
 struct MixedCanonical <: Form
     orthog_center::Union{Site,Vector{<:Site}}
 end
+
+Base.copy(x::MixedCanonical) = MixedCanonical(copy(x.orthog_center))
 
 """
     Canonical
