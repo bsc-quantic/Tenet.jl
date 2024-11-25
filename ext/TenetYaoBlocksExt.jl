@@ -25,16 +25,19 @@ function Tenet.Quantum(circuit::AbstractBlock)
         end
 
         # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
+        m = length(occupied_locs(gate))
         operator = if gate isa YaoBlocks.ControlBlock
-            m = length(occupied_locs(gate))
             control((1:(m - 1))..., m => content(gate))(m)
         else
             content(gate)
         end
-        array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
+
+        # NOTE dim permutation fixes array layout of Yao
+        perm = collect(Iterators.flatten([m:-1:1, (2m):-1:(m + 1)]))
+        array = permutedims(reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...), perm)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
-            map(reverse(occupied_locs(gate))) do l
+            map(occupied_locs(gate)) do l
                 from, to = last(wire[l]), Tenet.nextindex!(gen)
                 push!(wire[l], to)
                 (to, from)
