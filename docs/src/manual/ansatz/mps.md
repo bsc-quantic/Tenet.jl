@@ -19,7 +19,7 @@ using NetworkLayout
 ```@example viz
 fig = Figure() # hide
 
-open_mps = rand(MPS, n=10, χ=4) # hide
+open_mps = rand(MPS; n=10, maxdim=4) # hide
 
 plot!(fig[1,1], open_mps, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
 
@@ -84,7 +84,7 @@ The major difference between them is that MPOs have 2 indices per site (1 input 
 ```@example viz
 fig = Figure() # hide
 
-open_mpo = rand(MatrixProduct{Operator,Open}, n=10, χ=4) # hide
+open_mpo = rand(MPO, n=10, maxdim=4) # hide
 
 plot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
 
