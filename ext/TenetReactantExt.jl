@@ -13,7 +13,7 @@ function Reactant.make_tracer(
     seen, @nospecialize(prev::RT), path::Tuple, mode::Reactant.TraceMode; kwargs...
 ) where {RT<:Tensor}
     tracedata = Reactant.make_tracer(seen, parent(prev), Reactant.append_path(path, :data), mode; kwargs...)
-    return Tensor(tracedata, inds(prev))
+    return Tensor(tracedata, copy(inds(prev)))
 end
 
 function Reactant.make_tracer(seen, prev::TensorNetwork, path::Tuple, mode::Reactant.TraceMode; kwargs...)
@@ -42,16 +42,16 @@ function Reactant.make_tracer(seen, prev::Tenet.Product, path::Tuple, mode::Reac
     return Tenet.Product(tracetn)
 end
 
-for A in (MPS, MPO)
-    @eval function Reactant.make_tracer(seen, prev::$A, path::Tuple, mode::Reactant.TraceMode; kwargs...)
-        tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
-        return $A(tracetn, form(prev))
-    end
+function Reactant.make_tracer(
+    seen, prev::A, path::Tuple, mode::Reactant.TraceMode; kwargs...
+) where {A<:Tenet.AbstractMPO}
+    tracetn = Reactant.make_tracer(seen, Ansatz(prev), Reactant.append_path(path, :tn), mode; kwargs...)
+    return A(tracetn, copy(form(prev)))
 end
 
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
-    return :($Tensor($data, $(inds(tocopy))))
+    return :($Tensor($data, $(copy(inds(tocopy)))))
 end
 
 function Reactant.create_result(tocopy::TensorNetwork, @nospecialize(path), result_stores)
@@ -77,25 +77,10 @@ function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), resu
     return :($(Tenet.Product)($tn))
 end
 
-for A in (MPS, MPO)
-    @eval function Reactant.create_result(tocopy::A, @nospecialize(path), result_stores) where {A<:$A}
-        tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-        return :($A($tn, $(Tenet.form(tocopy))))
-    end
+function Reactant.create_result(tocopy::A, @nospecialize(path), result_stores) where {A<:Tenet.AbstractMPO}
+    tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
+    return :($A($tn, $(Tenet.form(tocopy))))
 end
-
-# TODO try rely on generic fallback for ansatzes
-# function Reactant.create_result(tocopy::Tenet.Product, @nospecialize(path), result_stores)
-#     tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-#     return :($(Tenet.Product)($tn))
-# end
-
-# for A in (MPS, MPO)
-#     @eval function Reactant.create_result(tocopy::$A, @nospecialize(path), result_stores)
-#         tn = Reactant.create_result(Ansatz(tocopy), Reactant.append_path(path, :tn), result_stores)
-#         return :($A($tn, form(tocopy)))
-#     end
-# end
 
 function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
     @assert length(path) == 2
