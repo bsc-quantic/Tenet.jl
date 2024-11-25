@@ -30,7 +30,7 @@ fig # hide
 
 ### Canonical Forms
 
-A Matrix Product State ([`MPS`](@ref)) representation is not unique. Instead, a single `MPS` can be represented in different canonical forms. We can check the canonical form of an `MPS` by calling the [`form`](@ref) function.
+An `MPS` representation is not unique: a single `MPS` can be represented in different canonical [`Form`](@ref). The choice of canonical form can affect the efficiency and stability of algorithms used to manipulate the `MPS`. You can check the canonical form of an `MPS` by calling the `form` function:
 
 ```@example
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
@@ -38,18 +38,19 @@ mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 form(mps)
 ```
 
-Each canonical form can be useful in different situations, and the choice of the canonical form can affect the efficiency of the algorithms used to manipulate the `MPS`. Currently, `Tenet` supports the [`NonCanonical`](@ref), [`CanonicalForm`](@ref) and [`MixedCanonical`](@ref) forms.
+Currently, `Tenet` supports the [`NonCanonical`](@ref), [`CanonicalForm`](@ref) and [`MixedCanonical`](@ref) forms.
 
 #### `NonCanonical` Form
-The default form of an `MPS` when we do not specify a canonical form.
+In the `NonCanonical` form, the tensors in the `MPS` do not satisfy any particular orthogonality conditions. This is the default `form` when an `MPS` is initialized without specifying a canonical form. It is useful for general purposes but may not be optimal for certain computations that benefit from orthogonality.
 
-#### `CanonicalForm`
-Also known as Vidal's form. This form stores each `Tensor` of the `MPS` as a sequence of $\Gamma$ unitary tensors and $\lambda$ vectors:
+#### `Canonical` Form
+Also known as Vidal's form, the `Canonical` form represents the `MPS` using a sequence of isometric tensors (`Γ`) and diagonal vectors (`λ`) containing the Schmidt coefficients. The `MPS` is expressed as:
 
 ```math
 | \psi \rangle = \sum_{i_1, \dots, i_N} \Gamma_1^{i_1} \lambda_2^{i_2} \Gamma_2^{i_2} \dots \lambda_{N-1}^{i_{N-1}} \Gamma_{N-1}^{i_{N-1}} \lambda_N^{i_N} \Gamma_N^{i_N} | i_1, \dots, i_N \rangle \, .
 ```
-This form can be obtained by calling [`canonize!`](@ref) on an `MPS`:
+
+You can convert an `MPS` to the `Canonical` form by calling `canonize!`:
 
 ```@example
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
@@ -59,7 +60,9 @@ form(mps)
 ```
 
 #### `MixedCanonical` Form
-This form stores the `Tensor`s in an `MPS` as left or right canonical wether the `Tensor` is on the left or right of the ortogonality center, which is stored in the field `orthog_center` of the `MixedCanonical` form.
+In the `MixedCanonical` form, tensors to the left of the orthogonality center are left-canonical, tensors to the right are right-canonical, and the tensors at the orthogonality center (which can be `Site` or `Vector{<:Site}`) contains the entanglement information between the left and right parts of the chain. The position of the orthogonality center is stored in the `orthog_center` field.
+
+You can convert an `MPS` to the `MixedCanonical` form and specify the orthogonality center using `mixed_canonize!`:
 
 ```@example
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
@@ -67,6 +70,11 @@ mixed_canonize!(mps, Site(2))
 
 form(mps)
 ```
+
+##### Additional Resources
+For more in-depth information on Matrix Product States and their canonical forms, you may refer to:
+- Schollwöck, U. (2011). The density-matrix renormalization group in the age of matrix product states. Annals of physics, 326(1), 96-192.
+
 
 ## Matrix Product Operators (MPO)
 
