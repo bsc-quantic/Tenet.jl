@@ -47,7 +47,7 @@ In the `NonCanonical` form, the tensors in the `MPS` do not satisfy any particul
 Also known as Vidal's form, the `Canonical` form represents the `MPS` using a sequence of isometric tensors (`Γ`) and diagonal vectors (`λ`) containing the Schmidt coefficients. The `MPS` is expressed as:
 
 ```math
-| \psi \rangle = \sum_{i_1, \dots, i_N} \Gamma_1^{i_1} \lambda_2^{i_2} \Gamma_2^{i_2} \dots \lambda_{N-1}^{i_{N-1}} \Gamma_{N-1}^{i_{N-1}} \lambda_N^{i_N} \Gamma_N^{i_N} | i_1, \dots, i_N \rangle \, .
+| \psi \rangle = \sum_{i_1, \dots, i_N} \Gamma_1^{i_1} \lambda_2 \Gamma_2^{i_2} \dots \lambda_{N-1} \Gamma_{N-1}^{i_{N-1}} \Gamma_N^{i_N} | i_1, \dots, i_N \rangle \, .
 ```
 
 You can convert an `MPS` to the `Canonical` form by calling `canonize!`:
