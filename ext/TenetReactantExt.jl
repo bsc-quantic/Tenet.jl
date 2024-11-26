@@ -201,7 +201,14 @@ end
 
 Tenet.contract(a::Tensor, b::Tensor{T,N,TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
 function Tenet.contract(a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb}; kwargs...) where {Ta,Na,Tb,Nb}
-    return contract(a, Tensor(Reactant.promote_to(TracedRArray{Tb,Nb}, parent(b)), inds(b)); kwargs...)
+    # TODO change to `Ops.constant` when Ops PR lands in Reactant
+    # apparently `promote_to` doesn't do the transpostion for converting from column-major (Julia) to row-major layout (MLIR)
+    # currently, we call permutedims manually
+    return contract(
+        a,
+        Tensor(Reactant.promote_to(TracedRArray{Tb,Nb}, permutedims(parent(b), collect(Nb:-1:1))), inds(b));
+        kwargs...,
+    )
 end
 
 end
