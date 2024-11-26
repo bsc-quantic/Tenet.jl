@@ -51,8 +51,3 @@ fig # hide
 ```
 
 In `Tenet`, the generic `MatrixProduct` ansatz implements this topology. Type variables are used to address their functionality (`State` or `Operator`) and their boundary conditions (`Open` or `Periodic`).
-
-```@docs
-MatrixProduct
-MatrixProduct(::Any)
-```

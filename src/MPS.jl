@@ -481,7 +481,7 @@ function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
     return ψ
 end
 
-function canonize!(ψ::AbstractMPO)
+function canonize!(ψ::AbstractMPO; normalize=false)
     Λ = Tensor[]
 
     # right-to-left QR sweep, get right-canonical tensors
@@ -495,6 +495,7 @@ function canonize!(ψ::AbstractMPO)
 
         # extract the singular values and contract them with the next tensor
         Λᵢ = pop!(ψ, tensors(ψ; between=(Site(i), Site(i + 1))))
+        normalize && (Λᵢ ./= norm(Λᵢ))
         Aᵢ₊₁ = tensors(ψ; at=Site(i + 1))
         replace!(ψ, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
         push!(Λ, Λᵢ)
@@ -541,14 +542,20 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
 end
 
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
+LinearAlgebra.normalize!(ψ::AbstractMPO, at::Site) = normalize!(form(ψ), ψ; at)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Site}) = normalize!(form(ψ), ψ; bond)
 
+# NOTE: Inplace normalization of the arrays should be faster, but currently lead to problems for `copy` TensorNetworks
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
-    tensor = tensors(ψ; at)
-    tensor ./= norm(ψ)
+    if at isa Site
+        tensor = tensors(ψ; at)
+        replace!(ψ, tensor => tensor ./ norm(ψ))
+    else
+        normalize!(mixed_canonize!(ψ, at))
+    end
+
     return ψ
 end
-
-LinearAlgebra.normalize!(ψ::AbstractMPO, site::Site) = normalize!(mixed_canonize!(ψ, site); at=site)
 
 function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
     mixed_canonize!(ψ, at)
@@ -556,4 +563,16 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-# TODO function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO) end
+function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothing)
+    if isnothing(bond) # Normalize all λ tensors
+        for i in 1:(nsites(ψ) - 1)
+            λ = tensors(ψ; between=(Site(i), Site(i + 1)))
+            replace!(ψ, λ => λ ./ norm(λ)^(1 / (nsites(ψ) - 1)))
+        end
+    else
+        λ = tensors(ψ; between=bond)
+        replace!(ψ, λ => λ ./ norm(λ))
+    end
+
+    return ψ
+end

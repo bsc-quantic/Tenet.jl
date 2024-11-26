@@ -4,3 +4,6 @@ always_for_in = true
 format_docstrings = true
 trailing_comma = true
 margin = 120
+import_to_using = true
+pipe_to_function_call = false
+always_use_return = false

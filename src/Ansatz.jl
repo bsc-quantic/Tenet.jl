@@ -232,6 +232,13 @@ mixed_canonize(tn::AbstractAnsatz, args...; kwargs...) = mixed_canonize!(deepcop
 canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 
 """
+    normalize!(ψ::AbstractAnsatz, at)
+
+Normalize the state at a given [`Site`](@ref) or bond in a [`AbstractAnsatz`](@ref) Tensor Network.
+"""
+LinearAlgebra.normalize(ψ::AbstractAnsatz, site) = normalize!(copy(ψ), site)
+
+"""
     isisometry(tn::AbstractAnsatz, site; dir, kwargs...)
 
 Check if the tensor at a given [`Site`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
@@ -278,8 +285,9 @@ Truncate the dimension of the virtual `bond` of a [`NonCanonical`](@ref) Tensor 
     - `threshold`: The threshold to truncate the bond dimension.
     - `maxdim`: The maximum bond dimension to keep.
     - `compute_local_svd`: Whether to compute the local SVD of the bond. If `true`, it will contract the bond and perform a SVD to get the local singular values. Defaults to `true`.
+    - `normalize`: Whether to normalize the state at the bond after truncation. Defaults to `false`.
 """
-function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true)
+function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, compute_local_svd=true, normalize=false)
     virtualind = inds(tn; bond)
 
     if compute_local_svd
@@ -309,26 +317,31 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
     end
 
     slice!(tn, virtualind, extent)
+    sliced_bond = tensors(tn; bond)
+
+    # Note: Inplace normalization of the inner arrays may be more efficient
+    normalize && replace!(tn, sliced_bond => sliced_bond ./ norm(tn))
 
     return tn
 end
 
-function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim)
+function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, normalize=false)
     # move orthogonality center to bond
     mixed_canonize!(tn, bond)
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true)
+
+    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true, normalize)
 end
 
 """
-    truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
+    truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, canonize=true)
 
 Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
-**Schmidt coefficients** or those larger than `threshold`, and then recanonizes the Tensor Network if `recanonize` is `true`.
+**Schmidt coefficients** or those larger than `threshold`, and then canonizes the Tensor Network if `canonize` is `true`.
 """
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, recanonize=true)
-    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false)
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, canonize=false, normalize=false)
+    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false, normalize)
 
-    recanonize && canonize!(tn)
+    canonize && canonize!(tn)
 
     return tn
 end
@@ -358,7 +371,7 @@ function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ
 end
 
 """
-    evolve!(ψ::AbstractAnsatz, gate; threshold = nothing, maxdim = nothing, renormalize = false)
+    evolve!(ψ::AbstractAnsatz, gate; threshold = nothing, maxdim = nothing, normalize = false)
 
 Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` operator.
 
@@ -371,7 +384,7 @@ Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` op
 
   - `threshold`: The threshold to truncate the bond dimension.
   - `maxdim`: The maximum bond dimension to keep.
-  - `renormalize`: Whether to renormalize the state after truncation.
+  - `normalize`: Whether to normalize the state after truncation.
 
 # Notes
 
@@ -379,8 +392,8 @@ Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` op
   - The gate must have the same number of inputs and outputs.
   - Currently only the "Simple Update" algorithm is used and the gate must be a 1-site or 2-site operator.
 """
-function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    return simple_update!(ψ, gate; threshold, maxdim, renormalize)
+function evolve!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false, kwargs...)
+    return simple_update!(ψ, gate; threshold, maxdim, normalize, kwargs...)
 end
 
 # by popular demand (Stefano, I'm looking at you), I aliased `apply!` to `evolve!`
@@ -391,11 +404,11 @@ function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=noth
 
     if nlanes(gate) == 1
         return simple_update_1site!(ψ, gate)
+    elseif nlanes(gate) == 2
+        return simple_update_2site!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
+    else
+        throw(ArgumentError("Only 1-site and 2-site gates are currently supported"))
     end
-
-    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
-
-    return simple_update!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
 end
 
 # TODO a lot of problems with merging... maybe we shouldn't merge manually
@@ -423,9 +436,15 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
     return contract!(ψ, contracting_index)
 end
 
-# TODO remove `renormalize` argument?
-function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, renormalize=false)
-    @assert nlanes(gate) == 2 "Only 2-site gates are supported currently"
+function simple_update_2site!(
+    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
+)
+    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize)
+end
+
+function simple_update_2site!(
+    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
+)
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
@@ -459,16 +478,49 @@ function simple_update!(::NonCanonical, ψ::AbstractAnsatz, gate; threshold=noth
 
     # truncate virtual index
     if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, bond; threshold, maxdim)
-        renormalize && normalize!(ψ, bond[1])
+        truncate!(ψ, collect(bond); threshold, maxdim, normalize)
     end
 
     return ψ
 end
 
-# TODO remove `renormalize` argument?
-# TODO optimize correctly -> avoid recanonization + use lateral Λs
-function simple_update!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, renormalize=false)
-    simple_update!(NonCanonical(), ψ, gate; threshold, maxdim, renormalize)
-    return canonize!(ψ)
+# TODO remove `normalize` argument?
+function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, normalize=false, canonize=true)
+    # Contract the exterior Λ tensors
+    sitel, siter = extrema(lanes(gate))
+    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
+
+    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
+
+    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false)
+
+    # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
+    U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
+    Γᵢ₋₁ = if isnothing(Λᵢ₋₁)
+        U
+    else
+        contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)); atol=wrap_eps(eltype(U)))), inds(Λᵢ₋₁)); dims=())
+    end
+    Γᵢ = if isnothing(Λᵢ₊₁)
+        Vt
+    else
+        contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)); atol=wrap_eps(eltype(Vt)))), inds(Λᵢ₊₁)), Vt; dims=())
+    end
+
+    # Update the tensors in the tensor network
+    replace!(ψ, tensors(ψ; at=sitel) => Γᵢ₋₁)
+    replace!(ψ, tensors(ψ; at=siter) => Γᵢ)
+
+    if canonize
+        canonize!(ψ; normalize)
+    else
+        normalize && normalize!(ψ, collect((sitel, siter)))
+    end
+
+    return ψ
 end
