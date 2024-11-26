@@ -17,27 +17,36 @@ using NetworkLayout
 ```
 
 ```@example viz
-fig = Figure() # hide
+fig = Figure()
+open_mps = rand(MPS; n=10, maxdim=4)
 
-open_mps = rand(MPS; n=10, maxdim=4) # hide
+plot!(fig[1,1], open_mps, layout=Spring(iterations=1000, C=0.5, seed=100))
+Label(fig[1,1, Bottom()], "Open")
 
-plot!(fig[1,1], open_mps, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
-
-Label(fig[1,1, Bottom()], "Open") # hide
-
-fig # hide
+fig
 ```
+
+The default ordering of the indices on the `MPS` constructor is (physical, left, right), but you can specify the ordering by passing the `order` keyword argument:
+
+```@example
+mps = MPS([rand(4, 2), rand(4, 8, 2), rand(8, 2)]; order=[:l, :r, :o])
+```
+where `:l`, `:r`, and `:o` represent the left, right, and outer physical indices, respectively.
+
 
 ### Canonical Forms
 
-An `MPS` representation is not unique: a single `MPS` can be represented in different canonical [`Form`](@ref). The choice of canonical form can affect the efficiency and stability of algorithms used to manipulate the `MPS`. You can check the canonical form of an `MPS` by calling the `form` function:
+An `MPS` representation is not unique: a single `MPS` can be represented in different canonical forms. The choice of canonical form can affect the efficiency and stability of algorithms used to manipulate the `MPS`.
+The current form of the `MPS` is stored as the trait [`Form`](@ref) and can be accessed via the `form` function:
 
 ```@example
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
 form(mps)
 ```
+> :warning: Depending on the form, `Tenet` will dispatch under the hood the appropriate algorithm which assumes full use of the canonical form, so be careful when making modifications that might alter the canonical form without changing the trait.
 
+`Tenet` has the internal function [`Tenet.check_form`](@ref) to check if the `MPS` is in the correct canonical form. This function can be used to ensure that the `MPS` is in the correct form before performing any operation that requires it.
 Currently, `Tenet` supports the [`NonCanonical`](@ref), [`CanonicalForm`](@ref) and [`MixedCanonical`](@ref) forms.
 
 #### `NonCanonical` Form
@@ -62,11 +71,14 @@ form(mps)
 #### `MixedCanonical` Form
 In the `MixedCanonical` form, tensors to the left of the orthogonality center are left-canonical, tensors to the right are right-canonical, and the tensors at the orthogonality center (which can be `Site` or `Vector{<:Site}`) contains the entanglement information between the left and right parts of the chain. The position of the orthogonality center is stored in the `orthog_center` field.
 
-You can convert an `MPS` to the `MixedCanonical` form and specify the orthogonality center using `mixed_canonize!`:
+You can convert an `MPS` to the `MixedCanonical` form and specify the orthogonality center using `mixed_canonize!`. Additionally, one can check that the `MPS` is effectively in mixed canonical form using the functions `isleftcanonical` and `isrightcanonical`, which return `true` if the `Tensor` at that particular site is left or right canonical, respectively.
 
 ```@example
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 mixed_canonize!(mps, Site(2))
+
+isleftcanonical(mps, 1)
+isrightcanonical(mps, 3)
 
 form(mps)
 ```
@@ -82,13 +94,11 @@ Matrix Product Operators ([`MPO`](@ref)) are the operator version of [Matrix Pro
 The major difference between them is that MPOs have 2 indices per site (1 input and 1 output) while MPSs only have 1 index per site (i.e. an output). Currently, only `Open` boundary conditions are supported in `Tenet`.
 
 ```@example viz
-fig = Figure() # hide
+fig = Figure()
+open_mpo = rand(MPO, n=10, maxdim=4)
 
-open_mpo = rand(MPO, n=10, maxdim=4) # hide
+plot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100))
+Label(fig[1,1, Bottom()], "Open")
 
-plot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
-
-Label(fig[1,1, Bottom()], "Open") # hide
-
-fig # hide
+fig
 ```
