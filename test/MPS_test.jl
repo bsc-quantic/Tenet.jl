@@ -374,6 +374,55 @@ using LinearAlgebra
                 @test_throws ArgumentError Tenet.check_form(evolved)
             end
         end
+
+        @testset "MPO evolution" begin
+            ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
+            normalize!(ψ)
+            mpo = rand(MPO; n=5, maxdim=4)
+
+            ϕ_1 = deepcopy(ψ)
+            ϕ_2 = deepcopy(ψ)
+            ϕ_3 = deepcopy(ψ)
+
+            @testset "NonCanonical" begin
+                evolve!(ϕ_1, mpo)
+                @test length(tensors(ϕ_1)) == 5
+            end
+
+            @testset "Canonical" begin
+                canonize!(ϕ_2)
+                evolve!(ϕ_2, mpo)
+                @test length(tensors(ϕ_2)) == 5 + 4
+                @test form(ϕ_2) == Canonical()
+                @test Tenet.check_form(ϕ_2)
+            end
+
+            @testset "MixedCanonical" begin
+                mixed_canonize!(ϕ_3, site"3")
+                evolve!(ϕ_3, mpo)
+                @test length(tensors(ϕ_3)) == 5
+                @test form(ϕ_3) == MixedCanonical(Site(3))
+                @test Tenet.check_form(ϕ_3)
+            end
+
+            function create_replacements(ϕ_1_sites::Dict, ϕ_2_sites::Dict)
+                # Ensure the keys match in both dictionaries
+                if keys(ϕ_1_sites) != keys(ϕ_2_sites)
+                    throw(ArgumentError("Keys of the dictionaries do not match."))
+                end
+
+                # Create a list of replacements
+                replacements = [(ϕ_2_sites[key] => ϕ_1_sites[key]) for key in keys(ϕ_1_sites)]
+
+                return replacements
+            end
+
+            t1 = contract(ϕ_1)
+            t2 = replace(contract(ϕ_2), create_replacements(Quantum(ϕ_1).sites, Quantum(ϕ_2).sites)...)
+            t3 = replace(contract(ϕ_3), create_replacements(Quantum(ϕ_1).sites, Quantum(ϕ_3).sites)...)
+
+            @test t1 ≈ t2 ≈ t3
+        end
     end
 
     # TODO rename when method is renamed
