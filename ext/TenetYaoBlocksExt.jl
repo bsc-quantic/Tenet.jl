@@ -25,13 +25,13 @@ function Tenet.Quantum(circuit::AbstractBlock)
         end
 
         # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
+        m = length(occupied_locs(gate))
         operator = if gate isa YaoBlocks.ControlBlock
-            m = length(occupied_locs(gate))
             control((1:(m - 1))..., m => content(gate))(m)
         else
             content(gate)
         end
-        array = reshape(mat(operator), fill(nlevel(operator), 2 * nqubits(operator))...)
+        array = reshape(collect(mat(operator)), fill(nlevel(operator), 2 * nqubits(operator))...)
 
         inds = (x -> collect(Iterators.flatten(zip(x...))))(
             map(occupied_locs(gate)) do l

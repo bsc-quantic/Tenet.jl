@@ -15,6 +15,8 @@ end
 Site(id::Int; kwargs...) = Site((id,); kwargs...)
 Site(id::Vararg{Int,N}; kwargs...) where {N} = Site(id; kwargs...)
 
+Base.copy(x::Site) = x
+
 id(site::Site{1}) = only(site.id)
 id(site::Site) = site.id
 
