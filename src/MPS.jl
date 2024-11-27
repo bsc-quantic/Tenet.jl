@@ -544,8 +544,6 @@ end
 function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true)
     evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
 
-    @show form(ψ)
-
     if !isnothing(threshold) || !isnothing(maxdim) || form(ψ) isa MixedCanonical
         # right-to-left QR sweep, get right-canonical tensors
         for i in nsites(ψ):-1:2
