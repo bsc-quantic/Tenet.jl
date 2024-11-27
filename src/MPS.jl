@@ -563,7 +563,7 @@ function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim
     end
 
     if form(ψ) isa Canonical
-        canonize!(ψ; normalize=normalize)
+        canonize!(ψ; normalize=normalize) # TODO: check how do we lose canonicity if we do not canonize
     elseif form(ψ) isa MixedCanonical
         mixed_canonize!(ψ, form(ψ).orthog_center)
         normalize && normalize!(ψ)
