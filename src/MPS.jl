@@ -541,6 +541,84 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     return tn
 end
 
+function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true)
+    evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
+
+    @show form(ψ)
+
+    if !isnothing(threshold) || !isnothing(maxdim) || form(ψ) isa MixedCanonical
+        # right-to-left QR sweep, get right-canonical tensors
+        for i in nsites(ψ):-1:2
+            canonize_site!(ψ, Site(i); direction=:left, method=:svd)
+        end
+
+        # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
+        for i in 1:(nsites(ψ) - 1)
+            canonize_site!(ψ, Site(i); direction=:right, method=:svd)
+            (!isnothing(threshold) || !isnothing(maxdim)) &&
+                truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, compute_local_svd=false, normalize=normalize)
+
+            if !(form(ψ) isa Canonical)
+                contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
+            end
+        end
+    end
+
+    if form(ψ) isa Canonical
+        canonize!(ψ; normalize=normalize)
+    elseif form(ψ) isa MixedCanonical
+        mixed_canonize!(ψ, form(ψ).orthog_center)
+        normalize && normalize!(ψ)
+    else
+        ψ.form = MixedCanonical(Site(nsites(ψ)))
+        normalize && normalize!(ψ)
+    end
+
+    return ψ
+end
+
+function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+    L = nsites(ψ)
+    Tenet.@reindex! outputs(ψ) => inputs(mpo)
+
+    right_inds = [inds(ψ; at=Site(i), dir=:right) for i in 1:(L - 1)]
+
+    for i in 1:L
+        contract_ind = inds(ψ; at=Site(i))
+        push!(ψ, tensors(mpo; at=Site(i)))
+        contract!(ψ, contract_ind)
+        merge!(Quantum(ψ).sites, Dict(Site(i) => inds(mpo; at=Site(i))))
+    end
+
+    for i in 1:(L - 1)
+        groupinds!(ψ, right_inds[i])
+    end
+
+    return ψ
+end
+
+function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+    # We convert all the tensors to left-canonical form
+    initial_form = form(ψ)
+    mixed_canonize!(ψ, Site(nsites(ψ)))
+    ψ.form = initial_form
+
+    evolve!(NonCanonical(), ψ, mpo; kwargs...)
+
+    return ψ
+end
+
+function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+    # We first join the λs to the Γs to get MixedCanonical(Site(1)) form
+    for i in 1:(nsites(ψ) - 1)
+        contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
+    end
+
+    evolve!(NonCanonical(), ψ, mpo; kwargs...)
+
+    return ψ
+end
+
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
 LinearAlgebra.normalize!(ψ::AbstractMPO, at::Site) = normalize!(form(ψ), ψ; at)
 LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Site}) = normalize!(form(ψ), ψ; bond)
