@@ -378,7 +378,7 @@ using LinearAlgebra
         @testset "MPO evolution" begin
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
             normalize!(ψ)
-            mpo = rand(MPO; n=5, maxdim=4)
+            mpo = rand(MPO; n=5, maxdim=8)
 
             ϕ_1 = deepcopy(ψ)
             ϕ_2 = deepcopy(ψ)
@@ -387,9 +387,11 @@ using LinearAlgebra
             @testset "NonCanonical" begin
                 evolve!(ϕ_1, mpo)
                 @test length(tensors(ϕ_1)) == 5
+                @test norm(ϕ_1) ≈ 1.0
 
                 evolved = evolve!(deepcopy(ψ), mpo; maxdim=3)
                 @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test norm(evolved) ≈ 1.0
             end
 
             @testset "Canonical" begin
@@ -410,11 +412,13 @@ using LinearAlgebra
                 evolve!(ϕ_3, mpo)
                 @test length(tensors(ϕ_3)) == 5
                 @test form(ϕ_3) == MixedCanonical(Site(3))
+                @test norm(ϕ_3) ≈ 1.0
                 @test Tenet.check_form(ϕ_3)
 
                 evolved = evolve!(deepcopy(mixed_canonize!(ψ, site"3")), mpo; maxdim=3)
                 @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
                 @test form(evolved) == MixedCanonical(Site(3))
+                @test norm(evolved) ≈ 1.0
                 @test Tenet.check_form(evolved)
             end
 
@@ -435,6 +439,7 @@ using LinearAlgebra
             t3 = replace(contract(ϕ_3), create_replacements(Quantum(ϕ_1).sites, Quantum(ϕ_3).sites)...)
 
             @test t1 ≈ t2 ≈ t3
+            @test only(overlap(ϕ_1, ϕ_2)) ≈ only(overlap(ϕ_1, ϕ_3)) ≈ only(overlap(ϕ_2, ϕ_3)) ≈ 1.0
         end
     end
 
