@@ -131,9 +131,9 @@ end
 
 Check if the tensors in the mps are in the proper [`Form`](@ref).
 """
-check_form(mps::AbstractMPO) = check_form(form(mps), mps)
+check_form(mps::AbstractMPO; kwargs...) = check_form(form(mps), mps; kwargs...)
 
-function check_form(config::MixedCanonical, mps::AbstractMPO)
+function check_form(config::MixedCanonical, mps::AbstractMPO; atol=1e-12)
     orthog_center = config.orthog_center
 
     left, right = if orthog_center isa Site
@@ -144,23 +144,24 @@ function check_form(config::MixedCanonical, mps::AbstractMPO)
 
     for i in 1:nsites(mps)
         if i < left # Check left-canonical tensors
-            isisometry(mps, Site(i); dir=:right) || throw(ArgumentError("Tensors are not left-canonical"))
+            isisometry(mps, Site(i); dir=:right, atol) || throw(ArgumentError("Tensors are not left-canonical"))
         elseif i > right # Check right-canonical tensors
-            isisometry(mps, Site(i); dir=:left) || throw(ArgumentError("Tensors are not right-canonical"))
+            isisometry(mps, Site(i); dir=:left, atol) || throw(ArgumentError("Tensors are not right-canonical"))
         end
     end
 
     return true
 end
 
-function check_form(::Canonical, mps::AbstractMPO)
+function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
     for i in 1:nsites(mps)
-        if i > 1 && !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right)
+        if i > 1 &&
+            !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right, atol)
             throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
         end
 
         if i < nsites(mps) &&
-            !isisometry(contract(mps; between=(Site(i), Site(i + 1)), direction=:left), Site(i); dir=:left)
+            !isisometry(contract(mps; between=(Site(i), Site(i + 1)), direction=:left), Site(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
@@ -541,42 +542,18 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
     return tn
 end
 
+"""
+    evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true)
+
+Evolve the [`AbstractAnsatz`](@ref) `ψ` with the [`AbstractMPO`](@ref) `mpo` along the output indices of `ψ`.
+If `threshold` or `maxdim` are not `nothing`, the tensors are truncated after each sweep at the proper value.
+"""
 function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true)
     evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
-    original_form = form(ψ)
-
-    if !isnothing(threshold) || !isnothing(maxdim) || form(ψ) isa MixedCanonical
-        # right-to-left QR sweep, get right-canonical tensors
-        for i in nsites(ψ):-1:2
-            canonize_site!(ψ, Site(i); direction=:left, method=:svd)
-        end
-
-        # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
-        for i in 1:(nsites(ψ) - 1)
-            canonize_site!(ψ, Site(i); direction=:right, method=:svd)
-            (!isnothing(threshold) || !isnothing(maxdim)) &&
-                truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, compute_local_svd=false, normalize)
-
-            if !(form(ψ) isa Canonical)
-                contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
-            end
-        end
-    end
-
-    if form(ψ) isa Canonical
-        canonize!(ψ; normalize) # TODO: check how do we lose canonicity if we do not canonize
-    elseif form(ψ) isa MixedCanonical
-        mixed_canonize!(ψ, original_form.orthog_center)
-        normalize && normalize!(ψ)
-    else
-        ψ.form = MixedCanonical(Site(nsites(ψ)))
-        normalize && normalize!(ψ)
-    end
-
     return ψ
 end
 
-function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold, maxdim, normalize, kwargs...)
     L = nsites(ψ)
     Tenet.@reindex! outputs(ψ) => inputs(mpo)
 
@@ -589,31 +566,87 @@ function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...
         merge!(Quantum(ψ).sites, Dict(Site(i) => inds(mpo; at=Site(i))))
     end
 
+    # Group the parallel bond indices
     for i in 1:(L - 1)
         groupinds!(ψ, right_inds[i])
+    end
+
+    if !isnothing(threshold) || !isnothing(maxdim)
+        truncate_sweep!(form(ψ), ψ; threshold, maxdim, normalize)
+    else
+        normalize && normalize!(ψ)
     end
 
     return ψ
 end
 
-function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
-    # We convert all the tensors to left-canonical form
+function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; normalize, kwargs...)
     initial_form = form(ψ)
-    mixed_canonize!(ψ, Site(nsites(ψ)))
-    ψ.form = initial_form
+    mixed_canonize!(ψ, Site(nsites(ψ))) # We convert all the tensors to left-canonical form
 
-    evolve!(NonCanonical(), ψ, mpo; kwargs...)
+    evolve!(NonCanonical(), ψ, mpo; normalize, kwargs...)
+
+    mixed_canonize!(ψ, initial_form.orthog_center)
 
     return ψ
 end
 
-function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold, maxdim, normalize, kwargs...)
     # We first join the λs to the Γs to get MixedCanonical(Site(1)) form
     for i in 1:(nsites(ψ) - 1)
         contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
     end
 
-    evolve!(NonCanonical(), ψ, mpo; kwargs...)
+    evolve!(NonCanonical(), ψ, mpo; threshold=nothing, maxdim=nothing, normalize=false, kwargs...) # set maxdim and threshold to nothing so we truncate from Canonical form
+
+    if !isnothing(threshold) || !isnothing(maxdim)
+        truncate_sweep!(Canonical(), ψ; threshold, maxdim, normalize)
+    else
+        normalize && canonize!(ψ; normalize)
+    end
+
+    return ψ
+end
+
+function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, normalize)
+    for i in nsites(ψ):-1:2
+        canonize_site!(ψ, Site(i); direction=:left, method=:svd)
+    end
+
+    # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
+    for i in 1:(nsites(ψ) - 1)
+        canonize_site!(ψ, Site(i); direction=:right, method=:svd)
+
+        (!isnothing(threshold) || !isnothing(maxdim)) &&
+            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false)
+
+        contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
+    end
+
+    ψ.form = MixedCanonical(Site(nsites(ψ)))
+
+    return ψ
+end
+
+function truncate_sweep!(::MixedCanonical, ψ::AbstractMPO; threshold, maxdim, normalize)
+    truncate_sweep!(NonCanonical(), ψ; threshold, maxdim, normalize)
+end
+
+function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normalize)
+    for i in nsites(ψ):-1:2
+        canonize_site!(ψ, Site(i); direction=:left, method=:svd)
+    end
+
+    # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
+    for i in 1:(nsites(ψ) - 1)
+        canonize_site!(ψ, Site(i); direction=:right, method=:svd)
+        (!isnothing(threshold) || !isnothing(maxdim)) &&
+            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false)
+    end
+
+    show_lambda(ψ) = [tensors(ψ; between=(Site(i), Site(i + 1))) for i in 1:(nsites(ψ) - 1)]
+
+    canonize!(ψ)
 
     return ψ
 end
