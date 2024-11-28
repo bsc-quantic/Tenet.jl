@@ -387,6 +387,9 @@ using LinearAlgebra
             @testset "NonCanonical" begin
                 evolve!(ϕ_1, mpo)
                 @test length(tensors(ϕ_1)) == 5
+
+                evolved = evolve!(deepcopy(ψ), mpo; maxdim = 3)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
             end
 
             @testset "Canonical" begin
@@ -395,6 +398,11 @@ using LinearAlgebra
                 @test length(tensors(ϕ_2)) == 5 + 4
                 @test form(ϕ_2) == Canonical()
                 @test Tenet.check_form(ϕ_2)
+
+                evolved = evolve!(deepcopy(canonize!(ψ)), mpo; maxdim = 3, normalize=true)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test form(evolved) == Canonical()
+                @test Tenet.check_form(evolved)
             end
 
             @testset "MixedCanonical" begin
@@ -403,6 +411,11 @@ using LinearAlgebra
                 @test length(tensors(ϕ_3)) == 5
                 @test form(ϕ_3) == MixedCanonical(Site(3))
                 @test Tenet.check_form(ϕ_3)
+
+                evolved = evolve!(deepcopy(mixed_canonize!(ψ, site"3")), mpo; maxdim = 3)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test form(evolved) == MixedCanonical(Site(3))
+                @test Tenet.check_form(evolved)
             end
 
             function create_replacements(ϕ_1_sites::Dict, ϕ_2_sites::Dict)
