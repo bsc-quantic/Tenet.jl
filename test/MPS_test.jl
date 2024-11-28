@@ -399,7 +399,7 @@ using LinearAlgebra
                 @test form(ϕ_2) == Canonical()
                 @test Tenet.check_form(ϕ_2)
 
-                evolved = evolve!(deepcopy(canonize!(ψ)), mpo; maxdim=3, normalize=true)
+                evolved = evolve!(deepcopy(canonize!(ψ)), mpo; maxdim=3)
                 @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
                 @test form(evolved) == Canonical()
                 @test Tenet.check_form(evolved)
