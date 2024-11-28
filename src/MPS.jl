@@ -543,6 +543,7 @@ end
 
 function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true)
     evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
+    original_form = form(ψ)
 
     if !isnothing(threshold) || !isnothing(maxdim) || form(ψ) isa MixedCanonical
         # right-to-left QR sweep, get right-canonical tensors
@@ -554,7 +555,7 @@ function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim
         for i in 1:(nsites(ψ) - 1)
             canonize_site!(ψ, Site(i); direction=:right, method=:svd)
             (!isnothing(threshold) || !isnothing(maxdim)) &&
-                truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, compute_local_svd=false, normalize=normalize)
+                truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, compute_local_svd=false, normalize)
 
             if !(form(ψ) isa Canonical)
                 contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
@@ -563,9 +564,9 @@ function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim
     end
 
     if form(ψ) isa Canonical
-        canonize!(ψ; normalize=normalize) # TODO: check how do we lose canonicity if we do not canonize
+        canonize!(ψ; normalize) # TODO: check how do we lose canonicity if we do not canonize
     elseif form(ψ) isa MixedCanonical
-        mixed_canonize!(ψ, form(ψ).orthog_center)
+        mixed_canonize!(ψ, original_form.orthog_center)
         normalize && normalize!(ψ)
     else
         ψ.form = MixedCanonical(Site(nsites(ψ)))
@@ -640,14 +641,15 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
 end
 
 function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothing)
+    old_norm = norm(ψ)
     if isnothing(bond) # Normalize all λ tensors
         for i in 1:(nsites(ψ) - 1)
             λ = tensors(ψ; between=(Site(i), Site(i + 1)))
-            replace!(ψ, λ => λ ./ norm(λ)^(1 / (nsites(ψ) - 1)))
+            replace!(ψ, λ => λ ./ old_norm^(1 / (nsites(ψ) - 1)))
         end
     else
         λ = tensors(ψ; between=bond)
-        replace!(ψ, λ => λ ./ norm(λ))
+        replace!(ψ, λ => λ ./ old_norm)
     end
 
     return ψ
