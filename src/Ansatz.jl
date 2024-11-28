@@ -338,7 +338,7 @@ end
 Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
 **Schmidt coefficients** or those larger than `threshold`, and then canonizes the Tensor Network if `canonize` is `true`.
 """
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; canonize = true, kwargs...)
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; canonize=true, kwargs...)
     truncate!(NonCanonical(), tn, bond; compute_local_svd=false, kwargs...)
 
     canonize && canonize!(tn)
