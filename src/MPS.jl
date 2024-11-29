@@ -556,10 +556,10 @@ function evolve!(
     evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
 
     if reset_index
-        resetindex!(Quantum(ψ); init=ninds(TensorNetwork(ψ)) + 1)
+        resetindex!(ψ; init=ninds(TensorNetwork(ψ)) + 1)
 
-        replacements = [(Quantum(ψ).sites[key] => original_sites[key]) for key in keys(original_sites)]
-        replace!(Quantum(ψ), replacements)
+        replacements = [inds(ψ; at=site) => original_sites[site] for site in keys(original_sites)]
+        replace!(ψ, replacements)
     end
 
     return ψ
@@ -620,9 +620,17 @@ function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold, m
     return ψ
 end
 
+"""
+	truncate_sweep!
+
+Do a right-to-left QR sweep on the [`AbstractMPO`](@ref) `ψ` and then left-to-right SVD sweep and truncate the tensors
+according to the `threshold` or `maxdim` values. The bond is normalized if `normalize=true`.
+"""
+function truncate_sweep! end
+
 function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, normalize)
     for i in nsites(ψ):-1:2
-        canonize_site!(ψ, Site(i); direction=:left, method=:svd)
+        canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
@@ -646,7 +654,7 @@ end
 
 function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normalize)
     for i in nsites(ψ):-1:2
-        canonize_site!(ψ, Site(i); direction=:left, method=:svd)
+        canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
