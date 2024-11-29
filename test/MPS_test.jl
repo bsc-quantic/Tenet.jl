@@ -422,21 +422,9 @@ using LinearAlgebra
                 @test Tenet.check_form(evolved)
             end
 
-            function create_replacements(ϕ_1_sites::Dict, ϕ_2_sites::Dict)
-                # Ensure the keys match in both dictionaries
-                if keys(ϕ_1_sites) != keys(ϕ_2_sites)
-                    throw(ArgumentError("Keys of the dictionaries do not match."))
-                end
-
-                # Create a list of replacements
-                replacements = [(ϕ_2_sites[key] => ϕ_1_sites[key]) for key in keys(ϕ_1_sites)]
-
-                return replacements
-            end
-
             t1 = contract(ϕ_1)
-            t2 = replace(contract(ϕ_2), create_replacements(Quantum(ϕ_1).sites, Quantum(ϕ_2).sites)...)
-            t3 = replace(contract(ϕ_3), create_replacements(Quantum(ϕ_1).sites, Quantum(ϕ_3).sites)...)
+            t2 = contract(ϕ_2)
+            t3 = contract(ϕ_3)
 
             @test t1 ≈ t2 ≈ t3
             @test only(overlap(ϕ_1, ϕ_2)) ≈ only(overlap(ϕ_1, ϕ_3)) ≈ only(overlap(ϕ_2, ϕ_3)) ≈ 1.0
