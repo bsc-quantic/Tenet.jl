@@ -664,8 +664,6 @@ function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normal
             truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false)
     end
 
-    show_lambda(ψ) = [tensors(ψ; between=(Site(i), Site(i + 1))) for i in 1:(nsites(ψ) - 1)]
-
     canonize!(ψ)
 
     return ψ
