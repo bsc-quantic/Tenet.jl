@@ -549,12 +549,14 @@ Evolve the [`AbstractAnsatz`](@ref) `ψ` with the [`AbstractMPO`](@ref) `mpo` al
 If `threshold` or `maxdim` are not `nothing`, the tensors are truncated after each sweep at the proper value, and the
 bond is normalized if `normalize=true`. If `reset_index=true`, the indices of the `ψ` are reset to the original ones.
 """
-function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true, reset_index=true)
+function evolve!(
+    ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true, reset_index=true
+)
     original_sites = copy(Quantum(ψ).sites)
     evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
 
     if reset_index
-        resetindex!(Quantum(ψ); init=ninds(TensorNetwork(ψ))+1)
+        resetindex!(Quantum(ψ); init=ninds(TensorNetwork(ψ)) + 1)
 
         replacements = [(Quantum(ψ).sites[key] => original_sites[key]) for key in keys(original_sites)]
         replace!(Quantum(ψ), replacements)
