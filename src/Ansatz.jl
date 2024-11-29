@@ -325,21 +325,21 @@ function truncate!(::NonCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, 
     return tn
 end
 
-function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; threshold, maxdim, normalize=false)
+function truncate!(::MixedCanonical, tn::AbstractAnsatz, bond; kwargs...)
     # move orthogonality center to bond
     mixed_canonize!(tn, bond)
 
-    return truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=true, normalize)
+    return truncate!(NonCanonical(), tn, bond; compute_local_svd=true, kwargs...)
 end
 
 """
-    truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, canonize=true)
+    truncate!(::Canonical, tn::AbstractAnsatz, bond; canonize=true, kwargs...)
 
 Truncate the dimension of the virtual `bond` of a [`Canonical`](@ref) Tensor Network by keeping the `maxdim` largest
 **Schmidt coefficients** or those larger than `threshold`, and then canonizes the Tensor Network if `canonize` is `true`.
 """
-function truncate!(::Canonical, tn::AbstractAnsatz, bond; threshold, maxdim, canonize=false, normalize=false)
-    truncate!(NonCanonical(), tn, bond; threshold, maxdim, compute_local_svd=false, normalize)
+function truncate!(::Canonical, tn::AbstractAnsatz, bond; canonize=true, kwargs...)
+    truncate!(NonCanonical(), tn, bond; compute_local_svd=false, kwargs...)
 
     canonize && canonize!(tn)
 
