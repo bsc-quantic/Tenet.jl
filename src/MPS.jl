@@ -621,7 +621,7 @@ function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold, m
 end
 
 """
-	truncate_sweep!
+    truncate_sweep!
 
 Do a right-to-left QR sweep on the [`AbstractMPO`](@ref) `ψ` and then left-to-right SVD sweep and truncate the tensors
 according to the `threshold` or `maxdim` values. The bond is normalized if `normalize=true`.
