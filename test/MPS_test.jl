@@ -374,6 +374,61 @@ using LinearAlgebra
                 @test_throws ArgumentError Tenet.check_form(evolved)
             end
         end
+
+        @testset "MPO evolution" begin
+            ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
+            normalize!(ψ)
+            mpo = rand(MPO; n=5, maxdim=8)
+
+            ϕ_1 = deepcopy(ψ)
+            ϕ_2 = deepcopy(ψ)
+            ϕ_3 = deepcopy(ψ)
+
+            @testset "NonCanonical" begin
+                evolve!(ϕ_1, mpo)
+                @test length(tensors(ϕ_1)) == 5
+                @test norm(ϕ_1) ≈ 1.0
+
+                evolved = evolve!(deepcopy(ψ), mpo; maxdim=3)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test norm(evolved) ≈ 1.0
+            end
+
+            @testset "Canonical" begin
+                canonize!(ϕ_2)
+                evolve!(ϕ_2, mpo)
+                @test length(tensors(ϕ_2)) == 5 + 4
+                @test form(ϕ_2) == Canonical()
+                @test Tenet.check_form(ϕ_2)
+
+                evolved = evolve!(deepcopy(canonize!(ψ)), mpo; maxdim=3)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test form(evolved) == Canonical()
+                @test Tenet.check_form(evolved)
+            end
+
+            @testset "MixedCanonical" begin
+                mixed_canonize!(ϕ_3, site"3")
+                evolve!(ϕ_3, mpo)
+                @test length(tensors(ϕ_3)) == 5
+                @test form(ϕ_3) == MixedCanonical(Site(3))
+                @test norm(ϕ_3) ≈ 1.0
+                @test Tenet.check_form(ϕ_3)
+
+                evolved = evolve!(deepcopy(mixed_canonize!(ψ, site"3")), mpo; maxdim=3)
+                @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
+                @test form(evolved) == MixedCanonical(Site(3))
+                @test norm(evolved) ≈ 1.0
+                @test Tenet.check_form(evolved)
+            end
+
+            t1 = contract(ϕ_1)
+            t2 = contract(ϕ_2)
+            t3 = contract(ϕ_3)
+
+            @test t1 ≈ t2 ≈ t3
+            @test only(overlap(ϕ_1, ϕ_2)) ≈ only(overlap(ϕ_1, ϕ_3)) ≈ only(overlap(ϕ_2, ϕ_3)) ≈ 1.0
+        end
     end
 
     # TODO rename when method is renamed
