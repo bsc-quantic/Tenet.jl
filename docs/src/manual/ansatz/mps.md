@@ -77,8 +77,9 @@ You can convert an `MPS` to the `MixedCanonical` form and specify the orthogonal
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 mixed_canonize!(mps, Site(2))
 
-isleftcanonical(mps, 1)
-isrightcanonical(mps, 3)
+isisometry(mps, 1; dir=:right) # Check if the first tensor is left canonical
+isisometry(mps, 3; dir=:left) # Check if the third tensor is right canonical
+```
 
 form(mps)
 ```
@@ -101,4 +102,17 @@ plot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100))
 Label(fig[1,1, Bottom()], "Open")
 
 fig
+```
+
+To apply an `MPO` to an `MPS`, you can use the `evolve!` function:
+
+```@example
+mps = rand(MPS; n=10, maxdim=100)
+mpo = rand(MPO; n=10, maxdim=4)
+
+size.(tensors(mps))
+
+evolve!(mps, mpo)
+
+size.(tensors(mps))
 ```
