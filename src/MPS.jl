@@ -289,14 +289,14 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
 # Keyword Arguments
 
   - `n` The number of sites.
-  - `maxdim` The maximum bond dimension.
+  - `maxdim` The maximum bond dimension.  If it is `nothing`, the maximum bond dimension increases exponentially with the number of sites up to `physdim^(n ÷ 2)`.
   - `eltype` The element type of the tensors. Defaults to `Float64`.
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim, eltype=Float64, physdim=2)
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=nothing, eltype=Float64, physdim=2)
     p = physdim
     T = eltype
-    χ = maxdim
+    χ = isnothing(maxdim) ? p^(n ÷ 2) : maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
@@ -331,14 +331,14 @@ In order to avoid norm explosion issues, the tensors are orthogonalized by QR fa
 # Keyword Arguments
 
   - `n` The number of sites.
-  - `maxdim` The maximum bond dimension.
+  - `maxdim` The maximum bond dimension. If it is `nothing`, the maximum bond dimension increases exponentially with the number of sites up to `(physdim^2)^(n ÷ 2)`.
   - `eltype` The element type of the tensors. Defaults to `Float64`.
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float64, physdim=2)
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, eltype=Float64, physdim=2)
     T = eltype
     ip = op = physdim
-    χ = maxdim
+    χ = isnothing(maxdim) ? (ip * op)^(n ÷ 2) : maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
