@@ -2,11 +2,14 @@
 
 ```@setup plot
 using Makie
-Makie.inline!(true)
-using GraphMakie
 using CairoMakie
-using Tenet
+using GraphMakie
 using NetworkLayout
+using Tenet
+
+CairoMakie.activate!(type = "svg")
+Makie.inline!(true)
+set_theme!(resolution=(800,200))
 ```
 
 In tensor network computations, it is good practice to apply various transformations to simplify the network structure, reduce computational cost, or prepare the network for further operations. These transformations modify the network's structure locally by permuting, contracting, factoring or truncating tensors.
@@ -123,7 +126,7 @@ tn = TensorNetwork([ #hide
 reduced = transform(tn, Tenet.SplitSimplification) #hide
 
 graphplot!(fig[1, 1], tn; layout=Stress(), labels=true) #hide
-graphplot!(fig[1, 2], reduced, layout=Spring(C=11); labels=true) #hide
+graphplot!(fig[1, 2], reduced; layout=Spring(C=11), labels=true) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide

@@ -2,8 +2,7 @@ using Documenter
 using DocumenterVitepress
 using DocumenterCitations
 using Tenet
-using CairoMakie
-using GraphMakie
+using Makie
 using LinearAlgebra
 
 DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Tenet); recursive=true)

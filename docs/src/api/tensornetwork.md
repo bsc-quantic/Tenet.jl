@@ -29,5 +29,5 @@ Tenet.ContractSimplification
 Tenet.DiagonalReduction
 Tenet.AntiDiagonalGauging
 Tenet.Truncate
-Tenet.SplitSimplificationd
+Tenet.SplitSimplification
 ```

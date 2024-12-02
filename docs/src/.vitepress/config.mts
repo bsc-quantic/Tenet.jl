@@ -2,6 +2,8 @@ import { defineConfig } from 'vitepress'
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
 import mathjax3 from "markdown-it-mathjax3";
 import footnote from "markdown-it-footnote";
+import kroki from "@kazumatu981/markdown-it-kroki";
+import abbr from "markdown-it-abbr";
 
 const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
@@ -36,9 +38,11 @@ export default defineConfig({
   markdown: {
     math: true,
     config(md) {
-      md.use(tabsMarkdownPlugin),
-        md.use(mathjax3),
-        md.use(footnote)
+      md.use(tabsMarkdownPlugin)
+      md.use(mathjax3)
+      md.use(footnote)
+      md.use(kroki)
+      md.use(abbr)
     },
     theme: {
       light: "github-light",
