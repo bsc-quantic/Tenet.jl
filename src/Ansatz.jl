@@ -437,13 +437,13 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
 end
 
 function simple_update_2site!(
-    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
+    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false, kwargs...
 )
-    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize)
+    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize, kwargs...)
 end
 
 function simple_update_2site!(
-    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
+    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false, kwargs...
 )
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
@@ -478,7 +478,7 @@ function simple_update_2site!(
 
     # truncate virtual index
     if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, collect(bond); threshold, maxdim, normalize)
+        truncate!(ψ, collect(bond); threshold, maxdim, normalize, kwargs...)
     end
 
     return ψ
@@ -497,7 +497,7 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
     !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
 
-    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false)
+    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 
     # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
     U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)

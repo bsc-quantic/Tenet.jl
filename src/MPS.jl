@@ -550,10 +550,10 @@ If `threshold` or `maxdim` are not `nothing`, the tensors are truncated after ea
 bond is normalized if `normalize=true`. If `reset_index=true`, the indices of the `ψ` are reset to the original ones.
 """
 function evolve!(
-    ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true, reset_index=true
+    ψ::AbstractAnsatz, mpo::AbstractMPO; threshold=nothing, maxdim=nothing, normalize=true, reset_index=true, kwargs...
 )
     original_sites = copy(Quantum(ψ).sites)
-    evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize)
+    evolve!(form(ψ), ψ, mpo; threshold, maxdim, normalize, kwargs...)
 
     if reset_index
         resetindex!(ψ; init=ninds(TensorNetwork(ψ)) + 1)
@@ -584,7 +584,7 @@ function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold
     end
 
     if !isnothing(threshold) || !isnothing(maxdim)
-        truncate_sweep!(form(ψ), ψ; threshold, maxdim, normalize)
+        truncate_sweep!(form(ψ), ψ; threshold, maxdim, normalize, kwargs...)
     else
         normalize && normalize!(ψ)
     end
@@ -612,7 +612,7 @@ function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; threshold, m
     evolve!(NonCanonical(), ψ, mpo; threshold=nothing, maxdim=nothing, normalize=false, kwargs...) # set maxdim and threshold to nothing so we truncate from Canonical form
 
     if !isnothing(threshold) || !isnothing(maxdim)
-        truncate_sweep!(Canonical(), ψ; threshold, maxdim, normalize)
+        truncate_sweep!(Canonical(), ψ; threshold, maxdim, normalize, kwargs...)
     else
         normalize && canonize!(ψ; normalize)
     end
@@ -628,7 +628,7 @@ according to the `threshold` or `maxdim` values. The bond is normalized if `norm
 """
 function truncate_sweep! end
 
-function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, normalize)
+function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, normalize, kwargs...)
     for i in nsites(ψ):-1:2
         canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
@@ -638,7 +638,7 @@ function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, nor
         canonize_site!(ψ, Site(i); direction=:right, method=:svd)
 
         (!isnothing(threshold) || !isnothing(maxdim)) &&
-            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false)
+            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false, kwargs...)
 
         contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
     end
@@ -648,11 +648,11 @@ function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; threshold, maxdim, nor
     return ψ
 end
 
-function truncate_sweep!(::MixedCanonical, ψ::AbstractMPO; threshold, maxdim, normalize)
-    truncate_sweep!(NonCanonical(), ψ; threshold, maxdim, normalize)
+function truncate_sweep!(::MixedCanonical, ψ::AbstractMPO; threshold, maxdim, normalize, kwargs...)
+    truncate_sweep!(NonCanonical(), ψ; threshold, maxdim, normalize, kwargs...)
 end
 
-function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normalize)
+function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normalize, kwargs...)
     for i in nsites(ψ):-1:2
         canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
@@ -661,7 +661,7 @@ function truncate_sweep!(::Canonical, ψ::AbstractMPO; threshold, maxdim, normal
     for i in 1:(nsites(ψ) - 1)
         canonize_site!(ψ, Site(i); direction=:right, method=:svd)
         (!isnothing(threshold) || !isnothing(maxdim)) &&
-            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false)
+            truncate!(ψ, [Site(i), Site(i + 1)]; threshold, maxdim, normalize, compute_local_svd=false, kwargs...)
     end
 
     canonize!(ψ)
