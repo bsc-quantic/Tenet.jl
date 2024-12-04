@@ -267,6 +267,8 @@ Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Netw
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
 """
 function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing, kwargs...)
+    all(isnothing, (threshold, maxdim)) && return tn
+
     return truncate!(form(tn), tn, bond; threshold, maxdim, kwargs...)
 end
 
@@ -436,15 +438,11 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
     return contract!(ψ, contracting_index)
 end
 
-function simple_update_2site!(
-    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
-)
-    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize)
+function simple_update_2site!(::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs...)
+    return simple_update_2site!(NonCanonical(), ψ, gate; kwargs...)
 end
 
-function simple_update_2site!(
-    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false
-)
+function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...)
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
@@ -477,9 +475,7 @@ function simple_update_2site!(
     svd!(ψ; left_inds=linds, right_inds=rinds, virtualind=vind)
 
     # truncate virtual index
-    if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, collect(bond); threshold, maxdim, normalize)
-    end
+    truncate!(ψ, collect(bond); kwargs...)
 
     return ψ
 end
@@ -497,7 +493,7 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
     !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
 
-    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false)
+    simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 
     # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
     U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
