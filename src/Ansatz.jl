@@ -477,9 +477,7 @@ function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs..
     svd!(ψ; left_inds=linds, right_inds=rinds, virtualind=vind)
 
     # truncate virtual index
-    if any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
-        truncate!(ψ, collect(bond); kwargs...)
-    end
+    truncate!(ψ, collect(bond); kwargs...)
 
     return ψ
 end
