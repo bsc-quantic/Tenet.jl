@@ -436,15 +436,11 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
     return contract!(ψ, contracting_index)
 end
 
-function simple_update_2site!(
-    ::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs...
-)
+function simple_update_2site!(::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs...)
     return simple_update_2site!(NonCanonical(), ψ, gate; kwargs...)
 end
 
-function simple_update_2site!(
-    ::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...
-)
+function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...)
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
