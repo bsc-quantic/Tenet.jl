@@ -582,9 +582,9 @@ function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...
         groupinds!(ψ, right_inds[i])
     end
 
-    if any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
-        truncate_sweep!(form(ψ), ψ; kwargs...)
-    else
+    truncate_sweep!(form(ψ), ψ; kwargs...)
+
+    if all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
         normalize = get(kwargs, :normalize, true)
         normalize && normalize!(ψ)
     end
@@ -596,7 +596,7 @@ function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs.
     initial_form = form(ψ)
     mixed_canonize!(ψ, Site(nsites(ψ))) # We convert all the tensors to left-canonical form
 
-    normalize = get(kwargs, :normalize, false)
+    normalize = get(kwargs, :normalize, true)
     evolve!(NonCanonical(), ψ, mpo; normalize, kwargs...)
 
     mixed_canonize!(ψ, initial_form.orthog_center)
@@ -612,10 +612,9 @@ function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
 
     # set `maxdim` and `threshold` to `nothing` so we later truncate in the `Canonical` form
     evolve!(NonCanonical(), ψ, mpo; kwargs..., threshold=nothing, maxdim=nothing, normalize=false)
+    truncate_sweep!(Canonical(), ψ; kwargs...)
 
-    if any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
-        truncate_sweep!(Canonical(), ψ; kwargs...)
-    else
+    if all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
         normalize = get(kwargs, :normalize, true)
         normalize && canonize!(ψ; normalize)
     end
@@ -629,9 +628,11 @@ end
 Do a right-to-left QR sweep on the [`AbstractMPO`](@ref) `ψ` and then left-to-right SVD sweep and truncate the tensors
 according to the `threshold` or `maxdim` values. The bond is normalized if `normalize=true`.
 """
-function truncate_sweep! end
+truncate_sweep!(ψ::AbstractMPO; kwargs...) = truncate_sweep!(form(ψ), ψ; kwargs...)
 
 function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; kwargs...)
+    all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) && return ψ
+
     for i in nsites(ψ):-1:2
         canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
@@ -654,6 +655,8 @@ function truncate_sweep!(::MixedCanonical, ψ::AbstractMPO; kwargs...)
 end
 
 function truncate_sweep!(::Canonical, ψ::AbstractMPO; kwargs...)
+    all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) && return ψ
+
     for i in nsites(ψ):-1:2
         canonize_site!(ψ, Site(i); direction=:left, method=:qr)
     end
