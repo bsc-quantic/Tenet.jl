@@ -640,9 +640,7 @@ function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; kwargs...)
     for i in 1:(nsites(ψ) - 1)
         canonize_site!(ψ, Site(i); direction=:right, method=:svd)
 
-        any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) &&
-            truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
-
+        truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
         contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
     end
 
@@ -663,8 +661,7 @@ function truncate_sweep!(::Canonical, ψ::AbstractMPO; kwargs...)
     # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
     for i in 1:(nsites(ψ) - 1)
         canonize_site!(ψ, Site(i); direction=:right, method=:svd)
-        any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) &&
-            truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
+        truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
     end
 
     canonize!(ψ)

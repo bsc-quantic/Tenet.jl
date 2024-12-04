@@ -267,7 +267,11 @@ Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Netw
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
 """
 function truncate!(tn::AbstractAnsatz, bond; threshold=nothing, maxdim=nothing, kwargs...)
-    return truncate!(form(tn), tn, bond; threshold, maxdim, kwargs...)
+    if all(isnothing, (threshold, maxdim))
+        return tn
+    else
+        return truncate!(form(tn), tn, bond; threshold, maxdim, kwargs...)
+    end
 end
 
 """
