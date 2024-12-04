@@ -437,13 +437,13 @@ function simple_update_1site!(ψ::AbstractAnsatz, gate)
 end
 
 function simple_update_2site!(
-    ::MixedCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false, kwargs...
+    ::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs...
 )
-    return simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize, kwargs...)
+    return simple_update_2site!(NonCanonical(), ψ, gate; kwargs...)
 end
 
 function simple_update_2site!(
-    ::NonCanonical, ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, normalize=false, kwargs...
+    ::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...
 )
     @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
@@ -477,8 +477,8 @@ function simple_update_2site!(
     svd!(ψ; left_inds=linds, right_inds=rinds, virtualind=vind)
 
     # truncate virtual index
-    if any(!isnothing, (threshold, maxdim))
-        truncate!(ψ, collect(bond); threshold, maxdim, normalize, kwargs...)
+    if any(!isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing))
+        truncate!(ψ, collect(bond); kwargs...)
     end
 
     return ψ
