@@ -121,25 +121,6 @@ function Reactant.set_act!(inp::Enzyme.Annotation{TensorNetwork}, path, reverse,
     end
 end
 
-# function Tenet.contract(
-#     a::Tensor{Ta,Na,Aa}, b::Tensor{Tb,Nb,Ab}; kwargs...
-# ) where {Ta,Na,Aa<:Reactant.ConcreteRArray,Tb,Nb,Ab<:Reactant.ConcreteRArray}
-#     c = @invoke Tenet.contract(a::Tensor, b::Tensor; kwargs...)
-#     return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
-# end
-
-# function Tenet.contract(a::Tensor{T,N,A}; kwargs...) where {T,N,A<:Reactant.ConcreteRArray}
-#     c = @invoke Tenet.contract(a::Tensor; kwargs...)
-#     return Tensor(Reactant.ConcreteRArray(parent(c)), inds(c))
-# end
-
-# NOTE `@reactant_override` no longer exists
-# @reactant_override function Base.:(-)(a::Tenet.Tensor, b::Tenet.Tensor)
-#     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
-#     perm = __find_index_permutation(inds(a), inds(b))
-#     return Tensor(parent(a) - permutedims(parent(b), perm), inds(a))
-# end
-
 function Tenet.contract(
     a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb,TracedRArray{Tb,Nb}}; dims=(∩(inds(a), inds(b))), out=nothing
 ) where {Ta,Na,Tb,Nb}
