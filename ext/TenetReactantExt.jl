@@ -143,37 +143,40 @@ end
 function Tenet.contract(
     a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb,TracedRArray{Tb,Nb}}; dims=(∩(inds(a), inds(b))), out=nothing
 ) where {Ta,Na,Tb,Nb}
-    ia = collect(inds(a))
-    ib = collect(inds(b))
-    i = ∩(dims, ia, ib)
+    ia, ib = collect(inds(a)), collect(inds(b))
+    @assert allunique(ia) "can't perform unary einsum operations on binary einsum"
+    @assert allunique(ib) "can't perform unary einsum operations on binary einsum"
+    @assert dims ⊆ ia ∩ ib "`dims` must be a subset of the intersection of the indices of the two tensors"
+    @assert isnothing(out) || out ⊆ ia ∪ ib "`out` must be a subset of the union of the indices of the two tensors"
+    @assert isnothing(out) || allunique(out) "indices in `out` for a binary einsum must be unique (no repetitions)"
 
-    counter = Tenet.IndexCounter()
-    translator = Dict(i => only(string(Tenet.nextindex!(counter))) for i in ia ∪ ib)
+    # override `dims` if `out` is provided
+    dims = !isnothing(out) ? setdiff(dims, out) : dims
 
-    ic::Vector{Symbol} = if isnothing(out)
-        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
-    else
-        out
+    contracting_inds = ∩(dims, ia, ib)
+    contracting_dimensions = [
+        map(i -> findfirst(==(i), ia), contracting_inds), map(i -> findfirst(==(i), ib), contracting_inds)
+    ]
+
+    batching_inds = setdiff(ia ∩ ib, dims)
+    batching_dimensions = [map(i -> findfirst(==(i), ia), batching_inds), map(i -> findfirst(==(i), ib), batching_inds)]
+
+    result_inds = setdiff(ia, contracting_inds, batching_inds) ∪ setdiff(ib, contracting_inds, batching_inds)
+    ic = vcat(batching_inds, result_inds)
+
+    # TODO replace for `Ops.convert`/`adapt` when it's available (there can be problems with nested array structures)
+    T = Base.promote_eltype(a, b)
+    da = eltype(a) != T ? TracedRArray{T,Na}(parent(a)) : parent(a)
+    db = eltype(b) != T ? TracedRArray{T,Nb}(parent(b)) : parent(b)
+
+    data = Reactant.Ops.dot_general(da, db; contracting_dimensions, batching_dimensions)
+
+    # if `out` is provided, emit `stablehlo.transpose` to correct dimension order
+    if !isnothing(out)
+        data = Reactant.Ops.transpose(data, map(i -> findfirst(==(i), ic), out))
     end
 
-    T = Base.promote_eltype(a, b)
-    mlirty = Reactant.MLIR.IR.Type(T)
-
-    op_a = parent(a).mlir_data
-    op_b = parent(b).mlir_data
-    rsize = Tuple(i ∈ ia ? size(a, i) : size(b, i) for i in ic)
-    result_0 = Reactant.MLIR.IR.TensorType(rsize, mlirty)
-
-    tia = Char[translator[i] for i in ia]
-    tib = Char[translator[i] for i in ib]
-    tic = Char[translator[i] for i in ic]
-    einsum_config = Reactant.MLIR.IR.Attribute("$(join(tia)),$(join(tib))->$(join(tic))")
-
-    result = Reactant.MLIR.IR.result(stablehlo.einsum(op_a, op_b; result_0, einsum_config))
-
-    data = TracedRArray{T,length(ic)}((), result, rsize)
-    _res = Tensor(data, ic)
-    return _res
+    return Tensor(data, ic)
 end
 
 function Tenet.contract(a::Tensor{T,N,TracedRArray{T,N}}; dims=nonunique(inds(a)), out=nothing) where {T,N}
@@ -201,14 +204,7 @@ end
 
 Tenet.contract(a::Tensor, b::Tensor{T,N,TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
 function Tenet.contract(a::Tensor{Ta,Na,TracedRArray{Ta,Na}}, b::Tensor{Tb,Nb}; kwargs...) where {Ta,Na,Tb,Nb}
-    # TODO change to `Ops.constant` when Ops PR lands in Reactant
-    # apparently `promote_to` doesn't do the transpostion for converting from column-major (Julia) to row-major layout (MLIR)
-    # currently, we call permutedims manually
-    return contract(
-        a,
-        Tensor(Reactant.promote_to(TracedRArray{Tb,Nb}, permutedims(parent(b), collect(Nb:-1:1))), inds(b));
-        kwargs...,
-    )
+    return contract(a, Tensor(TracedRArray{Tb,Nb}, parent(b)); kwargs...)
 end
 
 end
