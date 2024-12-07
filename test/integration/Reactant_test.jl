@@ -1,8 +1,4 @@
 @testset "Reactant" begin
-    using Reactant
-    using Reactant: @jit
-    using Adapt
-
     # TODO test `make_tracer`
     # TODO test `create_result`
     # TODO test `traced_getfield`

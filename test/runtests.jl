@@ -1,6 +1,8 @@
 using Test
 using Tenet
 using OMEinsum
+using Reactant
+using Adapt
 
 include("Utils.jl")
 
