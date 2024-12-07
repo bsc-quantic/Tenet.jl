@@ -154,12 +154,18 @@ function Tenet.contract(
     dims = !isnothing(out) ? setdiff(dims, out) : dims
 
     contracting_inds = ∩(dims, ia, ib)
-    contracting_dimensions = [
-        map(i -> findfirst(==(i), ia), contracting_inds), map(i -> findfirst(==(i), ib), contracting_inds)
-    ]
+    contracting_dimensions = if isempty(contracting_inds)
+        (Int[], Int[])
+    else
+        (map(i -> findfirst(==(i), ia), contracting_inds), map(i -> findfirst(==(i), ib), contracting_inds))
+    end
 
     batching_inds = setdiff(ia ∩ ib, dims)
-    batching_dimensions = [map(i -> findfirst(==(i), ia), batching_inds), map(i -> findfirst(==(i), ib), batching_inds)]
+    batching_dimensions = if isempty(batching_inds)
+        (Int[], Int[])
+    else
+        (map(i -> findfirst(==(i), ia), batching_inds), map(i -> findfirst(==(i), ib), batching_inds))
+    end
 
     # TODO replace for `Ops.convert`/`adapt` when it's available (there can be problems with nested array structures)
     T = Base.promote_eltype(a, b)
