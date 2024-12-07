@@ -183,26 +183,7 @@ function Tenet.contract(
 end
 
 function Tenet.contract(a::Tensor{T,N,TracedRArray{T,N}}; dims=nonunique(inds(a)), out=nothing) where {T,N}
-    ia = inds(a)
-    i = ∩(dims, ia)
-
-    ic::Vector{Symbol} = if isnothing(out)
-        setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))
-    else
-        out
-    end
-
-    mlirty = Reactant.MLIR.IR.Type(T)
-
-    operand = parent(a).mlir_data
-    rsize = Tuple(size(a, i) for i in ic)
-    result_0 = Reactant.MLIR.IR.TensorType(rsize, mlirty)
-    einsum_config = Reactant.MLIR.IR.Attribute("$(join(ia))->$(join(ic))")
-
-    result = Reactant.MLIR.IR.result(stablehlo.unary_einsum(operand; result_0, einsum_config))
-
-    data = TracedRArray{T,length(ic)}((), result, rsize)
-    return Tensor(data, ic)
+    error("compilation of unary einsum operations are not yet supported")
 end
 
 Tenet.contract(a::Tensor, b::Tensor{T,N,TracedRArray{T,N}}; kwargs...) where {T,N} = contract(b, a; kwargs...)
