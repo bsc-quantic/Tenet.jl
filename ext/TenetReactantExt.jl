@@ -161,9 +161,6 @@ function Tenet.contract(
     batching_inds = setdiff(ia ∩ ib, dims)
     batching_dimensions = [map(i -> findfirst(==(i), ia), batching_inds), map(i -> findfirst(==(i), ib), batching_inds)]
 
-    result_inds = setdiff(ia, contracting_inds, batching_inds) ∪ setdiff(ib, contracting_inds, batching_inds)
-    ic = vcat(batching_inds, result_inds)
-
     # TODO replace for `Ops.convert`/`adapt` when it's available (there can be problems with nested array structures)
     T = Base.promote_eltype(a, b)
     da = eltype(a) != T ? TracedRArray{T,Na}(parent(a)) : parent(a)
@@ -172,9 +169,9 @@ function Tenet.contract(
     data = Reactant.Ops.dot_general(da, db; contracting_dimensions, batching_dimensions)
 
     # if `out` is provided, emit `stablehlo.transpose` to correct dimension order
-    if !isnothing(out)
-        data = Reactant.Ops.transpose(data, map(i -> findfirst(==(i), ic), out))
-    end
+    result_inds = setdiff(ia, contracting_inds, batching_inds) ∪ setdiff(ib, contracting_inds, batching_inds)
+    ic = isnothing(out) ? vcat(batching_inds, result_inds) : out
+    data = isnothing(out) ? data : Reactant.Ops.transpose(data, map(i -> findfirst(==(i), ic), out))
 
     return Tensor(data, ic)
 end
