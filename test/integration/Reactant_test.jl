@@ -21,11 +21,6 @@
             @test size(Cre) == size(C)
             @test parent(Cre) ≈ parent(C)
 
-            A = Tensor(rand(2, 3), (:i, :j))
-            B = Tensor(rand(4, 3), (:j, :k))
-            Are = adapt(ConcreteRArray, A)
-            Bre = adapt(ConcreteRArray, B)
-
             f(a, b) = contract(a, b; out=[:k, :i])
             C = f(A, B)
             Cre = @jit f(Are, Bre)
