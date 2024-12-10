@@ -21,7 +21,7 @@
                 @test size(Cre) == size(C)
                 @test parent(Cre) ≈ parent(C)
 
-                @test "hybrid" begin
+                @testset "hybrid" begin
                     Cre = @jit contract(A, Bre)
 
                     @test inds(Cre) == inds(C)
@@ -39,7 +39,7 @@
                 @test size(Cre) == size(C)
                 @test parent(Cre) ≈ parent(C)
 
-                @test "hybrid" begin
+                @testset "hybrid" begin
                     Cre = @jit f(A, Bre)
 
                     @test inds(Cre) == inds(C)
