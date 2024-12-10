@@ -10,11 +10,11 @@
         @testset "matrix multiplication" begin
             A = Tensor(rand(2, 3), (:i, :j))
             B = Tensor(rand(3, 4), (:j, :k))
+            Are = adapt(ConcreteRArray, A)
+            Bre = adapt(ConcreteRArray, B)
 
             @testset "without permutation" begin
                 C = contract(A, B)
-                Are = adapt(ConcreteRArray, A)
-                Bre = adapt(ConcreteRArray, B)
                 Cre = @jit contract(Are, Bre)
 
                 @test inds(Cre) == inds(C)
