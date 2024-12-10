@@ -16,17 +16,11 @@
             @testset "without permutation" begin
                 C = contract(A, B)
                 Cre = @jit contract(Are, Bre)
-
-                @test inds(Cre) == inds(C)
-                @test size(Cre) == size(C)
-                @test parent(Cre) ≈ parent(C)
+                @test Cre ≈ C
 
                 @testset "hybrid" begin
                     Cre = @jit contract(A, Bre)
-
-                    @test inds(Cre) == inds(C)
-                    @test size(Cre) == size(C)
-                    @test parent(Cre) ≈ parent(C)
+                    @test Cre ≈ C
                 end
             end
 
@@ -34,17 +28,11 @@
                 f(a, b) = contract(a, b; out=[:k, :i])
                 C = f(A, B)
                 Cre = @jit f(Are, Bre)
-
-                @test inds(Cre) == inds(C)
-                @test size(Cre) == size(C)
-                @test parent(Cre) ≈ parent(C)
+                @test Cre ≈ C
 
                 @testset "hybrid" begin
                     Cre = @jit f(A, Bre)
-
-                    @test inds(Cre) == inds(C)
-                    @test size(Cre) == size(C)
-                    @test parent(Cre) ≈ parent(C)
+                    @test Cre ≈ C
                 end
             end
         end
@@ -58,9 +46,7 @@
             Bre = adapt(ConcreteRArray, B)
             Cre = @jit contract(Are, Bre)
 
-            @test inds(Cre) == inds(C)
-            @test size(Cre) == size(C)
-            @test only(Cre) ≈ only(C)
+            @test Cre ≈ C
         end
 
         @testset "outer product" begin
@@ -72,9 +58,7 @@
             Bre = adapt(ConcreteRArray, B)
             Cre = @jit contract(Are, Bre)
 
-            @test inds(Cre) == inds(C)
-            @test size(Cre) == size(C)
-            @test adapt(Array, Cre) ≈ C
+            @test Cre ≈ C
         end
 
         @testset "manual" begin
@@ -88,18 +72,14 @@
             C = f1(A, B)
             Cre = @jit f1(Are, Bre)
 
-            @test inds(Cre) == inds(C)
-            @test size(Cre) == size(C)
-            @test adapt(Array, Cre) ≈ C
+            @test Cre ≈ C
 
             # Contraction of not all common indices
             f2(a, b) = contract(a, b; dims=(:j,))
             C = f2(A, B)
             Cre = @jit f2(Are, Bre)
 
-            @test inds(Cre) == inds(C)
-            @test size(Cre) == size(C)
-            @test adapt(Array, Cre) ≈ C
+            @test Cre ≈ C
 
             @testset "Complex numbers" begin
                 A = Tensor(rand(Complex{Float64}, 2, 3, 4), (:i, :j, :k))
@@ -110,9 +90,7 @@
                 C = f1(A, B)
                 Cre = @jit f1(Are, Bre)
 
-                @test inds(Cre) == inds(C)
-                @test size(Cre) == size(C)
-                @test adapt(Array, Cre) ≈ C
+                @test Cre ≈ C
             end
         end
 
@@ -130,9 +108,7 @@
             X = contract(A, B, C, D)
             Xre = @jit contract(Are, Bre, Cre, Dre)
 
-            @test inds(Xre) == inds(X)
-            @test size(Xre) == size(X)
-            @test adapt(Array, Xre) ≈ X
+            @test Xre ≈ X
         end
     end
 end
