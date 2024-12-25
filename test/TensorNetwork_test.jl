@@ -1,5 +1,6 @@
 @testset "TensorNetwork" begin
     using Serialization
+    using LinearAlgebra
 
     @testset "Constructors" begin
         @testset "empty" begin
@@ -583,7 +584,7 @@
             replace!(tn, old_new...)
 
             @test issetequal(
-                inds.(tensors(tn)), [[:A, :P, :L], [:L, :B, :K, :U], [:U, :C, :V, :O], [:O, :D, :J, :N], [:N, :E, :M]]
+                inds.(tensors(tn)), [(:A, :P, :L), (:L, :B, :K, :U), (:U, :C, :V, :O), (:O, :D, :J, :N), (:N, :E, :M)]
             )
         end
     end
