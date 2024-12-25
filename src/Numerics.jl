@@ -18,12 +18,22 @@ end
 # NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
 __omeinsum_sym2str(x) = String[string(i) for i in x]
 
+"""
+    +(::Tensor, ::Tensor)
+
+Add two tensors element-wise. The tensors must have the same indices, alghough the order of the indices can be different.
+"""
 function Base.:(+)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
     perm = __find_index_permutation(inds(a), inds(b))
     return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
 end
 
+"""
+    -(::Tensor, ::Tensor)
+
+Subtract two tensors element-wise. The tensors must have the same indices, alghough the order of the indices can be different.
+"""
 function Base.:(-)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
     perm = __find_index_permutation(inds(a), inds(b))
@@ -31,9 +41,14 @@ function Base.:(-)(a::Tensor, b::Tensor)
 end
 
 """
-    contract(a::Tensor[, b::Tensor]; dims=nonunique([inds(a)..., inds(b)...]))
+    contract(a::Tensor, b::Tensor; dims=∩(inds(a), inds(b)), out=nothing)
 
-Perform tensor contraction operation.
+Perform a binary tensor contraction operation.
+
+# Keyword arguments
+
+    - `dims`: indices to contract over. Defaults to the set intersection of the indices of `a` and `b`.
+    - `out`: indices of the output tensor. Defaults to the set difference of the indices of `a` and `b`.
 """
 function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothing)
     ia = collect(inds(a))
@@ -51,6 +66,16 @@ function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothin
     return contract!(c, a, b)
 end
 
+"""
+    contract(a::Tensor; dims=∩(inds(a), inds(b)), out=nothing)
+
+Perform a unary tensor contraction operation.
+
+# Keyword arguments
+
+    - `dims`: indices to contract over. Defaults to the repeated indices.
+    - `out`: indices of the output tensor. Defaults to the unique indices.
+"""
 function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
     ia = inds(a)
     i = ∩(dims, ia)
@@ -72,6 +97,11 @@ contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = only(contract(T
 contract(a::Number, b::Number) = contract(fill(a), fill(b))
 contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs...), tensors)
 
+"""
+    contract!(c::Tensor, a::Tensor, b::Tensor)
+
+Perform a binary tensor contraction operation between `a` and `b` and store the result in `c`.
+"""
 function contract!(c::Tensor, a::Tensor, b::Tensor)
     ixs = (inds(a), inds(b))
     iy = inds(c)
@@ -83,6 +113,11 @@ function contract!(c::Tensor, a::Tensor, b::Tensor)
     return c
 end
 
+"""
+    contract!(c::Tensor, a::Tensor)
+
+Perform a unary tensor contraction operation on `a` and store the result in `c`.
+"""
 function contract!(y::Tensor, x::Tensor)
     ixs = (inds(x),)
     iy = inds(y)
