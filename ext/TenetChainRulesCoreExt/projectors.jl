@@ -1,6 +1,6 @@
 # `Tensor` projector
 function ChainRulesCore.ProjectTo(tensor::T) where {T<:Tensor}
-    return ProjectTo{T}(; data=ProjectTo(tensor.data), inds=tensor.inds)
+    return ProjectTo{T}(; data=ProjectTo(parent(tensor)), inds=inds(tensor))
 end
 
 function (projector::ProjectTo{T})(dx::T) where {T<:Tensor}

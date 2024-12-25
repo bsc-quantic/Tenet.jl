@@ -53,7 +53,7 @@ struct TensorNetwork <: AbstractTensorNetwork
 
     # TODO: Find a way to remove the `unsafe` keyword argument from the constructor
     function TensorNetwork(tensors; unsafe::Union{Nothing,UnsafeScope}=nothing)
-        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
+        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => collect(inds(tensor)) for tensor in tensors)
 
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
             for index in inds(tensor)
@@ -210,7 +210,7 @@ function tensors end
 @kwmethod function tensors(tn::AbstractTensorNetwork;)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
-        sort!(collect(keys(tn.tensormap)); by=sort ∘ inds)
+        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ inds)
     end
 end
 

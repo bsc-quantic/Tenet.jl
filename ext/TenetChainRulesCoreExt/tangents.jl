@@ -5,7 +5,7 @@ struct TensorNetworkTangent <: AbstractTangent
 end
 
 function TensorNetworkTangent(tensors::Vector{<:Tensor})
-    return TensorNetworkTangent(Dict(inds(tensor) => tensor for tensor in tensors))
+    return TensorNetworkTangent(Dict(collect(inds(tensor)) => tensor for tensor in tensors))
 end
 
 Tenet.tensors(tn::TensorNetworkTangent) = sort!(collect(values(tn.tensors)); by=inds)
@@ -50,3 +50,5 @@ Base.merge(Δa::TensorNetworkTangent, Δb::TensorNetworkTangent) = Δa + Δb
 
 Base.conj(Δ::Tangent{<:Tensor}) = Tangent{Tensor}(; data=conj(Δ.data), inds=NoTangent())
 Base.conj(Δ::TensorNetworkTangent) = TensorNetworkTangent(Dict(inds => conj(t) for (inds, t) in Δ.tensors))
+
+Base.getindex(Δ::TensorNetworkTangent, i::Base.AbstractVecOrTuple{Symbol}) = getindex(Δ.tensors, collect(i))

@@ -87,7 +87,7 @@ using LinearAlgebra
             )
             @test expect(ansatz, gate) ≈ 4.0
             @testset let ψ = simple_update!(copy(ansatz), gate)
-                @test tensors(simple_update!(copy(ansatz), gate); bond=(site"1", site"2")) ≈ Tensor([2, 0], [:i])
+                @test tensors(ψ; bond=(site"1", site"2")) ≈ Tensor([2, 0], [:i])
             end
         end
     end

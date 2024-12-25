@@ -25,9 +25,9 @@ letter(i) = Symbol(first(iterate(Iterators.drop(Iterators.filter(isletter, Itera
 
 # NOTE from https://stackoverflow.com/q/54652787
 function nonunique(x)
-    uniqueindexes = indexin(unique(x), x)
+    uniqueindexes = indexin(unique(x), collect(x))
     nonuniqueindexes = setdiff(1:length(x), uniqueindexes)
-    return unique(x[nonuniqueindexes])
+    return Tuple(unique(x[nonuniqueindexes]))
 end
 
 struct IndexCounter
