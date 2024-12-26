@@ -4,20 +4,20 @@
 using Tenet
 ```
 
-If you have reached here, you probably know wha a tensor is. Nevertheless, we are gonna give a brief remainder.
-
-There are many jokes[^1] about how to define a _tensor_. The definition we are giving here might not be the most correct one, but it is good enough for our use case (don't kill me please, mathematicians).
-A tensor $T$ of order[^2] $n$ is a multilinear[^3] application between $n$ vector spaces over a field $\mathcal{F}$.
+If you have reached here, you probably know what a tensor is, and probably have heard many jokes about _what a tensor is_[^1]. Nevertheless, we are gonna give a brief remainder.
 
 [^1]: For example, recursive definitions like _a tensor is whatever that transforms as a tensor_.
-[^2]: The _order_ of a tensor may also be known as _rank_ or _dimensionality_ in other fields. However, these can be missleading, since it has nothing to do with the _rank_ of linear algebra nor with the _dimensionality_ of a vector space. We prefer to use word _order_.
+
+A tensor $T$ of order[^2] $n$ is a multilinear[^3] function between $n$ vector spaces over a field $\mathcal{F}$.
+
+[^2]: The _order_ of a tensor may also be known as _rank_ or _dimensionality_ in other fields. However, these can be missleading, since it has nothing to do with the _rank_ of linear algebra nor with the _dimensionality_ of a vector space. Thus we prefer to use the word _order_.
 [^3]: Meaning that the relationships between the output and the inputs, and the inputs between them, are linear.
 
 ```math
 T : \mathcal{F}^{\dim(1)} \times \dots \times \mathcal{F}^{\dim(n)} \mapsto \mathcal{F}
 ```
 
-In layman's terms, it is a linear function whose inputs are vectors and the output is a scalar number.
+In layman's terms, it is a linear function that maps a set of vectors to a scalar.
 
 ```math
 T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \in \mathcal{F} \qquad\qquad \forall i, \mathbf{v}^{(i)} \in \mathcal{F}^{\dim(i)}
@@ -34,12 +34,19 @@ T_{ijk} \iff \mathtt{T[i,j,k]}
 
 ## The `Tensor` type
 
-In `Tenet`, a tensor is represented by the `Tensor` type, which wraps an array and a list of symbols. As it subtypes `AbstractArray`, many array operations can be dispatched to it.
+In `Tenet`, a tensor is represented by the `Tensor` type, which wraps an array and a list of index names. As it subtypes `AbstractArray`, many array operations are automatically dispatched.
 
-You can create a `Tensor` by passing an array and a list of `Symbol`s that name indices.
+You can create a `Tensor` by passing an `AbstractArray` and a `Vector` or `Tuple` of `Symbol`s.
 
 ```@repl tensor
 Tᵢⱼₖ = Tensor(rand(3,5,2), (:i,:j,:k))
+```
+
+Use `parent` and `inds` to access the underlying array and indices respectively.
+
+```@repl tensor
+parent(Tᵢⱼₖ)
+inds(Tᵢⱼₖ)
 ```
 
 The _dimensionality_ or size of each index can be consulted using the `size` function.
@@ -48,4 +55,21 @@ The _dimensionality_ or size of each index can be consulted using the `size` fun
 size(Tᵢⱼₖ)
 size(Tᵢⱼₖ, :j)
 length(Tᵢⱼₖ)
+```
+
+Note that these indices are the ones that really define the dimensions of the tensor and not the order of the array dimensions. This is key for interacting with other tensors.
+
+```@repl tensor
+a = Tensor([1 0; 1 0], (:i, :j))
+b = Tensor([1 1; 0 0], (:j, :i))
+c = a + b
+parent(a) + parent(b)
+```
+
+As such [`adjoint`](@ref) doesn't permute the dimensions; it just conjugates the array.
+
+```@repl tensor
+d = Tensor([1im 2im; 3im 4im], (:i, :j))
+d'
+conj(d)
 ```

@@ -19,22 +19,22 @@ makedocs(;
         "📖 Manual" => [
             "Tensors" => "manual/tensors.md",
             "Tensor Networks" => "manual/tensor-network.md",
-            "Contraction" => "manual/contraction.md",
-            "Transformations" => "manual/transformations.md",
             "Quantum" => "manual/quantum.md",
             "Ansatz" => [
                 "Introduction" => "manual/ansatz/index.md",
                 "Product ansatz" => "manual/ansatz/product.md",
                 "MPS/MPO ansatz" => "manual/ansatz/mps.md",
             ],
-            "Visualization" => "visualization.md",
         ],
         "🫂 Friends" => "friends.md",
         "🧭 API" => [
             "Tensor" => "api/tensor.md",
             "TensorNetwork" => "api/tensornetwork.md",
+            "Transformations" => "api/transformations.md",
             "Quantum" => "api/quantum.md",
             "Ansatz" => "api/ansatz.md",
+            "Product" => "api/product.md",
+            "MPS" => "api/mps.md",
         ],
         "⚒️ Developer Reference" => [
             "Hypergraph representation of `TensorNetwork`" => "developer/hypergraph.md",

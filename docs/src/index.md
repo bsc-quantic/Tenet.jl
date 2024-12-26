@@ -5,7 +5,7 @@ layout: home
 
 hero:
   name: Tenet.jl
-  text: Hackable Tensor Networks
+  text: The Hackable Tensor Network Library
   tagline: 
   actions:
     - theme: brand
@@ -24,7 +24,7 @@ hero:
 features:
   - icon: 🚀
     title: Fast & Device Agnostic
-    details: Its deep integration with Reactant.jl and carefully developed code, makes it go brrrr
+    details: Its deep integration with [Reactant.jl](https://github.com/EnzymeAD/) and carefully developed code, makes it go fast!
     link: /introduction
 
   - icon: ∂
@@ -33,16 +33,18 @@ features:
     link: /introduction
 
   - icon: 🧩
-    title: Carefully crafted
-    details: 
+    title: Composable
+    details: Design new TN types... or even replace the internals!
     link: /introduction
 
   - icon: 🫂
     title: Compatible with friends
-    details: 
+    details: We believe in collaboration and interoperation. As such, Tenet.jl integrates with many libraries... Even with Python!
     link: /alternatives
 ---
 ```
+
+Tenet.jl is a Tensor Network library written in Julia and designed to be performant, hackable and intuitive.
 
 !!! info "BSC-Quantic's Registry"
     `Tenet` and some of its dependencies are located in our [own Julia registry](https://github.com/bsc-quantic/Registry).

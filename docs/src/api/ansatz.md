@@ -1,7 +1,6 @@
 # Ansatz
 
-## MPS
-
-```@docs
-MPS
+```@autodocs
+Modules = [Tenet]
+Pages = ["Lattice.jl", "Ansatz.jl"]
 ```
