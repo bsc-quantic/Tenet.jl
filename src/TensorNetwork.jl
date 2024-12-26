@@ -684,11 +684,11 @@ See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
 contract(tn::AbstractTensorNetwork; kwargs...) = contract(sort_nt(values(kwargs)), tn)
 contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; path=einexpr(tn)), tn)
-function contract(::NamedTuple{(:path,)}, tn::AbstractTensorNetwork)
-    length(path.args) == 0 && return tn[inds(path)...]
+function contract(kwargs::NamedTuple{(:path,)}, tn::AbstractTensorNetwork)
+    length(kwargs.path.args) == 0 && return tn[inds(kwargs.path)...]
 
-    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
-    return contract(intermediates...; dims=suminds(path))
+    intermediates = map(subpath -> contract(tn; path=subpath), kwargs.path.args)
+    return contract(intermediates...; dims=suminds(kwargs.path))
 end
 
 """
