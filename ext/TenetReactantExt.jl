@@ -13,7 +13,7 @@ function Reactant.make_tracer(
     seen, @nospecialize(prev::RT), path::Tuple, mode::Reactant.TraceMode; kwargs...
 ) where {RT<:Tensor}
     tracedata = Reactant.make_tracer(seen, parent(prev), Reactant.append_path(path, :data), mode; kwargs...)
-    return Tensor(tracedata, copy(inds(prev)))
+    return Tensor(tracedata, inds(prev))
 end
 
 function Reactant.make_tracer(seen, prev::TensorNetwork, path::Tuple, mode::Reactant.TraceMode; kwargs...)
@@ -51,7 +51,7 @@ end
 
 function Reactant.create_result(@nospecialize(tocopy::Tensor), @nospecialize(path), result_stores)
     data = Reactant.create_result(parent(tocopy), Reactant.append_path(path, :data), result_stores)
-    return :($Tensor($data, $(copy(inds(tocopy)))))
+    return :($Tensor($data, $(inds(tocopy))))
 end
 
 function Reactant.create_result(tocopy::TensorNetwork, @nospecialize(path), result_stores)
