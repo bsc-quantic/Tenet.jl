@@ -150,19 +150,19 @@ function inds end
 inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
 inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
 
-function inds(::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
+function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
-    if set === :all
+    if kwargs.set === :all
         collect(keys(tn.indexmap))
-    elseif set === :open
+    elseif kwargs.set === :open
         map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
-    elseif set === :inner
+    elseif kwargs.set === :inner
         map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
-    elseif set === :hyper
+    elseif kwargs.set === :hyper
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
         throw(ArgumentError("""
-          Unknown query: set=$(set)
+          Unknown query: set=$(kwargs.set)
           Possible options are:
             - :all (default)
             - :open
