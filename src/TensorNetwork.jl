@@ -27,14 +27,22 @@ end
 
 Abstract type for `TensorNetwork`-derived types.
 Its subtypes must implement conversion or extraction of the underlying `TensorNetwork` by overloading the `TensorNetwork` constructor.
+
+# Implementors interface
+
+Any implementor of the `AbstractTensorNetwork` interface (currently only [`TensorNetwork`](@ref)) must define the following methods:
+
+  - `inds`
+  - `tensors`
+  - `size`
 """
 abstract type AbstractTensorNetwork end
 
 """
     TensorNetwork
 
-Graph of interconnected tensors, representing a multilinear equation.
-Graph vertices represent tensors and graph edges, tensor indices.
+Hypergraph of interconnected tensors, representing a multilinear equation aka Tensor Network.
+Vertices represent tensors and edges, tensor indices.
 """
 struct TensorNetwork <: AbstractTensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
@@ -80,7 +88,7 @@ end
 """
     copy(tn::TensorNetwork)
 
-Return a shallow copy of a [`TensorNetwork`](@ref).
+Return a shallow copy of a [`TensorNetwork`](@ref); i.e. changes to the copied `TensorNetwork` won't affect the original one, but changes to the tensors will.
 """
 function Base.copy(tn::TensorNetwork)
     new_tn = TensorNetwork(tensors(tn); unsafe=get_unsafe_scope(tn))
@@ -236,6 +244,11 @@ function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
+"""
+    arrays(tn::AbstractTensorNetwork)
+
+Return a list of the arrays of in the `TensorNetwork`. It is equivalent to `parent.(tensors(tn))`.
+"""
 arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
 Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
@@ -434,8 +447,8 @@ Base.replace!(tn::AbstractTensorNetwork) = tn
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
-# FIXME return type should be the original type, not `TensorNetwork`
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
+    orig_tn = tn
     tn = TensorNetwork(tn)
     old, new = old_new
     old ∈ tn || throw(ArgumentError("index $old does not exist"))
@@ -448,7 +461,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
         delete!(tn, tensor)
     end
     tryprune!(tn, old)
-    return tn
+    return orig_tn
 end
 
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
@@ -514,14 +527,19 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
     return tn
 end
 
-function resetindex!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
-    gen = IndexCounter(init)
-    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
-end
+"""
+    resetindex!(tn::AbstractTensorNetwork; init::Int=1)
 
+Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
+"""
 function resetindex!(tn::AbstractTensorNetwork; init::Int=1)
     mapping = resetindex!(Val(:return_mapping), tn; init=init)
     return replace!(tn, mapping)
+end
+
+function resetindex!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
+    gen = IndexCounter(init)
+    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
 end
 
 """
