@@ -69,8 +69,8 @@ function ChainRulesCore.rrule(::typeof(Base.merge), a::TensorNetwork, b::TensorN
     c = merge(a, b)
 
     function merge_pullback(c̄)
-        ā = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(a)])
-        b̄ = TensorNetworkTangent([c̄.tensors[inds(tensor)] for tensor in tensors(b)])
+        ā = TensorNetworkTangent([c̄[inds(tensor)] for tensor in tensors(a)])
+        b̄ = TensorNetworkTangent([c̄[inds(tensor)] for tensor in tensors(b)])
         return NoTangent(), ā, b̄
     end
     merge_pullback(c̄::AbstractVector) = merge_pullback(TensorNetworkTangent(c̄))

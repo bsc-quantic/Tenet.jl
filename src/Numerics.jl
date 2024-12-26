@@ -55,8 +55,8 @@ function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothin
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
-    ic::Vector{Symbol} = if isnothing(out)
-        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    ic = if isnothing(out)
+        Tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,)))
     else
         out
     end

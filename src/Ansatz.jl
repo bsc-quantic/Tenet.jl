@@ -177,7 +177,7 @@ Return the [`Tensor`](@ref) in a virtual bond between two [`Site`](@ref)s in a [
 """
 @kwmethod function tensors(tn::AbstractAnsatz; bond)
     vind = inds(tn; bond)
-    tensor = tensors(tn, [vind]) do vinds, indices
+    tensor = tensors(tn, (vind,)) do vinds, indices
         indices == vinds
     end
     isempty(tensor) && throw(MissingSchmidtCoefficientsException(bond))
