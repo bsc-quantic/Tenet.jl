@@ -27,6 +27,7 @@ end
 
 function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, right_inds)
     left_inds, right_inds = Tenet.factorinds(A, left_inds, right_inds)
+    left_inds, right_inds = Tuple(left_inds), Tuple(right_inds)
 
     Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
     prod_left_sizes = prod(left_sizes)
@@ -54,8 +55,8 @@ function KrylovKit.eigsolve(
     howmany::Int=1,
     which::KrylovKit.Selector=:LM,
     T::Type=eltype(A);
-    left_inds=Symbol[],
-    right_inds=Symbol[],
+    left_inds=(),
+    right_inds=(),
     kwargs...,
 )
     Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
@@ -85,8 +86,8 @@ function KrylovKit.eigsolve(
     howmany::Int,
     which::KrylovKit.Selector,
     alg::Algorithm;
-    left_inds=Symbol[],
-    right_inds=Symbol[],
+    left_inds=(),
+    right_inds=(),
     kwargs...,
 ) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
     Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
@@ -107,7 +108,7 @@ function KrylovKit.eigsolve(
     which::KrylovKit.Selector,
     alg::Algorithm;
     left_inds=inds(x₀),
-    right_inds=Symbol[],
+    right_inds=(),
     kwargs...,
 ) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
     Amat, left_sizes, right_sizes, x₀vec = eigsolve_prehook_tensor_reshape(A, x₀, left_inds, right_inds)
