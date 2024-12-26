@@ -1,6 +1,7 @@
 @testset "KrylovKit.eigsolve" begin
     using Tenet: Tensor
     using KrylovKit
+    using LinearAlgebra
 
     A = rand(ComplexF64, 4, 4)
     data = (A + A') / 2 # Make it Hermitian
@@ -13,7 +14,7 @@
     @test length(vecs) == 4
 
     for vec in vecs
-        @test inds(vec) == [:i]
+        @test inds(vec) == (:i,)
         @test size(vec) == (4,)
     end
 
