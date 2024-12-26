@@ -372,8 +372,8 @@ specifies whether to delete the singular values tensor after the contraction.
 """
 contract(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO) = contract!(kwargs, copy(tn))
 function contract!(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO)
-    site1, site2 = between
-    Λᵢ = tensors(tn; between)
+    site1, site2 = kwargs.between
+    Λᵢ = tensors(tn; between=kwargs.between)
     Λᵢ === nothing && return tn
 
     if kwargs.direction === :right
