@@ -41,7 +41,7 @@ abstract type AbstractQuantum <: AbstractTensorNetwork end
 """
     Quantum
 
-Tensor Network with a notion of "causality". This leads to the notion of sites and directionality (input/output).
+Tensor Network with a notion of "causality". This leads to the concept of sites and directionality (input/output).
 
 # Notes
 
@@ -76,7 +76,7 @@ Quantum(tn::Quantum) = tn
 """
     Quantum(array, sites)
 
-Constructs a [`Quantum`](@ref) Tensor Network from an array and a list of sites. Useful for simple operators like gates.
+Construct a [`Quantum`](@ref) Tensor Network from an array and a list of sites. Useful for simple operators like gates.
 """
 function Quantum(array, sites)
     if ndims(array) != length(sites)
@@ -99,7 +99,7 @@ end
 """
     TensorNetwork(q::AbstractQuantum)
 
-Returns the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
+Return the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
 """
 TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 
@@ -240,9 +240,10 @@ function resetindex!(tn::AbstractQuantum; init=1)
 end
 
 """
-    @reindex! a => b
+    @reindex! a => b reset=true
 
-Reindexes the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
+Rename in-place the indices of the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
+If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 """
 macro reindex!(expr, reset=:(reset = true))
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
@@ -264,7 +265,7 @@ end
 """
     sites(q::AbstractQuantum)
 
-Returns the sites of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 function sites end
 
@@ -274,7 +275,7 @@ function sites end
 """
     nsites(q::AbstractQuantum)
 
-Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
@@ -286,7 +287,7 @@ nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 """
     lanes(q::AbstractQuantum)
 
-Returns the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 function lanes(tn::AbstractQuantum)
     return unique(
@@ -299,7 +300,7 @@ end
 """
     nlanes(q::AbstractQuantum)
 
-Returns the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nlanes(tn::AbstractQuantum) = length(lanes(tn))
 
@@ -347,9 +348,9 @@ end
 end
 
 """
-    socket(q::Quantum)
+    socket(q::AbstractQuantum)
 
-Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
+Return the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
 """
 function socket(q::AbstractQuantum)
     _sites = sites(q)
@@ -365,12 +366,17 @@ function socket(q::AbstractQuantum)
 end
 
 """
-    adjoint(q::Quantum)
+    Base.adjoint(::AbstractQuantum)
 
-Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
+Return the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
 """
 Base.adjoint(tn::AbstractQuantum) = adjoint_sites!(conj(tn))
 
+"""
+    LinearAlgebra.adjoint!(::AbstractQuantum)
+
+Like [`adjoint`](@ref), but in-place.
+"""
 LinearAlgebra.adjoint!(tn::AbstractQuantum) = adjoint_sites!(conj!(tn))
 
 # update site information and rename inner indices
@@ -387,9 +393,23 @@ function adjoint_sites!(tn::AbstractQuantum)
     return tn
 end
 
+"""
+    Base.merge(a::AbstractQuantum, b::AbstractQuantum; reset=true)
+
+Merge multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+
+See also: [`merge!`](@ref), [`@reindex!`](@ref).
+"""
 Base.merge(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), copy.(tns))
 Base.merge!(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), tns)
 
+"""
+    Base.merge!(::AbstractQuantum...; reset=true)
+
+Merge in-place multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+
+See also: [`merge`](@ref), [`@reindex!`](@ref).
+"""
 function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
     @assert isdisjoint(setdiff(sites(b; set=:outputs), adjoint.(sites(b; set=:inputs))), sites(a; set=:outputs)) "b cannot create new sites where is not connected"
@@ -408,8 +428,18 @@ function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     return a
 end
 
+# NOTE do not document because we might move it down to `Ansatz`
 LinearAlgebra.normalize(ψ::AbstractQuantum; kwargs...) = normalize!(copy(ψ); kwargs...)
 
+"""
+    LinearAlgebra.norm(::AbstractQuantum, p=2; kwargs...)
+
+Return the Lp-norm of a [`AbstractQuantum`](@ref) Tensor Network.
+
+!!! warning
+
+    Only L2-norm is implemented yet.
+"""
 function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
     p == 2 || throw(ArgumentError("only L2-norm is implemented yet"))
     return LinearAlgebra.norm2(ψ; kwargs...)
