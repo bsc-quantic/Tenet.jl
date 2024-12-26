@@ -51,13 +51,7 @@ function eigsolve_prehook_tensor_reshape(A::Tensor, x₀::Tensor, left_inds, rig
 end
 
 function KrylovKit.eigsolve(
-    A::Tensor,
-    howmany::Int=1,
-    which::KrylovKit.Selector=:LM,
-    T::Type=eltype(A);
-    left_inds=(),
-    right_inds=(),
-    kwargs...,
+    A::Tensor, howmany::Int=1, which::KrylovKit.Selector=:LM, T::Type=eltype(A); left_inds=(), right_inds=(), kwargs...
 )
     Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
 
@@ -81,14 +75,7 @@ Perform eigenvalue decomposition on a tensor.
   - `right_inds`: right indices to be used in the eigenvalue decomposition. Defaults to all indices of `t` except `left_inds`.
 """
 function KrylovKit.eigsolve(
-    A::Tensor,
-    x₀,
-    howmany::Int,
-    which::KrylovKit.Selector,
-    alg::Algorithm;
-    left_inds=(),
-    right_inds=(),
-    kwargs...,
+    A::Tensor, x₀, howmany::Int, which::KrylovKit.Selector, alg::Algorithm; left_inds=(), right_inds=(), kwargs...
 ) where {Algorithm<:KrylovKit.Lanczos} # KrylovKit.KrylovAlgorithm}
     Amat, left_sizes, right_sizes = eigsolve_prehook_tensor_reshape(A, left_inds, right_inds)
 
