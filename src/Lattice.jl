@@ -20,6 +20,8 @@ Tuple(e::LatticeEdge) = (src(e), dst(e))
     Lattice
 
 A lattice is a graph where the vertices are [`Site`](@ref)s and the edges are virtual bonds.
+It is used for representing the topology of a [`Ansatz`](@ref) Tensor Network.
+It fulfills the [`AbstractGraph`](https://juliagraphs.org/Graphs.jl/stable/core_functions/interface/) interface.
 """
 struct Lattice <: AbstractGraph{Site}
     mapping::BijectiveIdDict{Site,Int}
@@ -35,18 +37,51 @@ Base.zero(::Lattice) = zero(Lattice)
 
 Graphs.is_directed(::Type{Lattice}) = false
 
+"""
+    Graphs.vertices(::Lattice)
+
+Return the vertices of the lattice; i.e. the list of [`Site`](@ref)s.
+"""
 function Graphs.vertices(lattice::Lattice)
     return map(vertices(lattice.graph)) do vertex
         lattice.mapping'[vertex]
     end
 end
 
+"""
+    Graphs.edges(::Lattice)
+
+Return the edges of the lattice; i.e. pairs of [`Site`](@ref)s.
+"""
 Graphs.edges(lattice::Lattice) = LatticeEdgeIterator(edges(lattice.graph), lattice)
 
+"""
+    Graphs.nv(::Lattice)
+
+Return the number of vertices/[`Site`](@ref)s in the lattice.
+"""
 Graphs.nv(lattice::Lattice) = nv(lattice.graph)
+
+"""
+    Graphs.ne(::Lattice)
+
+Return the number of edges in the lattice.
+"""
 Graphs.ne(lattice::Lattice) = ne(lattice.graph)
 
+"""
+    Graphs.has_vertex(lattice::Lattice, site::Site)
+
+Return `true` if the lattice has the given [`Site`](@ref).
+"""
 Graphs.has_vertex(lattice::Lattice, site::Site) = haskey(lattice.mapping, site)
+
+"""
+    Graphs.has_edge(lattice::Lattice, edge)
+    Graphs.has_edge(lattice::Lattice, a::Site, b::Site)
+
+Return `true` if the lattice has the given edge.
+"""
 Graphs.has_edge(lattice::Lattice, edge::LatticeEdge) = has_edge(lattice, edge.src, edge.dst)
 function Graphs.has_edge(lattice::Lattice, a::Site, b::Site)
     return has_vertex(lattice, a) &&
@@ -54,6 +89,11 @@ function Graphs.has_edge(lattice::Lattice, a::Site, b::Site)
            has_edge(lattice.graph, lattice.mapping[a], lattice.mapping[b])
 end
 
+"""
+    Graphs.neighbors(lattice::Lattice, site::Site)
+
+Return the neighbors [`Site`](@ref)s of the given [`Site`](@ref).
+"""
 function Graphs.neighbors(lattice::Lattice, site::Site)
     has_vertex(lattice, site) || throw(ArgumentError("site not in lattice"))
     vertex = lattice.mapping[site]
