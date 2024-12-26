@@ -370,30 +370,30 @@ For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values �
 The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
 specifies whether to delete the singular values tensor after the contraction.
 """
-@kwmethod contract(tn::AbstractMPO; between, direction, delete_Λ) = contract!(copy(tn); between, direction, delete_Λ)
-@kwmethod function contract!(tn::AbstractMPO; between, direction, delete_Λ)
+contract(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO) = contract!(kwargs, copy(tn))
+function contract!(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO)
     site1, site2 = between
     Λᵢ = tensors(tn; between)
     Λᵢ === nothing && return tn
 
-    if direction === :right
+    if kwargs.direction === :right
         Γᵢ₊₁ = tensors(tn; at=site2)
         replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
-    elseif direction === :left
+    elseif kwargs.direction === :left
         Γᵢ = tensors(tn; at=site1)
         replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
     else
-        throw(ArgumentError("Unknown direction=:$direction"))
+        throw(ArgumentError("Unknown direction=:$(kwargs.direction)"))
     end
 
-    delete_Λ && delete!(TensorNetwork(tn), Λᵢ)
+    kwargs.delete_Λ && delete!(TensorNetwork(tn), Λᵢ)
 
     return tn
 end
-@kwmethod contract(tn::AbstractMPO; between) = contract(tn; between, direction=:left, delete_Λ=true)
-@kwmethod contract!(tn::AbstractMPO; between) = contract!(tn; between, direction=:left, delete_Λ=true)
-@kwmethod contract(tn::AbstractMPO; between, direction) = contract(tn; between, direction, delete_Λ=true)
-@kwmethod contract!(tn::AbstractMPO; between, direction) = contract!(tn; between, direction, delete_Λ=true)
+contract(kwargs::NamedTuple{(:between,)}, tn::AbstractMPO) = contract(tn; kwargs..., direction=:left, delete_Λ=true)
+contract!(kwargs::NamedTuple{(:between,)}, tn::AbstractMPO) = contract!(tn; kwargs..., direction=:left, delete_Λ=true)
+contract(kwargs::NamedTuple{(:between, :direction)}, tn::AbstractMPO) = contract(tn; kwargs..., delete_Λ=true)
+contract!(kwargs::NamedTuple{(:between, :direction)}, tn::AbstractMPO) = contract!(tn; kwargs..., delete_Λ=true)
 
 # TODO change it to `lanes`?
 # TODO refactor to use `Lattice`
@@ -408,15 +408,15 @@ function sites(ψ::T, site::Site; dir) where {T<:AbstractMPO}
 end
 
 # TODO refactor to use `Lattice`
-@kwmethod function inds(ψ::T; at, dir) where {T<:AbstractMPO}
-    if dir === :left && at == site"1"
+function inds(kwargs::NamedTuple{(:at, :dir)}, ψ::T) where {T<:AbstractMPO}
+    if kwargs.dir === :left && kwargs.at == site"1"
         return nothing
-    elseif dir === :right && at == Site(nlanes(ψ); dual=isdual(at))
+    elseif kwargs.dir === :right && kwargs.at == Site(nlanes(ψ); dual=isdual(kwargs.at))
         return nothing
-    elseif dir ∈ (:left, :right)
-        return inds(ψ; bond=(at, sites(ψ, at; dir)))
+    elseif kwargs.dir ∈ (:left, :right)
+        return inds(ψ; bond=(kwargs.at, sites(ψ, kwargs.at; dir=kwargs.dir)))
     else
-        throw(ArgumentError("Unknown direction for $T = :$dir"))
+        throw(ArgumentError("Unknown direction for $T = :$(kwargs.dir)"))
     end
 end
 
