@@ -1,5 +1,3 @@
-using KeywordDispatch
-
 """
     Socket
 
@@ -121,20 +119,20 @@ function Base.show(io::IO, tn::T) where {T<:AbstractQuantum}
     return print(io, "$T (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
 end
 
-@kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
+tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
+inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
 
-@kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
-@kwmethod function inds(tn::AbstractQuantum; set)
-    if set === :physical
+function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
+    if kwargs.set === :physical
         return collect(values(Quantum(tn).sites))
-    elseif set === :virtual
+    elseif kwargs.set === :virtual
         return setdiff(inds(tn), values(Quantum(tn).sites))
-    elseif set ∈ (:inputs, :outputs)
-        return map(sites(tn; set)) do site
+    elseif kwargs.set ∈ (:inputs, :outputs)
+        return map(sites(tn; kwargs.set)) do site
             inds(tn; at=site)
         end
     else
-        return inds(TensorNetwork(tn); set)
+        return inds(TensorNetwork(tn); set=kwargs.set)
     end
 end
 
@@ -269,8 +267,8 @@ Return the sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 function sites end
 
-@kwdispatch sites(tn::AbstractQuantum)
-@kwmethod sites(tn::AbstractQuantum;) = sites(tn; set=:all)
+sites(tn::AbstractQuantum; kwargs...) = sites(sort_nt(values(kwargs)), tn)
+sites(::@NamedTuple{}, tn::AbstractQuantum) = sites((; set=:all), tn)
 
 """
     nsites(q::AbstractQuantum)
@@ -329,22 +327,22 @@ end
 hassite(tn::AbstractQuantum, site) = haskey(Quantum(tn).sites, site)
 Base.in(site::Site, tn::AbstractQuantum) = hassite(tn, site)
 
-@kwmethod function sites(tn::AbstractQuantum; set)
+function sites(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
     tn = Quantum(tn)
-    if set === :all
+    if kwargs.set === :all
         sort!(collect(keys(tn.sites)))
-    elseif set === :inputs
+    elseif kwargs.set === :inputs
         sort!(collect(Iterators.filter(isdual, keys(tn.sites))))
-    elseif set === :outputs
+    elseif kwargs.set === :outputs
         sort!(collect(Iterators.filter(!isdual, keys(tn.sites))))
     else
-        throw(ArgumentError("invalid set: $set"))
+        throw(ArgumentError("invalid set: $(kwargs.set)"))
     end
 end
 
-@kwmethod function sites(tn::AbstractQuantum; at::Symbol)
+function sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractQuantum)
     tn = Quantum(tn)
-    return findfirst(==(at), tn.sites)
+    return findfirst(==(kwargs.at), tn.sites)
 end
 
 """

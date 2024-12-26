@@ -1,4 +1,3 @@
-using KeywordDispatch
 using LinearAlgebra
 using Graphs: Graphs
 
@@ -151,8 +150,8 @@ Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = Graphs.has_edge(lattice(
 
 Return the index of the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
 """
-@kwmethod function inds(tn::AbstractAnsatz; bond)
-    (site1, site2) = bond
+function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
+    (site1, site2) = kwargs.bond
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
@@ -175,21 +174,21 @@ Return the [`Tensor`](@ref) in a virtual bond between two [`Site`](@ref)s in a [
   - If the [`AbstractAnsatz`](@ref) Tensor Network is in the canonical form, Tenet stores the Schmidt coefficients of the bond in a vector connected to the bond hyperedge between the two sites and the vector.
   - If the bond contains no Schmidt coefficients, this method will throw a `MissingSchmidtCoefficientsException`.
 """
-@kwmethod function tensors(tn::AbstractAnsatz; bond)
+function tensors(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
     vind = inds(tn; bond)
     tensor = filter(tensors(tn)) do tensor
         (vind,) == inds(tensor)
     end
-    isempty(tensor) && throw(MissingSchmidtCoefficientsException(bond))
+    isempty(tensor) && throw(MissingSchmidtCoefficientsException(kwargs.bond))
     return only(tensor)
 end
 
-@kwmethod function tensors(tn::AbstractAnsatz; between)
+function tensors(kwargs::NamedTuple{(:between,)}, tn::AbstractAnsatz)
     Base.depwarn(
         "`tensors(tn; between)` is deprecated, use `tensors(tn; bond)` instead.",
         ((Base.Core).Typeof(tensors)).name.mt.name,
     )
-    return tensors(tn; bond=between)
+    return tensors(tn; bond=kwargs.between)
 end
 
 """
@@ -197,7 +196,7 @@ end
 
 Contract the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
 """
-@kwmethod contract!(tn::AbstractAnsatz; bond) = contract!(tn, inds(tn; bond))
+contract!(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz) = contract!(tn, inds(tn; bond=kwargs.bond))
 
 """
     canonize!(tn::AbstractAnsatz)
