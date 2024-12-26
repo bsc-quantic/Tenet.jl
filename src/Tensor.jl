@@ -40,7 +40,7 @@ Tensor(data::Number) = Tensor(fill(data))
 
 Return the indices of the tensor in the order of the dimensions.
 """
-inds(t::Tensor) = t.inds
+inds(t::Tensor) = Tuple(t.inds)
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     data = copy(t.data)
