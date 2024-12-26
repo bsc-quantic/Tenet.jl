@@ -115,7 +115,7 @@ Return the underlying [`Quantum`](@ref) Tensor Network of an [`AbstractAnsatz`](
 Quantum(tn::AbstractAnsatz) = Ansatz(tn).tn
 
 # default form
-form(tn::AbstractAnsatz) = NonCanonical()
+form(::AbstractAnsatz) = NonCanonical()
 
 Base.copy(tn::Ansatz) = Ansatz(copy(Quantum(tn)), copy(lattice(tn)))
 Base.similar(tn::Ansatz) = Ansatz(similar(Quantum(tn)), copy(lattice(tn)))
@@ -258,9 +258,9 @@ Base.truncate(tn::AbstractAnsatz, args...; kwargs...) = truncate!(deepcopy(tn), 
 
 Truncate the dimension of the virtual `bond`` of an [`Ansatz`](@ref) Tensor Network. Dispatches to the appropriate method based on the [`form`](@ref) of the Tensor Network:
 
-  - If the Tensor Network is in the `MixedCanonical` form, the bond is truncated by moving the orthogonality center to the bond and keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`.
-  - If the Tensor Network is in the `Canonical` form, the bond is truncated by keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`, and then recanonizing the Tensor Network.
-  - If the Tensor Network is in the `NonCanonical` form, the bond is truncated by contracting the bond, performing an SVD and keeping the `maxdim` largest **singular values** or those larger than `threshold`.
+  - If the Tensor Network is in the [`MixedCanonical`](@ref) form, the bond is truncated by moving the orthogonality center to the bond and keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`.
+  - If the Tensor Network is in the [`Canonical`](@ref) form, the bond is truncated by keeping the `maxdim` largest **Schmidt coefficients** or those larger than `threshold`, and then recanonizing the Tensor Network.
+  - If the Tensor Network is in the [`NonCanonical`](@ref) form, the bond is truncated by contracting the bond, performing an SVD and keeping the `maxdim` largest **singular values** or those larger than `threshold`.
 
 # Notes
 
@@ -348,6 +348,11 @@ function truncate!(::Canonical, tn::AbstractAnsatz, bond; canonize=true, kwargs.
     return tn
 end
 
+"""
+    overlap(a::AbstractAnsatz, b::AbstractAnsatz)
+
+Compute the overlap between two [`AbstractAnsatz`](@ref) Tensor Networks.
+"""
 overlap(a::AbstractAnsatz, b::AbstractAnsatz) = contract(merge(a, copy(b)'))
 
 """
@@ -377,6 +382,10 @@ end
 
 Evolve (through time) a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` operator.
 
+!!! note
+
+    Currently only the "Simple Update" algorithm is implemented.
+
 # Arguments
 
   - `ψ`: Tensor Network representing the state.
@@ -401,6 +410,31 @@ end
 # by popular demand (Stefano, I'm looking at you), I aliased `apply!` to `evolve!`
 const apply! = evolve!
 
+"""
+    simple_update!(ψ::AbstractAnsatz, gate; threshold = nothing, maxdim = nothing, kwargs...)
+
+Update a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` operator using the "Simple Update" algorithm.
+`kwargs` are passed to the `truncate!` method in the case of a multi-site gate.
+
+!!! warning
+
+    Currently only 1-site and 2-site gates are supported.
+
+# Arguments
+
+  - `ψ`: Tensor Network representing the state.
+  - `gate`: The gate operator to update the state with.
+
+# Keyword Arguments
+
+  - `threshold`: The threshold to truncate the bond dimension.
+  - `maxdim`: The maximum bond dimension to keep.
+  - `normalize`: Whether to normalize the state after truncation.
+
+# Notes
+
+  - If both `threshold` and `maxdim` are provided, `maxdim` is used.
+"""
 function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, kwargs...)
     @assert issetequal(adjoint.(sites(gate; set=:inputs)), sites(gate; set=:outputs)) "Inputs of the gate must match outputs"
 
