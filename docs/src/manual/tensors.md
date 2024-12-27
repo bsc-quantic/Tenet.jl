@@ -17,19 +17,20 @@ A tensor $T$ of order[^2] $n$ is a multilinear[^3] function between $n$ vector s
 T : \mathcal{F}^{\dim(1)} \times \dots \times \mathcal{F}^{\dim(n)} \mapsto \mathcal{F}
 ```
 
-In layman's terms, it is a linear function that maps a set of vectors to a scalar.
+In layman's terms, you can view a tensor as a linear function that maps a set of vectors to a scalar.
 
 ```math
 T(\mathbf{v}^{(1)}, \dots, \mathbf{v}^{(n)}) = c \in \mathcal{F} \qquad\qquad \forall i, \mathbf{v}^{(i)} \in \mathcal{F}^{\dim(i)}
 ```
 
-Tensor algebra is a higher-order generalization of linear algebra, where scalar numbers can be viewed as _order-0 tensors_, vectors as _order-1 tensors_, matrices as _order-2 tensors_, ...
+Just like with matrices and vectors, $n$-dimensional arrays of numbers can be used to represent tensors. Furthermore, scalars, vectors and matrices can be viewed as tensors of order 0, 1 and 2, respectively.
 
-Letters are used to identify each of the vector spaces the tensor relates to.
-In computer science, you would intuitively think of tensors as "_n-dimensional arrays with named dimensions_".
+The dimensions of the tensors are usually identified with labels and known as tensor indices or just indices. By appropeately fixing the indices in a expression, a lot of different linear algebra operations can be described.
 
 ```math
-T_{ijk} \iff \mathtt{T[i,j,k]}
+\tr(A) = \sum_i A_{ii} \\
+A_{ji} = A^T_{ij} \\
+C_{ik} = \sum_j A_{ij} B_{jk}
 ```
 
 ## The `Tensor` type
@@ -57,11 +58,17 @@ size(Tᵢⱼₖ, :j)
 length(Tᵢⱼₖ)
 ```
 
-Note that these indices are the ones that really define the dimensions of the tensor and not the order of the array dimensions. This is key for interacting with other tensors.
+Note that these indices are the ones that really define the dimensions of the tensor and not the order of the array dimensions.
 
 ```@repl tensor
 a = Tensor([1 0; 1 0], (:i, :j))
 b = Tensor([1 1; 0 0], (:j, :i))
+a ≈ b
+```
+
+This is key for interacting with other tensors.
+
+```@repl tensor
 c = a + b
 parent(a) + parent(b)
 ```
