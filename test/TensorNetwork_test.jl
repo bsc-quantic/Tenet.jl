@@ -1,5 +1,6 @@
 @testset "TensorNetwork" begin
     using Serialization
+    using Graphs: neighbors
 
     @testset "Constructors" begin
         @testset "empty" begin

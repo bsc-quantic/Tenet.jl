@@ -16,7 +16,7 @@ using LinearAlgebra
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
         @test Tenet.lattice(ansatz) == lattice
         @test isempty(neighbors(ansatz, site"1"))
-        @test !Tenet.has_edge(ansatz, site"1", site"2")
+        @test !has_edge(ansatz, site"1", site"2")
 
         # some AbstractQuantum methods
         @test inds(ansatz; at=site"1") == :i
@@ -63,8 +63,8 @@ using LinearAlgebra
         @test issetequal(neighbors(ansatz, site"1"), [site"2"])
         @test issetequal(neighbors(ansatz, site"2"), [site"1"])
 
-        @test Tenet.has_edge(ansatz, site"1", site"2")
-        @test Tenet.has_edge(ansatz, site"2", site"1")
+        @test has_edge(ansatz, site"1", site"2")
+        @test has_edge(ansatz, site"2", site"1")
 
         @test inds(ansatz; bond=(site"1", site"2")) == :i
 

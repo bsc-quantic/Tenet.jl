@@ -1,6 +1,6 @@
 using Random
 using LinearAlgebra
-using Graphs
+using Graphs: Graphs
 using BijectiveDicts: BijectiveIdDict
 
 abstract type AbstractMPO <: AbstractAnsatz end
@@ -90,7 +90,7 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check=true)
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     qtn = Quantum(tn, sitemap)
-    graph = path_graph(n)
+    graph = Graphs.path_graph(n)
     mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
@@ -221,7 +221,7 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
     qtn = Quantum(tn, sitemap)
-    graph = path_graph(n)
+    graph = Graphs.path_graph(n)
     mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)

@@ -1,6 +1,6 @@
 using KeywordDispatch
 using LinearAlgebra
-using Graphs
+using Graphs: Graphs
 
 # Traits
 """
@@ -98,7 +98,7 @@ struct Ansatz <: AbstractAnsatz
     lattice::Lattice
 
     function Ansatz(tn, lattice)
-        if !issetequal(lanes(tn), vertices(lattice))
+        if !issetequal(lanes(tn), Graphs.vertices(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end
         return new(tn, lattice)
@@ -137,14 +137,14 @@ end
 
 Return the neighboring sites of a given [`Site`](@ref) in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
 """
-Graphs.neighbors(tn::AbstractAnsatz, site::Site) = neighbors(lattice(tn), site)
+Graphs.neighbors(tn::AbstractAnsatz, site::Site) = Graphs.neighbors(lattice(tn), site)
 
 """
     has_edge(tn::AbstractAnsatz, a::Site, b::Site)
 
 Check whether there is an edge between two [`Site`](@ref)s in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
 """
-Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = has_edge(lattice(tn), a, b)
+Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = Graphs.has_edge(lattice(tn), a, b)
 
 """
     inds(tn::AbstractAnsatz; bond)
@@ -156,7 +156,7 @@ Return the index of the virtual bond between two [`Site`](@ref)s in a [`Abstract
     @assert site1 ∈ sites(tn) "Site $site1 not found"
     @assert site2 ∈ sites(tn) "Site $site2 not found"
     @assert site1 != site2 "Sites must be different"
-    @assert has_edge(tn, site1, site2) "Sites must be neighbors"
+    @assert Graphs.has_edge(tn, site1, site2) "Sites must be neighbors"
 
     tensor1 = tensors(tn; at=site1)
     tensor2 = tensors(tn; at=site2)
@@ -477,7 +477,7 @@ function simple_update_2site!(::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs
 end
 
 function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...)
-    @assert has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
+    @assert Graphs.has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
 
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)

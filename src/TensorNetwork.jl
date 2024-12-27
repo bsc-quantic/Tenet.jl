@@ -6,7 +6,7 @@ using LinearAlgebra
 using ScopedValues
 using Serialization
 using KeywordDispatch
-using Graphs
+using Graphs: Graphs
 
 mutable struct CachedField{T}
     isvalid::Bool

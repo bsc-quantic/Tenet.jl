@@ -2,7 +2,7 @@ module TenetGraphMakieExt
 
 using Tenet
 using GraphMakie
-using Graphs
+using Graphs: Graphs
 using Makie
 using Combinatorics: combinations
 const NetworkLayout = GraphMakie.NetworkLayout

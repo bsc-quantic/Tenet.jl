@@ -1,7 +1,7 @@
-using Graphs
+using Graphs: Graphs
 using BijectiveDicts: BijectiveIdDict
 
-struct LatticeEdge <: AbstractEdge{Site}
+struct LatticeEdge <: Graphs.AbstractEdge{Site}
     src::Site
     dst::Site
 end
@@ -23,7 +23,7 @@ A lattice is a graph where the vertices are [`Site`](@ref)s and the edges are vi
 It is used for representing the topology of a [`Ansatz`](@ref) Tensor Network.
 It fulfills the [`AbstractGraph`](https://juliagraphs.org/Graphs.jl/stable/core_functions/interface/) interface.
 """
-struct Lattice <: AbstractGraph{Site}
+struct Lattice <: Graphs.AbstractGraph{Site}
     mapping::BijectiveIdDict{Site,Int}
     graph::Graphs.SimpleGraph{Int}
 end
@@ -43,7 +43,7 @@ Graphs.is_directed(::Type{Lattice}) = false
 Return the vertices of the lattice; i.e. the list of [`Site`](@ref)s.
 """
 function Graphs.vertices(lattice::Lattice)
-    return map(vertices(lattice.graph)) do vertex
+    return map(Graphs.vertices(lattice.graph)) do vertex
         lattice.mapping'[vertex]
     end
 end
@@ -53,21 +53,21 @@ end
 
 Return the edges of the lattice; i.e. pairs of [`Site`](@ref)s.
 """
-Graphs.edges(lattice::Lattice) = LatticeEdgeIterator(edges(lattice.graph), lattice)
+Graphs.edges(lattice::Lattice) = LatticeEdgeIterator(Graphs.edges(lattice.graph), lattice)
 
 """
     Graphs.nv(::Lattice)
 
 Return the number of vertices/[`Site`](@ref)s in the lattice.
 """
-Graphs.nv(lattice::Lattice) = nv(lattice.graph)
+Graphs.nv(lattice::Lattice) = Graphs.nv(lattice.graph)
 
 """
     Graphs.ne(::Lattice)
 
 Return the number of edges in the lattice.
 """
-Graphs.ne(lattice::Lattice) = ne(lattice.graph)
+Graphs.ne(lattice::Lattice) = Graphs.ne(lattice.graph)
 
 """
     Graphs.has_vertex(lattice::Lattice, site::Site)
@@ -82,11 +82,11 @@ Graphs.has_vertex(lattice::Lattice, site::Site) = haskey(lattice.mapping, site)
 
 Return `true` if the lattice has the given edge.
 """
-Graphs.has_edge(lattice::Lattice, edge::LatticeEdge) = has_edge(lattice, edge.src, edge.dst)
+Graphs.has_edge(lattice::Lattice, edge::LatticeEdge) = Graphs.has_edge(lattice, edge.src, edge.dst)
 function Graphs.has_edge(lattice::Lattice, a::Site, b::Site)
-    return has_vertex(lattice, a) &&
-           has_vertex(lattice, b) &&
-           has_edge(lattice.graph, lattice.mapping[a], lattice.mapping[b])
+    return Graphs.has_vertex(lattice, a) &&
+           Graphs.has_vertex(lattice, b) &&
+           Graphs.has_edge(lattice.graph, lattice.mapping[a], lattice.mapping[b])
 end
 
 """
@@ -95,9 +95,9 @@ end
 Return the neighbors [`Site`](@ref)s of the given [`Site`](@ref).
 """
 function Graphs.neighbors(lattice::Lattice, site::Site)
-    has_vertex(lattice, site) || throw(ArgumentError("site not in lattice"))
+    Graphs.has_vertex(lattice, site) || throw(ArgumentError("site not in lattice"))
     vertex = lattice.mapping[site]
-    return map(neighbors(lattice.graph, vertex)) do neighbor
+    return map(Graphs.neighbors(lattice.graph, vertex)) do neighbor
         lattice.mapping'[neighbor]
     end
 end
@@ -107,15 +107,15 @@ struct LatticeEdgeIterator <: Graphs.AbstractEdgeIter
     lattice::Lattice
 end
 
-Graphs.ne(iterator::LatticeEdgeIterator) = ne(iterator.lattice)
+Graphs.ne(iterator::LatticeEdgeIterator) = Graphs.ne(iterator.lattice)
 Base.eltype(::Type{LatticeEdgeIterator}) = LatticeEdge
 Base.length(iterator::LatticeEdgeIterator) = length(iterator.simpleit)
-Base.in(e::LatticeEdge, it::LatticeEdgeIterator) = has_edge(it.lattice, src(e), src(dst))
+Base.in(e::LatticeEdge, it::LatticeEdgeIterator) = Graphs.has_edge(it.lattice, Graphs.src(e), Graphs.src(dst))
 Base.show(io::IO, iterator::LatticeEdgeIterator) = write(io, "LatticeEdgeIterator $(ne(iterator))")
 
 function Base.iterate(iterator::LatticeEdgeIterator, state=nothing)
     itres = isnothing(state) ? iterate(iterator.simpleit) : iterate(iterator.simpleit, state)
     isnothing(itres) && return nothing
     edge, state = itres
-    return LatticeEdge(iterator.lattice.mapping'[src(edge)], iterator.lattice.mapping'[dst(edge)]), state
+    return LatticeEdge(iterator.lattice.mapping'[Graphs.src(edge)], iterator.lattice.mapping'[Graphs.dst(edge)]), state
 end

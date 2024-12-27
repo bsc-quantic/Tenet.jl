@@ -6,7 +6,6 @@ using Tenet
 using ChainRulesCore
 using ChainRulesTestUtils
 using Random
-using Graphs
 
 const TensorNetworkTangent = Base.get_extension(Tenet, :TenetChainRulesCoreExt).TensorNetworkTangent
 
