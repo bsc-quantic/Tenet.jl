@@ -38,7 +38,7 @@ makedocs(;
             "Product" => "api/product.md",
             "MPS" => "api/mps.md",
         ],
-        "⚒️ Developer Reference" => [
+        "⚒️ Internals" => [
             "Hypergraph representation" => "developer/hypergraph.md",
             "Type Hierarchy" => "developer/type-hierarchy.md",
             "Unsafe region" => "developer/unsafe-region.md",
