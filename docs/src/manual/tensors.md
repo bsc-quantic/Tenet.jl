@@ -27,9 +27,21 @@ Just like with matrices and vectors, $n$-dimensional arrays of numbers can be us
 
 The dimensions of the tensors are usually identified with labels and known as tensor indices or just indices. By appropeately fixing the indices in a expression, a lot of different linear algebra operations can be described.
 
+For example, the trace operation...
+
 ```math
-\tr(A) = \sum_i A_{ii} \\
-A_{ji} = A^T_{ij} \\
+tr(A) = \sum_i A_{ii}
+```
+
+... a tranposition of dimensions...
+
+```math
+A_{ji} = A^T_{ij}
+```
+
+... or a matrix multiplication.
+
+```math
 C_{ik} = \sum_j A_{ij} B_{jk}
 ```
 
