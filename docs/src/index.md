@@ -24,7 +24,7 @@ hero:
 features:
   - icon: 🚀
     title: Fast & Device Agnostic
-    details: Its deep integration with [Reactant.jl](https://github.com/EnzymeAD/) and carefully developed code, makes it go fast!
+    details: Its deep integration with <a href="https://github.com/EnzymeAD/Reactant.jl">Reactant.jl</a> and carefully developed code, makes it go fast!
     link: /introduction
 
   - icon: ∂
