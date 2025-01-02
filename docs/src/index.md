@@ -40,7 +40,7 @@ features:
   - icon: 🫂
     title: Compatible with friends
     details: We believe in collaboration and interoperation. As such, Tenet.jl integrates with many libraries... Even with Python!
-    link: /alternatives
+    link: /manual/interop
 ---
 ```
 

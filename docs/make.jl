@@ -18,15 +18,17 @@ makedocs(;
         "Home" => "index.md",
         "📖 Manual" => [
             "Tensors" => "manual/tensors.md",
-            "Tensor Networks" => "manual/tensor-network.md",
-            "Quantum" => "manual/quantum.md",
-            "Ansatz" => [
-                "Introduction" => "manual/ansatz/index.md",
-                "Product ansatz" => "manual/ansatz/product.md",
-                "MPS/MPO ansatz" => "manual/ansatz/mps.md",
+            "Tensor Networks" => [
+                "Introduction" => "manual/tensor-network.md",
+                "Quantum" => "manual/quantum.md",
+                "Ansatz" => [
+                    "Introduction" => "manual/ansatz/index.md",
+                    "Product ansatz" => "manual/ansatz/product.md",
+                    "MPS/MPO ansatz" => "manual/ansatz/mps.md",
+                ],
             ],
+            "🤝 Interoperation" => "manual/interop.md",
         ],
-        "🫂 Friends" => "friends.md",
         "🧭 API" => [
             "Tensor" => "api/tensor.md",
             "TensorNetwork" => "api/tensornetwork.md",
@@ -37,7 +39,7 @@ makedocs(;
             "MPS" => "api/mps.md",
         ],
         "⚒️ Developer Reference" => [
-            "Hypergraph representation of `TensorNetwork`" => "developer/hypergraph.md",
+            "Hypergraph representation" => "developer/hypergraph.md",
             "Type Hierarchy" => "developer/type-hierarchy.md",
             "Unsafe region" => "developer/unsafe-region.md",
             "Cached field" => "developer/cached-field.md",

@@ -1,4 +1,4 @@
-# Friends
+# Interoperation
 
 If `Tenet`'s design doesn't fit your case, ¡no problem!. There are other nice libraries in the wild, of which we recommend to take a look at:
 
