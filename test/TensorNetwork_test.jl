@@ -183,10 +183,11 @@
         end
 
         @testset "by symbols" begin
-            tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork([tensor])
+            A = Tensor(zeros(2, 3), (:i, :j))
+            B = Tensor(zeros(3, 2), (:j, :k))
+            tn = TensorNetwork([A, B])
 
-            @test only(pop!(tn, (:i, :j))) === tensor
+            @test only(pop!(tn, (:i, :j))) === A
             @test length(tensors(tn)) == 0
             @test isempty(tensors(tn))
             @test isempty(size(tn))

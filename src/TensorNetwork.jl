@@ -387,7 +387,7 @@ Base.pop!(tn::AbstractTensorNetwork, tensor::Tensor) = (delete!(TensorNetwork(tn
 Base.pop!(tn::AbstractTensorNetwork, i::Symbol) = pop!(TensorNetwork(tn), (i,))
 
 function Base.pop!(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
-    tensorlist = tensors(tn; intersects=i)
+    tensorlist = tensors(tn; contains=i)
     for tensor in tensorlist
         _ = pop!(tn, tensor)
     end
