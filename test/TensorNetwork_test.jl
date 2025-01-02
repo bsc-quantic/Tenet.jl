@@ -188,9 +188,8 @@
             tn = TensorNetwork([A, B])
 
             @test only(pop!(tn, (:i, :j))) === A
-            @test length(tensors(tn)) == 0
-            @test isempty(tensors(tn))
-            @test isempty(size(tn))
+            @test length(tensors(tn)) == 1
+            @test size(tn) == Dict(:j => 3, :k => 2)
         end
     end
 
