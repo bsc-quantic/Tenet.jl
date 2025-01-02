@@ -80,3 +80,75 @@ d = Tensor([1im 2im; 3im 4im], (:i, :j))
 d'
 conj(d)
 ```
+
+## Contraction
+
+Einsum operations are performed automatically with [`contract`](@ref).
+Unlike other tensor libraries, the einsum pattern is not explicitly stated by the user but implicitly inferred from the `Tensor` objects; i.e. repeated indices will be contracted while unique indices will remain.
+However, the user might require some flexibility on the output and contracted indices.
+That's why [`contract`](@ref) has two extra keyword arguments: `dims`, which lists the indices to be contracted, and `out`, which lists the resulting indices after the contraction.
+Keep in mind that you're not forced to define them: `dims` defaults to the repeated indices and `out` defaults to the unique indices, but it's not recommended to define both.
+
+For example, let's imagine that we want to perform the following operation: A sum over one dimension of a tensor.
+
+```math
+X_j = \sum_i A_ij
+```
+
+[`contract`](@ref) can act on just one tensor (unary contraction) and the user can write the following operation in two different ways:
+
+```@repl tensor
+contract(a; dims=[:i])
+contract(a; out=[:j])
+```
+
+For the case of binary contraction, imagine the following matrix multiplication:
+
+```math
+Y_j = \sum_i A_ij B_ji
+```
+
+Then the default would be enough, although you can still define `dims` or `out`.
+
+```@repl tensor
+contract(a, b)
+contract(a, b; dims=[:i])
+contract(a, b; out=[:j])
+```
+
+But what if instead of contracting index `:i`, we want to perform a Hadamard product (element-wise multiplication)? Then that's a case where implicit inference of the einsum rule is not enough and you need to specify `dims` or `out`.
+
+```@repl tensor
+contract(a, b; dims=Symbol[])
+contract(a, b; out=[:i,:j])
+```
+
+## Indexing
+
+[`Tensor`](@ref), as a subtype of `AbstractArray`, allows direct indexing of the underneath array with [`getindex`](@ref)/[`setindex`](@ref) or the `[...]` notation.
+
+```@repl tensor
+a[1,1] = 3
+a[1,:]
+```
+
+But like explained above, on [`Tensor`](@ref) you should refer the dimensions by their index label, which Tenet allows in many methods.
+
+```@repl tensor
+a[i=1,j=1]
+```
+
+Check out that not specifying all the indices is equivalent to using `:` on the non-specified indices.
+
+```@repl tensor
+a[i=1]
+a[i=1,j=:]
+```
+
+Other supported methods are [`permutedims`](@ref), [`selectdim`](@ref) and [`view`](@ref).
+
+```@repl tensor
+permutedims(a, [:j, :i])
+selectdim(a, :i, 1)
+view(a, :i=>1)
+```
