@@ -158,6 +158,7 @@ LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; l
     LinearAlgebra.svd(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform SVD factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 
@@ -194,6 +195,7 @@ LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; lef
     LinearAlgebra.qr(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform QR factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 
@@ -230,6 +232,7 @@ LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; lef
     LinearAlgebra.lu(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform LU factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 
