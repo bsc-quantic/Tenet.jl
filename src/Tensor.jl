@@ -173,7 +173,7 @@ end
 
 """
     Base.setindex!(t::Tensor, v, i...)
-    Base.getindex(::Tensor; i...)
+    Base.setindex(::Tensor; i...)
     (::Tensor)[index=i...]
 
 Set the element of the tensor at the given indices to `v`. If kwargs are provided, then it is equivalent to calling `.=` on [`view`](@ref).
@@ -319,7 +319,7 @@ Base.transpose(t::Tensor{T,1,A}) where {T,A<:AbstractArray{T,1}} = copy(t)
 Base.transpose(t::Tensor{T,2,A}) where {T,A<:AbstractArray{T,2}} = Tensor(transpose(parent(t)), reverse(inds(t)))
 
 """
-    expend(tensor::Tensor; label[, axis=1, size=1, method=:zeros])
+    expand(tensor::Tensor; label[, axis=1, size=1, method=:zeros])
 
 Expand the tensor by adding a new dimension `label` with the given `size` at the specified `axis`.
 Currently the supported methods are `:zeros` and `:repeat`.
