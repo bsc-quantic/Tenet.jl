@@ -82,7 +82,7 @@ function Reactant.create_result(tocopy::A, @nospecialize(path), result_stores) w
     return :($A($tn, $(Tenet.form(tocopy))))
 end
 
-function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
+function Reactant.TracedUtils.push_val!(ad_inputs, x::TensorNetwork, path)
     @assert length(path) == 2
     @assert path[2] === :data
 
@@ -91,7 +91,7 @@ function Reactant.push_val!(ad_inputs, x::TensorNetwork, path)
     return push!(ad_inputs, x)
 end
 
-function Reactant.set!(x::TensorNetwork, path, tostore; emptypath=false)
+function Reactant.TracedUtils.set!(x::TensorNetwork, path, tostore; emptypath=false)
     @assert length(path) == 2
     @assert path[2] === :data
 
