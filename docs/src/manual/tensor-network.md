@@ -83,15 +83,28 @@ When contracting two tensors in a Tensor Network, diagrammatically it is equival
 ```
 
 The ultimate goal of Tensor Networks is to compose tensor contractions until you get the final result tensor.
-Tensor contraction is associative, so mathematically the order in which you perform the contractions doesn't matter, but the computational cost depends (and a lot) on the order.
+Tensor contraction is associative, so mathematically the order in which you perform the contractions doesn't matter, but the computational cost depends (and a lot) on the order (which is also known as _contractio path_).
 Actually, finding the optimal contraction path is a NP-complete problem and general tensor network contraction is #P-complete.
 
-But don't fear! Optimal contraction paths can be computed for small tensor networks (i.e. in the order of of up to 40 indices) in a laptop, and several good heuristics and approximate algorithms are known for solving such problem.
+But don't fear! Optimal contraction paths can be found for small tensor networks (i.e. in the order of of up to 40 indices) in a laptop, and several approximate algorithms are known for obtaining quasi-optimal contraction paths.
 In Tenet, contraction path optimization is delegated to the [`EinExprs`](https://github.com/bsc-quantic/EinExprs) library.
 A `EinExpr` is a lower-level form of a Tensor Network, in which the contents of the arrays have been left out and the contraction path has been laid out as a tree. It is similar to a symbolic expression (i.e. `Expr`) but in which every node represents an Einstein summation expression (aka `einsum`). You can get the `EinExpr` (which again, represents the contraction path) by calling [`einexpr`](@ref).
 
 ```@repl plot
-einexpr(tn; optimizer=Exhaustive())
+path = einexpr(tn; optimizer=Exhaustive())
+```
+
+Once a contraction path is found, you can pass it to the [`contract`](@ref) method. Note that if no contraction `path` is provided, then Tenet will choose an optimizer based on the characteristics of the Tensor Network which will be used for finding the contraction path.
+
+```@repl plot
+contract(tn; path=path)
+contract(tn)
+```
+
+If you want to manually perform the contractions, then you can indicate which index to contract by just passing the index. If you call [`contract!`](@ref), the Tensor Network will be modified in-place and if [`contract`](@ref) is called, a mutated copy will be returned.
+
+```@repl plot
+contract(tn, :i)
 ```
 
 ## Visualization
