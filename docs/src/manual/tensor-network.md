@@ -17,17 +17,17 @@ Physicists noticed about this and developed[^1] a graphical notation called _Ten
 
 [^1]: This manual is no place for history but first developments trace back to Penrose.
 
-For example, the following equation
+For example, the following equation...
 
 ```math
 \sum_{ijklmnop} A_{im} B_{ijp} C_{njk} D_{pkl} E_{mno} F_{ol}
 ```
 
-can be represented visually as
+...can be represented visually as
 
 ```@raw html
-<img class="light-only" src="/assets/tn-sketch-light.svg" alt="Sketch of a Tensor Network"/>
-<img class="dark-only" src="/assets/tn-sketch-dark.svg" alt="Sketch of a Tensor Network (dark mode)"/>
+<img class="light-only" width="70%" src="/assets/tn-sketch-light.svg" alt="Sketch of a Tensor Network"/>
+<img class="dark-only" width="70%" src="/assets/tn-sketch-dark.svg" alt="Sketch of a Tensor Network (dark mode)"/>
 ```
 
 Not exclusively, but much of the research on Tensor Networks comes from the physics fields, so it's to be expected that the majority of Tensor Network libraries are written from the physics point of view.
@@ -36,6 +36,9 @@ For example, some libraries only offer access to certain structured Tensor Netwo
 This is completely fine, but it's not the design philosophy of Tenet.
 
 Instead, Tenet constructs abstractions layer by layer, starting from the most essential and adding more and more details for sofistification.
+Each layers consists of an _abstract type_, that defines the interface to be consumed, and a _concrete type_, that implements the interface.
+Layers build up by _concrete types_ inheriting from the parent abstract type and composing the parent concrete type.
+More information can be found in [Inheritance and Traits](@ref).
 The most essential of these layers in Tenet is the [`TensorNetwork`](@ref) type.
 
 ## The `TensorNetwork` type
@@ -66,9 +69,50 @@ tn
 push!(tn, A)
 ```
 
-## Query information
+You can also replace existing tensors and indices with [`replace`](@ref) and [`replace!`](@ref).
 
-### Replace existing elements
+```@repl plot
+:i ∈ tn
+replace!(tn, :i => :my_index)
+:i ∈ tn
+:my_index ∈ tn
+replace!(tn, :my_index => :i) # hide
+```
+
+!!! warning
+    Note that although it is a bit unusual but completely legal to have more than one tensor with the same indices, there can be problems when deciding which tensor to be replaced.
+    Because of that, you **must** pass the exact tensor you want to replace. A copy of it won't be valid.
+
+## The `AbstractTensorNetwork` interface
+
+As explained above, each layer is composed by a _concrete type_ and an _abstract type_, which in this case is [`AbstractTensorNetwork`](@ref Tenet.AbstractTensorNetwork).
+Subtypes of it are required to implement a [`TensorNetwork`](@ref) method that returns the composed [`TensorNetwork`](@ref) object.
+In exchange, [`AbstracTensorNetwork`](@ref Tenet.AbstractTensorNetwork) automatically implements [`tensors`](@ref) and [`inds`](@ref) methods for any contract-fulfilling subtype.
+
+As the names suggest, [`tensors`](@ref) returns tensors and [`inds`](@ref) returns indices.
+
+```@repl plot
+tensors(tn)
+inds(tn)
+```
+
+What is interesting about them is that they implement a small query system based on keyword dispatching. For example, you can get the tensors that contain or intersect with a subset of indices using the `contains` or `intersects` keyword arguments:
+
+!!! note
+    Keyword dispatching doesn't work with multiple unrelated keywords. Checkout [Keyword dispatch](@ref) for more information.
+
+```@repl plot
+tensors(tn; contains=[:i,:m]) # A
+tensors(tn; intersects=[:i,:m]) # A, B, E
+```
+
+Or get the list of open indices (which in this case is none):
+
+```@repl plot
+inds(tn; set = :open)
+```
+
+The list of available keywords depends on the layer, so don't forget to check the 🧭 API reference!
 
 ## Contraction
 
@@ -76,8 +120,8 @@ When contracting two tensors in a Tensor Network, diagrammatically it is equival
 
 ```@raw html
 <figure>
-<img class="light-only" src="/assets/tensor-matmul-light.svg" alt="Matrix Multiplication using Tensor Network notation"/>
-<img class="dark-only" src="/assets/tensor-matmul-dark.svg" alt="Matrix Multiplication using Tensor Network notation (dark mode)"/>
+<img class="light-only" width="70%" src="/assets/tensor-matmul-light.svg" alt="Matrix Multiplication using Tensor Network notation"/>
+<img class="dark-only" width="70%" src="/assets/tensor-matmul-dark.svg" alt="Matrix Multiplication using Tensor Network notation (dark mode)"/>
 <figcaption>Matrix Multiplication using Tensor Network notation</figcaption>
 </figure>
 ```
@@ -109,42 +153,65 @@ contract(tn, :i)
 
 ## Visualization
 
-`Tenet` provides visualization support with [`GraphMakie`](https://github.com/MakieOrg/GraphMakie.jl). You can just import a [`Makie`](https://docs.makie.org/) backend and call [`GraphMakie.graphplot`](@ref) on a [`TensorNetwork`](@ref).
+`Tenet` provides visualization support with [`GraphMakie`](https://github.com/MakieOrg/GraphMakie.jl). Import a [`Makie`](https://docs.makie.org/) backend and call [`GraphMakie.graphplot`](@ref) on a [`TensorNetwork`](@ref).
 
 ```@example plot
 graphplot(tn, layout=Stress(), labels=true)
 ```
 
-## Slicing
-
 ## Transformations
 
-In tensor network computations, it is good practice to apply various transformations to simplify the network structure, reduce computational cost, or prepare the network for further operations. These transformations modify the network's structure locally by permuting, contracting, factoring or truncating tensors.
-
-A crucial reason why these methods are indispensable lies in their ability to drastically reduce the problem size of the contraction path search and also the contraction. This doesn't necessarily involve reducing the maximum rank of the Tensor Network itself, but more importantly, it reduces the size (or rank) of the involved tensors.
-
+In Tensor Network computations, it is good practice transform before in order to prepare the network for further operations.
+In the case of exact Tensor Network contraction, a crucial reason why these methods are indispensable lies in their ability to drastically reduce the problem size of the contraction path search.
+This doesn't necessarily involve reducing the maximum rank of the Tensor Network itself (althoug it can), but more importantly, it reduces the size of the (hyper)graph.
+These transformations can modify the network's structure locally by permuting, contracting, factoring or truncating tensors.
 Our approach is based in [gray2021hyper](@cite), which can also be found in [quimb](https://quimb.readthedocs.io/).
 
-In Tenet, we provide a set of predefined transformations which you can apply to your `TensorNetwork` using both the `transform`/`transform!` functions.
+Tenet provides a set of predefined transformations which you can apply to your `TensorNetwork` using the [`transform`](@ref)/[`transform!`](@ref) functions.
 
-### Hyperindex converter
+### HyperFlatten
+
+The [`HyperFlatten`](@ref Tenet.HyperFlatten) transformation converts hyperindices to COPY-tensors (i.e. [Kronecker delta](https://wikipedia.org/wiki/Kronecker_delta)s).
+It is useful when some method requires the Tensor Network to be represented as a graph and not as a hypergraph.
+The opposite transformation is [`HyperGroup`](@ref Tenet.HyperGroup).
+
+```@example plot
+fig = Figure() # hide
+
+A = Tensor(rand(2,2), [:i,:j])
+B = Tensor(rand(2,2), [:i,:k])
+C = Tensor(rand(2,2), [:i,:l])
+
+tn = TensorNetwork([A, B, C])
+transformed = transform(tn, Tenet.HyperFlatten())
+
+graphplot!(fig[1, 1], tn; layout=Stress(), labels=true) #hide
+graphplot!(fig[1, 2], transformed; layout=Stress(), labels=true) #hide
+
+Label(fig[1, 1, Bottom()], "Original") #hide
+Label(fig[1, 2, Bottom()], "Transformed") #hide
+
+fig #hide
+```
 
 ### Contraction simplification
+
+The [`ContractionSimplification`](@ref Tenet.ContractSimplification) transformation contracts greedily tensors whose resulting tensor is smaller (in number of elements or in rank, it's configurable). These preemptive contractions don't affect the result of the contraction path but reduce the search space.
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
 fig = Figure() #hide
 
-A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l)) #hide
-B = Tensor(rand(2, 2), (:i, :m)) #hide
-C = Tensor(rand(2, 2, 2), (:m, :n, :o)) #hide
-E = Tensor(rand(2, 2, 2, 2), (:o, :p, :q, :j)) #hide
+A = Tensor(rand(2, 2, 2, 2), (:i, :j, :k, :l))
+B = Tensor(rand(2, 2), (:i, :m))
+C = Tensor(rand(2, 2, 2), (:m, :n, :o))
+E = Tensor(rand(2, 2, 2), (:o, :p, :j))
 
-tn = TensorNetwork([A, B, C, E]) #hide
-reduced = transform(tn, Tenet.ContractSimplification) #hide
+tn = TensorNetwork([A, B, C, E])
+transformed = transform(tn, Tenet.ContractSimplification)
 
 graphplot!(fig[1, 1], tn; layout=Stress(), labels=true) #hide
-graphplot!(fig[1, 2], reduced; layout=Stress(), labels=true) #hide
+graphplot!(fig[1, 2], transformed; layout=Stress(), labels=true) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -154,28 +221,37 @@ fig #hide
 
 ### Diagonal reduction
 
+The [`DiagonalReduction`](@ref Tenet.DiagonalReduction) transformation tries to reduce the rank of tensors by looking up tensors that have pairs of indices with a diagonal structure between them.
+
+```math
+A_{ijkl} = \begin{cases}
+A'_{i k l} &\text{for } i = j \\
+0 \quad &\text{for } i \neq j
+\end{cases} \quad \mapsto A_{ijkl} = A'_{\alpha k l} \delta_{\alpha i j}
+```
+
+In such cases, the diagonal structure between the indices can be extracted into a COPY-tensor and the two indices of the tensor are fused into one.
+
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
 fig = Figure() #hide
 
-data = zeros(Float64, 2, 2, 2, 2) #hide
-for i in 1:2 #hide
-    for j in 1:2 #hide
-        for k in 1:2 #hide
-            data[i, i, j, k] = k #hide
-        end #hide
-    end #hide
-end #hide
+data = zeros(Float64, 2, 2, 2, 2)
+for i in 1:2
+    for j in 1:2
+        for k in 1:2
+            data[i, i, j, k] = k
+        end
+    end
+end
 
-A = Tensor(data, (:i, :j, :k, :l)) #hide
-B = Tensor(rand(2, 2), (:i, :m)) #hide
-C = Tensor(rand(2, 2), (:j, :n)) #hide
+A = Tensor(data, (:i, :j, :k, :l))
 
-tn = TensorNetwork([A, B, C]) #hide
-reduced = transform(tn, Tenet.DiagonalReduction) #hide
+tn = TensorNetwork([A])
+transformed = transform(tn, Tenet.DiagonalReduction)
 
 graphplot!(fig[1, 1], tn; layout=Stress(), labels=true) #hide
-graphplot!(fig[1, 2], reduced; layout=Stress(), labels=true) #hide
+graphplot!(fig[1, 2], transformed; layout=Stress(), labels=true) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -183,26 +259,26 @@ Label(fig[1, 2, Bottom()], "Transformed") #hide
 fig #hide
 ```
 
-### Anti-diagonal reduction
+### Truncation
 
-### Dimension truncation
+The [`Truncate`](@ref Tenet.Truncate) transformation truncates the dimension of a [`Tensor`](@ref) if it founds slices of it where all elements are smaller than a given threshold.
 
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
 fig = Figure() #hide
 
-data = rand(3, 3, 3) #hide
-data[:, 1:2, :] .= 0 #hide
+data = rand(3, 3, 3)
+data[:, 1:2, :] .= 0
 
-A = Tensor(data, (:i, :j, :k)) #hide
-B = Tensor(rand(3, 3), (:j, :l)) #hide
-C = Tensor(rand(3, 3), (:l, :m)) #hide
+A = Tensor(data, (:i, :j, :k))
+B = Tensor(rand(3, 3), (:j, :l))
+C = Tensor(rand(3, 3), (:l, :m))
 
-tn = TensorNetwork([A, B, C]) #hide
-reduced = transform(tn, Tenet.Truncate) #hide
+tn = TensorNetwork([A, B, C])
+transformed = transform(tn, Tenet.Truncate)
 
 graphplot!(fig[1, 1], tn; layout=Spring(C=10), labels=true) #hide
-graphplot!(fig[1, 2], reduced; layout=Spring(C=10), labels=true) #hide
+graphplot!(fig[1, 2], transformed; layout=Spring(C=10), labels=true) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
@@ -212,26 +288,29 @@ fig #hide
 
 ### Split simplification
 
+The [`SplitSimplification`](@ref Tenet.SplitSimplification) transformation decomposes a [`Tensor`](@ref) using the Singular Value Decomposition (SVD) if the rank of the decomposition is smaller than the original; i.e. there are singular values which can be truncated.
+
 ```@example plot
 set_theme!(resolution=(800,200)) # hide
 fig = Figure() #hide
 
-v1 = Tensor([1, 2, 3], (:i,)) #hide
-v2 = Tensor([4, 5, 6], (:j,)) #hide
-m1 = Tensor(rand(3, 3), (:k, :l)) #hide
+# outer product has rank=1
+v1 = Tensor([1, 2, 3], (:i,))
+v2 = Tensor([4, 5, 6], (:j,))
+t1 = contract(v1, v2)
 
-t1 = contract(v1, v2) #hide
-tensor = contract(t1, m1)  #hide
+m1 = Tensor(rand(3, 3), (:k, :l))
+tensor = contract(t1, m1) 
 
-tn = TensorNetwork([ #hide
-    tensor, #hide
-    Tensor(rand(3, 3, 3), (:k, :m, :n)), #hide
-    Tensor(rand(3, 3, 3), (:l, :n, :o)) #hide
-]) #hide
-reduced = transform(tn, Tenet.SplitSimplification) #hide
+tn = TensorNetwork([
+    tensor,
+    Tensor(rand(3, 3, 3), (:k, :m, :n)),
+    Tensor(rand(3, 3, 3), (:l, :n, :o))
+])
+transformed = transform(tn, Tenet.SplitSimplification)
 
 graphplot!(fig[1, 1], tn; layout=Stress(), labels=true) #hide
-graphplot!(fig[1, 2], reduced, layout=Spring(C=11); labels=true) #hide
+graphplot!(fig[1, 2], transformed, layout=Spring(C=10.0, iterations=200); labels=true) #hide
 
 Label(fig[1, 1, Bottom()], "Original") #hide
 Label(fig[1, 2, Bottom()], "Transformed") #hide
