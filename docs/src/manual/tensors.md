@@ -137,7 +137,7 @@ contract(a, b; out=[:i,:j])
 
 ## Indexing
 
-[`Tensor`](@ref), as a subtype of `AbstractArray`, allows direct indexing of the underneath array with [`getindex`](@ref)/[`setindex`](@ref) or the `[...]` notation.
+[`Tensor`](@ref), as a subtype of `AbstractArray`, allows direct indexing of the underneath array with [`getindex`](@ref)/[`setindex!`](@ref) or the `[...]` notation.
 
 ```@repl tensor
 a[1,1] = 3
