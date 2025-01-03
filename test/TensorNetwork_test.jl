@@ -297,6 +297,7 @@
         @test issetequal(tensors(tn; intersects=:k), (t_ik,))
         @test issetequal(tensors(tn; intersects=:l), (t_ilm, t_lm))
         @test issetequal(tensors(tn; intersects=:m), (t_ilm, t_lm))
+        @test issetequal(tensors(tn; intersects=(:i, :m)), (t_ij, t_ik, t_ilm, t_lm))
         @test issetequal(tensors(tn; contains=(:i, :j)), (t_ij,))
         @test issetequal(tensors(tn; contains=(:i, :k)), (t_ik,))
         @test issetequal(tensors(tn; contains=(:i, :l)), (t_ilm,))

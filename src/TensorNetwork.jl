@@ -214,19 +214,14 @@ function tensors end
     end
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; contains::Symbol) = copy(TensorNetwork(tn).indexmap[contains])
+@kwmethod tensors(tn::AbstractTensorNetwork; contains::Symbol) = tensors(tn; contains=[contains]) # copy(TensorNetwork(tn).indexmap[contains])
 @kwmethod function tensors(tn::AbstractTensorNetwork; contains::AbstractVecOrTuple{Symbol})
-    return tensors(⊆, TensorNetwork(tn), contains)
+    return filter(t -> issubset(contains, inds(t)), tensors(tn))
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; intersects::Symbol) = tensors(!isdisjoint, TensorNetwork(tn), [intersects])
+@kwmethod tensors(tn::AbstractTensorNetwork; intersects::Symbol) = tensors(tn; intersects=[intersects])
 @kwmethod function tensors(tn::AbstractTensorNetwork; intersects::AbstractVecOrTuple{Symbol})
-    return tensors(!isdisjoint, TensorNetwork(tn), intersects)
-end
-
-function tensors(selector, tn::AbstractTensorNetwork, is::AbstractVecOrTuple{Symbol})
-    tn = TensorNetwork(tn)
-    return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+    return filter(t -> !isdisjoint(inds(t), intersects), tensors(tn))
 end
 
 """
