@@ -21,11 +21,9 @@ makedocs(;
             "Tensor Networks" => [
                 "Introduction" => "manual/tensor-network.md",
                 "Quantum" => "manual/quantum.md",
-                "Ansatz" => [
-                    "Introduction" => "manual/ansatz/index.md",
-                    "Product ansatz" => "manual/ansatz/product.md",
-                    "MPS/MPO ansatz" => "manual/ansatz/mps.md",
-                ],
+                "Ansatz" => "manual/ansatz/index.md",
+                "Product ansatz" => "manual/ansatz/product.md",
+                "MPS/MPO ansatz" => "manual/ansatz/mps.md",
             ],
             "🤝 Interoperation" => "manual/interop.md",
         ],
