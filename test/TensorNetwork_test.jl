@@ -302,7 +302,7 @@
         @test issetequal(tensors(tn; contains=(:i, :k)), (t_ik,))
         @test issetequal(tensors(tn; contains=(:i, :l)), (t_ilm,))
         @test issetequal(tensors(tn; contains=(:l, :m)), (t_ilm, t_lm))
-        @test_throws KeyError tensors(tn, intersects=:_)
+        @test isempty(tensors(tn; intersects=:_))
         @test isempty(tensors(tn; contains=(:j, :l)))
     end
 
