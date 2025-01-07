@@ -46,7 +46,14 @@ Perform a binary tensor contraction operation.
     - `dims`: indices to contract over. Defaults to the set intersection of the indices of `a` and `b`.
     - `out`: indices of the output tensor. Defaults to the set difference of the indices of `a` and `b`.
 """
-function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothing)
+function contract(a::Tensor, b::Tensor; kwargs...)
+    c = allocate_result(contract, a, b; kwargs...)
+    return contract!(c, a, b)
+end
+
+function allocate_result(
+    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(inds(a), inds(b))), out=nothing
+)
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
@@ -57,9 +64,8 @@ function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothin
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a, b)
+    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero)
+    return Tensor(data, ic)
 end
 
 """
@@ -72,7 +78,12 @@ Perform a unary tensor contraction operation.
     - `dims`: indices to contract over. Defaults to the repeated indices.
     - `out`: indices of the output tensor. Defaults to the unique indices.
 """
-function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
+function contract(a::Tensor; kwargs...)
+    c = allocate_result(contract, a; kwargs...)
+    return contract!(c, a)
+end
+
+function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(inds(a)), out=nothing)
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -82,9 +93,8 @@ function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a)
+    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero)
+    return Tensor(data, ic)
 end
 
 contract(a::Union{T,AbstractArray{T,0}}, b::Tensor{T}) where {T} = contract(Tensor(a), b)
