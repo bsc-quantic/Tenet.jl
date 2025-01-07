@@ -96,6 +96,7 @@ function ChainRulesCore.rrule(::typeof(contract), x::Tensor; kwargs...)
 
         return (NoTangent(), x̄)
     end
+    contract_pullback(ȳ::AbstractArray) = contract_pullback(Tensor(ȳ, inds(y)))
     contract_pullback(ȳ::AbstractThunk) = contract_pullback(unthunk(ȳ))
 
     return y, contract_pullback
@@ -111,6 +112,7 @@ function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs..
         b̄ = @thunk proj_b(contract(conj(a), c̄; out=inds(b)))
         return (NoTangent(), ā, b̄)
     end
+    contract_pullback(c̄::AbstractArray) = contract_pullback(Tensor(c̄, inds(c)))
     contract_pullback(c̄::AbstractVector) = contract_pullback(Tensor(c̄, inds(c)))
     contract_pullback(c̄::AbstractThunk) = contract_pullback(unthunk(c̄))
 
