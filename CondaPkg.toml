@@ -1,6 +1,4 @@
-[deps]
+[pip.deps]
 qibo = ""
 qiskit = ""
-
-[pip.deps]
 quimb = ""
