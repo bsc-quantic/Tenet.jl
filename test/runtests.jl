@@ -1,6 +1,6 @@
 using Test
 using Tenet
-using OMEinsum
+using TensorOperations
 using Reactant
 using Adapt
 
