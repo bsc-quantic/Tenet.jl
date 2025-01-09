@@ -1,4 +1,4 @@
-function Tenet.Quantum(::Val{:cirq}, pyobj::Py)
+function Base.convert(::Type{Quantum}, ::Val{:cirq}, pyobj::Py)
     cirq = pyimport("cirq")
     if !pyissubclass(pytype(pyobj), cirq.circuits.circuit.Circuit)
         throw(ArgumentError("Expected a cirq.circuits.circuit.Circuit object, got $(pyfullyqualname(pyobj))"))

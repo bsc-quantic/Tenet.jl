@@ -1,4 +1,4 @@
-function Tenet.TensorNetwork(::Val{:quimb}, pyobj::Py)
+function Base.convert(::Type{TensorNetwork}, ::Val{:quimb}, pyobj::Py)
     quimb = pyimport("quimb")
     if !pyissubclass(pytype(pyobj), quimb.tensor.tensor_core.TensorNetwork)
         throw(ArgumentError("Expected a quimb.tensor.tensor_core.TensorNetwork object, got $(pyfullyqualname(pyobj))"))
@@ -13,7 +13,7 @@ function Tenet.TensorNetwork(::Val{:quimb}, pyobj::Py)
     return TensorNetwork(ts)
 end
 
-function Tenet.Quantum(::Val{:quimb}, pyobj::Py)
+function Base.convert(::Type{Quantum}, ::Val{:quimb}, pyobj::Py)
     quimb = pyimport("quimb")
     if pyissubclass(pytype(pyobj), quimb.tensor.circuit.Circuit)
         return Quantum(pyobj.get_uni())
@@ -26,13 +26,13 @@ function Tenet.Quantum(::Val{:quimb}, pyobj::Py)
     end
 end
 
-function Tenet.Quantum(::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGenVector")}, pyobj::Py)
+function Base.convert(::Type{Quantum}, ::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGenVector")}, pyobj::Py)
     tn = TensorNetwork(pyobj)
     sitedict = Dict(Site(pyconvert(Int, i)) => pyconvert(Symbol, pyobj.site_ind(i)) for i in pyobj.sites)
     return Quantum(tn, sitedict)
 end
 
-function Tenet.Quantum(::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGenOperator")}, pyobj::Py)
+function Base.convert(::Type{Quantum}, ::Val{Symbol("quimb.tensor.tensor_arbgeom.TensorNetworkGenOperator")}, pyobj::Py)
     tn = TensorNetwork(pyobj)
 
     sitedict = merge!(

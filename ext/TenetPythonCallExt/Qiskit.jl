@@ -1,4 +1,4 @@
-function Tenet.Quantum(::Val{:qiskit}, pyobj::Py)
+function Base.convert(::Type{Quantum}, ::Val{:qiskit}, pyobj::Py)
     qiskit = pyimport("qiskit")
     if !pyissubclass(pytype(pyobj), qiskit.circuit.quantumcircuit.QuantumCircuit)
         throw(
