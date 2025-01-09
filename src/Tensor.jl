@@ -11,10 +11,11 @@ struct Tensor{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
     inds::Vector{Symbol}
 
-    function Tensor{T,N,A}(data::A, inds::AbstractVector) where {T,N,A<:AbstractArray{T,N}}
+    function Tensor{T,N,A}(data::A, inds) where {T,N,A<:AbstractArray{T,N}}
+        inds = collect(inds)
         length(inds) == N ||
             throw(ArgumentError("ndims(data) [$(ndims(data))] must be equal to length(inds) [$(length(inds))]"))
-        all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(collect(inds))) ||
+        all(i -> allequal(Iterators.map(dim -> size(data, dim), findall(==(i), inds))), nonunique(inds)) ||
             throw(DimensionMismatch("nonuniform size of repeated indices"))
 
         return new{T,N,A}(data, inds)
@@ -39,7 +40,7 @@ Tensor(data::Number) = Tensor(fill(data))
 
 Return the indices of the tensor in the order of the dimensions.
 """
-inds(t::Tensor) = t.inds
+inds(t::Tensor) = Tuple(t.inds)
 
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     data = copy(t.data)
