@@ -175,7 +175,7 @@ Return the [`Tensor`](@ref) in a virtual bond between two [`Site`](@ref)s in a [
   - If the bond contains no Schmidt coefficients, this method will throw a `MissingSchmidtCoefficientsException`.
 """
 function tensors(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
-    vind = inds(tn; bond)
+    vind = inds(tn; bond=kwargs.bond)
     tensor = filter(tensors(tn)) do tensor
         (vind,) == inds(tensor)
     end
