@@ -57,3 +57,6 @@ struct UnsafeScope
 end
 
 Base.values(uc::UnsafeScope) = map(x -> x.value, uc.refs)
+
+# from https://discourse.julialang.org/t/sort-keys-of-namedtuple/94630/3
+@generated sort_nt(nt::NamedTuple{KS}) where {KS} = :(NamedTuple{$(Tuple(sort(collect(KS))))}(nt))

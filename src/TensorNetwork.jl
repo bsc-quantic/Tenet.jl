@@ -5,7 +5,6 @@ using OMEinsum
 using LinearAlgebra
 using ScopedValues
 using Serialization
-using KeywordDispatch
 using Graphs: Graphs
 
 mutable struct CachedField{T}
@@ -131,7 +130,6 @@ function Base.conj!(tn::AbstractTensorNetwork)
     return tn
 end
 
-# TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
 """
     inds(tn::AbstractTensorNetwork, set = :all)
 
@@ -149,22 +147,22 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
 """
 function inds end
 
-@kwdispatch inds(tn::AbstractTensorNetwork)
-@kwmethod inds(tn::AbstractTensorNetwork;) = inds(tn; set=:all)
+inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
+inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
 
-@kwmethod function inds(tn::AbstractTensorNetwork; set)
+function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
-    if set === :all
+    if kwargs.set === :all
         collect(keys(tn.indexmap))
-    elseif set === :open
+    elseif kwargs.set === :open
         map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
-    elseif set === :inner
+    elseif kwargs.set === :inner
         map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
-    elseif set === :hyper
+    elseif kwargs.set === :hyper
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
         throw(ArgumentError("""
-          Unknown query: set=$(set)
+          Unknown query: set=$(kwargs.set)
           Possible options are:
             - :all (default)
             - :open
@@ -177,23 +175,24 @@ function inds end
     end
 end
 
-@kwmethod function inds(tn::AbstractTensorNetwork; parallelto)
-    candidates = filter!(!=(parallelto), mapreduce(inds, ∩, tensors(tn; contains=parallelto)))
+function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
+    candidates = filter!(!=(kwargs.parallelto), mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto)))
     return filter(candidates) do i
-        length(tensors(tn; contains=i)) == length(tensors(tn; contains=parallelto))
+        length(tensors(tn; contains=i)) == length(tensors(tn; contains=kwargs.parallelto))
     end
 end
 
 """
-    ninds(tn::TensorNetwork)
+    ninds(tn::TensorNetwork; kwargs...)
 
-Return the number of indices in the `TensorNetwork`.
+Return the number of indices in the `TensorNetwork`. It accepts the same keyword arguments as [`inds`](@ref).
 
 See also: [`ntensors`](@ref)
 """
-ninds(tn::AbstractTensorNetwork) = length(TensorNetwork(tn).indexmap)
+ninds(tn::AbstractTensorNetwork; kwargs...) = ninds(values(kwargs), tn)
+ninds(::@NamedTuple{}, tn::AbstractTensorNetwork) = length(TensorNetwork(tn).indexmap)
+ninds(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(inds(kwargs, tn))
 
-# TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
 """
     tensors(tn::AbstractTensorNetwork)
 
@@ -205,33 +204,37 @@ Return a list of the `Tensor`s in the [`AbstractTensorNetwork`](@ref).
 """
 function tensors end
 
-@kwdispatch tensors(tn::AbstractTensorNetwork)
+tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
-@kwmethod function tensors(tn::AbstractTensorNetwork;)
+function tensors(::@NamedTuple{}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
         sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ inds)
     end
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; contains::Symbol) = tensors(tn; contains=[contains]) # copy(TensorNetwork(tn).indexmap[contains])
-@kwmethod function tensors(tn::AbstractTensorNetwork; contains::AbstractVecOrTuple{Symbol})
-    return filter(t -> issubset(contains, inds(t)), tensors(tn))
+tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork) = tensors(tn; contains=[kwargs.contains]) # copy(TensorNetwork(tn).indexmap[contains])
+function tensors(kwargs::@NamedTuple{contains::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
+    return filter(t -> issubset(kwargs.contains, inds(t)), tensors(tn))
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; intersects::Symbol) = tensors(tn; intersects=[intersects])
-@kwmethod function tensors(tn::AbstractTensorNetwork; intersects::AbstractVecOrTuple{Symbol})
-    return filter(t -> !isdisjoint(inds(t), intersects), tensors(tn))
+function tensors(kwargs::@NamedTuple{intersects::Symbol}, tn::AbstractTensorNetwork)
+    tensors(tn; intersects=[kwargs.intersects])
+end
+function tensors(kwargs::@NamedTuple{intersects::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
+    return filter(t -> !isdisjoint(inds(t), kwargs.intersects), tensors(tn))
 end
 
 """
     ntensors(tn::AbstractTensorNetwork)
 
-Return the number of tensors in the `TensorNetwork`.
+Return the number of tensors in the `TensorNetwork`. It accepts the same keyword arguments as [`tensors`](@ref).
 
 See also: [`ninds`](@ref)
 """
-ntensors(tn::AbstractTensorNetwork) = length(TensorNetwork(tn).tensormap)
+ntensors(tn::AbstractTensorNetwork; kwargs...) = ntensors(values(kwargs), tn)
+ntensors(::@NamedTuple{}, tn::AbstractTensorNetwork) = length(TensorNetwork(tn).tensormap)
+ntensors(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(tensors(kwargs, tn))
 
 # TODO move to `tensors` method
 function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
@@ -240,11 +243,17 @@ function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
 end
 
 """
-    arrays(tn::AbstractTensorNetwork)
+    arrays(tn::AbstractTensorNetwork; kwargs...)
 
-Return a list of the arrays of in the `TensorNetwork`. It is equivalent to `parent.(tensors(tn))`.
+Return a list of the arrays of in the `TensorNetwork`. It is equivalent to `parent.(tensors(tn; kwargs...))`.
 """
-arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
+arrays(tn::AbstractTensorNetwork; kwargs...) = parent.(tensors(tn; kwargs...))
+
+"""
+    Base.collect(tn::AbstractTensorNetwork)
+
+Return a list of the `Tensor`s in the `TensorNetwork`. It is equivalent to `tensors(tn)`.
+"""
 Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
 """
@@ -666,15 +675,35 @@ function EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer=Greedy, outputs=i
     )
 end
 
-@kwdispatch contract(tn::AbstractTensorNetwork)
-@kwdispatch contract!(tn::AbstractTensorNetwork)
+"""
+    contract(tn::AbstractTensorNetwork; path=einexpr(tn))
 
-contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
+Contract a [`AbstractTensorNetwork`](@ref). If `path` is not specified, the contraction order will be computed by [`einexpr`](@ref).
+
+See also: [`einexpr`](@ref), [`contract!`](@ref).
+"""
+contract(tn::AbstractTensorNetwork; kwargs...) = contract(sort_nt(values(kwargs)), tn)
+contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; path=einexpr(tn)), tn)
+function contract(kwargs::NamedTuple{(:path,)}, tn::AbstractTensorNetwork)
+    length(kwargs.path.args) == 0 && return tn[inds(kwargs.path)...]
+
+    intermediates = map(subpath -> contract(tn; path=subpath), kwargs.path.args)
+    return contract(intermediates...; dims=suminds(kwargs.path))
+end
+
+"""
+    contract!(tn::AbstractTensorNetwork; path=einexpr(tn))
+
+Same as [`contract`](@ref) but in-place.
+
+See also: [`einexpr`](@ref).
+"""
+contract!(tn::AbstractTensorNetwork; kwargs...) = contract!(sort_nt(values(kwargs)), tn)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
 """
-    contract!(tn::TensorNetwork, index)
+    contract!(tn::AbstractTensorNetwork, index)
 
 In-place contraction of tensors connected to `index`.
 
@@ -689,6 +718,7 @@ function contract!(tn::AbstractTensorNetwork, i)
     return tn
 end
 contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
+contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
 
 function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
     tn = TensorNetwork(tn)
@@ -697,23 +727,6 @@ function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
 end
 contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
 contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
-
-# """
-#     contract(tn::AbstractTensorNetwork; kwargs...)
-
-# Contract a [`AbstractTensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
-
-# The `kwargs` will be passed down to the [`einexpr`](@ref) function.
-
-# See also: [`einexpr`](@ref), [`contract!`](@ref).
-# """
-@kwmethod contract(tn::AbstractTensorNetwork;) = contract(tn; path=einexpr(tn))
-@kwmethod function contract(tn::AbstractTensorNetwork; path)
-    length(path.args) == 0 && return tn[inds(path)...]
-
-    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
-    return contract(intermediates...; dims=suminds(path))
-end
 
 function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
