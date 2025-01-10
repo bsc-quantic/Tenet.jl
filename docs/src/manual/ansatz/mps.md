@@ -82,7 +82,6 @@ mixed_canonize!(mps, Site(2))
 
 isisometry(mps, 1; dir=:right) # Check if the first tensor is left canonical
 isisometry(mps, 3; dir=:left) # Check if the third tensor is right canonical
-```
 
 form(mps)
 ```
