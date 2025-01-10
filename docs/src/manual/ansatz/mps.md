@@ -6,12 +6,14 @@ Depending on the boundary conditions, these chains can be open or closed (i.e. p
 only `Open` boundary conditions are supported in `Tenet`.
 
 ```@setup viz
+using Tenet
 using Makie
 Makie.inline!(true)
 set_theme!(resolution=(800,200))
 
 using CairoMakie
 using GraphMakie
+CairoMakie.activate!(type = "svg")
 
 using Tenet
 using NetworkLayout
@@ -29,7 +31,7 @@ fig # hide
 
 The default ordering of the indices on the `MPS` constructor is (physical, left, right), but you can specify the ordering by passing the `order` keyword argument:
 
-```@repl
+```@repl plot
 mps = MPS([rand(4, 2), rand(4, 8, 2), rand(8, 2)]; order=[:l, :r, :o])
 ```
 where `:l`, `:r`, and `:o` represent the left, right, and outer physical indices, respectively.
@@ -40,7 +42,7 @@ where `:l`, `:r`, and `:o` represent the left, right, and outer physical indices
 An `MPS` representation is not unique: a single `MPS` can be represented in different canonical forms. The choice of canonical form can affect the efficiency and stability of algorithms used to manipulate the `MPS`.
 The current form of the `MPS` is stored as the trait [`Form`](@ref) and can be accessed via the `form` function:
 
-```@repl
+```@repl plot
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
 form(mps)
@@ -62,7 +64,7 @@ Also known as Vidal's form, the `Canonical` form represents the `MPS` using a se
 
 You can convert an `MPS` to the `Canonical` form by calling `canonize!`:
 
-```@repl
+```@repl plot
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 canonize!(mps)
 
@@ -74,7 +76,7 @@ In the `MixedCanonical` form, tensors to the left of the orthogonality center ar
 
 You can convert an `MPS` to the `MixedCanonical` form and specify the orthogonality center using `mixed_canonize!`. Additionally, one can check that the `MPS` is effectively in mixed canonical form using the functions `isleftcanonical` and `isrightcanonical`, which return `true` if the `Tensor` at that particular site is left or right canonical, respectively.
 
-```@repl
+```@repl plot
 mps = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 mixed_canonize!(mps, Site(2))
 
@@ -107,7 +109,7 @@ fig # hide
 
 To apply an `MPO` to an `MPS`, you can use the `evolve!` function:
 
-```@repl
+```@repl plot
 mps = rand(MPS; n=10, maxdim=100)
 mpo = rand(MPO; n=10, maxdim=4)
 
