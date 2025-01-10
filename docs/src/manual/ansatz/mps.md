@@ -5,7 +5,7 @@ Due to this, these networks are also known as _Tensor Trains_ in other scientifi
 Depending on the boundary conditions, these chains can be open or closed (i.e. periodic boundary conditions). Currently
 only `Open` boundary conditions are supported in `Tenet`.
 
-```@setup viz
+```@setup plot
 using Tenet
 using Makie
 Makie.inline!(true)
@@ -19,7 +19,7 @@ using Tenet
 using NetworkLayout
 ```
 
-```@example viz
+```@example plot
 fig = Figure() # hide
 open_mps = rand(MPS; n=10, maxdim=4)
 
@@ -97,7 +97,7 @@ For more in-depth information on Matrix Product States and their canonical forms
 Matrix Product Operators ([`MPO`](@ref)) are the operator version of [Matrix Product State (MPS)](#matrix-product-states-mps).
 The major difference between them is that MPOs have 2 indices per site (1 input and 1 output) while MPSs only have 1 index per site (i.e. an output). Currently, only `Open` boundary conditions are supported in `Tenet`.
 
-```@example viz
+```@example plot
 fig = Figure() # hide
 open_mpo = rand(MPO, n=10, maxdim=4)
 
