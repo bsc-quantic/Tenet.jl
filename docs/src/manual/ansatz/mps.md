@@ -108,12 +108,14 @@ fig # hide
 To apply an `MPO` to an `MPS`, you can use the `evolve!` function:
 
 ```@repl plot
-mps = rand(MPS; n=10, maxdim=100)
-mpo = rand(MPO; n=10, maxdim=4)
+mps = rand(MPS; n=6)
+mpo = rand(MPO; n=6)
 
 size.(tensors(mps))
 
-evolve!(mps, mpo)
+evolve!(mps, mpo; normalize=false)
 
 size.(tensors(mps))
 ```
+
+As we can see, the bond dimension of the `MPS` has increased after applying the `MPO` to it.
