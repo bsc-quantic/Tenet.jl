@@ -29,12 +29,16 @@ export transform, transform!
 #! format: on
 
 include("Site.jl")
+export Lane, @lane_str
 export Site, @site_str, isdual
-@compat public id
+@compat public id Moment
 
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 @compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
+
+include("Circuit.jl")
+export Gate, Circuit
 
 include("Lattice.jl")
 @compat public Lattice
@@ -68,6 +72,8 @@ export Product
 include("MPS.jl")
 export MPS, MPO
 @compat public AbstractMPS, AbstractMPO, defaultorder, check_form
+
+include("PEPS.jl")
 
 # reexports from EinExprs
 export einexpr, inds

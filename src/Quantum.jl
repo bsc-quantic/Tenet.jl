@@ -302,7 +302,7 @@ Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nlanes(tn::AbstractQuantum) = length(lanes(tn))
 
-function addsite!(tn::AbstractQuantum, site, index)
+function addsite!(tn::Quantum, site, index)
     tn = Quantum(tn)
     if haskey(tn.sites, site)
         error("Site $site already exists")
@@ -315,7 +315,7 @@ function addsite!(tn::AbstractQuantum, site, index)
     return tn.sites[site] = index
 end
 
-function rmsite!(tn::AbstractQuantum, site)
+function rmsite!(tn::Quantum, site)
     tn = Quantum(tn)
     if !haskey(tn.sites, site)
         error("Site $site does not exist")
