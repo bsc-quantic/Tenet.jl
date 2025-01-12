@@ -736,7 +736,7 @@ function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right
 end
 
 function LinearAlgebra.qr!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
-    tensor = tn[left_inds ∪ right_inds...]
+    tensor = only(tensors(tn; contains=left_inds ∪ right_inds))
     Q, R = qr(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([Q, R]))
     return tn
