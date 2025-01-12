@@ -124,12 +124,14 @@ inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs
 
 function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
     if kwargs.set === :physical
-        return collect(values(Quantum(tn).sites))
+        return map(sites(tn)) do site
+            inds(tn; at=site)::Symbol
+        end
     elseif kwargs.set === :virtual
-        return setdiff(inds(tn), values(Quantum(tn).sites))
+        return setdiff(inds(tn), inds(tn; set=:physical))
     elseif kwargs.set ∈ (:inputs, :outputs)
         return map(sites(tn; kwargs.set)) do site
-            inds(tn; at=site)
+            inds(tn; at=site)::Symbol
         end
     else
         return inds(TensorNetwork(tn); set=kwargs.set)
@@ -287,13 +289,7 @@ nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
 Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
-function lanes(tn::AbstractQuantum)
-    return unique(
-        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
-            isdual(site) ? site' : site
-        end,
-    )
-end
+lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
 
 """
     nlanes(q::AbstractQuantum)

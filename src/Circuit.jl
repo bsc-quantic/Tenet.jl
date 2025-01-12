@@ -1,4 +1,4 @@
-using BijectiveDicts: BijectiveIdDict
+using BijectiveDicts: BijectiveDict
 
 struct Gate
     tensor::Tensor
@@ -48,12 +48,12 @@ resetindex(gate::Gate) = replace(gate, [ind => gensym(:i) for ind in inds(gate)]
 
 struct Circuit <: AbstractQuantum
     tn::TensorNetwork
-    moments::BijectiveIdDict{Moment,Symbol} # mapping between indices and `Moment`s
+    moments::BijectiveDict{Moment,Symbol} # mapping between indices and `Moment`s
     inputs::Dict{Lane,Int}
     outputs::Dict{Lane,Int} # current moment for each lane
 end
 
-Circuit() = Circuit(TensorNetwork(), BijectiveIdDict{Symbol,Moment}(), Dict(), Dict())
+Circuit() = Circuit(TensorNetwork(), BijectiveDict(Dict{Moment,Symbol}(), Dict{Symbol,Moment}()), Dict(), Dict())
 
 TensorNetwork(circuit::Circuit) = circuit.tn
 # TODO conversion between `Quantum and `Circuit`
@@ -66,19 +66,20 @@ end
 
 inds(kwargs::@NamedTuple{at::Site}, circuit::Circuit) = circuit.moments[moment(circuit, kwargs.at)]
 
+# NOTE `inds(; set)` is implemented in `Quantum.jl` for `AbstractQuantum`
 # NOTE `tensors(; at)` is implemented in `Quantum.jl` for `AbstractQuantum`
 
 function sites(::@NamedTuple{}, circuit::Circuit)
-    keys(circuit.inputs) ∪ keys(circuit.outputs)
+    Site[Site.(keys(circuit.inputs); dual=true)..., Site.(keys(circuit.outputs))...]
 end
 
-function sites(::@NamedTuple{set::Symbol}, circuit::Circuit)
-    if set === :inputs
+function sites(kwargs::@NamedTuple{set::Symbol}, circuit::Circuit)
+    if kwargs.set === :inputs
         return Site.(keys(circuit.inputs); dual=true)
-    elseif set === :outputs
+    elseif kwargs.set === :outputs
         return Site.(keys(circuit.outputs))
     else
-        throw(ArgumentError("Expected set to be one of `:inputs` or `:outputs`, but got $(set)"))
+        throw(ArgumentError("Expected set to be one of `:inputs` or `:outputs`, but got $(kwargs.set)"))
     end
 end
 
@@ -92,6 +93,7 @@ function Base.push!(circuit::Circuit, gate::Gate)
     new_lanes = setdiff(lanes(gate), connecting_lanes)
 
     # reindex gate to match circuit indices
+    gate = resetindex(gate)
     gate = replace(gate, [site' => inds(circuit; at=site) for site in Iterators.map(Site, connecting_lanes)])
 
     # add gate to circuit
