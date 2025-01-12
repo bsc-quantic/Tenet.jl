@@ -73,8 +73,6 @@ include("MPS.jl")
 export MPS, MPO
 @compat public AbstractMPS, AbstractMPO, defaultorder, check_form
 
-include("PEPS.jl")
-
 # reexports from EinExprs
 export einexpr, inds
 
