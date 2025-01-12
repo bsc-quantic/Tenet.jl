@@ -58,6 +58,8 @@ Circuit() = Circuit(TensorNetwork(), BijectiveDict(Dict{Moment,Symbol}(), Dict{S
 TensorNetwork(circuit::Circuit) = circuit.tn
 # TODO conversion between `Quantum and `Circuit`
 
+moments(circuit::Circuit) = collect(keys(circuit.moments))
+
 function moment(circuit::Circuit, site::Site)
     lane = Lane(site)
     t = isdual(site) ? circuit.inputs[lane] : circuit.outputs[lane]

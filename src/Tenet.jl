@@ -38,7 +38,7 @@ export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 @compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
 
 include("Circuit.jl")
-export Gate, Circuit
+export Gate, Circuit, moments
 
 include("Lattice.jl")
 @compat public Lattice
