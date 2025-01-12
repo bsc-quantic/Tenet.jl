@@ -8,6 +8,10 @@
         @test isempty(inds(circuit; set=:outputs))
         @test isempty(inds(circuit; set=:physical))
         @test isempty(inds(circuit; set=:virtual))
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying a single lane gate
@@ -26,6 +30,10 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying a gate with multiple lanes
@@ -46,6 +54,10 @@
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying two gates in the same lane
@@ -69,6 +81,10 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate2))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying the same gate twice
@@ -89,6 +105,10 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying two gates in different lanes
@@ -116,6 +136,10 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 
     # test applying two gates with a shared lane
@@ -143,5 +167,9 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+
+        qtn = Quantum(circuit)
+        @test issetequal(sites(qtn), sites(circuit))
+        @test issetequal(tensors(qtn), tensors(circuit))
     end
 end

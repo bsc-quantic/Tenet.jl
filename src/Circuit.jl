@@ -56,7 +56,11 @@ end
 Circuit() = Circuit(TensorNetwork(), BijectiveDict(Dict{Moment,Symbol}(), Dict{Symbol,Moment}()), Dict(), Dict())
 
 TensorNetwork(circuit::Circuit) = circuit.tn
-# TODO conversion between `Quantum and `Circuit`
+
+# TODO conversion from `Quantum to `Circuit`
+function Quantum(circuit::Circuit)
+    Quantum(TensorNetwork(circuit), Dict([site => inds(circuit; at=site) for site in sites(circuit)]))
+end
 
 moments(circuit::Circuit) = collect(keys(circuit.moments))
 
@@ -67,6 +71,7 @@ function moment(circuit::Circuit, site::Site)
 end
 
 inds(kwargs::@NamedTuple{at::Site}, circuit::Circuit) = circuit.moments[moment(circuit, kwargs.at)]
+inds(kwargs::@NamedTuple{at::Moment}, circuit::Circuit) = circuit.moments[kwargs.at]
 
 # NOTE `inds(; set)` is implemented in `Quantum.jl` for `AbstractQuantum`
 # NOTE `tensors(; at)` is implemented in `Quantum.jl` for `AbstractQuantum`
