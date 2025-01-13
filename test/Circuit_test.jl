@@ -31,7 +31,8 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
-        @test collect(circuit) == [gate]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate]))
+        @test sites.(circuit) == sites.([gate])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -56,7 +57,8 @@
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
-        @test collect(circuit) = [gate]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate]))
+        @test sites.(circuit) == sites.([gate])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -84,7 +86,8 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate2))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
-        @test collect(circuit) == [gate1, gate2]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate1, gate2]))
+        @test sites.(circuit) == sites.([gate1, gate2])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -109,7 +112,8 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
-        @test collect(circuit) == [gate, gate]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate, gate]))
+        @test sites.(circuit) == sites.([gate, gate])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -141,7 +145,8 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
-        @test collect(circuit) == [gate1, gate2]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate1, gate2]))
+        @test sites.(circuit) == sites.([gate1, gate2])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -173,7 +178,8 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
-        @test collect(circuit) == [gate1, gate2]
+        @test parent.(Tensor.(circuit)) == parent.(Tensor.([gate1, gate2]))
+        @test sites.(circuit) == sites.([gate1, gate2])
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
