@@ -20,7 +20,7 @@ Currently only `Open` boundary conditions are supported in Tenet.
 fig = Figure() # hide
 open_mps = rand(MPS; n=10, maxdim=4)
 
-plot!(fig[1,1], open_mps, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
+graphplot!(fig[1,1], open_mps, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
 Label(fig[1,1, Bottom()], "Open") # hide
 
 fig # hide
@@ -104,7 +104,7 @@ The major difference between them is that MPOs have 2 indices per site (1 input 
 fig = Figure() # hide
 open_mpo = rand(MPO, n=10, maxdim=4)
 
-plot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
+graphplot!(fig[1,1], open_mpo, layout=Spring(iterations=1000, C=0.5, seed=100)) # hide
 Label(fig[1,1, Bottom()], "Open") # hide
 
 fig # hide
