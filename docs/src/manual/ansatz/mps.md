@@ -4,9 +4,9 @@
 using Tenet
 using Makie
 Makie.inline!(true)
-set_theme!(resolution=(800,200))
-using CairoMakie
+set_theme!(resolution=(800,400))
 using GraphMakie
+using CairoMakie
 CairoMakie.activate!(type = "svg")
 using NetworkLayout
 ```
@@ -28,13 +28,13 @@ fig # hide
 
 In Tenet, a Matrix Product State can be easily created by passing a list of arrays to the [`MPS`](@ref) constructor:
 ```@repl examples
-mps = MPS([rand(2, 2), rand(2, 4, 2), rand(4, 2, 2), rand(2, 2)])
+mps = MPS([rand(2, 2), rand(2, 2, 4), rand(2, 4, 2), rand(2, 2)])
 ```
 
 The default ordering of the indices on the [`MPS`](@ref) constructor is (physical, left, right), but you can specify the ordering by passing the `order` keyword argument:
 
 ```@repl examples
-mps = MPS([rand(2, 2), rand(2, 2, 4), rand(2, 4, 2), rand(2, 2)]; order=[:o, :l, :r])
+mps = MPS([rand(2, 2), rand(2, 2, 4), rand(4, 2, 2), rand(2, 2)]; order=[:l, :o, :r])
 ```
 where `:l`, `:r`, and `:o` represent the left, right, and outer physical indices, respectively.
 
