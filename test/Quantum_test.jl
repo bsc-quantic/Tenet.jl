@@ -1,5 +1,5 @@
 @testset "Quantum" begin
-    using Tenet
+    using Tenet: nsites, State, Operator, Scalar
 
     _tensors = Tensor[Tensor(zeros(2), [:i])]
     tn = TensorNetwork(_tensors)

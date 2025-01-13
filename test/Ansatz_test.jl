@@ -9,7 +9,7 @@ using LinearAlgebra
         tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j])])
         qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j))
         graph = Graph(2)
-        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[Site(i) => i for i in 1:2])
+        mapping = BijectiveIdDict{AbstractLane,Int}(Pair{AbstractLane,Int}[Lane(i) => i for i in 1:2])
         lattice = Lattice(mapping, graph)
         ansatz = Ansatz(qtn, lattice)
 

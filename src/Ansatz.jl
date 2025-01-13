@@ -97,6 +97,7 @@ struct Ansatz <: AbstractAnsatz
     lattice::Lattice
 
     function Ansatz(tn, lattice)
+        # TODO make comparison in another way when we start using `Site`s
         if !issetequal(lanes(tn), Graphs.vertices(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end

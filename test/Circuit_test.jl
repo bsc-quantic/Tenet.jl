@@ -8,6 +8,7 @@
         @test isempty(inds(circuit; set=:outputs))
         @test isempty(inds(circuit; set=:physical))
         @test isempty(inds(circuit; set=:virtual))
+        @test collect(circuit) == Gate[]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -30,6 +31,7 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
+        @collect circuit == [gate]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -39,7 +41,7 @@
     # test applying a gate with multiple lanes
     @testset let circuit = Circuit(), gate = Gate(zeros(2, 2, 2, 2), [site"1'", site"2'", site"1", site"2"])
         push!(circuit, gate)
-        @test issetequal(sites(circuit), [site"1'", site"1"])
+        @test issetequal(sites(circuit), [site"1'", site"1", site"2'", site"2"])
         @test issetequal(lanes(circuit), [Lane(1), Lane(2)])
         @test issetequal(sites(circuit; set=:inputs), [site"1'", site"2'"])
         @test issetequal(sites(circuit; set=:outputs), [site"1", site"2"])
@@ -54,6 +56,7 @@
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+        @test collect(circuit) = [gate]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -81,6 +84,7 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate2))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
+        @test collect(circuit) == [gate1, gate2]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -105,6 +109,7 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
+        @test collect(circuit) == [gate, gate]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -136,6 +141,7 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+        @test collect(circuit) == [gate1, gate2]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
@@ -167,6 +173,7 @@
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 3)
         @test Tenet.moment(circuit, site"2'") == Moment(Lane(2), 1)
         @test Tenet.moment(circuit, site"2") == Moment(Lane(2), 2)
+        @test collect(circuit) == [gate1, gate2]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))

@@ -9,7 +9,7 @@ Represents the location of a physical index.
 
 See also: [`Site`](@ref), [`lanes`](@ref)
 """
-struct Lane{N}
+struct Lane{N} <: AbstractLane
     id::NTuple{N,Int}
 
     Lane(id::NTuple{N,Int}) where {N} = new{N}(id)
@@ -127,7 +127,3 @@ end
 Moment(lane::L, t) where {L<:AbstractLane} = Moment{L}(lane, t)
 
 Lane(x::Moment) = Lane(x.lane)
-
-struct Bond{L<:AbstractLane}
-    lanes::NTuple{2,L}
-end

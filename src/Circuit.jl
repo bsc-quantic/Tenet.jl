@@ -8,7 +8,7 @@ struct Gate
         @assert ndims(tensor) == length(sites)
         @assert allunique(sites)
         @assert allunique(inds(tensor))
-        new(tensor, sites)
+        new(tensor, collect(sites))
     end
 end
 
@@ -16,7 +16,10 @@ Gate(array::AbstractArray, sites) = Gate(Tensor(array, [gensym(:i) for _ in 1:nd
 
 Tensor(gate::Gate) = gate.tensor
 Base.parent(gate::Gate) = Tensor(gate)
-inds(gate::Gate) = inds(Tensor(gate))
+
+inds(gate::Gate; kwargs...) = inds(sort_nt(values(kwargs)), gate::Gate)
+inds(::@NamedTuple{}, gate::Gate) = inds(Tensor(gate))
+inds(kwargs::@NamedTuple{at::S}, gate::Gate) where {S<:Site} = inds(gate)[findfirst(isequal(kwargs.at), sites(gate))]
 
 sites(gate::Gate; kwargs...) = sites(sort_nt(values(kwargs)), gate)
 sites(::@NamedTuple{}, gate::Gate) = Tuple(gate.sites)
@@ -34,10 +37,13 @@ end
 
 lanes(gate::Gate) = unique(Iterators.map(Tenet.Lane, sites(gate)))
 
+Base.:(==)(a::Gate, b::Gate) = sites(a) == sites(b) && Tensor(a) == Tensor(b)
+
+Base.replace(gate::Gate) = gate
 Base.replace(gate::Gate, old_new::Pair{Symbol,Symbol}...) = Gate(replace(Tensor(gate), old_new...), sites(gate))
 
-function Base.replace(gate::Gate, old_new::Pair{Site,Symbol}...)
-    mapping = ImmutableDict(Pair.(sites(gate), inds(gate)))
+function Base.replace(gate::Gate, old_new::Pair{<:Site,Symbol}...)
+    mapping = Base.ImmutableDict(Pair.(sites(gate), inds(gate))...)
     old_new = map(old_new) do (old, new)
         mapping[old] => new
     end
@@ -51,9 +57,12 @@ struct Circuit <: AbstractQuantum
     moments::BijectiveDict{Moment,Symbol} # mapping between indices and `Moment`s
     inputs::Dict{Lane,Int}
     outputs::Dict{Lane,Int} # current moment for each lane
+    ordered_gates::Vector{Gate} # used in iterate
 end
 
-Circuit() = Circuit(TensorNetwork(), BijectiveDict(Dict{Moment,Symbol}(), Dict{Symbol,Moment}()), Dict(), Dict())
+function Circuit()
+    Circuit(TensorNetwork(), BijectiveDict(Dict{Moment,Symbol}(), Dict{Symbol,Moment}()), Dict(), Dict(), Gate[])
+end
 
 TensorNetwork(circuit::Circuit) = circuit.tn
 
@@ -70,11 +79,28 @@ function moment(circuit::Circuit, site::Site)
     return Moment(lane, t)
 end
 
-inds(kwargs::@NamedTuple{at::Site}, circuit::Circuit) = circuit.moments[moment(circuit, kwargs.at)]
+inds(kwargs::@NamedTuple{at::S}, circuit::Circuit) where {S<:Site} = circuit.moments[moment(circuit, kwargs.at)]
 inds(kwargs::@NamedTuple{at::Moment}, circuit::Circuit) = circuit.moments[kwargs.at]
 
-# NOTE `inds(; set)` is implemented in `Quantum.jl` for `AbstractQuantum`
-# NOTE `tensors(; at)` is implemented in `Quantum.jl` for `AbstractQuantum`
+# NOTE `inds(; set)` is implemented in `Quantum.jl` for `AbstractQuantum`, but reimplemented here for performance
+function inds(kwargs::@NamedTuple{set::Symbol}, circuit::Circuit)
+    if kwargs.set ∈ (:inputs, :outputs)
+        return [inds(circuit; at=site) for site in sites(circuit; kwargs...)]
+    elseif kwargs.set === :physical
+        return [inds(circuit; at=site) for site in sites(circuit)]
+    elseif kwargs.set === :virtual
+        return setdiff(inds(circuit), inds(circuit; set=:physical))
+    else
+        return inds(TensorNetwork(circuit); set=kwargs.set)
+    end
+end
+
+# NOTE `tensors(; at)` is implemented in `Quantum.jl` for `AbstractQuantum`, but reimplemented for performance
+function tensors(kwargs::@NamedTuple{at::S}, circuit::Circuit) where {S<:Site}
+    only(tensors(circuit; contains=inds(circuit; kwargs...)))
+end
+
+# NOTE `tensors(; at::Moment)` not fully defined
 
 function sites(::@NamedTuple{}, circuit::Circuit)
     Site[Site.(keys(circuit.inputs); dual=true)..., Site.(keys(circuit.outputs))...]
@@ -101,7 +127,9 @@ function Base.push!(circuit::Circuit, gate::Gate)
 
     # reindex gate to match circuit indices
     gate = resetindex(gate)
-    gate = replace(gate, [site' => inds(circuit; at=site) for site in Iterators.map(Site, connecting_lanes)])
+    if !isempty(connecting_lanes)
+        gate = replace(gate, [site' => inds(circuit; at=site) for site in Iterators.map(Site, connecting_lanes)]...)
+    end
 
     # add gate to circuit
     push!(TensorNetwork(circuit), Tensor(gate))
@@ -121,7 +149,21 @@ function Base.push!(circuit::Circuit, gate::Gate)
         circuit.moments[moment] = inds(gate; at=Site(lane))
     end
 
+    push!(circuit.ordered_gates, gate)
+
     return circuit
 end
 
-# TODO iterative walk through the gates
+Base.eltype(::Type{Circuit}) = Gate
+Base.IteratorSize(::Type{Circuit}) = Base.HasLength()
+
+# TODO choose between breadth-first and depth-first traversing algorithms
+"""
+    Base.iterate(circuit::Circuit[, state=1])
+
+Iterate over the gates in `circuit` in the order they were added.
+"""
+Base.iterate(circuit::Circuit, state=1) = iterate(circuit.ordered_gates, state)
+
+# NOTE if not specialized, it will fallback to the `TensorNetwork` method with returns `Vector{Tensor}`
+Base.collect(circuit::Circuit) = copy(circuit.ordered_gates)
