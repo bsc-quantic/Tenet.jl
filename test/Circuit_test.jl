@@ -31,7 +31,7 @@
         @test parent(tensors(circuit; at=site"1")) == parent(Tensor(gate))
         @test Tenet.moment(circuit, site"1'") == Moment(Lane(1), 1)
         @test Tenet.moment(circuit, site"1") == Moment(Lane(1), 2)
-        @collect circuit == [gate]
+        @test collect(circuit) == [gate]
 
         qtn = Quantum(circuit)
         @test issetequal(sites(qtn), sites(circuit))
