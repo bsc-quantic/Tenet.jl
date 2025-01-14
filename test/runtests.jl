@@ -1,12 +1,13 @@
 using Test
 using Tenet
 using OMEinsum
-using Reactant
 using Adapt
 
 include("Utils.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
+
+println("Running tests for group: $TENET_TEST_GROUP")
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin

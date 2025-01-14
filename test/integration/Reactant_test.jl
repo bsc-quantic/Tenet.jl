@@ -1,3 +1,5 @@
+using Reactant
+
 @testset "Reactant" begin
     # TODO test `make_tracer`
     # TODO test `create_result`
