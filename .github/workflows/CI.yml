@@ -37,27 +37,27 @@ jobs:
         arch:
           - x64
     steps:
-    - uses: actions/checkout@v4
-    - uses: julia-actions/setup-julia@v1
-      with:
-        version: ${{ matrix.version }}
-        arch: ${{ matrix.arch }}
-        include-all-prereleases: true
-    - uses: julia-actions/cache@v1
-      with:
-        cache-name: Unit Tests CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-    - name: Add Julia registries
-      run: |
-        using Pkg
-        pkg"registry add https://github.com/bsc-quantic/Registry.git"
-        pkg"registry add General"
-        shell: julia --color=yes {0}
-    - uses: julia-actions/julia-buildpkg@v1
-    - uses: julia-actions/julia-runtest@v1
-    - uses: julia-actions/julia-processcoverage@v1
-    - uses: codecov/codecov-action@v3
-      with:
-        files: lcov.info
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          include-all-prereleases: true
+      - uses: julia-actions/cache@v1
+        with:
+          cache-name: Unit Tests CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
+          shell: julia --color=yes {0}
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
   integration_test:
     name: Integration Tests - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -72,25 +72,25 @@ jobs:
         arch:
           - x64
     steps:
-    - uses: actions/checkout@v4
-    - uses: julia-actions/setup-julia@v1
-      with:
-        version: ${{ matrix.version }}
-        arch: ${{ matrix.arch }}
-        include-all-prereleases: true
-    - uses: julia-actions/cache@v1
-      with:
-        cache-name: Integration Tests CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-    - name: Add Julia registries
-      run: |
-        using Pkg
-        pkg"registry add https://github.com/bsc-quantic/Registry.git"
-        pkg"registry add General"
-        shell: julia --color=yes {0}
-    - uses: julia-actions/julia-buildpkg@v1
-    - uses: julia-actions/julia-runtest@v1
-      with:
-        test_args: 'Integration tests'
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          include-all-prereleases: true
+      - uses: julia-actions/cache@v1
+        with:
+          cache-name: Integration Tests CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
+          shell: julia --color=yes {0}
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          test_args: 'Integration tests'
   docs:
     name: Documentation
     runs-on: ubuntu-latest
