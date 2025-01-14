@@ -318,10 +318,10 @@ using LinearAlgebra
     @testset "expect" begin
         i, j = 2, 3
         mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-        gate = Quantum(mat, [Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
+        gate = Gate(mat, [Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
-        @test isapprox(expect(ψ, [gate]), norm(ψ)^2)
+        @test expect(ψ, Quantum.([gate])) ≈ norm(ψ)^2
     end
 
     @testset "evolve!" begin
