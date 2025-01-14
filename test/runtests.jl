@@ -6,36 +6,38 @@ using Adapt
 
 include("Utils.jl")
 
-@testset "Unit tests" verbose = true begin
-    include("Helpers_test.jl")
-    include("Tensor_test.jl")
-    include("Numerics_test.jl")
-    include("TensorNetwork_test.jl")
-    include("Transformations_test.jl")
-    include("Site_test.jl")
-    include("Quantum_test.jl")
-    include("Lattice_test.jl")
-    include("Ansatz_test.jl")
-    include("Product_test.jl")
-    include("MPS_test.jl")
-    include("MPO_test.jl")
-end
+if "integration_tests" ∉ ARGS
+    @testset "Unit tests" verbose = true begin
+        include("Helpers_test.jl")
+        include("Tensor_test.jl")
+        include("Numerics_test.jl")
+        include("TensorNetwork_test.jl")
+        include("Transformations_test.jl")
+        include("Site_test.jl")
+        include("Quantum_test.jl")
+        include("Lattice_test.jl")
+        include("Ansatz_test.jl")
+        include("Product_test.jl")
+        include("MPS_test.jl")
+        include("MPO_test.jl")
+    end
+else
+    @testset "Integration tests" verbose = true begin
+        include("integration/Reactant_test.jl")
+        include("integration/ChainRules_test.jl")
+        # include("integration/BlockArray_test.jl")
+        include("integration/Dagger_test.jl")
+        include("integration/Makie_test.jl")
+        include("integration/KrylovKit_test.jl")
+        include("integration/Quac_test.jl")
+        include("integration/ITensors_test.jl")
+        include("integration/ITensorNetworks_test.jl")
 
-@testset "Integration tests" verbose = true begin
-    include("integration/Reactant_test.jl")
-    include("integration/ChainRules_test.jl")
-    # include("integration/BlockArray_test.jl")
-    include("integration/Dagger_test.jl")
-    include("integration/Makie_test.jl")
-    include("integration/KrylovKit_test.jl")
-    include("integration/Quac_test.jl")
-    include("integration/ITensors_test.jl")
-    include("integration/ITensorNetworks_test.jl")
-
-    @testset "Python" begin
-        include("integration/python/test_quimb.jl")
-        include("integration/python/test_qiskit.jl")
-        include("integration/python/test_qibo.jl")
+        @testset "Python" begin
+            include("integration/python/test_quimb.jl")
+            include("integration/python/test_qiskit.jl")
+            include("integration/python/test_qibo.jl")
+        end
     end
 end
 
