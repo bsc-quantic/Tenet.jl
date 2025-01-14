@@ -8,7 +8,7 @@ include("Utils.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 
-if REACTANT_TEST_GROUP == "all" || REACTANT_TEST_GROUP == "unit"
+if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin
         include("Helpers_test.jl")
         include("Tensor_test.jl")
@@ -25,7 +25,7 @@ if REACTANT_TEST_GROUP == "all" || REACTANT_TEST_GROUP == "unit"
     end
 end
 
-if REACTANT_TEST_GROUP == "all" || REACTANT_TEST_GROUP == "integration"
+if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
         include("integration/Reactant_test.jl")
         include("integration/ChainRules_test.jl")
