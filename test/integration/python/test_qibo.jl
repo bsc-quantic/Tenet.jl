@@ -11,8 +11,12 @@
     circuit.add(qibo.gates.H(1))
     circuit.add(qibo.gates.H(2))
 
-    tn = convert(Quantum, circuit)
-    @test issetequal(sites(tn; set=:inputs), adjoint.(Site.([1, 2, 3])))
-    @test issetequal(sites(tn; set=:outputs), Site.([1, 2, 3]))
-    @test Tenet.ntensors(tn) == 7
+    circ = convert(Circuit, circuit)
+    @test circ isa Circuit
+    @test issetequal(sites(circ; set=:inputs), Site.([0, 1, 2]; dual=true))
+    @test issetequal(sites(circ; set=:outputs), Site.([0, 1, 2]))
+    @test Tenet.ntensors(circ) == 7
+    @test issetequal(
+        moments(circ), [Moment.(Ref(Lane(0)), 1:4)..., Moment.(Ref(Lane(1)), 1:4)..., Moment.(Ref(Lane(2)), 1:4)...]
+    )
 end

@@ -2,7 +2,7 @@
     using Tenet: Tensor, contract, Lattice
     using ChainRulesTestUtils
     using Graphs
-    using BijectiveDicts: BijectiveIdDict
+    using BijectiveDicts
 
     @testset "Tensor" begin
         test_frule(Tensor, ones(), Symbol[])
@@ -194,7 +194,7 @@
     @testset "Ansatz" begin
         tn = Quantum(TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
         graph = Graph(1)
-        mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site"1" => 1])
+        mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane"1" => 1])
         lattice = Lattice(mapping, graph)
         test_frule(Ansatz, tn, lattice)
         test_rrule(Ansatz, tn, lattice)

@@ -46,11 +46,11 @@ struct NonCanonical <: Form end
 
 [`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
 
-  - The orthogonality center is a [`Site`](@ref) or a vector of [`Site`](@ref)s. The tensors to the
+  - The orthogonality center is a [`Lane`](@ref) or a vector of [`Lane`](@ref)s. The tensors to the
     left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
 """
 struct MixedCanonical <: Form
-    orthog_center::Union{Site,Vector{<:Site}}
+    orthog_center::Union{Lane,Vector{<:Lane}}
 end
 
 Base.copy(x::MixedCanonical) = MixedCanonical(copy(x.orthog_center))
@@ -70,10 +70,10 @@ Return the canonical form of the [`AbstractAnsatz`](@ref) Tensor Network.
 function form end
 
 struct MissingSchmidtCoefficientsException <: Base.Exception
-    bond::NTuple{2,Site}
+    bond::NTuple{2,AbstractLane}
 end
 
-MissingSchmidtCoefficientsException(bond::Vector{<:Site}) = MissingSchmidtCoefficientsException(tuple(bond...))
+MissingSchmidtCoefficientsException(bond::Vector{<:AbstractLane}) = MissingSchmidtCoefficientsException(tuple(bond...))
 
 function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
     return print(io, "Can't access the spectrum on bond $(e.bond)")
@@ -90,13 +90,14 @@ abstract type AbstractAnsatz <: AbstractQuantum end
 """
     Ansatz
 
-[`AbstractQuantum`](@ref) Tensor Network together with a [`Lattice`](@ref) for connectivity information between [`Site`](@ref)s.
+[`AbstractQuantum`](@ref) Tensor Network together with a [`Lattice`](@ref) for connectivity information between [`Lane`](@ref)s.
 """
 struct Ansatz <: AbstractAnsatz
     tn::Quantum
     lattice::Lattice
 
     function Ansatz(tn, lattice)
+        # TODO make comparison in another way when we start using `Site`s
         if !issetequal(lanes(tn), Graphs.vertices(lattice))
             throw(ArgumentError("Sites of the tensor network and the lattice must be equal"))
         end
@@ -132,42 +133,45 @@ function Base.isapprox(a::AbstractAnsatz, b::AbstractAnsatz; kwargs...)
 end
 
 """
-    neighbors(tn::AbstractAnsatz, site::Site)
+    neighbors(tn::AbstractAnsatz, lane::AbstractLane)
 
-Return the neighboring sites of a given [`Site`](@ref) in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
+Return the neighboring sites of a given [`AbstractLane`](@ref) in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
 """
-Graphs.neighbors(tn::AbstractAnsatz, site::Site) = Graphs.neighbors(lattice(tn), site)
+Graphs.neighbors(tn::AbstractAnsatz, lane::AbstractLane) = Graphs.neighbors(lattice(tn), lane)
 
 """
-    has_edge(tn::AbstractAnsatz, a::Site, b::Site)
+    has_edge(tn::AbstractAnsatz, a::AbstractLane, b::AbstractLane)
 
-Check whether there is an edge between two [`Site`](@ref)s in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
+Check whether there is an edge between two [`AbstractLane`](@ref)s in the [`Lattice`](@ref) of the [`AbstractAnsatz`](@ref) Tensor Network.
 """
-Graphs.has_edge(tn::AbstractAnsatz, a::Site, b::Site) = Graphs.has_edge(lattice(tn), a, b)
+Graphs.has_edge(tn::AbstractAnsatz, a::AbstractLane, b::AbstractLane) = Graphs.has_edge(lattice(tn), a, b)
 
 """
     inds(tn::AbstractAnsatz; bond)
 
-Return the index of the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+Return the index of the virtual bond between two [`AbstractLane`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
 """
 function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
-    (site1, site2) = kwargs.bond
-    @assert site1 ∈ sites(tn) "Site $site1 not found"
-    @assert site2 ∈ sites(tn) "Site $site2 not found"
-    @assert site1 != site2 "Sites must be different"
-    @assert Graphs.has_edge(tn, site1, site2) "Sites must be neighbors"
+    (lane1, lane2) = kwargs.bond
+    @assert lane1 ∈ lanes(tn) "Lane $lane1 not found"
+    @assert lane2 ∈ lanes(tn) "Lane $lane2 not found"
+    @assert lane1 != lane2 "Lanes must be different"
+    @assert Graphs.has_edge(tn, lane1, lane2) "Lanes must be neighbors"
 
-    tensor1 = tensors(tn; at=site1)
-    tensor2 = tensors(tn; at=site2)
+    tensor1 = tensors(tn; at=lane1)
+    tensor2 = tensors(tn; at=lane2)
 
     isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
+# TODO fix this properly when we do the mapping 
+tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane} = tensors(tn; at=Site(kwargs.at))
+
 """
     tensors(tn::AbstractAnsatz; bond)
 
-Return the [`Tensor`](@ref) in a virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+Return the [`Tensor`](@ref) in a virtual bond between two [`AbstractLane`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
 
 # Notes
 
@@ -194,7 +198,7 @@ end
 """
     contract!(tn::AbstractAnsatz; bond)
 
-Contract the virtual bond between two [`Site`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
+Contract the virtual bond between two [`AbstractLane`](@ref)s in a [`AbstractAnsatz`](@ref) Tensor Network.
 """
 contract!(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz) = contract!(tn, inds(tn; bond=kwargs.bond))
 
@@ -235,12 +239,12 @@ canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(
 
 Normalize the state at a given [`Site`](@ref) or bond in a [`AbstractAnsatz`](@ref) Tensor Network.
 """
-LinearAlgebra.normalize(ψ::AbstractAnsatz, site) = normalize!(copy(ψ), site)
+LinearAlgebra.normalize(ψ::AbstractAnsatz, lane) = normalize!(copy(ψ), lane)
 
 """
-    isisometry(tn::AbstractAnsatz, site; dir, kwargs...)
+    isisometry(tn::AbstractAnsatz, lane; dir, kwargs...)
 
-Check if the tensor at a given [`Site`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
+Check if the tensor at a given [`Lane`](@ref) in a [`AbstractAnsatz`](@ref) Tensor Network is an isometry.
 The `dir` keyword argument specifies the direction of the isometry to check.
 """
 function isisometry end
@@ -434,12 +438,14 @@ Update a [`AbstractAnsatz`](@ref) Tensor Network with a `gate` operator using th
 
   - If both `threshold` and `maxdim` are provided, `maxdim` is used.
 """
-function simple_update!(ψ::AbstractAnsatz, gate; threshold=nothing, maxdim=nothing, kwargs...)
+function simple_update!(ψ::AbstractAnsatz, gate::Gate; threshold=nothing, maxdim=nothing, kwargs...)
     @assert issetequal(adjoint.(sites(gate; set=:inputs)), sites(gate; set=:outputs)) "Inputs of the gate must match outputs"
+    @assert isconnectable(ψ, gate) "Gate must be connectable to the Quantum Tensor Network"
 
     if nlanes(gate) == 1
         return simple_update_1site!(ψ, gate)
     elseif nlanes(gate) == 2
+        @assert Graphs.has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites of the lattice"
         return simple_update_2site!(form(ψ), ψ, gate; threshold, maxdim, kwargs...)
     else
         throw(ArgumentError("Only 1-site and 2-site gates are currently supported"))
@@ -448,23 +454,18 @@ end
 
 # TODO a lot of problems with merging... maybe we shouldn't merge manually
 function simple_update_1site!(ψ::AbstractAnsatz, gate)
-    @assert nlanes(gate) == 1 "Gate must act only on one lane"
-    @assert ninputs(gate) == 1 "Gate must have only one input"
-    @assert noutputs(gate) == 1 "Gate must have only one output"
-
     # shallow copy to avoid problems if errors in mid execution
-    gate = copy(gate)
-    resetindex!(gate; init=ninds(ψ))
+    gate = resetinds(gate; init=ninds(ψ))
 
     contracting_index = gensym(:tmp)
     targetsite = only(sites(gate; set=:inputs))'
 
     # reindex output of gate to match TN sitemap
-    replace!(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(ψ; at=targetsite))
+    gate = replace(gate, inds(gate; at=only(sites(gate; set=:outputs))) => inds(ψ; at=targetsite))
 
     # reindex contracting index
     replace!(ψ, inds(ψ; at=targetsite) => contracting_index)
-    replace!(gate, inds(gate; at=targetsite') => contracting_index)
+    gate = replace(gate, inds(gate; at=targetsite') => contracting_index)
 
     # contract gate with TN
     merge!(ψ, gate; reset=false)
@@ -476,8 +477,6 @@ function simple_update_2site!(::MixedCanonical, ψ::AbstractAnsatz, gate; kwargs
 end
 
 function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs...)
-    @assert Graphs.has_edge(ψ, lanes(gate)...) "Gate must act on neighboring sites"
-
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
@@ -492,13 +491,13 @@ function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs..
     # reindex contracting indices to temporary names to avoid issues
     oinds = Dict(site => inds(ψ; at=site) for site in sites(gate; set=:outputs))
     tmpinds = Dict(site => gensym(:tmp) for site in sites(gate; set=:inputs))
-    replace!(gate, [inds(gate; at=site) => i for (site, i) in tmpinds])
+    gate = replace(gate, [inds(gate; at=site) => i for (site, i) in tmpinds]...)
     replace!(ψ, [inds(ψ; at=site') => i for (site, i) in tmpinds])
 
     # NOTE `replace!` is getting confused when a index is already there even if it would be overriden
     # TODO fix this to be handled in one call -> replace when #244 is fixed
-    replace!(gate, [inds(gate; at=site) => gensym() for (site, i) in oinds])
-    replace!(gate, [inds(gate; at=site) => i for (site, i) in oinds])
+    gate = replace(gate, [inds(gate; at=site) => gensym() for (site, i) in oinds]...)
+    gate = replace(gate, [inds(gate; at=site) => i for (site, i) in oinds]...)
 
     # contract physical inds with gate
     merge!(ψ, gate; reset=false)
@@ -517,14 +516,14 @@ end
 function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, normalize=false, canonize=true)
     # Contract the exterior Λ tensors
     sitel, siter = extrema(lanes(gate))
-    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
-        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+    (0 < id(sitel) < nlanes(ψ) || 0 < id(siter) < nlanes(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nlanes(ψ))"))
 
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Site(id(sitel) - 1), sitel))
-    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Site(id(siter) + 1)))
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Lane(id(sitel) - 1), sitel))
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Lane(id(siter) + 1)))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Site(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Site(id(siter) + 1)), direction=:left, delete_Λ=false)
+    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Lane(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Lane(id(siter) + 1)), direction=:left, delete_Λ=false)
 
     simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 

@@ -1,6 +1,7 @@
-@testset "Product" begin
-    using LinearAlgebra
+using LinearAlgebra
+using Tenet: nsites, State, Operator
 
+@testset "Product" begin
     # TODO test `Product` with `Scalar` socket
 
     qtn = Product([rand(2) for _ in 1:3])

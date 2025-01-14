@@ -1,5 +1,6 @@
 using LinearAlgebra
 using Graphs: Graphs
+using BijectiveDicts
 
 """
     Product <: AbstractAnsatz
@@ -34,7 +35,7 @@ function Product(arrays::AbstractArray{<:AbstractVector})
     sitemap = Dict(Site(i) => symbols[i] for i in eachindex(arrays))
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
     graph = Graphs.Graph(n)
-    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
@@ -56,7 +57,7 @@ function Product(arrays::AbstractArray{<:AbstractMatrix})
     )
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
     graph = Graphs.Graph(n)
-    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)

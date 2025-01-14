@@ -1,22 +1,21 @@
-@testset "Quac" begin
-    using Quac
+using Test
+using Tenet
+using Tenet: nsites, Operator
+using Quac: Quac
 
+@testset "Quac" begin
     @testset "Gate" begin
         id_gate = 2
         gate = Quac.Z(id_gate)
+        qgate = convert(Gate, gate)
 
-        qgate = Quantum(gate)
-
-        @test nsites(qgate; set=:inputs) == 1
-        @test nsites(qgate; set=:outputs) == 1
         @test issetequal(sites(qgate), [Site(id_gate), Site(id_gate; dual=true)])
-        @test socket(qgate) == Operator()
     end
 
     @testset "QFT" begin
         n = 3
         qftcirc = Quac.Algorithms.QFT(n)
-        qftqtn = Quantum(qftcirc)
+        qftqtn = convert(Circuit, qftcirc)
 
         # correct number of inputs and outputs
         @test nsites(qftqtn; set=:inputs) == n
@@ -24,12 +23,10 @@
         @test socket(qftqtn) == Operator()
 
         # all open indices are sites
-        siteinds = getindex.((qftqtn,), sites(qftqtn))
-        @test issetequal(inds(TensorNetwork(qftqtn); set=:open), siteinds)
+        @test issetequal(inds(qftqtn; set=:open), inds(qftqtn; set=:physical))
 
         # all inner indices are not sites
         # TODO too strict condition. remove?
-        notsiteinds = setdiff(inds(TensorNetwork(qftqtn)), siteinds)
-        @test_skip issetequal(inds(TensorNetwork(qftqtn); set=:inner), notsiteinds)
+        @test_skip issetequal(inds(qftqtn; set=:inner), inds(qftqtn; set=:virtual))
     end
 end

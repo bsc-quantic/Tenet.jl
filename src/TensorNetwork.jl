@@ -532,16 +532,16 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
 end
 
 """
-    resetindex!(tn::AbstractTensorNetwork; init::Int=1)
+    resetinds!(tn::AbstractTensorNetwork; init::Int=1)
 
 Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
 """
-function resetindex!(tn::AbstractTensorNetwork; init::Int=1)
-    mapping = resetindex!(Val(:return_mapping), tn; init=init)
+function resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+    mapping = resetinds!(Val(:return_mapping), tn; init=init)
     return replace!(tn, mapping)
 end
 
-function resetindex!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
+function resetinds!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
     gen = IndexCounter(init)
     return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
 end
