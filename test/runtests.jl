@@ -7,7 +7,7 @@ include("Utils.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 
-println("Running tests for group: $TENET_TEST_GROUP")
+println("Running tests for group: $TENET_TEST_GROUP, env =$ENV")
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin
