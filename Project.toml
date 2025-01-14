@@ -57,7 +57,7 @@ TenetYaoBlocksExt = "YaoBlocks"
 [compat]
 AbstractTrees = "0.4"
 Adapt = "4"
-BijectiveDicts = "0.1"
+BijectiveDicts = "0.1, 0.2"
 ChainRules = "1.0"
 ChainRulesCore = "1.0"
 ChainRulesTestUtils = "1"
