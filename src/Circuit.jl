@@ -1,5 +1,13 @@
 using BijectiveDicts: BijectiveDict
 
+"""
+    Gate
+
+A `Gate` is a [`Tensor`](@ref) together with a set of [`Site`](@ref)s that represent the input/output indices.
+It is similar to the relation between [`Quantum`](@ref) and [`TensorNetwork`](@ref), but only applies to one tensor.
+
+Although it is not a [`AbstractQuantum`](@ref), it can be converted to [`TensorNetwork`](@ref) or [`Quantum`](@ref).
+"""
 struct Gate
     tensor::Tensor
     sites::Vector{Site}
@@ -13,17 +21,48 @@ struct Gate
 end
 
 Gate(array::AbstractArray, sites) = Gate(Tensor(array, [gensym(:i) for _ in 1:ndims(array)]), sites)
+Base.copy(gate::Gate) = Gate(copy(Tensor(gate)), sites(gate))
 
 Tensor(gate::Gate) = gate.tensor
 Base.parent(gate::Gate) = Tensor(gate)
 
-inds(gate::Gate; kwargs...) = inds(sort_nt(values(kwargs)), gate::Gate)
+TensorNetwork(gate::Gate) = TensorNetwork([Tensor(gate)])
+Quantum(gate::Gate) = Quantum(TensorNetwork(gate), Dict(sites(gate) .=> inds(gate)))
+
+# AbstractTensorNetwork methods
+inds(gate::Gate; kwargs...) = inds(sort_nt(values(kwargs)), gate)
 inds(::@NamedTuple{}, gate::Gate) = inds(Tensor(gate))
 inds(kwargs::@NamedTuple{at::S}, gate::Gate) where {S<:Site} = inds(gate)[findfirst(isequal(kwargs.at), sites(gate))]
+function inds(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
+    if kwargs.set ∈ (:all, :open, :physical)
+        return inds(gate)
+    elseif kwargs.set ∈ (:inner, :hyper, :virtual)
+        return Symbol[]
+    elseif kwargs.set === :inputs
+        return last.(
+            Iterators.filter(zip(sites(gate), inds(gate))) do (site, ind)
+                isdual(site)
+            end
+        )
+    elseif kwargs.set === :outputs
+        return last.(
+            Iterators.filter(zip(sites(gate), inds(gate))) do (site, ind)
+                !isdual(site)
+            end
+        )
+    else
+        error(
+            "Expected set to be one of `:all`, `:open`, `:physical`, `:inner`, `:hyper`, `:virtual`, or `:inputs`, but got $(kwargs.set)",
+        )
+    end
+end
 
+tensors(gate::Gate; kwargs...) = tensors(sort_nt(values(kwargs)), gate)
+tensors(::@NamedTuple{}, gate::Gate) = Tensor[Tensor(gate)]
+
+# AbstractQuantum methods
 sites(gate::Gate; kwargs...) = sites(sort_nt(values(kwargs)), gate)
 sites(::@NamedTuple{}, gate::Gate) = Tuple(gate.sites)
-
 function sites(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
     pred = if kwargs.set === :outputs
         !isdual
@@ -35,6 +74,7 @@ function sites(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
     return filter(pred, sites(gate))
 end
 
+nlanes(gate::Gate) = length(lanes(gate))
 lanes(gate::Gate) = unique(Iterators.map(Tenet.Lane, sites(gate)))
 
 Base.:(==)(a::Gate, b::Gate) = sites(a) == sites(b) && Tensor(a) == Tensor(b)
@@ -50,7 +90,13 @@ function Base.replace(gate::Gate, old_new::Pair{<:Site,Symbol}...)
     return replace(gate, old_new...)
 end
 
-resetindex(gate::Gate) = replace(gate, [ind => gensym(:i) for ind in inds(gate)]...)
+resetinds(gate::Gate; init=nothing) = replace(gate, [ind => gensym(:i) for ind in inds(gate)]...)
+
+function Base.merge!(qtn::AbstractQuantum, gate::Gate; reset=false)
+    @assert isconnectable(qtn, gate)
+    merge!(qtn, Quantum(gate); reset)
+    return qtn
+end
 
 struct Circuit <: AbstractQuantum
     tn::TensorNetwork
@@ -126,7 +172,7 @@ function Base.push!(circuit::Circuit, gate::Gate)
     new_lanes = setdiff(lanes(gate), connecting_lanes)
 
     # reindex gate to match circuit indices
-    gate = resetindex(gate)
+    gate = resetinds(gate)
     if !isempty(connecting_lanes)
         gate = replace(gate, [site' => inds(circuit; at=site) for site in Iterators.map(Site, connecting_lanes)]...)
     end

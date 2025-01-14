@@ -1,11 +1,12 @@
 using Tenet
-using Tenet: Lattice, Bond, AbstractLane
+using Tenet: Lattice, Bond
 using Graphs
-using BijectiveDicts: BijectiveIdDict
+using BijectiveDicts: BijectiveDict
 
 @testset "Lattice" begin
-    @testset let graph = SimpleGraph(), mapping = BijectiveIdDict{AbstractLane,Int}(), lattice = Lattice(mapping, graph)
+    @testset let graph = SimpleGraph(), mapping = BijectiveDict{Lane,Int}(), lattice = Lattice(mapping, graph)
         @test lattice == zero(Lattice)
+        @test lattice == copy(lattice) && lattice !== copy(lattice)
         @test nv(lattice) == 0
         @test ne(lattice) == 0
         @test isempty(vertices(lattice))

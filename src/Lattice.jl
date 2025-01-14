@@ -1,5 +1,5 @@
 using Graphs: Graphs
-using BijectiveDicts: BijectiveIdDict
+using BijectiveDicts: BijectiveDict
 
 struct Bond{L<:AbstractLane}
     src::L
@@ -25,8 +25,8 @@ A lattice is a graph where the vertices are [`Site`](@ref)s and the edges are vi
 It is used for representing the topology of a [`Ansatz`](@ref) Tensor Network.
 It fulfills the [`AbstractGraph`](https://juliagraphs.org/Graphs.jl/stable/core_functions/interface/) interface.
 """
-struct Lattice <: Graphs.AbstractGraph{AbstractLane}
-    mapping::BijectiveIdDict{AbstractLane,Int}
+struct Lattice <: Graphs.AbstractGraph{Lane}
+    mapping::BijectiveDict{Lane,Int,Dict{Lane,Int},Dict{Int,Lane}}
     graph::Graphs.SimpleGraph{Int} # TODO replace graph format because `rem_vertex!` renames vertices
 end
 
@@ -34,10 +34,12 @@ Base.copy(lattice::Lattice) = Lattice(copy(lattice.mapping), copy(lattice.graph)
 Base.:(==)(a::Lattice, b::Lattice) = a.mapping == b.mapping && a.graph == b.graph
 
 # TODO these where needed by ChainRulesTestUtils, do we still need them?
-Base.zero(::Type{Lattice}) = Lattice(BijectiveIdDict{AbstractLane,Int}(), zero(Graphs.SimpleGraph{Int}))
+Base.zero(::Type{Lattice}) = Lattice(BijectiveDict{Lane,Int}(), zero(Graphs.SimpleGraph{Int}))
 Base.zero(::Lattice) = zero(Lattice)
 
-Base.in(v::AbstractLane, lattice::Lattice) = v ∈ keys(lattice.mapping)
+Base.in(v::Lane, lattice::Lattice) = v ∈ keys(lattice.mapping)
+Base.in(v::Site, lattice::Lattice) = Lane(v) ∈ keys(lattice.mapping)
+Base.in(e::Bond, lattice::Lattice) = e ∈ edges(lattice)
 
 Graphs.is_directed(::Type{Lattice}) = false
 
@@ -124,17 +126,25 @@ function Base.iterate(iterator::BondIterator, state=nothing)
     return Bond(iterator.lattice.mapping'[Graphs.src(edge)], iterator.lattice.mapping'[Graphs.dst(edge)]), state
 end
 
+"""
+    Lattice(::Val{:chain}, n; periodic=false)
+
+Create a chain lattice with `n` sites.
+"""
 function Lattice(::Val{:chain}, n; periodic=false)
     graph = periodic ? Graphs.cycle_graph(n) : Graphs.path_graph(n)
-    mapping = BijectiveIdDict{AbstractLane,Int}([Lane(i) => i for i in 1:n])
+    mapping = BijectiveDict{Lane,Int}([Lane(i) => i for i in 1:n])
     Lattice(mapping, graph)
 end
 
+"""
+    Lattice(::Val{:rectangular}, nrows, ncols; periodic=false)
+
+Create a rectangular lattice with `nrows` rows and `ncols` columns.
+"""
 function Lattice(::Val{:rectangular}, nrows, ncols; periodic=false)
     graph = Graphs.grid((nrows, ncols); periodic)
-    mapping = BijectiveIdDict{AbstractLane,Int}([
-        Lane(row, col) => row + (col - 1) * nrows for row in 1:nrows for col in 1:ncols
-    ])
+    mapping = BijectiveDict{Lane,Int}([Lane(row, col) => row + (col - 1) * nrows for row in 1:nrows for col in 1:ncols])
     Lattice(mapping, graph)
 end
 
@@ -147,7 +157,7 @@ function Lattice(::Val{:lieb}, ncellrows, ncellcols)
     nrows, ncols = 1 .+ 2 .* (ncellrows, ncellcols)
 
     lanes = [Lane(row, col) for row in 1:nrows for col in 1:ncols if !(row % 2 == 0 && col % 2 == 0)]
-    mapping = BijectiveIdDict{AbstractLane,Int}([lane => i for (i, lane) in enumerate(lanes)])
+    mapping = BijectiveDict{Lane,Int}([lane => i for (i, lane) in enumerate(lanes)])
     graph = Graphs.SimpleGraph{Int}(length(lanes))
 
     # add horizontal edges

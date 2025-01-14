@@ -9,7 +9,7 @@
 
 @non_differentiable Tenet.currindex(::Tenet.IndexCounter)
 @non_differentiable Tenet.nextindex!(::Tenet.IndexCounter)
-@non_differentiable Tenet.resetindex!(::Tenet.IndexCounter)
+@non_differentiable Tenet.resetinds!(::Tenet.IndexCounter)
 
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)

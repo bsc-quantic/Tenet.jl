@@ -1,7 +1,7 @@
 using Random
 using LinearAlgebra
 using Graphs: Graphs
-using BijectiveDicts: BijectiveIdDict
+using BijectiveDicts
 
 abstract type AbstractMPO <: AbstractAnsatz end
 abstract type AbstractMPS <: AbstractMPO end
@@ -91,7 +91,7 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check=true)
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
     qtn = Quantum(tn, sitemap)
     graph = Graphs.path_graph(n)
-    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return MPS(ansatz, NonCanonical())
@@ -133,20 +133,20 @@ Check if the tensors in the mps are in the proper [`Form`](@ref).
 """
 check_form(mps::AbstractMPO; kwargs...) = check_form(form(mps), mps; kwargs...)
 
-function check_form(config::MixedCanonical, mps::AbstractMPO; atol=1e-12)
+function check_form(config::MixedCanonical, ψ::AbstractMPO; atol=1e-12)
     orthog_center = config.orthog_center
 
-    left, right = if orthog_center isa Site
+    left, right = if orthog_center isa Lane
         id(orthog_center) .+ (0, 0) # So left and right get the same value
-    elseif orthog_center isa Vector{<:Site}
+    elseif orthog_center isa Vector{<:Lane}
         extrema(id.(orthog_center))
     end
 
-    for i in 1:nsites(mps)
+    for i in 1:nlanes(ψ)
         if i < left # Check left-canonical tensors
-            isisometry(mps, Site(i); dir=:right, atol) || throw(ArgumentError("Tensors are not left-canonical"))
+            isisometry(ψ, Lane(i); dir=:right, atol) || throw(ArgumentError("Tensors are not left-canonical"))
         elseif i > right # Check right-canonical tensors
-            isisometry(mps, Site(i); dir=:left, atol) || throw(ArgumentError("Tensors are not right-canonical"))
+            isisometry(ψ, Lane(i); dir=:left, atol) || throw(ArgumentError("Tensors are not right-canonical"))
         end
     end
 
@@ -156,12 +156,12 @@ end
 function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
     for i in 1:nsites(mps)
         if i > 1 &&
-            !isisometry(contract(mps; between=(Site(i - 1), Site(i)), direction=:right), Site(i); dir=:right, atol)
-            throw(ArgumentError("Can not form a left-canonical tensor in Site($i) from Γ and λ contraction."))
+            !isisometry(contract(mps; between=(Lane(i - 1), Lane(i)), direction=:right), Lane(i); dir=:right, atol)
+            throw(ArgumentError("Can not form a left-canonical tensor in Lane($i) from Γ and λ contraction."))
         end
 
         if i < nsites(mps) &&
-            !isisometry(contract(mps; between=(Site(i), Site(i + 1)), direction=:left), Site(i); dir=:left, atol)
+            !isisometry(contract(mps; between=(Lane(i), Lane(i + 1)), direction=:left), Lane(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
@@ -222,7 +222,7 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
     qtn = Quantum(tn, sitemap)
     graph = Graphs.path_graph(n)
-    mapping = BijectiveIdDict{Site,Int}(Pair{Site,Int}[site => i for (i, site) in enumerate(lanes(qtn))])
+    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
     lattice = Lattice(mapping, graph)
     ansatz = Ansatz(qtn, lattice)
     return MPO(ansatz, NonCanonical())
@@ -317,7 +317,7 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=nothing, elty
     arrays[1] = reshape(arrays[1], p, p)
     arrays[n] = reshape(arrays[n], p, p)
 
-    return MPS(arrays; order=(:l, :o, :r), form=MixedCanonical(Site(1)))
+    return MPS(arrays; order=(:l, :o, :r), form=MixedCanonical(Lane(1)))
 end
 
 # TODO different input/output physical dims
@@ -407,14 +407,36 @@ function sites(ψ::T, site::Site; dir) where {T<:AbstractMPO}
     end
 end
 
+function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
+    if dir === :left
+        return lane <= lane"1" ? nothing : Lane(id(lane) - 1)
+    elseif dir === :right
+        return lane >= Lane(nlanes(ψ)) ? nothing : Lane(id(lane) + 1)
+    else
+        throw(ArgumentError("Unknown direction for $T = :$dir"))
+    end
+end
+
 # TODO refactor to use `Lattice`
-function inds(kwargs::NamedTuple{(:at, :dir)}, ψ::T) where {T<:AbstractMPO}
+function inds(kwargs::NamedTuple{(:at, :dir),Tuple{S,Symbol}}, ψ::T) where {S<:Site,T<:AbstractMPO}
     if kwargs.dir === :left && kwargs.at == site"1"
         return nothing
     elseif kwargs.dir === :right && kwargs.at == Site(nlanes(ψ); dual=isdual(kwargs.at))
         return nothing
     elseif kwargs.dir ∈ (:left, :right)
         return inds(ψ; bond=(kwargs.at, sites(ψ, kwargs.at; dir=kwargs.dir)))
+    else
+        throw(ArgumentError("Unknown direction for $T = :$(kwargs.dir)"))
+    end
+end
+
+function inds(kwargs::NamedTuple{(:at, :dir),Tuple{L,Symbol}}, ψ::T) where {L<:Lane,T<:AbstractMPO}
+    if kwargs.dir === :left && kwargs.at == lane"1"
+        return nothing
+    elseif kwargs.dir === :right && kwargs.at == Lane(nlanes(ψ))
+        return nothing
+    elseif kwargs.dir ∈ (:left, :right)
+        return inds(ψ; bond=(kwargs.at, lanes(ψ, kwargs.at; dir=kwargs.dir)))
     else
         throw(ArgumentError("Unknown direction for $T = :$(kwargs.dir)"))
     end
@@ -443,24 +465,27 @@ end
 
 # TODO generalize to AbstractAnsatz
 # NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize_site!(ψ::MPS, site::Site; direction::Symbol, method=:qr)
+function canonize_site!(ψ::AbstractMPO, lane::Lane; direction::Symbol, method=:qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
+    site = Site(lane)
 
     virtualind = if direction === :left
-        site == Site(1) && throw(ArgumentError("Cannot right-canonize left-most tensor"))
-        push!(right_inds, inds(ψ; at=site, dir=:left))
+        lane == lane"1" && throw(ArgumentError("Cannot right-canonize left-most tensor"))
+        push!(right_inds, inds(ψ; at=lane, dir=:left))
 
-        site == Site(nsites(ψ)) || push!(left_inds, inds(ψ; at=site, dir=:right))
-        push!(left_inds, inds(ψ; at=site))
+        lane == Lane(nlanes(ψ)) || push!(left_inds, inds(ψ; at=lane, dir=:right))
+        site ∈ ψ && push!(left_inds, inds(ψ; at=site))
+        site' ∈ ψ && push!(left_inds, inds(ψ; at=site'))
 
         only(right_inds)
     elseif direction === :right
-        site == Site(nsites(ψ)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
-        push!(right_inds, inds(ψ; at=site, dir=:right))
+        lane == Lane(nlanes(ψ)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
+        push!(right_inds, inds(ψ; at=lane, dir=:right))
 
-        site == Site(1) || push!(left_inds, inds(ψ; at=site, dir=:left))
-        push!(left_inds, inds(ψ; at=site))
+        lane == lane"1" || push!(left_inds, inds(ψ; at=lane, dir=:left))
+        site ∈ ψ && push!(left_inds, inds(ψ; at=site))
+        site' ∈ ψ && push!(left_inds, inds(ψ; at=site'))
 
         only(right_inds)
     else
@@ -487,24 +512,24 @@ function canonize!(ψ::AbstractMPO; normalize=false)
 
     # right-to-left QR sweep, get right-canonical tensors
     for i in nsites(ψ):-1:2
-        canonize_site!(ψ, Site(i); direction=:left, method=:qr)
+        canonize_site!(ψ, Lane(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
     for i in 1:(nsites(ψ) - 1)
-        canonize_site!(ψ, Site(i); direction=:right, method=:svd)
+        canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
 
         # extract the singular values and contract them with the next tensor
-        Λᵢ = pop!(ψ, tensors(ψ; between=(Site(i), Site(i + 1))))
+        Λᵢ = pop!(ψ, tensors(ψ; between=(Lane(i), Lane(i + 1))))
         normalize && (Λᵢ ./= norm(Λᵢ))
-        Aᵢ₊₁ = tensors(ψ; at=Site(i + 1))
+        Aᵢ₊₁ = tensors(ψ; at=Lane(i + 1))
         replace!(ψ, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
         push!(Λ, Λᵢ)
     end
 
     for i in 2:nsites(ψ) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i - 1] # singular values start between site 1 and 2
-        A = tensors(ψ; at=Site(i))
+        A = tensors(ψ; at=Lane(i))
         Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ)); dims=())
         replace!(ψ, A => Γᵢ)
         push!(ψ, Λᵢ)
@@ -519,9 +544,9 @@ end
 # TODO dispatch on form
 # TODO generalize to AbstractAnsatz
 function mixed_canonize!(tn::AbstractMPO, orthog_center)
-    left, right = if orthog_center isa Site
+    left, right = if orthog_center isa Lane
         id(orthog_center) .+ (-1, 1)
-    elseif orthog_center isa Vector{<:Site}
+    elseif orthog_center isa Vector{<:Lane}
         extrema(id.(orthog_center)) .+ (-1, 1)
     else
         throw(ArgumentError("`orthog_center` must be a `Site` or a `Vector{Site}`"))
@@ -529,12 +554,12 @@ function mixed_canonize!(tn::AbstractMPO, orthog_center)
 
     # left-to-right QR sweep (left-canonical tensors)
     for i in 1:left
-        canonize_site!(tn, Site(i); direction=:right, method=:qr)
+        canonize_site!(tn, Lane(i); direction=:right, method=:qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
-    for i in nsites(tn):-1:right
-        canonize_site!(tn, Site(i); direction=:left, method=:qr)
+    for i in nlanes(tn):-1:right
+        canonize_site!(tn, Lane(i); direction=:left, method=:qr)
     end
 
     tn.form = MixedCanonical(orthog_center)
@@ -549,13 +574,13 @@ Evolve the [`AbstractAnsatz`](@ref) `ψ` with the [`AbstractMPO`](@ref) `mpo` al
 If `threshold` or `maxdim` are not `nothing`, the tensors are truncated after each sweep at the proper value, and the
 bond is normalized if `normalize=true`. If `reset_index=true`, the indices of the `ψ` are reset to the original ones.
 """
-function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; reset_index=true, kwargs...)
+function evolve!(ψ::AbstractMPS, mpo::AbstractMPO; reset_index=true, kwargs...)
     original_sites = copy(Quantum(ψ).sites)
     normalize = get(kwargs, :normalize, true)
     evolve!(form(ψ), ψ, mpo; normalize, kwargs...)
 
     if reset_index
-        resetindex!(ψ; init=ninds(TensorNetwork(ψ)) + 1)
+        resetinds!(ψ; init=ninds(TensorNetwork(ψ)) + 1)
 
         replacements = [inds(ψ; at=site) => original_sites[site] for site in keys(original_sites)]
         replace!(ψ, replacements)
@@ -564,15 +589,15 @@ function evolve!(ψ::AbstractAnsatz, mpo::AbstractMPO; reset_index=true, kwargs.
     return ψ
 end
 
-function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+function evolve!(::NonCanonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     L = nsites(ψ)
     Tenet.@reindex! outputs(ψ) => inputs(mpo)
 
-    right_inds = [inds(ψ; at=Site(i), dir=:right) for i in 1:(L - 1)]
+    right_inds = [inds(ψ; at=Lane(i), dir=:right) for i in 1:(L - 1)]
 
     for i in 1:L
         contract_ind = inds(ψ; at=Site(i))
-        push!(ψ, tensors(mpo; at=Site(i)))
+        push!(ψ, tensors(mpo; at=Lane(i)))
         contract!(ψ, contract_ind)
         merge!(Quantum(ψ).sites, Dict(Site(i) => inds(mpo; at=Site(i))))
     end
@@ -592,9 +617,9 @@ function evolve!(::NonCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...
     return ψ
 end
 
-function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
+function evolve!(::MixedCanonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     initial_form = form(ψ)
-    mixed_canonize!(ψ, Site(nsites(ψ))) # We convert all the tensors to left-canonical form
+    mixed_canonize!(ψ, Lane(nsites(ψ))) # We convert all the tensors to left-canonical form
 
     normalize = get(kwargs, :normalize, true)
     evolve!(NonCanonical(), ψ, mpo; normalize, kwargs...)
@@ -604,10 +629,10 @@ function evolve!(::MixedCanonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs.
     return ψ
 end
 
-function evolve!(::Canonical, ψ::AbstractAnsatz, mpo::AbstractMPO; kwargs...)
-    # We first join the λs to the Γs to get MixedCanonical(Site(1)) form
+function evolve!(::Canonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
+    # We first join the λs to the Γs to get MixedCanonical(lane"1") form
     for i in 1:(nsites(ψ) - 1)
-        contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
+        contract!(ψ; between=(Lane(i), Lane(i + 1)), direction=:right)
     end
 
     # set `maxdim` and `threshold` to `nothing` so we later truncate in the `Canonical` form
@@ -633,19 +658,19 @@ truncate_sweep!(ψ::AbstractMPO; kwargs...) = truncate_sweep!(form(ψ), ψ; kwar
 function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; kwargs...)
     all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) && return ψ
 
-    for i in nsites(ψ):-1:2
-        canonize_site!(ψ, Site(i); direction=:left, method=:qr)
+    for i in nlanes(ψ):-1:2
+        canonize_site!(ψ, Lane(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
-    for i in 1:(nsites(ψ) - 1)
-        canonize_site!(ψ, Site(i); direction=:right, method=:svd)
+    for i in 1:(nlanes(ψ) - 1)
+        canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
 
-        truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
-        contract!(ψ; between=(Site(i), Site(i + 1)), direction=:right)
+        truncate!(ψ, [Lane(i), Lane(i + 1)]; kwargs..., compute_local_svd=false)
+        contract!(ψ; between=(Lane(i), Lane(i + 1)), direction=:right)
     end
 
-    ψ.form = MixedCanonical(Site(nsites(ψ)))
+    ψ.form = MixedCanonical(Lane(nlanes(ψ)))
 
     return ψ
 end
@@ -657,14 +682,14 @@ end
 function truncate_sweep!(::Canonical, ψ::AbstractMPO; kwargs...)
     all(isnothing, get.(Ref(kwargs), [:threshold, :maxdim], nothing)) && return ψ
 
-    for i in nsites(ψ):-1:2
-        canonize_site!(ψ, Site(i); direction=:left, method=:qr)
+    for i in nlanes(ψ):-1:2
+        canonize_site!(ψ, Lane(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values and truncate
-    for i in 1:(nsites(ψ) - 1)
-        canonize_site!(ψ, Site(i); direction=:right, method=:svd)
-        truncate!(ψ, [Site(i), Site(i + 1)]; kwargs..., compute_local_svd=false)
+    for i in 1:(nlanes(ψ) - 1)
+        canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
+        truncate!(ψ, [Lane(i), Lane(i + 1)]; kwargs..., compute_local_svd=false)
     end
 
     canonize!(ψ)
@@ -673,11 +698,11 @@ function truncate_sweep!(::Canonical, ψ::AbstractMPO; kwargs...)
 end
 
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
-LinearAlgebra.normalize!(ψ::AbstractMPO, at::Site) = normalize!(form(ψ), ψ; at)
-LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Site}) = normalize!(form(ψ), ψ; bond)
+LinearAlgebra.normalize!(ψ::AbstractMPO, at::Lane) = normalize!(form(ψ), ψ; at)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Lane}) = normalize!(form(ψ), ψ; bond)
 
 # NOTE: Inplace normalization of the arrays should be faster, but currently lead to problems for `copy` TensorNetworks
-function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Site(nsites(ψ) ÷ 2))
+function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=Lane(nlanes(ψ) ÷ 2))
     if at isa Site
         tensor = tensors(ψ; at)
         replace!(ψ, tensor => tensor ./ norm(ψ))
@@ -697,9 +722,9 @@ end
 function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothing)
     old_norm = norm(ψ)
     if isnothing(bond) # Normalize all λ tensors
-        for i in 1:(nsites(ψ) - 1)
-            λ = tensors(ψ; between=(Site(i), Site(i + 1)))
-            replace!(ψ, λ => λ ./ old_norm^(1 / (nsites(ψ) - 1)))
+        for i in 1:(nlanes(ψ) - 1)
+            λ = tensors(ψ; between=(Lane(i), Lane(i + 1)))
+            replace!(ψ, λ => λ ./ old_norm^(1 / (nlanes(ψ) - 1)))
         end
     else
         λ = tensors(ψ; between=bond)

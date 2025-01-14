@@ -5,7 +5,7 @@
     @test nsites(H; set=:outputs) == 3
     @test issetequal(sites(H), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
     @test boundary(H) == Open()
-    @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) == nothing
+    @test inds(H; at=lane"1", dir=:left) == inds(H; at=lane"3", dir=:right) == nothing
 
     # Default order (:o :i, :l, :r)
     H = MPO([rand(2, 4, 1), rand(2, 4, 1, 3), rand(2, 4, 3)])
@@ -14,9 +14,9 @@
     @test size(tensors(H; at=site"2")) == (2, 4, 1, 3)
     @test size(tensors(H; at=site"3")) == (2, 4, 3)
 
-    @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) === nothing
-    @test inds(H; at=site"2", dir=:left) == inds(H; at=site"1", dir=:right) !== nothing
-    @test inds(H; at=site"3", dir=:left) == inds(H; at=site"2", dir=:right) !== nothing
+    @test inds(H; at=lane"1", dir=:left) == inds(H; at=lane"3", dir=:right) === nothing
+    @test inds(H; at=lane"2", dir=:left) == inds(H; at=lane"1", dir=:right) !== nothing
+    @test inds(H; at=lane"3", dir=:left) == inds(H; at=lane"2", dir=:right) !== nothing
 
     for i in 1:Tenet.ntensors(H)
         @test size(H, inds(H; at=Site(i))) == 2
@@ -37,9 +37,9 @@
     @test size(tensors(H; at=site"2")) == (3, 2, 1, 4)
     @test size(tensors(H; at=site"3")) == (2, 3, 4)
 
-    @test inds(H; at=site"1", dir=:left) == inds(H; at=site"3", dir=:right) === nothing
-    @test inds(H; at=site"2", dir=:left) == inds(H; at=site"1", dir=:right) !== nothing
-    @test inds(H; at=site"3", dir=:left) == inds(H; at=site"2", dir=:right) !== nothing
+    @test inds(H; at=lane"1", dir=:left) == inds(H; at=lane"3", dir=:right) === nothing
+    @test inds(H; at=lane"2", dir=:left) == inds(H; at=lane"1", dir=:right) !== nothing
+    @test inds(H; at=lane"3", dir=:left) == inds(H; at=lane"2", dir=:right) !== nothing
 
     for i in 1:Tenet.ntensors(H)
         @test size(H, inds(H; at=Site(i))) == 2

@@ -12,7 +12,7 @@
         @test replace(gate, :i => :k) == Gate(Tensor(data, (:k, :j)), [site"1'", site"1"])
         @test replace(gate, site"1'" => :k) == Gate(Tensor(data, (:k, :j)), [site"1'", site"1"])
 
-        gate = Tenet.resetindex(gate)
+        gate = Tenet.resetinds(gate)
         @test gate isa Gate
         @test parent(Tensor(gate)) == data
         @test isdisjoint(inds(gate), inds(tensor))
@@ -22,5 +22,14 @@
         @test gate isa Gate
         @test parent(Tensor(gate)) == data
         @test issetequal(sites(gate), (site"1'", site"1"))
+
+        tn = TensorNetwork(gate)
+        @test tn isa TensorNetwork
+        @test issetequal(tensors(tn), [Tensor(gate)])
+
+        qtn = Quantum(gate)
+        @test qtn isa Quantum
+        @test issetequal(sites(qtn), (site"1'", site"1"))
+        @test issetequal(tensors(qtn), [Tensor(gate)])
     end
 end

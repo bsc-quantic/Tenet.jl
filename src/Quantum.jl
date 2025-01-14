@@ -190,8 +190,8 @@ end
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     if reset
-        resetindex!(a)
-        resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+        resetinds!(a)
+        resetinds!(b; init=ninds(TensorNetwork(a)) + 1)
     end
 
     sitesa = if ioa === :inputs
@@ -228,16 +228,19 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     return b
 end
 
-function resetindex!(tn::AbstractQuantum; init=1)
-    tn = Quantum(tn)
+function resetinds!(tn::AbstractQuantum; init=1)
+    qtn = Quantum(tn)
 
-    mapping = resetindex!(Val(:return_mapping), tn; init)
-    replace!(TensorNetwork(tn), mapping)
+    mapping = resetinds!(Val(:return_mapping), tn; init)
+    replace!(TensorNetwork(qtn), mapping)
 
-    for (site, index) in tn.sites
-        tn.sites[site] = mapping[index]
+    for (site, index) in qtn.sites
+        qtn.sites[site] = mapping[index]
     end
+
+    return tn
 end
+resetinds(tn::AbstractQuantum; init=1) = resetinds!(copy(tn); init)
 
 """
     @reindex! a => b reset=true
@@ -298,7 +301,7 @@ Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nlanes(tn::AbstractQuantum) = length(lanes(tn))
 
-function addsite!(tn::Quantum, site, index)
+function addsite!(tn::AbstractQuantum, site, index)
     tn = Quantum(tn)
     if haskey(tn.sites, site)
         error("Site $site already exists")
@@ -311,7 +314,7 @@ function addsite!(tn::Quantum, site, index)
     return tn.sites[site] = index
 end
 
-function rmsite!(tn::Quantum, site)
+function rmsite!(tn::AbstractQuantum, site)
     tn = Quantum(tn)
     if !haskey(tn.sites, site)
         error("Site $site does not exist")
@@ -339,6 +342,21 @@ end
 function sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractQuantum)
     tn = Quantum(tn)
     return findfirst(==(kwargs.at), tn.sites)
+end
+
+"""
+    isconnectable(a::AbstractQuantum, b::AbstractQuantum)
+
+Return `true` if two [`AbstractQuantum`](@ref) Tensor Networks can be connected. This means:
+
+ 1. The outputs of `a` are a superset of the inputs of `b`.
+ 2. The outputs of `a` and `b` are disjoint except for the sites that are connected.
+"""
+function isconnectable(a, b)
+    Lane.(sites(a; set=:outputs)) ⊇ Lane.(sites(b; set=:inputs)) && isdisjoint(
+        setdiff(Lane.(sites(a; set=:outputs)), Lane.(sites(b; set=:inputs))),
+        setdiff(Lane.(sites(b; set=:inputs)), Lane.(sites(b; set=:outputs))),
+    )
 end
 
 """
