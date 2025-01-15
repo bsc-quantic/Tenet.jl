@@ -1,4 +1,4 @@
-using Tenet: canonize_site, canonize_site!
+using Tenet: nsites, State, canonize_site, canonize_site!
 using LinearAlgebra
 
 @testset "MPS" begin
@@ -15,18 +15,18 @@ using LinearAlgebra
     @test size(tensors(ψ; at=site"1")) == (2, 1)
     @test size(tensors(ψ; at=site"2")) == (2, 1, 3)
     @test size(tensors(ψ; at=site"3")) == (2, 3)
-    @test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) === nothing
-    @test inds(ψ; at=site"2", dir=:left) == inds(ψ; at=site"1", dir=:right)
-    @test inds(ψ; at=site"3", dir=:left) == inds(ψ; at=site"2", dir=:right)
+    @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
+    @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right)
+    @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right)
 
     arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
     ψ = MPS(arrays; order=[:r, :o, :l])
     @test size(tensors(ψ; at=site"1")) == (1, 2)
     @test size(tensors(ψ; at=site"2")) == (3, 2, 1)
     @test size(tensors(ψ; at=site"3")) == (2, 3)
-    @test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) === nothing
-    @test inds(ψ; at=site"2", dir=:left) == inds(ψ; at=site"1", dir=:right) !== nothing
-    @test inds(ψ; at=site"3", dir=:left) == inds(ψ; at=site"2", dir=:right) !== nothing
+    @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
+    @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right) !== nothing
+    @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right) !== nothing
     @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
 
     @testset "identity constructor" begin
@@ -75,7 +75,7 @@ using LinearAlgebra
         end
     end
 
-    @testset "Site" begin
+    @testset "sites" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
         @test isnothing(sites(ψ, site"1"; dir=:left))
@@ -88,6 +88,19 @@ using LinearAlgebra
         @test sites(ψ, site"1"; dir=:right) == site"2"
     end
 
+    @testset "lanes" begin
+        ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+
+        @test isnothing(lanes(ψ, lane"1"; dir=:left))
+        @test isnothing(lanes(ψ, lane"3"; dir=:right))
+
+        @test lanes(ψ, lane"2"; dir=:left) == lane"1"
+        @test lanes(ψ, lane"3"; dir=:left) == lane"2"
+
+        @test lanes(ψ, lane"2"; dir=:right) == lane"3"
+        @test lanes(ψ, lane"1"; dir=:right) == lane"2"
+    end
+
     @testset "adjoint" begin
         ψ = rand(MPS; n=3, maxdim=2, eltype=ComplexF64)
         @test socket(ψ') == State(; dual=true)
@@ -97,31 +110,31 @@ using LinearAlgebra
     @testset "truncate!" begin
         @testset "NonCanonical" begin
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-            canonize_site!(ψ, Site(2); direction=:right, method=:svd)
+            canonize_site!(ψ, lane"2"; direction=:right, method=:svd)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1)
+            @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
-            singular_values = tensors(ψ; between=(site"2", site"3"))
-            truncated = truncate(ψ, [site"2", site"3"]; threshold=singular_values[2] + 0.1)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 1
+            singular_values = tensors(ψ; between=(lane"2", lane"3"))
+            truncated = truncate(ψ, [lane"2", lane"3"]; threshold=singular_values[2] + 0.1)
+            @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
             # If maxdim > size(spectrum), the bond dimension is not truncated
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=4)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=4)
+            @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 2
 
             normalize!(ψ)
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=1, normalize=true)
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
 
         @testset "MixedCanonical" begin
             ψ = rand(MPS; n=5, maxdim=16)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 3
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=3)
+            @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 3
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=3, normalize=true)
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=3, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
 
@@ -129,12 +142,12 @@ using LinearAlgebra
             ψ = rand(MPS; n=5, maxdim=16)
             canonize!(ψ)
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=true, normalize=true)
-            @test size(truncated, inds(truncated; bond=[site"2", site"3"])) == 2
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=2, canonize=true, normalize=true)
+            @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 2
             @test Tenet.check_form(truncated)
             @test norm(truncated) ≈ 1.0
 
-            truncated = truncate(ψ, [site"2", site"3"]; maxdim=2, canonize=false, normalize=true)
+            truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=2, canonize=false, normalize=true)
             @test norm(truncated) ≈ 1.0
         end
     end
@@ -164,7 +177,7 @@ using LinearAlgebra
             normalized = normalize(ψ)
             @test norm(normalized) ≈ 1.0
 
-            normalize!(ψ, Site(3))
+            normalize!(ψ, lane"3")
             @test norm(ψ) ≈ 1.0
         end
 
@@ -172,13 +185,13 @@ using LinearAlgebra
             ψ = rand(MPS; n=5, maxdim=16)
 
             # Perturb the state to make it non-normalized
-            t = tensors(ψ; at=site"3")
+            t = tensors(ψ; at=lane"3")
             replace!(ψ, t => Tensor(rand(size(t)...), inds(t)))
 
             normalized = normalize(ψ)
             @test norm(normalized) ≈ 1.0
 
-            normalize!(ψ, Site(3))
+            normalize!(ψ, lane"3")
             @test norm(ψ) ≈ 1.0
         end
 
@@ -189,7 +202,7 @@ using LinearAlgebra
             normalized = normalize(ψ)
             @test norm(normalized) ≈ 1.0
 
-            normalize!(ψ, (Site(3), Site(4)))
+            normalize!(ψ, (lane"3", lane"4"))
             @test norm(ψ) ≈ 1.0
         end
     end
@@ -197,29 +210,29 @@ using LinearAlgebra
     @testset "canonize_site!" begin
         ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
-        @test_throws ArgumentError canonize_site!(ψ, Site(1); direction=:left)
-        @test_throws ArgumentError canonize_site!(ψ, Site(3); direction=:right)
+        @test_throws ArgumentError canonize_site!(ψ, lane"1"; direction=:left)
+        @test_throws ArgumentError canonize_site!(ψ, lane"3"; direction=:right)
 
         for method in [:qr, :svd]
-            canonized = canonize_site(ψ, site"1"; direction=:right, method=method)
-            @test isleftcanonical(canonized, site"1")
+            canonized = canonize_site(ψ, lane"1"; direction=:right, method=method)
+            @test isleftcanonical(canonized, lane"1")
             @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-            canonized = canonize_site(ψ, site"2"; direction=:right, method=method)
-            @test isleftcanonical(canonized, site"2")
+            canonized = canonize_site(ψ, lane"2"; direction=:right, method=method)
+            @test isleftcanonical(canonized, lane"2")
             @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-            canonized = canonize_site(ψ, site"2"; direction=:left, method=method)
-            @test isrightcanonical(canonized, site"2")
+            canonized = canonize_site(ψ, lane"2"; direction=:left, method=method)
+            @test isrightcanonical(canonized, lane"2")
             @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-            canonized = canonize_site(ψ, site"3"; direction=:left, method=method)
-            @test isrightcanonical(canonized, site"3")
+            canonized = canonize_site(ψ, lane"3"; direction=:left, method=method)
+            @test isrightcanonical(canonized, lane"3")
             @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
         end
 
         # Ensure that svd creates a new tensor
-        @test length(tensors(canonize_site(ψ, Site(2); direction=:left, method=:svd))) == 4
+        @test length(tensors(canonize_site(ψ, lane"2"; direction=:left, method=:svd))) == 4
     end
 
     @testset "canonize!" begin
@@ -235,21 +248,21 @@ using LinearAlgebra
         @test isapprox(norm(ψ), norm(canonized))
 
         # Extract the singular values between each adjacent pair of sites in the canonized chain
-        Λ = [tensors(canonized; between=(Site(i), Site(i + 1))) for i in 1:4]
+        Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
         @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
 
         for i in 1:5
             canonized = canonize(ψ)
 
             if i == 1
-                @test isleftcanonical(canonized, Site(i))
+                @test isleftcanonical(canonized, Lane(i))
             elseif i == 5 # in the limits of the chain, we get the norm of the state
-                normalize!(tensors(canonized; bond=(Site(i - 1), Site(i))))
-                contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
-                @test isleftcanonical(canonized, Site(i))
+                normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
+                contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+                @test isleftcanonical(canonized, Lane(i))
             else
-                contract!(canonized; between=(Site(i - 1), Site(i)), direction=:right)
-                @test isleftcanonical(canonized, Site(i))
+                contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+                @test isleftcanonical(canonized, Lane(i))
             end
         end
 
@@ -257,14 +270,14 @@ using LinearAlgebra
             canonized = canonize(ψ)
 
             if i == 1 # in the limits of the chain, we get the norm of the state
-                normalize!(tensors(canonized; bond=(Site(i), Site(i + 1))))
-                contract!(canonized; between=(Site(i), Site(i + 1)), direction=:left)
-                @test isrightcanonical(canonized, Site(i))
+                normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
+                contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+                @test isrightcanonical(canonized, Lane(i))
             elseif i == 5
-                @test isrightcanonical(canonized, Site(i))
+                @test isrightcanonical(canonized, Lane(i))
             else
-                contract!(canonized; between=(Site(i), Site(i + 1)), direction=:left)
-                @test isrightcanonical(canonized, Site(i))
+                contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+                @test isrightcanonical(canonized, Lane(i))
             end
         end
     end
@@ -272,31 +285,31 @@ using LinearAlgebra
     @testset "mixed_canonize!" begin
         @testset "single Site" begin
             ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-            canonized = mixed_canonize(ψ, site"3")
+            canonized = mixed_canonize(ψ, lane"3")
             @test Tenet.check_form(canonized)
 
             @test form(canonized) isa MixedCanonical
-            @test form(canonized).orthog_center == site"3"
+            @test form(canonized).orthog_center == lane"3"
 
-            @test isisometry(canonized, site"1"; dir=:right)
-            @test isisometry(canonized, site"2"; dir=:right)
-            @test isisometry(canonized, site"4"; dir=:left)
-            @test isisometry(canonized, site"5"; dir=:left)
+            @test isisometry(canonized, lane"1"; dir=:right)
+            @test isisometry(canonized, lane"2"; dir=:right)
+            @test isisometry(canonized, lane"4"; dir=:left)
+            @test isisometry(canonized, lane"5"; dir=:left)
 
             @test contract(canonized) ≈ contract(ψ)
         end
 
         @testset "multiple Sites" begin
             ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-            canonized = mixed_canonize(ψ, [site"2", site"3"])
+            canonized = mixed_canonize(ψ, [lane"2", lane"3"])
 
             @test Tenet.check_form(canonized)
             @test form(canonized) isa MixedCanonical
-            @test form(canonized).orthog_center == [site"2", site"3"]
+            @test form(canonized).orthog_center == [lane"2", lane"3"]
 
-            @test isisometry(canonized, site"1"; dir=:right)
-            @test isisometry(canonized, site"4"; dir=:left)
-            @test isisometry(canonized, site"5"; dir=:left)
+            @test isisometry(canonized, lane"1"; dir=:right)
+            @test isisometry(canonized, lane"4"; dir=:left)
+            @test isisometry(canonized, lane"5"; dir=:left)
 
             @test contract(canonized) ≈ contract(ψ)
         end
@@ -305,17 +318,17 @@ using LinearAlgebra
     @testset "expect" begin
         i, j = 2, 3
         mat = reshape(kron(LinearAlgebra.I(2), LinearAlgebra.I(2)), 2, 2, 2, 2)
-        gate = Quantum(mat, [Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
+        gate = Gate(mat, [Site(i), Site(j), Site(i; dual=true), Site(j; dual=true)])
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
-        @test isapprox(expect(ψ, [gate]), norm(ψ)^2)
+        @test expect(ψ, Quantum.([gate])) ≈ norm(ψ)^2
     end
 
     @testset "evolve!" begin
         @testset "one site" begin
             i = 2
             mat = reshape(LinearAlgebra.I(2), 2, 2)
-            gate = Quantum(mat, [Site(i), Site(i; dual=true)])
+            gate = Gate(mat, [Site(i), Site(i; dual=true)])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "NonCanonical" begin
@@ -337,18 +350,19 @@ using LinearAlgebra
 
         @testset "two sites" begin
             mat = reshape(LinearAlgebra.I(4), 2, 2, 2, 2)
-            gate = Quantum(mat, [site"2", site"3", site"2'", site"3'"])
+            gate = Gate(mat, [site"2", site"3", site"2'", site"3'"])
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "NonCanonical" begin
-                ϕ = deepcopy(ψ)
-                evolve!(ϕ, gate; threshold=1e-14)
-                @test length(tensors(ϕ)) == 5
-                @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
-                @test isapprox(contract(ϕ), contract(ψ))
+                let ϕ = deepcopy(ψ)
+                    evolve!(ϕ, gate; threshold=1e-14)
+                    @test length(tensors(ϕ)) == 5
+                    @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
+                    @test isapprox(contract(ϕ), contract(ψ))
 
-                evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
-                @test norm(evolved) ≈ 1.0
+                    evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
+                    @test norm(evolved) ≈ 1.0
+                end
             end
 
             @testset "Canonical" begin
@@ -408,16 +422,16 @@ using LinearAlgebra
             end
 
             @testset "MixedCanonical" begin
-                mixed_canonize!(ϕ_3, site"3")
+                mixed_canonize!(ϕ_3, lane"3")
                 evolve!(ϕ_3, mpo)
                 @test length(tensors(ϕ_3)) == 5
-                @test form(ϕ_3) == MixedCanonical(Site(3))
+                @test form(ϕ_3) == MixedCanonical(lane"3")
                 @test norm(ϕ_3) ≈ 1.0
                 @test Tenet.check_form(ϕ_3)
 
-                evolved = evolve!(deepcopy(mixed_canonize!(ψ, site"3")), mpo; maxdim=3)
+                evolved = evolve!(deepcopy(mixed_canonize!(ψ, lane"3")), mpo; maxdim=3)
                 @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
-                @test form(evolved) == MixedCanonical(Site(3))
+                @test form(evolved) == MixedCanonical(lane"3")
                 @test norm(evolved) ≈ 1.0
                 @test Tenet.check_form(evolved)
             end
@@ -435,25 +449,25 @@ using LinearAlgebra
     @testset "contract between" begin
         ψ = rand(MPS; n=5, maxdim=20)
         let canonized = canonize(ψ)
-            @test_throws ArgumentError contract!(canonized; between=(site"1", site"2"), direction=:dummy)
+            @test_throws ArgumentError contract!(canonized; between=(lane"1", lane"2"), direction=:dummy)
         end
 
         canonized = canonize(ψ)
 
         for i in 1:4
-            contract_some = contract(canonized; between=(Site(i), Site(i + 1)))
-            Bᵢ = tensors(contract_some; at=Site(i))
+            contract_some = contract(canonized; between=(Lane(i), Lane(i + 1)))
+            Bᵢ = tensors(contract_some; at=Lane(i))
 
             @test isapprox(contract(contract_some), contract(ψ))
             @test_throws Tenet.MissingSchmidtCoefficientsException tensors(
-                contract_some; between=(Site(i), Site(i + 1))
+                contract_some; between=(Lane(i), Lane(i + 1))
             )
 
-            @test isrightcanonical(contract_some, Site(i))
-            @test isleftcanonical(contract(canonized; between=(Site(i), Site(i + 1)), direction=:right), Site(i + 1))
+            @test isrightcanonical(contract_some, Lane(i))
+            @test isleftcanonical(contract(canonized; between=(Lane(i), Lane(i + 1)), direction=:right), Lane(i + 1))
 
-            Γᵢ = tensors(canonized; at=Site(i))
-            Λᵢ₊₁ = tensors(canonized; between=(Site(i), Site(i + 1)))
+            Γᵢ = tensors(canonized; at=Lane(i))
+            Λᵢ₊₁ = tensors(canonized; between=(Lane(i), Lane(i + 1)))
             @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims=())
         end
     end

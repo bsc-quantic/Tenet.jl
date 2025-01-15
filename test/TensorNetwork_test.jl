@@ -1,8 +1,10 @@
-@testset "TensorNetwork" begin
-    using Serialization
-    using Graphs: neighbors
-    using LinearAlgebra
+using Test
+using Tenet
+using Serialization
+using Graphs: neighbors
+using LinearAlgebra
 
+@testset "TensorNetwork" begin
     @testset "Constructors" begin
         @testset "empty" begin
             tn = TensorNetwork()

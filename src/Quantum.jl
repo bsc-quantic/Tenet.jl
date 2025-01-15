@@ -72,29 +72,6 @@ end
 Quantum(tn::Quantum) = tn
 
 """
-    Quantum(array, sites)
-
-Construct a [`Quantum`](@ref) Tensor Network from an array and a list of sites. Useful for simple operators like gates.
-"""
-function Quantum(array, sites)
-    if ndims(array) != length(sites)
-        throw(ArgumentError("Number of sites must match number of dimensions of array"))
-    end
-
-    gen = IndexCounter()
-    symbols = map(_ -> nextindex!(gen), sites)
-    sitemap = Dict{Site,Symbol}(
-        map(sites, 1:ndims(array)) do site, i
-            site => symbols[i]
-        end,
-    )
-    tensor = Tensor(array, symbols)
-    tn = TensorNetwork([tensor])
-    qtn = Quantum(tn, sitemap)
-    return qtn
-end
-
-"""
     TensorNetwork(q::AbstractQuantum)
 
 Return the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
@@ -124,12 +101,14 @@ inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs
 
 function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
     if kwargs.set === :physical
-        return collect(values(Quantum(tn).sites))
+        return map(sites(tn)) do site
+            inds(tn; at=site)::Symbol
+        end
     elseif kwargs.set === :virtual
-        return setdiff(inds(tn), values(Quantum(tn).sites))
+        return setdiff(inds(tn), inds(tn; set=:physical))
     elseif kwargs.set ∈ (:inputs, :outputs)
         return map(sites(tn; kwargs.set)) do site
-            inds(tn; at=site)
+            inds(tn; at=site)::Symbol
         end
     else
         return inds(TensorNetwork(tn); set=kwargs.set)
@@ -188,8 +167,8 @@ end
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     if reset
-        resetindex!(a)
-        resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+        resetinds!(a)
+        resetinds!(b; init=ninds(TensorNetwork(a)) + 1)
     end
 
     sitesa = if ioa === :inputs
@@ -226,16 +205,19 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     return b
 end
 
-function resetindex!(tn::AbstractQuantum; init=1)
-    tn = Quantum(tn)
+function resetinds!(tn::AbstractQuantum; init=1)
+    qtn = Quantum(tn)
 
-    mapping = resetindex!(Val(:return_mapping), tn; init)
-    replace!(TensorNetwork(tn), mapping)
+    mapping = resetinds!(Val(:return_mapping), tn; init)
+    replace!(TensorNetwork(qtn), mapping)
 
-    for (site, index) in tn.sites
-        tn.sites[site] = mapping[index]
+    for (site, index) in qtn.sites
+        qtn.sites[site] = mapping[index]
     end
+
+    return tn
 end
+resetinds(tn::AbstractQuantum; init=1) = resetinds!(copy(tn); init)
 
 """
     @reindex! a => b reset=true
@@ -287,13 +269,7 @@ nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
 Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
-function lanes(tn::AbstractQuantum)
-    return unique(
-        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
-            isdual(site) ? site' : site
-        end,
-    )
-end
+lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
 
 """
     nlanes(q::AbstractQuantum)
@@ -343,6 +319,21 @@ end
 function sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractQuantum)
     tn = Quantum(tn)
     return findfirst(==(kwargs.at), tn.sites)
+end
+
+"""
+    isconnectable(a::AbstractQuantum, b::AbstractQuantum)
+
+Return `true` if two [`AbstractQuantum`](@ref) Tensor Networks can be connected. This means:
+
+ 1. The outputs of `a` are a superset of the inputs of `b`.
+ 2. The outputs of `a` and `b` are disjoint except for the sites that are connected.
+"""
+function isconnectable(a, b)
+    Lane.(sites(a; set=:outputs)) ⊇ Lane.(sites(b; set=:inputs)) && isdisjoint(
+        setdiff(Lane.(sites(a; set=:outputs)), Lane.(sites(b; set=:inputs))),
+        setdiff(Lane.(sites(b; set=:inputs)), Lane.(sites(b; set=:outputs))),
+    )
 end
 
 """

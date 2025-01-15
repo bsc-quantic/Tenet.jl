@@ -11,18 +11,18 @@ function flatten_circuit(x)
     end
 end
 
-function Tenet.Quantum(circuit::AbstractBlock)
-    n = nqubits(circuit)
-    gen = Tenet.IndexCounter()
-    wire = [[Tenet.nextindex!(gen)] for _ in 1:n]
-    tensors = Tensor[]
+function Base.convert(::Type{Circuit}, yaocirc::AbstractBlock)
+    circuit = Circuit()
 
     for gate in flatten_circuit(circuit)
-        if gate isa Swap
-            (a, b) = occupied_locs(gate)
-            wire[a], wire[b] = wire[b], wire[a]
-            continue
-        end
+        # if gate isa Swap
+        #     (a, b) = occupied_locs(gate)
+        #     wire[a], wire[b] = wire[b], wire[a]
+        #     continue
+        # end
+
+        gatelanes = Lane.(occupied_locs(gate))
+        gatesites = [Site.(gatelanes; dual=true)..., Site.(gatelanes)...]
 
         # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
         m = length(occupied_locs(gate))
@@ -31,27 +31,12 @@ function Tenet.Quantum(circuit::AbstractBlock)
         else
             content(gate)
         end
-        array = reshape(collect(mat(operator)), fill(nlevel(operator), 2 * nqubits(operator))...)
+        array = reshape(collect(mat(operator)), fill(nlevel(operator), length(gatesites))...)
 
-        inds = (x -> collect(Iterators.flatten(zip(x...))))(
-            map(occupied_locs(gate)) do l
-                from, to = last(wire[l]), Tenet.nextindex!(gen)
-                push!(wire[l], to)
-                (to, from)
-            end,
-        )
-
-        tensor = Tensor(array, inds)
-        push!(tensors, tensor)
+        push!(circuit, Gate(array, gatesites))
     end
 
-    # if a wire has only one index, no gates have been applied to it
-    sites = merge(
-        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire) if length(index) > 1]),
-        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire) if length(index) > 1]),
-    )
-
-    return Quantum(Tenet.TensorNetwork(tensors), sites)
+    return circuit
 end
 
 end

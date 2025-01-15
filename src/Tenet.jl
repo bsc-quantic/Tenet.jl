@@ -13,7 +13,7 @@ include("Numerics.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, groupinds!
-@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetindex!
+@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!
 
 include("Transformations.jl")
 export transform, transform!
@@ -29,12 +29,16 @@ export transform, transform!
 #! format: on
 
 include("Site.jl")
+export Lane, @lane_str
 export Site, @site_str, isdual
-@compat public id
+@compat public id, Moment
 
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 @compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
+
+include("Circuit.jl")
+export Gate, Circuit, moments
 
 include("Lattice.jl")
 @compat public Lattice
