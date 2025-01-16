@@ -39,6 +39,7 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
         include("integration/Quac_test.jl")
         include("integration/ITensors_test.jl")
         include("integration/ITensorNetworks_test.jl")
+        include("integration/YaoBlocks_test.jl")
 
         @testset "Python" begin
             include("integration/python/test_cirq.jl")
