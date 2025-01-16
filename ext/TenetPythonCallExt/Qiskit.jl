@@ -1,4 +1,4 @@
-function Base.convert(::Type{Quantum}, ::Val{:qiskit}, pyobj::Py)
+function Base.convert(::Type{Circuit}, ::Val{:qiskit}, pyobj::Py)
     qiskit = pyimport("qiskit")
     if !pyissubclass(pytype(pyobj), qiskit.circuit.quantumcircuit.QuantumCircuit)
         throw(
@@ -11,7 +11,7 @@ function Base.convert(::Type{Quantum}, ::Val{:qiskit}, pyobj::Py)
     circuit = Circuit()
 
     for instr in pyobj
-        gatelanes = map(x -> Lane(pyconvert(Int, x._index)), instr.qubits)
+        gatelanes = map(x -> Lane(pyconvert(Int, x._index) + 1), instr.qubits)
         gatesites = [Site.(gatelanes; dual=true)..., Site.(gatelanes)...]
 
         # if unassigned parameters, throw
