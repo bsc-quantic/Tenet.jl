@@ -11,9 +11,7 @@ CairoMakie.activate!(type = "svg")
 using NetworkLayout
 ```
 
-Matrix Product States ([`MPS`](@ref)) are a Quantum Tensor Network [`Ansatz`](@ref) whose tensors are laid out in a 1D chain.
-Due to this, these networks are also known as _Tensor Trains_ in other scientific fields.
-Depending on the boundary conditions, these chains can be open or closed (i.e. periodic boundary conditions).
+Matrix Product States ([`MPS`](@ref)) (also known as _Tensor Trains_) are a Quantum Tensor Network [`Ansatz`](@ref) whose tensors are laid out in a 1D chain. Depending on the boundary conditions, these chains can be open or closed (i.e. periodic boundary conditions).
 
 !!! warning
     Currently only [`Open`](@ref) boundary conditions are supported in Tenet.
