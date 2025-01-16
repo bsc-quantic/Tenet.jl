@@ -42,7 +42,6 @@ Additionally, Tenet has the [`rand`](@ref) function to generate random [`MPS`](@
 
 ```@repl examples
 Φ = rand(MPS, n=8, maxdim=10)
-size.(tensors(Φ))
 ```
 
 ### Canonical Forms
