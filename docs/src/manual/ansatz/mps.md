@@ -42,7 +42,7 @@ Additionally, Tenet has the [`rand`](@ref) function to generate random [`MPS`](@
 
 ```@repl examples
 Φ = rand(MPS, n=8, maxdim=10)
-size.(tensors(mps))
+size.(tensors(Φ))
 ```
 
 ### Canonical Forms
@@ -110,9 +110,8 @@ To apply an [`MPO`](@ref) to an [`MPS`](@ref), you can use the [`evolve!`](@ref)
 
 ```@repl examples
 mps = rand(MPS; n=6)
-mpo = rand(MPO; n=6)
 
-evolve!(mps, mpo; normalize=false)
+evolve!(mps, open_mpo; normalize=false)
 ```
 
 ## Additional Resources
