@@ -109,7 +109,7 @@ fig # hide
 To apply an [`MPO`](@ref) to an [`MPS`](@ref), you can use the [`evolve!`](@ref) function:
 
 ```@repl examples
-mps = rand(MPS; n=6)
+mps = rand(MPS; n=10)
 
 evolve!(mps, open_mpo; normalize=false)
 ```
