@@ -47,6 +47,16 @@
             @test parent(C) ≈ C_ein
         end
 
+        @testset "* alias" begin
+            data = rand(2, 3, 4)
+            realnum = 2
+            complexnum = 2 + 2im
+
+            A = Tensor(data, (:i, :j, :k))
+            @test data * realnum ≈ parent(A * realnum) ≈ parent(realnum * A)
+            @test data * complexnum ≈ parent(A * complexnum) ≈ parent(complexnum * A)
+        end
+
         @testset "matrix multiplication" begin
             A = Tensor(rand(2, 3), (:i, :j))
             B = Tensor(rand(3, 4), (:j, :k))
