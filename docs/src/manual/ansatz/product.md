@@ -11,8 +11,8 @@ CairoMakie.activate!(type = "svg")
 using NetworkLayout
 ```
 
-A [`Product`](@ref) is the simplest Quantum Tensor Network [`Ansatz`](@ref), which consists of a one [`Tensor](@ref) per [`Site`](@ref) without any bonds, so all the sites are unconnected.
-The [`Socket`](@ref) type of a [`Product`](@ref) (whether it represents a [`State`](@ref) or an [`Operator`](@ref)) depends on the rank of the tensors provided in the constructor.
+A [`Product`](@ref) is the simplest [`Ansatz`](@ref) Tensor Network, which consists of a [`Tensor`](@ref) per [`Lane`](@ref) without any bonds, so all the sites are unconnected.
+The [`Socket`](@ref) type of a [`Product`](@ref) (whether it represents a [`State`](@ref) or an [`Operator`](@ref)) depends on the order of the tensors provided in the constructor.
 
 ## `Product` State
 Each tensor is one-dimensional, with the only index being the output physical index.
