@@ -16,16 +16,6 @@
         @test parent(D) ≈ parent(A) - permutedims(parent(B), (3, 1, 4, 2))
     end
 
-    @testset "tensor-number multiplication" begin
-        data = rand(2, 3, 4)
-        realnum = 2
-        complexnum = 2 + 2im
-
-        A = Tensor(data, (:i, :j, :k))
-        @test data * realnum ≈ parent(A * realnum) ≈ parent(realnum * A)
-        @test data * complexnum ≈ parent(A * complexnum) ≈ parent(complexnum * A)
-    end
-
     @testset "contract" begin
         @testset "axis sum" begin
             A = Tensor(rand(2, 3, 4), (:i, :j, :k))
@@ -55,6 +45,16 @@
             @test inds(C) == (:j,)
             @test size(C) == size(C_ein) == (3,)
             @test parent(C) ≈ C_ein
+        end
+
+        @testset "* alias" begin
+            data = rand(2, 3, 4)
+            realnum = 2
+            complexnum = 2 + 2im
+    
+            A = Tensor(data, (:i, :j, :k))
+            @test data * realnum ≈ parent(A * realnum) ≈ parent(realnum * A)
+            @test data * complexnum ≈ parent(A * complexnum) ≈ parent(complexnum * A)
         end
 
         @testset "matrix multiplication" begin
