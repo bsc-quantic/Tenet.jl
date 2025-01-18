@@ -9,7 +9,8 @@
         @test Tenet.ntensors(circuit) == 2
     end
 
-    @testset_skip "GHZ Circuit" begin
+    @testset "GHZ Circuit" begin
+        n_qubits = 3
         yaocirc = chain(n_qubits, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
         circuit = convert(Circuit, yaocirc)
 
@@ -23,7 +24,7 @@
         @test only(statevec(ArrayReg(bit"111"))' * statevec(yaosv)) ≈ 1 / √2
     end
 
-    @testset_skip "two-qubit gate" begin
+    @testset "two-qubit gate" begin
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
         yaocirc = chain(2, put((1, 2) => U))
         psi = zero_state(2)
