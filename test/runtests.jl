@@ -31,7 +31,7 @@ end
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
         include("integration/Reactant_test.jl")
-        # include("integration/ChainRules_test.jl")
+        include("integration/ChainRules_test.jl")
         # include("integration/BlockArray_test.jl")
         include("integration/Dagger_test.jl")
         include("integration/Makie_test.jl")
