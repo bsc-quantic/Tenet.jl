@@ -1,3 +1,4 @@
+using Yao
 using YaoBlocks
 
 @testset "YaoBlocks" begin
@@ -9,35 +10,33 @@ using YaoBlocks
         @test Tenet.ntensors(circuit) == 2
     end
 
-    @testset "GHZ Circuit" begin
+    @testset "GHZ" begin
         n_qubits = 3
         yaocirc = chain(n_qubits, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
         circuit = convert(Circuit, yaocirc)
 
+        # <111|circuit|000>
         zeros = Quantum(Product(fill([1, 0], n_qubits))) #|000>
         ones = Quantum(Product(fill([0, 1], n_qubits))) #|111>
+        ampl111 = only(Tenet.contract(merge(zeros, Quantum(circuit), ones')))
 
-        expected_value = Tenet.contract(merge(zeros, Quantum(circuit), ones')) # <111|circuit|000>
-        @test only(expected_value) ≈ 1 / √2
+        yaoampl111 = apply!(zero_state(n_qubits), yaocirc)[bit"111"]
 
-        yaosv = apply!(zero_state(n_qubits), yaocirc) # circuit|000>
-        @test only(statevec(ArrayReg(YaoBlocks.bit"111"))' * statevec(yaosv)) ≈ 1 / √2
+        @test yaoampl111 ≈ ampl111 ≈ 1 / √2
     end
 
-    @testset "two-qubit gate" begin
+    @testset "two-qubit dense gate" begin
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
         yaocirc = chain(2, put((1, 2) => U))
-        psi = zero_state(2)
-        apply!(psi, yaocirc)
 
+        # <11|circuit|00>
         circuit = convert(Circuit, yaocirc)
         zeros = Quantum(Product(fill([1, 0], 2))) #|00>
         ones = Quantum(Product(fill([0, 1], 2))) #|11>
+        ampl11 = Tenet.contract(merge(zeros, Quantum(circuit), ones'))
 
-        expected_value = Tenet.contract(merge(zeros, Quantum(circuit), ones')) # <11|circuit|00>
+        yaoampl11 = apply!(zero_state(n_qubits), yaocirc)[bit"11"]
 
-        yaosv = apply!(zero_state(2), yaocirc) # circuit|00>
-
-        @test only(expected_value) ≈ only(statevec(ArrayReg(YaoBlocks.bit"11"))' * statevec(yaosv))
+        @test only(ampl11) ≈ yaoampl11
     end
 end
