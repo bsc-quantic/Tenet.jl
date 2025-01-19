@@ -11,21 +11,22 @@ using YaoBlocks
     end
 
     @testset "GHZ" begin
-        n_qubits = 3
-        yaocirc = chain(n_qubits, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
+        n = 3
+        yaocirc = chain(n, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
         circuit = convert(Circuit, yaocirc)
 
         # <111|circuit|000>
-        zeros = Quantum(Product(fill([1, 0], n_qubits))) #|000>
-        ones = Quantum(Product(fill([0, 1], n_qubits))) #|111>
+        zeros = Quantum(Product(fill([1, 0], n))) #|000>
+        ones = Quantum(Product(fill([0, 1], n))) #|111>
         ampl111 = only(Tenet.contract(merge(zeros, Quantum(circuit), ones')))
 
-        yaoampl111 = apply!(zero_state(n_qubits), yaocirc)[bit"111"]
+        yaoampl111 = apply!(zero_state(n), yaocirc)[bit"111"]
 
         @test yaoampl111 ≈ ampl111 ≈ 1 / √2
     end
 
     @testset "two-qubit dense gate" begin
+        n = 2
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
         yaocirc = chain(2, put((1, 2) => U))
 
@@ -35,7 +36,7 @@ using YaoBlocks
         ones = Quantum(Product(fill([0, 1], 2))) #|11>
         ampl11 = Tenet.contract(merge(zeros, Quantum(circuit), ones'))
 
-        yaoampl11 = apply!(zero_state(n_qubits), yaocirc)[bit"11"]
+        yaoampl11 = apply!(zero_state(n), yaocirc)[bit"11"]
 
         @test only(ampl11) ≈ yaoampl11
     end
