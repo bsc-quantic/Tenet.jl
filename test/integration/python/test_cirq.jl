@@ -1,5 +1,9 @@
+using PythonCall
+using CondaPkg
+
+CondaPkg.update()
+
 @testset "cirq" begin
-    using PythonCall
     cirq = pyimport("cirq")
 
     @testset "LineQubit" begin

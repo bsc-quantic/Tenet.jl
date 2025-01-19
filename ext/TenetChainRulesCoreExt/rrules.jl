@@ -84,7 +84,7 @@ function ChainRulesCore.rrule(::typeof(contract), x::Tensor; kwargs...)
     y = contract(x; kwargs...)
     proj = ProjectTo(x)
 
-    function contract_pullback(ȳ)
+    function contract_pullback(ȳ::Tensor)
         y_shape_with_singletons = map(inds(x)) do i
             i ∉ inds(ȳ) ? 1 : size(ȳ, i)
         end
@@ -113,7 +113,6 @@ function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs..
         return (NoTangent(), ā, b̄)
     end
     contract_pullback(c̄::AbstractArray) = contract_pullback(Tensor(c̄, inds(c)))
-    contract_pullback(c̄::AbstractVector) = contract_pullback(Tensor(c̄, inds(c)))
     contract_pullback(c̄::AbstractThunk) = contract_pullback(unthunk(c̄))
 
     return c, contract_pullback
