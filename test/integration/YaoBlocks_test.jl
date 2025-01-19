@@ -1,6 +1,6 @@
-@testset "YaoBlocks" begin
-    using YaoBlocks
+using YaoBlocks
 
+@testset "YaoBlocks" begin
     # NOTE qubit #3 left empty on purpose
     @testset let yaocirc = chain(3, put(1 => X), cnot(1, 2))
         circuit = convert(Circuit, yaocirc)
@@ -21,7 +21,7 @@
         @test only(expected_value) ≈ 1 / √2
 
         yaosv = apply!(zero_state(n_qubits), yaocirc) # circuit|000>
-        @test only(statevec(ArrayReg(bit"111"))' * statevec(yaosv)) ≈ 1 / √2
+        @test only(statevec(ArrayReg(YaoBlocks.bit"111"))' * statevec(yaosv)) ≈ 1 / √2
     end
 
     @testset "two-qubit gate" begin
@@ -38,6 +38,6 @@
 
         yaosv = apply!(zero_state(2), yaocirc) # circuit|00>
 
-        @test only(expected_value) ≈ only(statevec(ArrayReg(bit"11"))' * statevec(yaosv))
+        @test only(expected_value) ≈ only(statevec(ArrayReg(YaoBlocks.bit"11"))' * statevec(yaosv))
     end
 end
