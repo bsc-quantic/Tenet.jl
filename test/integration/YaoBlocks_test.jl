@@ -29,7 +29,7 @@ using YaoBlocks
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
         yaocirc = chain(n_qubits, put((1, 2) => U))
         circuit = convert(Circuit, yaocirc)
-        
+
         zerost = Quantum(Product(fill([1, 0], n_qubits))) #|00>
         onest = Quantum(Product(fill([0, 1], n_qubits))) #|11>
 
