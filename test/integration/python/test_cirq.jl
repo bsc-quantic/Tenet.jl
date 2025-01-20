@@ -17,12 +17,12 @@ CondaPkg.update()
         circuit.append(cirq.H(qubits[1]))
         circuit.append(cirq.H(qubits[2]))
 
-        circ = convert(Circuit, circuit)
+        circ = convert(Circuit, Val(:cirq), circuit)
         @test issetequal(sites(circ; set=:inputs), Site.([0, 1, 2]; dual=true))
         @test issetequal(sites(circ; set=:outputs), Site.([0, 1, 2]))
         @test Tenet.ntensors(circ) == 7
         @test issetequal(
-            moments(circ), [Moment.(Ref(Lane(0)), 1:4)..., Moment.(Ref(Lane(1)), 1:4)..., Moment.(Ref(Lane(2)), 1:4)...]
+            moments(circ), [Tenet.Moment.(Ref(Lane(0)), 1:4)..., Tenet.Moment.(Ref(Lane(1)), 1:4)..., Tenet.Moment.(Ref(Lane(2)), 1:4)...]
         )
     end
 
@@ -37,13 +37,13 @@ CondaPkg.update()
         circuit.append(cirq.H(qubits[1]))
         circuit.append(cirq.H(qubits[2]))
 
-        circ = convert(Circuit, circuit)
+        circ = convert(Circuit, Val(:cirq), circuit)
         @test issetequal(sites(circ; set=:inputs), Site.([(0, 0), (1, 0), (2, 0)]; dual=true))
         @test issetequal(sites(circ; set=:outputs), Site.([(0, 0), (1, 0), (2, 0)]))
         @test Tenet.ntensors(circ) == 7
         @test issetequal(
             moments(circ),
-            [Moment.(Ref(Lane(0, 0)), 1:4)..., Moment.(Ref(Lane(1, 0)), 1:4)..., Moment.(Ref(Lane(2, 0)), 1:4)...],
+            [Tenet.Moment.(Ref(Lane(0, 0)), 1:4)..., Tenet.Moment.(Ref(Lane(1, 0)), 1:4)..., Tenet.Moment.(Ref(Lane(2, 0)), 1:4)...],
         )
     end
 end
