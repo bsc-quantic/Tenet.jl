@@ -22,7 +22,12 @@ CondaPkg.update()
         @test issetequal(sites(circ; set=:outputs), Site.([0, 1, 2]))
         @test Tenet.ntensors(circ) == 7
         @test issetequal(
-            moments(circ), [Tenet.Moment.(Ref(Lane(0)), 1:4)..., Tenet.Moment.(Ref(Lane(1)), 1:4)..., Tenet.Moment.(Ref(Lane(2)), 1:4)...]
+            moments(circ),
+            [
+                Tenet.Moment.(Ref(Lane(0)), 1:4)...,
+                Tenet.Moment.(Ref(Lane(1)), 1:4)...,
+                Tenet.Moment.(Ref(Lane(2)), 1:4)...,
+            ],
         )
     end
 
@@ -43,7 +48,11 @@ CondaPkg.update()
         @test Tenet.ntensors(circ) == 7
         @test issetequal(
             moments(circ),
-            [Tenet.Moment.(Ref(Lane(0, 0)), 1:4)..., Tenet.Moment.(Ref(Lane(1, 0)), 1:4)..., Tenet.Moment.(Ref(Lane(2, 0)), 1:4)...],
+            [
+                Tenet.Moment.(Ref(Lane(0, 0)), 1:4)...,
+                Tenet.Moment.(Ref(Lane(1, 0)), 1:4)...,
+                Tenet.Moment.(Ref(Lane(2, 0)), 1:4)...,
+            ],
         )
     end
 end

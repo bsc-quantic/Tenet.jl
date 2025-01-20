@@ -17,6 +17,7 @@
     @test issetequal(sites(tn; set=:outputs), Site.([0, 1, 2]))
     @test Tenet.ntensors(tn) == 7
     @test issetequal(
-        moments(tn), [Tenet.Moment.(Ref(Lane(0)), 1:4)..., Tenet.Moment.(Ref(Lane(1)), 1:4)..., Tenet.Moment.(Ref(Lane(2)), 1:4)...]
+        moments(tn),
+        [Tenet.Moment.(Ref(Lane(0)), 1:4)..., Tenet.Moment.(Ref(Lane(1)), 1:4)..., Tenet.Moment.(Ref(Lane(2)), 1:4)...],
     )
 end
