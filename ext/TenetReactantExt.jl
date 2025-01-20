@@ -3,7 +3,7 @@ module TenetReactantExt
 using Tenet
 using EinExprs
 using Reactant
-using Reactant: TracedRArray, TracedRNumber
+using Reactant: TracedRArray, TracedRNumber, @reactant_overlay
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
@@ -188,5 +188,12 @@ end
 # fixes issue with default `conj(x::AbstractArray) = x` method (it might be overlayed in Reactant.jl)
 Base.conj(@nospecialize(x::Tensor{<:Number,N,<:TracedRArray})) where {N} = x
 Base.conj(@nospecialize(x::Tensor{<:Complex,N,<:TracedRArray})) where {N} = Tensor(conj(parent(x)), inds(x))
+
+# fix infinite recursion on Reactant rewrite of invoke/call step
+@reactant_overlay @noinline function Base.replace!(
+    tn::Tenet.AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}}
+)
+    Base.inferencebarrier(Base.replace!)(tn, old_new)
+end
 
 end
