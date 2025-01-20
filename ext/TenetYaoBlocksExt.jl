@@ -14,7 +14,7 @@ end
 function Base.convert(::Type{Circuit}, yaocirc::AbstractBlock)
     circuit = Circuit()
 
-    for gate in flatten_circuit(circuit)
+    for gate in flatten_circuit(yaocirc)
         # if gate isa Swap
         #     (a, b) = occupied_locs(gate)
         #     wire[a], wire[b] = wire[b], wire[a]

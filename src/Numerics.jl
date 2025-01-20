@@ -141,8 +141,8 @@ end
 Alias for [`contract`](@ref).
 """
 Base.:*(a::Tensor, b::Tensor) = contract(a, b)
-Base.:*(a::Tensor, b::Number) = T(parent(a) * b, inds(a))
-Base.:*(a::Number, b::Tensor) = T(a * parent(b), inds(b))
+Base.:*(a::Tensor, b::Number) = Tensor(parent(a) * b, inds(a))
+Base.:*(a::Number, b::Tensor) = Tensor(a * parent(b), inds(b))
 
 function factorinds(tensor, left_inds, right_inds)
     isdisjoint(left_inds, right_inds) ||
