@@ -11,31 +11,33 @@ using YaoBlocks
     end
 
     @testset "GHZ" begin
-        n_qubits = 3
-        yaocirc = chain(n_qubits, put(1 => H), Yao.control(1, 2 => X), Yao.control(2, 3 => X))
+        n = 3
+        yaocirc = chain(n, put(1 => Yao.H), Yao.control(1, 2 => Yao.X), Yao.control(2, 3 => Yao.X))
         circuit = convert(Circuit, yaocirc)
 
-        zerost = Quantum(Product(fill([1, 0], n_qubits))) #|000>
-        onest = Quantum(Product(fill([0, 1], n_qubits))) #|111>
+        # <111|circuit|000>
+        zeros = Quantum(Product(fill([1, 0], n))) #|000>
+        ones = Quantum(Product(fill([0, 1], n))) #|111>
+        ampl111 = only(Tenet.contract(merge(zeros, Quantum(circuit), ones')))
 
-        expected_value = Tenet.contract(merge(zerost, Quantum(circuit), onest')) # Tenet <111|circuit|000>
+        yaoampl111 = apply!(zero_state(n), yaocirc)[bit"111"]
 
-        yaosv = apply!(zero_state(n_qubits), yaocirc) # circuit|000>
-        @test only(expected_value) ≈ only(statevec(ArrayReg(bit"111"))' * statevec(yaosv)) ≈ 1 / √2 # Yao <111|circuit|000>
+        @test yaoampl111 ≈ ampl111 ≈ 1 / √2
     end
 
     @testset "two-qubit dense gate" begin
-        n_qubits = 2
+        n = 2
         U = matblock(rand(ComplexF64, 4, 4); tag="U")
-        yaocirc = chain(n_qubits, put((1, 2) => U))
+        yaocirc = chain(2, put((1, 2) => U))
+
+        # <11|circuit|00>
         circuit = convert(Circuit, yaocirc)
+        zeros = Quantum(Product(fill([1, 0], 2))) #|00>
+        ones = Quantum(Product(fill([0, 1], 2))) #|11>
+        ampl11 = Tenet.contract(merge(zeros, Quantum(circuit), ones'))
 
-        zerost = Quantum(Product(fill([1, 0], n_qubits))) #|00>
-        onest = Quantum(Product(fill([0, 1], n_qubits))) #|11>
+        yaoampl11 = apply!(zero_state(n), yaocirc)[bit"11"]
 
-        expected_value = Tenet.contract(merge(zerost, Quantum(circuit), onest')) # Tenet <11|circuit|00>
-
-        yaosv = apply!(zero_state(n_qubits), yaocirc) # circuit|00>
-        @test only(expected_value) ≈ only(statevec(ArrayReg(bit"11"))' * statevec(yaosv)) # Yao <11|circuit|00>
+        @test only(ampl11) ≈ yaoampl11
     end
 end
