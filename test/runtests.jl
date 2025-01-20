@@ -42,10 +42,12 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
         include("integration/YaoBlocks_test.jl")
 
         @testset "Python" begin
+            run(`cp CondaPkg.toml ../CondaPkg.toml`) 
             include("integration/python/test_cirq.jl")
             include("integration/python/test_quimb.jl")
             include("integration/python/test_qiskit.jl")
             include("integration/python/test_qibo.jl")
+            run(`rm ../CondaPkg.toml`)
         end
     end
 end
