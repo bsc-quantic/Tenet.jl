@@ -22,7 +22,7 @@ function Base.convert(::Type{Circuit}, yaocirc::AbstractBlock)
         # end
 
         gatelanes = Lane.(occupied_locs(gate))
-        gatesites = [Site.(gatelanes; dual=true)..., Site.(gatelanes)...]
+        gatesites = [Site.(gatelanes)..., Site.(gatelanes; dual=true)...]
 
         # NOTE `YaoBlocks.mat` on m-site qubits still returns the operator on the full Hilbert space
         m = length(occupied_locs(gate))
