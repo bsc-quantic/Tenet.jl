@@ -420,3 +420,5 @@ dist
 *.excalidraw
 archive/
 test/.CondaPkg/
+.CondaPkg/
+CondaPkg.toml
