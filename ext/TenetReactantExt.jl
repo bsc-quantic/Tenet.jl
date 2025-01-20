@@ -185,4 +185,8 @@ function Tenet.contract(a::Tensor{TracedRNumber{T},N,TracedRArray{T,N}}, b::Tens
     return contract(a, Tensor(Reactant.Ops.constant(parent(b)), inds(b)); kwargs...)
 end
 
+# fixes issue with default `conj(x::AbstractArray) = x` method (it might be overlayed in Reactant.jl)
+Base.conj(@nospecialize(x::Tensor{<:Number,N,<:TracedRArray})) where {N} = x
+Base.conj(@nospecialize(x::Tensor{<:Complex,N,<:TracedRArray})) where {N} = Tensor(conj(parent(x)), inds(x))
+
 end
