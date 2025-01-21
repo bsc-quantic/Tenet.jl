@@ -24,7 +24,7 @@ hero:
 features:
   - icon: 🧩
     title: Hackable, Flexible, Extendable!
-    details: Tenet proposes a new interface for Tensor Networks which is both easier to use and to extend.
+    details: Tenet proposes a new interface for Tensor Networks which is both easy to use and to extend.
     link: /manual/design/introduction
 
   - icon: 🚀
@@ -34,7 +34,7 @@ features:
 
   - icon: ∂
     title: Built-In MLIR AD
-    details: Leverage Enzyme-Powered Automatic Differentiation to Differentiate Tensor Network contraction
+    details: Leverage Enzyme-Powered Automatic Differentiation to Differentiate Tensor Network contraction when used in combination with <a href="https://github.com/EnzymeAD/Reactant.jl">Reactant.jl</a>.
     link: /manual/reactant
 
   - icon: 🫂
