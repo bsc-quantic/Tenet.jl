@@ -27,6 +27,7 @@ makedocs(;
                 "MPS/MPO ansatz" => "manual/design/mps.md",
             ],
             "🤝 Interoperation" => "manual/interop.md",
+            "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],
         "🧭 API" => [
             "Tensor" => "api/tensor.md",
