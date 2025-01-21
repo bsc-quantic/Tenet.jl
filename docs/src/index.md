@@ -13,7 +13,7 @@ hero:
       link: /manual
     - theme: alt
       text: API Reference 📚
-      link: /api/api
+      link: /api/index
     - theme: alt
       text: View on GitHub
       link: https://github.com/bsc-quantic/Tenet.jl
