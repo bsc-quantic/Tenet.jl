@@ -365,18 +365,22 @@ Compute the expectation value of an observable on a [`AbstractAnsatz`](@ref) Ten
 
 # Arguments
 
-  - `ψ`: Tensor Network representing the state.
+  - `ψ`: Tensor Network representing the state. It must be a state (i.e. `socket` returns `State(dual=false)`).
   - `observable`: The observable to compute the expectation value. If a `Vector` or `Tuple` of observables is provided, the sum of the expectation values is returned.
 
 # Keyword Arguments
 
-  - `bra`: The bra state. Defaults to a copy of `ψ`.
+  - `bra`: The bra state. It must be a dual state (i.e. `socket` returns `State(dual=true)`). Defaults to the adjoint of `ψ`.
 """
-expect(ψ::AbstractAnsatz, observable; bra=copy(ψ)) = contract(merge(ψ, observable, bra'))
+function expect(ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
+    @assert socket(ψ) == State() "ψ must be a state"
+    @assert socket(bra) == State(; dual=true) "bra must be a dual state"
+    contract(merge(ψ, observable, bra))
+end
 
-function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=copy(ψ))
+function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=adjoint(ψ))
     sum(observables) do observable
-        expect(ψ, observable; bra=copy(bra))
+        expect(ψ, observable; bra)
     end
 end
 
