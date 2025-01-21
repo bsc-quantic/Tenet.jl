@@ -30,7 +30,6 @@ makedocs(;
             "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],
         "🧭 API" => [
-            "Index" => "api/index.md",
             "Tensor" => "api/tensor.md",
             "TensorNetwork" => "api/tensornetwork.md",
             "Transformations" => "api/transformations.md",
