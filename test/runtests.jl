@@ -38,7 +38,7 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             include("integration/python/test_qibo.jl")
             run(`rm ../CondaPkg.toml`)
         end
-        
+
         include("integration/Reactant_test.jl")
         include("integration/ChainRules_test.jl")
         # include("integration/BlockArray_test.jl")
