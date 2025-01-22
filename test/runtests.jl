@@ -30,6 +30,15 @@ end
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
+        @testset "Python" begin
+            run(`cp CondaPkg.toml ../CondaPkg.toml`)
+            include("integration/python/test_cirq.jl")
+            include("integration/python/test_quimb.jl")
+            include("integration/python/test_qiskit.jl")
+            include("integration/python/test_qibo.jl")
+            run(`rm ../CondaPkg.toml`)
+        end
+        
         include("integration/Reactant_test.jl")
         include("integration/ChainRules_test.jl")
         # include("integration/BlockArray_test.jl")
@@ -40,15 +49,6 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
         include("integration/ITensors_test.jl")
         include("integration/ITensorNetworks_test.jl")
         include("integration/YaoBlocks_test.jl")
-
-        @testset "Python" begin
-            run(`cp CondaPkg.toml ../CondaPkg.toml`)
-            include("integration/python/test_cirq.jl")
-            include("integration/python/test_quimb.jl")
-            include("integration/python/test_qiskit.jl")
-            include("integration/python/test_qibo.jl")
-            run(`rm ../CondaPkg.toml`)
-        end
     end
 end
 
