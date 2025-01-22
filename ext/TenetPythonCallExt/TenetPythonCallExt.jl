@@ -8,6 +8,8 @@ pyfullyqualname(pyobj) = join([pytype(pyobj).__module__, pytype(pyobj).__qualnam
 
 Base.convert(::Type{Site}, pyobj::Py) = convert(Site, Val(Symbol(pyfullyqualname(pyobj))), pyobj)
 
+Base.convert(::Type{Lane}, pyobj::Py) = convert(Lane, Val(Symbol(pyfullyqualname(pyobj))), pyobj)
+
 function Base.convert(::Type{TensorNetwork}, pyobj::Py)
     pymodule, _ = split(pyconvert(String, pytype(pyobj).__module__), "."; limit=2)
     return convert(TensorNetwork, Val(Symbol(pymodule)), pyobj)
