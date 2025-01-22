@@ -17,13 +17,14 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "📖 Manual" => [
-            "Tensors" => "manual/tensors.md",
-            "Tensor Networks" => [
-                "Introduction" => "manual/tensor-network.md",
-                "Quantum" => "manual/quantum.md",
-                "Ansatz" => "manual/ansatz/index.md",
-                "Product ansatz" => "manual/ansatz/product.md",
-                "MPS/MPO ansatz" => "manual/ansatz/mps.md",
+            "The Design of Tenet" => [
+                "Introduction" => "manual/design/introduction.md",
+                "Tensors" => "manual/design/tensors.md",
+                "Tensor Networks" => "manual/design/tensor-network.md",
+                "Quantum" => "manual/design/quantum.md",
+                "Ansatz" => "manual/design/ansatz.md",
+                "Product ansatz" => "manual/design/product.md",
+                "MPS/MPO ansatz" => "manual/design/mps.md",
             ],
             "🤝 Interoperation" => "manual/interop.md",
         ],
