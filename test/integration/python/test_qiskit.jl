@@ -13,10 +13,11 @@
 
     tn = convert(Circuit, circuit)
     @test tn isa Circuit
-    @test issetequal(sites(circ; set=:inputs), Site.([1, 2, 3]; dual=true))
-    @test issetequal(sites(circ; set=:outputs), Site.([1, 2, 3]))
-    @test Tenet.ntensors(circ) == 7
+    @test issetequal(sites(tn; set=:inputs), Site.([0, 1, 2]; dual=true))
+    @test issetequal(sites(tn; set=:outputs), Site.([0, 1, 2]))
+    @test Tenet.ntensors(tn) == 7
     @test issetequal(
-        moments(circ), [Moment.(Ref(Lane(1)), 1:4)..., Moment.(Ref(Lane(2)), 1:4)..., Moment.(Ref(Lane(3)), 1:4)...]
+        moments(tn),
+        [Tenet.Moment.(Ref(Lane(0)), 1:4)..., Tenet.Moment.(Ref(Lane(1)), 1:4)..., Tenet.Moment.(Ref(Lane(2)), 1:4)...],
     )
 end
