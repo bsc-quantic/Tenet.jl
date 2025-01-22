@@ -18,6 +18,11 @@ function Base.convert(::Type{Quantum}, pyobj::Py)
     return convert(Quantum, Val(Symbol(pymodule)), pyobj)
 end
 
+function Base.convert(::Type{Circuit}, pyobj::Py)
+    pymodule, _ = split(pyconvert(String, pytype(pyobj).__module__), "."; limit=2)
+    return convert(Circuit, Val(Symbol(pymodule)), pyobj)
+end
+
 include("Qiskit.jl")
 include("Quimb.jl")
 include("Qibo.jl")

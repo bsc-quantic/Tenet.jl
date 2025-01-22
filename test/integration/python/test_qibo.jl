@@ -11,7 +11,7 @@
     circuit.add(qibo.gates.H(1))
     circuit.add(qibo.gates.H(2))
 
-    circ = convert(Circuit, Val(:qibo), circuit)
+    circ = convert(Circuit, circuit)
     @test circ isa Circuit
     @test issetequal(sites(circ; set=:inputs), Site.([0, 1, 2]; dual=true))
     @test issetequal(sites(circ; set=:outputs), Site.([0, 1, 2]))

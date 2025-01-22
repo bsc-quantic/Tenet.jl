@@ -11,7 +11,7 @@
     circuit.h(1)
     circuit.h(2)
 
-    tn = convert(Circuit, Val(:qiskit), circuit)
+    tn = convert(Circuit, circuit)
     @test tn isa Circuit
     @test issetequal(sites(tn; set=:inputs), Site.([0, 1, 2]; dual=true))
     @test issetequal(sites(tn; set=:outputs), Site.([0, 1, 2]))
