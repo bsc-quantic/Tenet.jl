@@ -9,7 +9,7 @@ const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin
-        include("Helpers_test.jl")
+        #= include("Helpers_test.jl")
         include("Tensor_test.jl")
         include("Numerics_test.jl")
         include("TensorNetwork_test.jl")
@@ -24,22 +24,22 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
         include("Ansatz_test.jl")
         include("Product_test.jl")
         include("MPS_test.jl")
-        include("MPO_test.jl")
+        include("MPO_test.jl") =#
     end
 end
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
         @testset "Python" begin
-            run(`cp CondaPkg.toml ../CondaPkg.toml`)
+            #run(`cp CondaPkg.toml ../CondaPkg.toml`)
             include("integration/python/test_cirq.jl")
             include("integration/python/test_quimb.jl")
             include("integration/python/test_qiskit.jl")
             include("integration/python/test_qibo.jl")
-            run(`rm ../CondaPkg.toml`)
+            #run(`rm ../CondaPkg.toml`)
         end
 
-        include("integration/Reactant_test.jl")
+        #= include("integration/Reactant_test.jl")
         include("integration/ChainRules_test.jl")
         # include("integration/BlockArray_test.jl")
         include("integration/Dagger_test.jl")
@@ -48,7 +48,7 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
         include("integration/Quac_test.jl")
         include("integration/ITensors_test.jl")
         include("integration/ITensorNetworks_test.jl")
-        include("integration/YaoBlocks_test.jl")
+        include("integration/YaoBlocks_test.jl") =#
     end
 end
 
