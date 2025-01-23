@@ -123,8 +123,9 @@
     end
 
     @testset "mixed_canonize!" begin
+        ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
+        
         @testset "single Site" begin
-            ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
             canonized = mixed_canonize(ψ, lane"3")
             @test Tenet.check_form(canonized)
 
@@ -140,7 +141,6 @@
         end
 
         @testset "multiple Sites" begin
-            ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
             canonized = mixed_canonize(ψ, [lane"2", lane"3"])
 
             @test Tenet.check_form(canonized)
