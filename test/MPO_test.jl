@@ -74,4 +74,51 @@
         @test isapprox(norm(H), 1.0)
         @test maximum(last, size(H)) <= χ
     end
+
+    @testset "canonize!" begin
+        using Tenet: isleftcanonical, isrightcanonical
+
+        ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
+        canonized = canonize(ψ)
+
+        @test form(canonized) isa Canonical
+
+        @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
+        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
+        @test isapprox(norm(ψ), norm(canonized))
+
+        # Extract the singular values between each adjacent pair of sites in the canonized chain
+        Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
+        @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
+
+        for i in 1:5
+            canonized = canonize(ψ)
+
+            if i == 1
+                @test isleftcanonical(canonized, Lane(i))
+            elseif i == 5 # in the limits of the chain, we get the norm of the state
+                normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
+                contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+                @test isleftcanonical(canonized, Lane(i))
+            else
+                contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+                @test isleftcanonical(canonized, Lane(i))
+            end
+        end
+
+        for i in 1:5
+            canonized = canonize(ψ)
+
+            if i == 1 # in the limits of the chain, we get the norm of the state
+                normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
+                contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+                @test isrightcanonical(canonized, Lane(i))
+            elseif i == 5
+                @test isrightcanonical(canonized, Lane(i))
+            else
+                contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+                @test isrightcanonical(canonized, Lane(i))
+            end
+        end
+    end
 end
