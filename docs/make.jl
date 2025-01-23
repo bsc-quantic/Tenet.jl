@@ -1,6 +1,7 @@
 using Documenter
 using DocumenterVitepress
 using DocumenterCitations
+using DocumenterMermaid
 using Tenet
 using CairoMakie
 using GraphMakie
