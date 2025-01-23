@@ -161,7 +161,7 @@
                         Tensor(rand(2, 2), [:i, :j]),
                         Tensor(rand(2, 2, 2), [:j, :k, :l]),
                         Tensor(rand(2, 2, 2), [:l, :m, :n]),
-                        Tensor(rand(2, 2), [:n, :o])
+                        Tensor(rand(2, 2), [:n, :o]),
                     ],
                 ),
                 Dict(site"1" => :i, site"2" => :k, site"3" => :m, site"4" => :o),
@@ -209,7 +209,16 @@
                         Tensor(rand(2, 2, 2), [:r, :s, :q]),
                     ],
                 ),
-                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p, site"4" => :r, site"4'" => :s),
+                Dict(
+                    site"1" => :i,
+                    site"1'" => :j,
+                    site"2" => :l,
+                    site"2'" => :m,
+                    site"3" => :o,
+                    site"3'" => :p,
+                    site"4" => :r,
+                    site"4'" => :s,
+                ),
             )
 
             Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
