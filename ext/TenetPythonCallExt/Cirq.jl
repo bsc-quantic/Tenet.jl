@@ -16,8 +16,8 @@ function Base.convert(::Type{Circuit}, ::Val{:cirq}, pyobj::Py)
 
     for moment in pyobj
         for gate in moment.operations
-            gatelanes = convert.(Lane, gate.qubits)
-            gatesites = [Site.(gatelanes; dual=true)..., Site.(gatelanes)...]
+            gatelanes = map(qubit -> convert(Lane, qubit), gate.qubits)
+            gatesites = [Site.(gatelanes)..., Site.(gatelanes; dual=true)...]
 
             matrix = pyconvert(Array, cirq.unitary(gate))
             array = reshape(matrix, fill(2, length(gatesites))...)
