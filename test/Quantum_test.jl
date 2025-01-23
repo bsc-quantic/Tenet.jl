@@ -152,5 +152,73 @@
                 (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
             end
         end
+
+        @testset "mps greater than mpo" begin
+            # MPS-like tensor network with 4 sites
+            mps4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]),
+                        Tensor(rand(2, 2, 2), [:j, :k, :l]),
+                        Tensor(rand(2, 2, 2), [:l, :m, :n]),
+                        Tensor(rand(2, 2), [:n, :o])
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m, site"4" => :o),
+            )
+
+            # MPO-like tensor network with 3 sites
+            mpo3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2), [:o, :p, :n]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
+            )
+
+            Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
+
+            mps4inds = [inds(mps4sites; at=i) for i in sites(mps4sites; set=:outputs)]
+            mpo3inds = [inds(mpo3sites; at=i) for i in sites(mpo3sites; set=:inputs)]
+            # test MPO indices is subset of MPS's but not the opposite
+            @test mpo3inds ⊆ mps4inds
+            @test !(mps4inds ⊆ mpo3inds)
+        end
+
+        @testset "mpo greater than mps" begin
+            # MPS-like tensor network with 3 sites
+            mps3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]), Tensor(rand(2, 2, 2), [:j, :k, :l]), Tensor(rand(2, 2), [:l, :m])
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m),
+            )
+
+            # MPO-like tensor network with 4 sites
+            mpo4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2, 2), [:o, :p, :n, :q]),
+                        Tensor(rand(2, 2, 2), [:r, :s, :q]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p, site"4" => :r, site"4'" => :s),
+            )
+
+            Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
+
+            mps3inds = [inds(mps3sites; at=i) for i in sites(mps3sites; set=:outputs)]
+            mpo4inds = [inds(mpo4sites; at=i) for i in sites(mpo4sites; set=:inputs)]
+            # test MPS indices is subset of MPO's but not the opposite
+            @test mps3inds ⊆ mpo4inds
+            @test !(mpo4inds ⊆ mps3inds)
+        end
     end
 end
