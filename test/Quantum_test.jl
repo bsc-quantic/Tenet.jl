@@ -183,7 +183,7 @@
 
             mps4inds = [inds(mps4sites; at=i) for i in sites(mps4sites; set=:outputs)]
             mpo3inds = [inds(mpo3sites; at=i) for i in sites(mpo3sites; set=:inputs)]
-            # test MPO indices is subset of MPS's but not the opposite
+            # test MPO sites indices is subset of MPS's but not the opposite
             @test mpo3inds ⊆ mps4inds
             @test !(mps4inds ⊆ mpo3inds)
         end
@@ -225,7 +225,7 @@
 
             mps3inds = [inds(mps3sites; at=i) for i in sites(mps3sites; set=:outputs)]
             mpo4inds = [inds(mpo4sites; at=i) for i in sites(mpo4sites; set=:inputs)]
-            # test MPS indices is subset of MPO's but not the opposite
+            # test MPS sites indices is subset of MPO's but not the opposite
             @test mps3inds ⊆ mpo4inds
             @test !(mpo4inds ⊆ mps3inds)
         end
