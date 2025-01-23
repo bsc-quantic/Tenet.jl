@@ -121,4 +121,37 @@
             end
         end
     end
+
+    @testset "mixed_canonize!" begin
+        @testset "single Site" begin
+            ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
+            canonized = mixed_canonize(ψ, lane"3")
+            @test Tenet.check_form(canonized)
+
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == lane"3"
+
+            @test isisometry(canonized, lane"1"; dir=:right)
+            @test isisometry(canonized, lane"2"; dir=:right)
+            @test isisometry(canonized, lane"4"; dir=:left)
+            @test isisometry(canonized, lane"5"; dir=:left)
+
+            @test contract(canonized) ≈ contract(ψ)
+        end
+
+        @testset "multiple Sites" begin
+            ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
+            canonized = mixed_canonize(ψ, [lane"2", lane"3"])
+
+            @test Tenet.check_form(canonized)
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == [lane"2", lane"3"]
+
+            @test isisometry(canonized, lane"1"; dir=:right)
+            @test isisometry(canonized, lane"4"; dir=:left)
+            @test isisometry(canonized, lane"5"; dir=:left)
+
+            @test contract(canonized) ≈ contract(ψ)
+        end
+    end
 end
