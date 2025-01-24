@@ -511,12 +511,12 @@ function canonize!(ψ::AbstractMPO; normalize=false)
     Λ = Tensor[]
 
     # right-to-left QR sweep, get right-canonical tensors
-    for i in nsites(ψ):-1:2
+    for i in nlanes(ψ):-1:2
         canonize_site!(ψ, Lane(i); direction=:left, method=:qr)
     end
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
-    for i in 1:(nsites(ψ) - 1)
+    for i in 1:(nlanes(ψ) - 1)
         canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
 
         # extract the singular values and contract them with the next tensor
@@ -527,7 +527,7 @@ function canonize!(ψ::AbstractMPO; normalize=false)
         push!(Λ, Λᵢ)
     end
 
-    for i in 2:nsites(ψ) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
+    for i in 2:nlanes(ψ) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i - 1] # singular values start between site 1 and 2
         A = tensors(ψ; at=Lane(i))
         Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ)); dims=())
