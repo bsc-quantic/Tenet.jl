@@ -153,7 +153,7 @@
             end
         end
 
-        @testset "mps greater than mpo" begin
+        @testset "state with more lanes than operator" begin
             # MPS-like tensor network with 4 sites
             mps4sites = Quantum(
                 TensorNetwork(
@@ -181,14 +181,12 @@
 
             Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
 
-            mps4inds = [inds(mps4sites; at=i) for i in sites(mps4sites; set=:outputs)]
-            mpo3inds = [inds(mpo3sites; at=i) for i in sites(mpo3sites; set=:inputs)]
-            # test MPO sites indices are a subset of MPS's but not the opposite
-            @test mpo3inds ⊆ mps4inds
-            @test !(mps4inds ⊆ mpo3inds)
+            for lane in lanes(mpo3sites)
+                @test inds(mps4sites; at=Site(lane)) == inds(mpo3sites; at=Site(lane; dual=true))
+            end
         end
 
-        @testset "mpo greater than mps" begin
+        @testset "state with less lanes than operator" begin
             # MPS-like tensor network with 3 sites
             mps3sites = Quantum(
                 TensorNetwork(
@@ -223,11 +221,9 @@
 
             Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
 
-            mps3inds = [inds(mps3sites; at=i) for i in sites(mps3sites; set=:outputs)]
-            mpo4inds = [inds(mpo4sites; at=i) for i in sites(mpo4sites; set=:inputs)]
-            # test MPS sites indices are a subset of MPO's but not the opposite
-            @test mps3inds ⊆ mpo4inds
-            @test !(mpo4inds ⊆ mps3inds)
+            for lane in lanes(mps3sites)
+                @test inds(mps3sites; at=Site(lane)) == inds(mpo4sites; at=Site(lane; dual=true))
+            end
         end
     end
 end
