@@ -152,5 +152,78 @@
                 (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
             end
         end
+
+        @testset "state with more lanes than operator" begin
+            # MPS-like tensor network with 4 sites
+            mps4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]),
+                        Tensor(rand(2, 2, 2), [:j, :k, :l]),
+                        Tensor(rand(2, 2, 2), [:l, :m, :n]),
+                        Tensor(rand(2, 2), [:n, :o]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m, site"4" => :o),
+            )
+
+            # MPO-like tensor network with 3 sites
+            mpo3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2), [:o, :p, :n]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
+            )
+
+            Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
+
+            for lane in lanes(mpo3sites)
+                @test inds(mps4sites; at=Site(lane)) == inds(mpo3sites; at=Site(lane; dual=true))
+            end
+        end
+
+        @testset "state with less lanes than operator" begin
+            # MPS-like tensor network with 3 sites
+            mps3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]), Tensor(rand(2, 2, 2), [:j, :k, :l]), Tensor(rand(2, 2), [:l, :m])
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m),
+            )
+
+            # MPO-like tensor network with 4 sites
+            mpo4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2, 2), [:o, :p, :n, :q]),
+                        Tensor(rand(2, 2, 2), [:r, :s, :q]),
+                    ],
+                ),
+                Dict(
+                    site"1" => :i,
+                    site"1'" => :j,
+                    site"2" => :l,
+                    site"2'" => :m,
+                    site"3" => :o,
+                    site"3'" => :p,
+                    site"4" => :r,
+                    site"4'" => :s,
+                ),
+            )
+
+            Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
+
+            for lane in lanes(mps3sites)
+                @test inds(mps3sites; at=Site(lane)) == inds(mpo4sites; at=Site(lane; dual=true))
+            end
+        end
     end
 end
