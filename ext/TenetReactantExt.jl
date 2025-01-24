@@ -9,24 +9,26 @@ const stablehlo = MLIR.Dialects.stablehlo
 
 const Enzyme = Reactant.Enzyme
 
-# we specify `mode` and `track_numbers` types due to ambiguity
-Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(TT::Type{<:Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
-)
-    A_traced = Reactant.traced_type_inner(Tenet.parenttype(TT), seen, mode, track_numbers)
-    T = eltype(A_traced)
-    N = ndims(TT)
-    return Tensor{T,N,A_traced}
-end
+@static if isdefined(Reactant, :traced_type_inner)
+    # we specify `mode` and `track_numbers` types due to ambiguity
+    Base.@nospecializeinfer function Reactant.traced_type_inner(
+        @nospecialize(TT::Type{<:Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+    )
+        A_traced = Reactant.traced_type_inner(Tenet.parenttype(TT), seen, mode, track_numbers)
+        T = eltype(A_traced)
+        N = ndims(TT)
+        return Tensor{T,N,A_traced}
+    end
 
-# we specify `mode` and `track_numbers` types due to ambiguity
-Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(T::Type{<:Tenet.AbstractTensorNetwork}),
-    seen,
-    mode::Reactant.TraceMode,
-    @nospecialize(track_numbers::Type)
-)
-    return T
+    # we specify `mode` and `track_numbers` types due to ambiguity
+    Base.@nospecializeinfer function Reactant.traced_type_inner(
+        @nospecialize(T::Type{<:Tenet.AbstractTensorNetwork}),
+        seen,
+        mode::Reactant.TraceMode,
+        @nospecialize(track_numbers::Type)
+    )
+        return T
+    end
 end
 
 function Reactant.make_tracer(seen, @nospecialize(prev::RT), @nospecialize(path), mode; kwargs...) where {RT<:Tensor}
