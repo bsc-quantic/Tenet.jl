@@ -249,7 +249,9 @@ using LinearAlgebra
 
         # Extract the singular values between each adjacent pair of sites in the canonized chain
         Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
-        @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
+
+        norm_psi = norm(ψ)
+        @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
 
         for i in 1:5
             canonized = canonize(ψ)
