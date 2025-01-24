@@ -6,7 +6,7 @@ using Tenet
 
 ## The `Lattice` type
 
-A [`Lattice`](@ref) is a graph that reprents the conectivity pattern between different physical sites.
+A [`Lattice`](@ref) is a graph that reprents the connectivity pattern between different physical sites.
 Its vertices are [`Lane`](@ref)s and wherever an edge exists between two [`Lane`](@ref)s, it means that those two sites can interact locally.
 A [`Lattice`](@ref) is constructed by passing a `Graph` and a dictionary mapping [`Lane`](@ref)s to the original graph's vertices:
 
