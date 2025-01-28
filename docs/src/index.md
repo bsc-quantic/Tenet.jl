@@ -10,10 +10,10 @@ hero:
   actions:
     - theme: brand
       text: Manual
-      link: /manual
+      link: /manual/design/introduction
     - theme: alt
       text: API Reference 📚
-      link: /api/api
+      link: /api/tensor
     - theme: alt
       text: View on GitHub
       link: https://github.com/bsc-quantic/Tenet.jl
@@ -22,20 +22,20 @@ hero:
     alt: Tenet.jl
 
 features:
+  - icon: 🧩
+    title: Hackable, Flexible, Extendable!
+    details: Tenet proposes a new interface for Tensor Networks which is both easy to use and to extend.
+    link: /manual/design/introduction
+
   - icon: 🚀
-    title: Fast & Device Agnostic
+    title: Accelerate your code with Reactant.jl
     details: Its deep integration with <a href="https://github.com/EnzymeAD/Reactant.jl">Reactant.jl</a> and carefully developed code, makes it go fast!
-    link: /introduction
+    link: /manual/reactant
 
   - icon: ∂
     title: Built-In MLIR AD
-    details: Leverage Enzyme-Powered Automatic Differentiation to Differentiate MLIR Functions
-    link: /introduction
-
-  - icon: 🧩
-    title: Composable
-    details: Design new TN types... or even replace the internals!
-    link: /introduction
+    details: Leverage Enzyme-Powered Automatic Differentiation to Differentiate Tensor Network contraction when used in combination with <a href="https://github.com/EnzymeAD/Reactant.jl">Reactant.jl</a>.
+    link: /manual/reactant
 
   - icon: 🫂
     title: Compatible with friends

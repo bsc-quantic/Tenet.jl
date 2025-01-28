@@ -1,4 +1,4 @@
-# Quantum Tensor Networks
+# The `Quantum` class
 
 ```@setup examples
 using Tenet
@@ -10,18 +10,6 @@ using CairoMakie
 CairoMakie.activate!(type = "svg")
 using NetworkLayout
 ```
-
-Quantum mechanics is a generalization of probability theory to complex probabilities[^1] with a very nice property: all of its objects are linear entities[^2]. A quantum state can be viewed as a vector-like object that represents a complex probability distribution, and a quantum operator can be viewed as a matrix-like object that represents a transformation of the probability distribution (so it preserves that the sum of probabilities is $1$).
-
-[^1]: Believe me, I'm not lying. If you want to read more about this perspective, I recommend you the book "Quantum Computing since Democritus" by Scott Aaronson.
-
-[^2]: Excepting measurements, but those are still an open problem.
-
-⚠️ WIP
-
-...
-Tensor Network states and operators can efficiently represent some vectors living in an exponentially large vector space!
-...
 
 ## The `Site` type
 

@@ -1,4 +1,4 @@
-# Tensor Networks
+# The `TensorNetwork` class
 
 ```@setup plot
 using Tenet
@@ -12,43 +12,19 @@ CairoMakie.activate!(type = "svg")
 using NetworkLayout
 ```
 
-When the number of tensors in some einsum expression starts to grow, the traditional written mathematical notation starts being inadecuate and it's prone to errors.
-Physicists noticed about this and developed[^1] a graphical notation called _Tensor Networks_, in which tensors of a einsum are represented by the vertices of a graph and the edges are the tensor indices connecting tensors.
+In `Tenet`, Tensor Networks are represented by the [`TensorNetwork`](@ref) type.
+In order to fit all posible use-cases of [`TensorNetwork`](@ref) implements a **hypergraph**[^2] of [`Tensor`](@ref) objects, with support for open-indices and multiple shared indices between two tensors.
 
-[^1]: This manual is no place for history but first developments trace back to Penrose.
+[^2]: A hypergraph is the generalization of a graph but where edges are not restricted to connect 2 vertices, but any number of vertices.
 
-For example, the following equation...
-
-```math
-\sum_{ijklmnop} A_{im} B_{ijp} C_{njk} D_{pkl} E_{mno} F_{ol}
-```
-
-...can be represented visually as
+For example, this Tensor Network...
 
 ```@raw html
 <img class="light-only" width="70%" src="/assets/tn-sketch-light.svg" alt="Sketch of a Tensor Network"/>
 <img class="dark-only" width="70%" src="/assets/tn-sketch-dark.svg" alt="Sketch of a Tensor Network (dark mode)"/>
 ```
 
-Not exclusively, but much of the research on Tensor Networks comes from the physics fields, so it's to be expected that the majority of Tensor Network libraries are written from the physics point of view.
-This has some consequences on how the abstractions are implemented and what interface is offered to the user.
-For example, some libraries only offer access to certain structured Tensor Networks like MPS or PEPS, forbiding modification of the graph topology.
-This is completely fine, but it's not the design philosophy of Tenet.
-
-Instead, Tenet constructs abstractions layer by layer, starting from the most essential and adding more and more details for sofistification.
-Each layers consists of an _abstract type_, that defines the interface to be consumed, and a _concrete type_, that implements the interface.
-Layers build up by _concrete types_ inheriting from the parent abstract type and composing the parent concrete type.
-More information can be found in [Inheritance and Traits](@ref).
-The most essential of these layers in Tenet is the [`TensorNetwork`](@ref) type.
-
-## The `TensorNetwork` type
-
-In `Tenet`, Tensor Networks are represented by the [`TensorNetwork`](@ref) type.
-In order to fit all posible use-cases of [`TensorNetwork`](@ref) implements a **hypergraph**[^2] of [`Tensor`](@ref) objects, with support for open-indices.
-
-[^2]: A hypergraph is the generalization of a graph but where edges are not restricted to connect 2 vertices, but any number of vertices.
-
-For example, the example above can be constructed as follows:
+... can be constructed as follows:
 
 ```@repl plot
 tn = TensorNetwork([
@@ -85,9 +61,9 @@ replace!(tn, :my_index => :i) # hide
 
 ## The `AbstractTensorNetwork` interface
 
-As explained above, each layer is composed by a _concrete type_ and an _abstract type_, which in this case is [`AbstractTensorNetwork`](@ref Tenet.AbstractTensorNetwork).
+Subclasses of [`TensorNetwork`](@ref) inherit from the [`AbstractTensorNetwork`](@ref Tenet.AbstractTensorNetwork) abstract type.
 Subtypes of it are required to implement a [`TensorNetwork`](@ref) method that returns the composed [`TensorNetwork`](@ref) object.
-In exchange, [`AbstracTensorNetwork`](@ref Tenet.AbstractTensorNetwork) automatically implements [`tensors`](@ref) and [`inds`](@ref) methods for any contract-fulfilling subtype.
+In exchange, [`AbstracTensorNetwork`](@ref Tenet.AbstractTensorNetwork) automatically implements [`tensors`](@ref) and [`inds`](@ref) methods for any interface-fulfilling subtype.
 
 As the names suggest, [`tensors`](@ref) returns tensors and [`inds`](@ref) returns indices.
 

@@ -1,6 +1,7 @@
 using Documenter
 using DocumenterVitepress
 using DocumenterCitations
+using DocumenterMermaid
 using Tenet
 using CairoMakie
 using GraphMakie
@@ -20,13 +21,14 @@ makedocs(;
             "The Design of Tenet" => [
                 "Introduction" => "manual/design/introduction.md",
                 "Tensors" => "manual/design/tensors.md",
-                "Tensor Networks" => "manual/design/tensor-network.md",
-                "Quantum" => "manual/design/quantum.md",
-                "Ansatz" => "manual/design/ansatz.md",
-                "Product ansatz" => "manual/design/product.md",
-                "MPS/MPO ansatz" => "manual/design/mps.md",
+                "The TensorNetwork class" => "manual/design/tensor-network.md",
+                "The Quantum class" => "manual/design/quantum.md",
+                "The Ansatz class" => "manual/design/ansatz.md",
+                "The Product ansatz" => "manual/design/product.md",
+                "The MPS/MPO ansatz" => "manual/design/mps.md",
             ],
             "🤝 Interoperation" => "manual/interop.md",
+            "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],
         "🧭 API" => [
             "Tensor" => "api/tensor.md",

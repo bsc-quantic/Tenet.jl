@@ -1,4 +1,4 @@
-# `Product` ansatz
+# The `Product` ansatz
 
 ```@setup examples
 using Tenet

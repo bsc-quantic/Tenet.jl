@@ -41,7 +41,7 @@ include("Circuit.jl")
 export Gate, Circuit, moments
 
 include("Lattice.jl")
-@compat public Lattice
+export Lattice
 
 include("Ansatz.jl")
 #! format: off

@@ -27,6 +27,7 @@ fig # hide
 ```
 
 In Tenet, a Matrix Product State can be easily created by passing a list of arrays to the [`MPS`](@ref) constructor:
+
 ```@repl examples
 ψ = MPS([rand(2, 2), rand(2, 2, 4), rand(2, 4, 2), rand(2, 2)])
 ```
@@ -36,6 +37,7 @@ The default ordering of the indices on the [`MPS`](@ref) constructor is (physica
 ```@repl examples
 ϕ = MPS([rand(2, 2), rand(2, 2, 4), rand(4, 2, 2), rand(2, 2)]; order=[:l, :o, :r])
 ```
+
 where `:l`, `:r`, and `:o` represent the left, right, and outer physical indices, respectively.
 
 Additionally, Tenet has the [`rand`](@ref) function to generate random [`MPS`](@ref) with a given number of sites and maximum bond dimension:
@@ -44,7 +46,7 @@ Additionally, Tenet has the [`rand`](@ref) function to generate random [`MPS`](@
 Φ = rand(MPS, n=8, maxdim=10)
 ```
 
-### Canonical Forms
+## Canonical Forms
 
 An [`MPS`](@ref) representation is not unique: a single [`MPS`](@ref) can be represented in different canonical forms. The choice of canonical form can affect the efficiency and stability of algorithms used to manipulate the [`MPS`](@ref).
 The current form of the [`MPS`](@ref) is stored as the trait [`Form`](@ref) and can be accessed via the [`form`](@ref) function:
@@ -52,16 +54,19 @@ The current form of the [`MPS`](@ref) is stored as the trait [`Form`](@ref) and 
 ```@repl examples
 form(ψ)
 ```
+
 !!! warning
     Depending on the form, Tenet will dispatch under the hood the appropriate algorithm which assumes full use of the canonical form, so be careful when making modifications that might alter the canonical form without changing the trait.
 
 Tenet has the internal function [`Tenet.check_form`](@ref) to check if the [`MPS`](@ref) is in the correct canonical form. This function can be used to ensure that the [`MPS`](@ref) is in the correct form before performing any operation that requires it.
 Currently, Tenet supports the [`NonCanonical`](@ref), [`CanonicalForm`](@ref) and [`MixedCanonical`](@ref) forms.
 
-#### `NonCanonical` Form
+### `NonCanonical` Form
+
 In the [`NonCanonical`](@ref) form, the tensors in the [`MPS`](@ref) do not satisfy any particular orthogonality conditions. This is the default [`form`](@ref) when an [`MPS`](@ref) is initialized without specifying a canonical form. It is useful for general purposes but may not be optimal for certain computations that benefit from orthogonality.
 
-#### `Canonical` Form
+### `Canonical` Form
+
 Also known as Vidal's form, the [`Canonical`](@ref) form represents the [`MPS`](@ref) using a sequence of tensors $\Gamma$ and diagonal vectors $\Lambda$ containing the Schmidt coefficients. The [`MPS`](@ref) is expressed as:
 
 ```math
@@ -76,7 +81,8 @@ canonize!(ψ)
 form(ψ)
 ```
 
-#### `MixedCanonical` Form
+### `MixedCanonical` Form
+
 In the [`MixedCanonical`](@ref) form, the Schmidt coefficients are contained in one tensor, called the orthogonality center, and the rest of the tensors locating to the left and right side are left- and right-canonical; i.e. isometries pointing to the right and left directions respectively.
 
 !!! tip
@@ -120,5 +126,7 @@ evolve!(mps, open_mpo; normalize=false)
 ```
 
 ## Additional Resources
+
 For more in-depth information on Matrix Product States and their canonical forms, you may refer to:
+
 - Schollwöck, U. (2011). The density-matrix renormalization group in the age of matrix product states. Annals of physics, 326(1), 96-192.
