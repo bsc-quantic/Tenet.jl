@@ -61,9 +61,9 @@ replace!(tn, :my_index => :i) # hide
 
 ## The `AbstractTensorNetwork` interface
 
-As explained above, each layer is composed by a _concrete type_ and an _abstract type_, which in this case is [`AbstractTensorNetwork`](@ref Tenet.AbstractTensorNetwork).
+Subclasses of [`TensorNetwork`](@ref) inherit from the [`AbstractTensorNetwork`](@ref Tenet.AbstractTensorNetwork) abstract type.
 Subtypes of it are required to implement a [`TensorNetwork`](@ref) method that returns the composed [`TensorNetwork`](@ref) object.
-In exchange, [`AbstracTensorNetwork`](@ref Tenet.AbstractTensorNetwork) automatically implements [`tensors`](@ref) and [`inds`](@ref) methods for any contract-fulfilling subtype.
+In exchange, [`AbstracTensorNetwork`](@ref Tenet.AbstractTensorNetwork) automatically implements [`tensors`](@ref) and [`inds`](@ref) methods for any interface-fulfilling subtype.
 
 As the names suggest, [`tensors`](@ref) returns tensors and [`inds`](@ref) returns indices.
 
