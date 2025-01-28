@@ -2,5 +2,5 @@
 
 ```@autodocs
 Modules = [Tenet]
-Pages = ["Site.jl", "Quantum.jl"]
+Pages = ["Site.jl", "Quantum.jl", "Circuit.jl"]
 ```

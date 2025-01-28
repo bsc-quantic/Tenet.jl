@@ -44,7 +44,12 @@ If we don't stick to the strict rules of einsum[^1] and take a broader definitio
 In Tenet, the `TensorNetwork` class is in charge of such general represention.
 A [`TensorNetwork`](@ref) is an (hyper-,multi-,open-)graph of [`Tensor`](@ref)s. No more, no less.
 
-But Tensor Networks are commonly used to represent more concrete objects.
+But Tensor Networks are commonly used to represent more concrete objects, and the more we concretize, the more information we need to add.
+Each new functionality or concretization is managed by a new class, with [`TensorNetwork`](@ref) being the most abstract.
+
+## How Tenet.jl sees Quantum Tensor Networks
+
+Indeed, Quantum Tensor Networks require two different concretizations.
 
 On one hand, Tensor Networks can model vector-like and operator-like objects, in such a way that connecting and contracting them is similar to a matrix-vector product.
 This requires a kind of plug in system in which open edges know how to connect with another Tensor Network's open edges.

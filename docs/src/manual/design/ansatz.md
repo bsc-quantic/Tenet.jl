@@ -1,4 +1,4 @@
-# Ansatz
+# The `Ansatz` class
 
 ```@setup examples
 using Tenet
