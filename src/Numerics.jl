@@ -45,6 +45,11 @@ Perform a binary tensor contraction operation.
 
     - `dims`: indices to contract over. Defaults to the set intersection of the indices of `a` and `b`.
     - `out`: indices of the output tensor. Defaults to the set difference of the indices of `a` and `b`.
+
+!!! todo
+
+    We are in the process of making [`contract`](@ref) multi-backend; i.e. let the user choose between different einsum libraries as the engine powering [`contract`](@ref).
+    Currently, we use [OMEinsum.jl](@ref), but it has proven to be slow when used dynamically like we do.
 """
 function contract(a::Tensor, b::Tensor; kwargs...)
     c = allocate_result(contract, a, b; kwargs...)

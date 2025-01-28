@@ -1,4 +1,4 @@
-# Compilation with Reactant.jl
+# Acceleration with Reactant.jl
 
 [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl) is a new MLIR & XLA frontend for the Julia language. It's similar to JAX, in the sense that it traces some code, compiles array operations using the XLA compiler and can run the final compiled function in CPU, GPU or TPU.
 
