@@ -64,7 +64,7 @@ function Base.convert(::Type{Ansatz}, tn::ITensorNetwork)
     return Ansatz(convert(Quantum, tn), convert(Lattice, siteinds(tn)))
 end
 
-function Bas.convert(::Type{ITensorNetwork}, tn::Tenet.AbstractAnsatz)
+function Base.convert(::Type{ITensorNetwork}, tn::Tenet.AbstractAnsatz)
     return @invoke convert(ITensorNetwork, tn::Tenet.AbstractQuantum)
 end
 
