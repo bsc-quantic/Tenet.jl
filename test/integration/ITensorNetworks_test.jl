@@ -1,6 +1,8 @@
 @testset "ITensorNetworks" begin
+    using Tenet
+    using Graphs
     using ITensors: ITensors, ITensor, Index, array
-    using ITensorNetworks: ITensorNetwork, vertices
+    using ITensorNetworks: ITensorNetwork
 
     i = Index(2, "i")
     j = Index(3, "j")
@@ -21,5 +23,19 @@
     @test itn isa ITensorNetwork
     @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
 
-    # TODO test Quantum
+    tn = convert(Quantum, itn)
+    @test tn isa Quantum
+    @test issetequal(arrays(tn), array.([a, b, c]))
+
+    itn = convert(ITensorNetwork, tn)
+    @test itn isa ITensorNetwork
+    @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
+
+    tn = convert(Ansatz, itn)
+    @test tn isa Ansatz
+    @test issetequal(arrays(tn), array.([a, b, c]))
+
+    itn = convert(ITensorNetwork, tn)
+    @test itn isa ITensorNetwork
+    @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
 end

@@ -1,9 +1,12 @@
 module TenetITensorNetworksExt
 
 using Tenet
-using ITensorNetworks: ITensorNetworks, ITensorNetwork, ITensor, Index, siteinds, plev, vertices, rename_vertices
-const ITensors = ITensorNetworks.ITensors
-const DataGraphs = ITensorNetworks.DataGraphs
+using ITensorNetworks: ITensorNetworks, ITensorNetwork, IndsNetwork, plev, rename_vertices
+using ITensors: ITensors, ITensor, Index, siteinds
+using BijectiveDicts: BijectiveDict
+using Graphs: vertices
+using DataGraphs: DataGraphs, underlying_graph
+using NamedGraphs: NamedGraph, position_graph
 const TenetITensorsExt = Base.get_extension(Tenet, :TenetITensorsExt)
 
 Base.convert(::Type{TensorNetwork}, tn::ITensorNetwork) = TensorNetwork([convert(Tensor, tn[v]) for v in vertices(tn)])
@@ -35,8 +38,34 @@ function Base.convert(::Type{ITensorNetwork}, tn::Tenet.AbstractQuantum)
         indices = map(x -> Symbol(replace(x, "\"" => "")), string.(ITensors.tags.(ITensors.inds(itensor))))
         tensor = only(tensors(tn; contains=indices))
         physical_index = only(inds(tn; set=:physical) ∩ inds(tensor))
-        return sites(tn; at=physical_index).id
+        return Tenet.id(sites(tn; at=physical_index))
     end
+end
+
+function Base.convert(::Type{Lattice}, s::IndsNetwork)
+    # NOTE they don't suffer from the issue of removing a vertex from SimpleGraph (i.e. vertex renaming), because their vertice list keeps ordered
+    # TODO maybe we can use Vector for the mapping
+    ng = underlying_graph(s) # namedgraph
+    g = position_graph(ng) # simplegraph
+
+    mapping = BijectiveDict{Lane,Int}()
+    for (i, v) in enumerate(vertices(ng))
+        mapping[Lane(v)] = i
+    end
+
+    return Lattice(mapping, copy(g))
+end
+
+function Base.convert(::Type{IndsNetwork}, l::Lattice)
+    return NamedGraph(copy(l.graph), Tenet.id.(vertices(l)))
+end
+
+function Base.convert(::Type{Ansatz}, tn::ITensorNetwork)
+    return Ansatz(convert(Quantum, tn), convert(Lattice, siteinds(tn)))
+end
+
+function Bas.convert(::Type{ITensorNetwork}, tn::Tenet.AbstractAnsatz)
+    return @invoke convert(ITensorNetwork, tn::Tenet.AbstractQuantum)
 end
 
 end
