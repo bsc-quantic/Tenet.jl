@@ -45,16 +45,41 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             run(`rm ../CondaPkg.toml`)
         end
 
-        include("integration/Reactant_test.jl")
-        include("integration/ChainRules_test.jl")
-        # include("integration/BlockArray_test.jl")
-        include("integration/Dagger_test.jl")
-        include("integration/Makie_test.jl")
-        include("integration/KrylovKit_test.jl")
-        include("integration/Quac_test.jl")
-        include("integration/ITensors_test.jl")
-        include("integration/ITensorNetworks_test.jl")
-        include("integration/YaoBlocks_test.jl")
+        @safetestset "Reactant" begin
+            include("integration/Reactant_test.jl")
+        end
+
+        @safetestset "ChainRules" begin
+            include("integration/ChainRules_test.jl")
+        end
+
+        @safetestset "Dagger" begin
+            include("integration/Dagger_test.jl")
+        end
+
+        @safetestset "Makie" begin
+            include("integration/Makie_test.jl")
+        end
+
+        @safetestset "KrylovKit" begin
+            include("integration/KrylovKit_test.jl")
+        end
+
+        @safetestset "Quac" begin
+            include("integration/Quac_test.jl")
+        end
+
+        @safetestset "ITensors" begin
+            include("integration/ITensors_test.jl")
+        end
+
+        @safetestset "ITensorNetworks" begin
+            include("integration/ITensorNetworks_test.jl")
+        end
+
+        @safetestset "YaoBlocks" begin
+            include("integration/YaoBlocks_test.jl")
+        end
     end
 end
 
