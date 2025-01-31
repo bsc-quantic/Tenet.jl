@@ -15,7 +15,7 @@
     c = ITensor(rand(5, 6), l, m)
     itn = ITensorNetwork([a, b, c])
 
-    @testset "TensorNetwork" let itn = itn
+    @testset let itn = itn
         tn = convert(TensorNetwork, itn)
         @test tn isa TensorNetwork
         @test issetequal(arrays(tn), array.([a, b, c]))
@@ -25,7 +25,7 @@
         @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
     end
 
-    @testset "Quantum" let itn = itn
+    @testset let itn = itn
         tn = convert(Quantum, itn)
         @test tn isa Quantum
         @test issetequal(arrays(tn), array.([a, b, c]))
@@ -35,7 +35,7 @@
         @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
     end
 
-    @testset "Ansatz" let itn = itn
+    @testset let itn = itn
         tn = convert(Ansatz, itn)
         @test tn isa Ansatz
         @test issetequal(arrays(tn), array.([a, b, c]))
