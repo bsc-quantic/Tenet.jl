@@ -151,13 +151,13 @@ function check_form(config::MixedCanonical, ψ::AbstractMPO; atol=1e-12)
 end
 
 function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
-    for i in 1:nsites(mps)
+    for i in 1:nlanes(mps)
         if i > 1 &&
             !isisometry(contract(mps; between=(Lane(i - 1), Lane(i)), direction=:right), Lane(i); dir=:right, atol)
             throw(ArgumentError("Can not form a left-canonical tensor in Lane($i) from Γ and λ contraction."))
         end
 
-        if i < nsites(mps) &&
+        if i < nlanes(mps) &&
             !isisometry(contract(mps; between=(Lane(i), Lane(i + 1)), direction=:left), Lane(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
@@ -585,7 +585,7 @@ function evolve!(ψ::AbstractMPS, mpo::AbstractMPO; reset_index=true, kwargs...)
 end
 
 function evolve!(::NonCanonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
-    L = nsites(ψ)
+    L = nlanes(ψ)
     Tenet.@reindex! outputs(ψ) => inputs(mpo)
 
     right_inds = [inds(ψ; at=Lane(i), dir=:right) for i in 1:(L - 1)]
@@ -614,7 +614,7 @@ end
 
 function evolve!(::MixedCanonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     initial_form = form(ψ)
-    mixed_canonize!(ψ, Lane(nsites(ψ))) # We convert all the tensors to left-canonical form
+    mixed_canonize!(ψ, Lane(nlanes(ψ))) # We convert all the tensors to left-canonical form
 
     normalize = get(kwargs, :normalize, true)
     evolve!(NonCanonical(), ψ, mpo; normalize, kwargs...)
@@ -626,7 +626,7 @@ end
 
 function evolve!(::Canonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     # We first join the λs to the Γs to get MixedCanonical(lane"1") form
-    for i in 1:(nsites(ψ) - 1)
+    for i in 1:(nlanes(ψ) - 1)
         contract!(ψ; between=(Lane(i), Lane(i + 1)), direction=:right)
     end
 
