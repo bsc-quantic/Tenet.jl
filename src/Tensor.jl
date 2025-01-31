@@ -139,6 +139,9 @@ Return the underlying array of the tensor.
 """
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
+parenttype(::Type{Tensor{T,N}}) where {T,N} = AbstractArray{T,N}
+parenttype(::Type{Tensor{T}}) where {T} = AbstractArray{T}
+parenttype(::Type{Tensor}) = AbstractArray
 parenttype(::T) where {T<:Tensor} = parenttype(T)
 
 """
