@@ -1,5 +1,5 @@
 using Test
-using Tenet: MPS, tensors, form, inds
+using Tenet: Tenet, MPS, tensors, form, inds
 using ITensorMPS
 using ITensors
 using ITensors: ITensor, Index, dim, dims
