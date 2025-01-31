@@ -14,16 +14,22 @@ function Base.literal_pow(f, a::Tensor{T,0}, ::Val{p}) where {T,p}
     return Tensor(fill(Base.literal_pow(f, only(a), Val(p))))
 end
 
-# NOTE used for marking non-differentiability
-# NOTE use `String[...]` code instead of `map` or broadcasting to set eltype in empty cases
-__omeinsum_sym2str(x) = String[string(i) for i in x]
+"""
+    +(::Tensor, ::Tensor)
 
+Add two tensors element-wise. The tensors must have the same indices, alghough the order of the indices can be different.
+"""
 function Base.:(+)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
     perm = __find_index_permutation(inds(a), inds(b))
     return Tensor(parent(a) + PermutedDimsArray(parent(b), perm), inds(a))
 end
 
+"""
+    -(::Tensor, ::Tensor)
+
+Subtract two tensors element-wise. The tensors must have the same indices, alghough the order of the indices can be different.
+"""
 function Base.:(-)(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || throw(ArgumentError("indices must be equal"))
     perm = __find_index_permutation(inds(a), inds(b))
@@ -31,27 +37,58 @@ function Base.:(-)(a::Tensor, b::Tensor)
 end
 
 """
-    contract(a::Tensor[, b::Tensor]; dims=nonunique([inds(a)..., inds(b)...]))
+    contract(a::Tensor, b::Tensor; dims=∩(inds(a), inds(b)), out=nothing)
 
-Perform tensor contraction operation.
+Perform a binary tensor contraction operation.
+
+# Keyword arguments
+
+    - `dims`: indices to contract over. Defaults to the set intersection of the indices of `a` and `b`.
+    - `out`: indices of the output tensor. Defaults to the set difference of the indices of `a` and `b`.
+
+!!! todo
+
+    We are in the process of making [`contract`](@ref) multi-backend; i.e. let the user choose between different einsum libraries as the engine powering [`contract`](@ref).
+    Currently, we use [OMEinsum.jl](@ref), but it has proven to be slow when used dynamically like we do.
 """
-function contract(a::Tensor, b::Tensor; dims=(∩(inds(a), inds(b))), out=nothing)
+function contract(a::Tensor, b::Tensor; kwargs...)
+    c = allocate_result(contract, a, b; kwargs...)
+    return contract!(c, a, b)
+end
+
+function allocate_result(
+    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(inds(a), inds(b))), out=nothing
+)
     ia = collect(inds(a))
     ib = collect(inds(b))
     i = ∩(dims, ia, ib)
 
-    ic::Vector{Symbol} = if isnothing(out)
-        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,))::Vector{Symbol}
+    ic = if isnothing(out)
+        Tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,)))
     else
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a, b)
+    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero)
+    return Tensor(data, ic)
 end
 
-function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
+"""
+    contract(a::Tensor; dims=∩(inds(a), inds(b)), out=nothing)
+
+Perform a unary tensor contraction operation.
+
+# Keyword arguments
+
+    - `dims`: indices to contract over. Defaults to the repeated indices.
+    - `out`: indices of the output tensor. Defaults to the unique indices.
+"""
+function contract(a::Tensor; kwargs...)
+    c = allocate_result(contract, a; kwargs...)
+    return contract!(c, a)
+end
+
+function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(inds(a)), out=nothing)
     ia = inds(a)
     i = ∩(dims, ia)
 
@@ -61,9 +98,8 @@ function contract(a::Tensor; dims=nonunique(inds(a)), out=nothing)
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero=false)
-    c = Tensor(data, ic)
-    return contract!(c, a)
+    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero)
+    return Tensor(data, ic)
 end
 
 contract(a::Union{T,AbstractArray{T,0}}, b::Tensor{T}) where {T} = contract(Tensor(a), b)
@@ -72,6 +108,11 @@ contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = only(contract(T
 contract(a::Number, b::Number) = contract(fill(a), fill(b))
 contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs...), tensors)
 
+"""
+    contract!(c::Tensor, a::Tensor, b::Tensor)
+
+Perform a binary tensor contraction operation between `a` and `b` and store the result in `c`.
+"""
 function contract!(c::Tensor, a::Tensor, b::Tensor)
     ixs = (inds(a), inds(b))
     iy = inds(c)
@@ -83,6 +124,11 @@ function contract!(c::Tensor, a::Tensor, b::Tensor)
     return c
 end
 
+"""
+    contract!(c::Tensor, a::Tensor)
+
+Perform a unary tensor contraction operation on `a` and store the result in `c`.
+"""
 function contract!(y::Tensor, x::Tensor)
     ixs = (inds(x),)
     iy = inds(y)
@@ -94,12 +140,14 @@ end
 
 """
     *(::Tensor, ::Tensor)
+    *(::Tensor, ::Number)
+    *(::Number, ::Tensor)
 
 Alias for [`contract`](@ref).
 """
 Base.:*(a::Tensor, b::Tensor) = contract(a, b)
-Base.:*(a::T, b::Number) where {T<:Tensor} = T(parent(a) * b, inds(a))
-Base.:*(a::Number, b::T) where {T<:Tensor} = T(a * parent(b), inds(b))
+Base.:*(a::Tensor, b::Number) = Tensor(parent(a) * b, inds(a))
+Base.:*(a::Number, b::Tensor) = Tensor(a * parent(b), inds(b))
 
 function factorinds(tensor, left_inds, right_inds)
     isdisjoint(left_inds, right_inds) ||
@@ -125,6 +173,7 @@ LinearAlgebra.svd(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke svd(t::Tensor; l
     LinearAlgebra.svd(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform SVD factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 
@@ -161,6 +210,7 @@ LinearAlgebra.qr(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke qr(t::Tensor; lef
     LinearAlgebra.qr(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform QR factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 
@@ -197,6 +247,7 @@ LinearAlgebra.lu(t::Tensor{<:Any,2}; kwargs...) = Base.@invoke lu(t::Tensor; lef
     LinearAlgebra.lu(tensor::Tensor; left_inds, right_inds, virtualind, kwargs...)
 
 Perform LU factorization on a tensor.
+Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2` in which case no indices need to be specified.
 
 # Keyword arguments
 

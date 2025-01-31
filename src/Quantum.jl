@@ -1,5 +1,3 @@
-using KeywordDispatch
-
 """
     Socket
 
@@ -41,7 +39,7 @@ abstract type AbstractQuantum <: AbstractTensorNetwork end
 """
     Quantum
 
-Tensor Network with a notion of "causality". This leads to the notion of sites and directionality (input/output).
+Tensor Network with a notion of "causality". This leads to the concept of sites and directionality (input/output).
 
 # Notes
 
@@ -76,7 +74,7 @@ Quantum(tn::Quantum) = tn
 """
     TensorNetwork(q::AbstractQuantum)
 
-Returns the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
+Return the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
 """
 TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 
@@ -98,20 +96,22 @@ function Base.show(io::IO, tn::T) where {T<:AbstractQuantum}
     return print(io, "$T (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
 end
 
-@kwmethod tensors(tn::AbstractQuantum; at) = only(tensors(tn; intersects=inds(tn; at)))
+tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
+inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
 
-@kwmethod inds(tn::AbstractQuantum; at) = Quantum(tn).sites[at]
-@kwmethod function inds(tn::AbstractQuantum; set)
-    if set === :physical
-        return collect(values(Quantum(tn).sites))
-    elseif set === :virtual
-        return setdiff(inds(tn), values(Quantum(tn).sites))
-    elseif set ∈ (:inputs, :outputs)
-        return map(sites(tn; set)) do site
-            inds(tn; at=site)
+function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
+    if kwargs.set === :physical
+        return map(sites(tn)) do site
+            inds(tn; at=site)::Symbol
+        end
+    elseif kwargs.set === :virtual
+        return setdiff(inds(tn), inds(tn; set=:physical))
+    elseif kwargs.set ∈ (:inputs, :outputs)
+        return map(sites(tn; kwargs.set)) do site
+            inds(tn; at=site)::Symbol
         end
     else
-        return inds(TensorNetwork(tn); set)
+        return inds(TensorNetwork(tn); set=kwargs.set)
     end
 end
 
@@ -166,11 +166,17 @@ function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pai
 end
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
-    ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
-
     if reset
-        resetindex!(a)
-        resetindex!(b; init=ninds(TensorNetwork(a)) + 1)
+        resetinds!(a)
+        resetinds!(b; init=ninds(TensorNetwork(a)) + 1)
+    end
+
+    sitesa = if ioa === :inputs
+        collect(sites(a; set=:inputs))
+    elseif ioa === :outputs
+        collect(sites(a; set=:outputs))
+    else
+        error("Invalid argument: $(Meta.quot(ioa))")
     end
 
     sitesb = if iob === :inputs
@@ -178,11 +184,16 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     elseif iob === :outputs
         collect(sites(b; set=:outputs))
     else
-        error("Invalid argument: :$iob")
+        error("Invalid argument: :$(Meta.quot(iob))")
     end
 
-    replacements = map(sitesb) do site
-        inds(b; at=site) => inds(a; at=ioa != iob ? site' : site)
+    # TODO select sites to reindex
+    targetsites = (ioa === :inputs ? adjoint.(sitesa) : sitesa) ∩ (iob === :inputs ? adjoint.(sitesb) : sitesb)
+
+    replacements = map(targetsites) do site
+        siteb = iob === :inputs ? site' : site
+        sitea = ioa === :inputs ? site' : site
+        inds(b; at=siteb) => inds(a; at=sitea)
     end
 
     if issetequal(first.(replacements), last.(replacements))
@@ -194,21 +205,25 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     return b
 end
 
-function resetindex!(tn::AbstractQuantum; init=1)
-    tn = Quantum(tn)
+function resetinds!(tn::AbstractQuantum; init=1)
+    qtn = Quantum(tn)
 
-    mapping = resetindex!(Val(:return_mapping), tn; init)
-    replace!(TensorNetwork(tn), mapping)
+    mapping = resetinds!(Val(:return_mapping), tn; init)
+    replace!(TensorNetwork(qtn), mapping)
 
-    for (site, index) in tn.sites
-        tn.sites[site] = mapping[index]
+    for (site, index) in qtn.sites
+        qtn.sites[site] = mapping[index]
     end
+
+    return tn
 end
+resetinds(tn::AbstractQuantum; init=1) = resetinds!(copy(tn); init)
 
 """
-    @reindex! a => b
+    @reindex! a => b reset=true
 
-Reindexes the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
+Rename in-place the indices of the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
+If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 """
 macro reindex!(expr, reset=:(reset = true))
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
@@ -230,17 +245,17 @@ end
 """
     sites(q::AbstractQuantum)
 
-Returns the sites of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 function sites end
 
-@kwdispatch sites(tn::AbstractQuantum)
-@kwmethod sites(tn::AbstractQuantum;) = sites(tn; set=:all)
+sites(tn::AbstractQuantum; kwargs...) = sites(sort_nt(values(kwargs)), tn)
+sites(::@NamedTuple{}, tn::AbstractQuantum) = sites((; set=:all), tn)
 
 """
     nsites(q::AbstractQuantum)
 
-Returns the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
@@ -252,20 +267,14 @@ nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 """
     lanes(q::AbstractQuantum)
 
-Returns the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
-function lanes(tn::AbstractQuantum)
-    return unique(
-        Iterators.map(Iterators.flatten([sites(tn; set=:inputs), sites(tn; set=:outputs)])) do site
-            isdual(site) ? site' : site
-        end,
-    )
-end
+lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
 
 """
     nlanes(q::AbstractQuantum)
 
-Returns the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
 """
 nlanes(tn::AbstractQuantum) = length(lanes(tn))
 
@@ -291,28 +300,46 @@ function rmsite!(tn::AbstractQuantum, site)
     return delete!(tn.sites, site)
 end
 
-@kwmethod function sites(tn::AbstractQuantum; set)
+hassite(tn::AbstractQuantum, site) = haskey(Quantum(tn).sites, site)
+Base.in(site::Site, tn::AbstractQuantum) = hassite(tn, site)
+
+function sites(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
     tn = Quantum(tn)
-    if set === :all
+    if kwargs.set === :all
         sort!(collect(keys(tn.sites)))
-    elseif set === :inputs
+    elseif kwargs.set === :inputs
         sort!(collect(Iterators.filter(isdual, keys(tn.sites))))
-    elseif set === :outputs
+    elseif kwargs.set === :outputs
         sort!(collect(Iterators.filter(!isdual, keys(tn.sites))))
     else
-        throw(ArgumentError("invalid set: $set"))
+        throw(ArgumentError("invalid set: $(kwargs.set)"))
     end
 end
 
-@kwmethod function sites(tn::AbstractQuantum; at::Symbol)
+function sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractQuantum)
     tn = Quantum(tn)
-    return findfirst(==(at), tn.sites)
+    return findfirst(==(kwargs.at), tn.sites)
 end
 
 """
-    socket(q::Quantum)
+    isconnectable(a::AbstractQuantum, b::AbstractQuantum)
 
-Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
+Return `true` if two [`AbstractQuantum`](@ref) Tensor Networks can be connected. This means:
+
+ 1. The outputs of `a` are a superset of the inputs of `b`.
+ 2. The outputs of `a` and `b` are disjoint except for the sites that are connected.
+"""
+function isconnectable(a, b)
+    Lane.(sites(a; set=:outputs)) ⊇ Lane.(sites(b; set=:inputs)) && isdisjoint(
+        setdiff(Lane.(sites(a; set=:outputs)), Lane.(sites(b; set=:inputs))),
+        setdiff(Lane.(sites(b; set=:inputs)), Lane.(sites(b; set=:outputs))),
+    )
+end
+
+"""
+    socket(q::AbstractQuantum)
+
+Return the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
 """
 function socket(q::AbstractQuantum)
     _sites = sites(q)
@@ -328,16 +355,21 @@ function socket(q::AbstractQuantum)
 end
 
 """
-    adjoint(q::Quantum)
+    Base.adjoint(::AbstractQuantum)
 
-Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
+Return the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
 """
-Base.adjoint(tn::AbstractQuantum) = adjoint!(deepcopy(tn))
+Base.adjoint(tn::AbstractQuantum) = adjoint_sites!(conj(tn))
 
-function LinearAlgebra.adjoint!(tn::AbstractQuantum)
-    conj!(tn)
+"""
+    LinearAlgebra.adjoint!(::AbstractQuantum)
 
-    # update site information
+Like [`adjoint`](@ref), but in-place.
+"""
+LinearAlgebra.adjoint!(tn::AbstractQuantum) = adjoint_sites!(conj!(tn))
+
+# update site information and rename inner indices
+function adjoint_sites!(tn::AbstractQuantum)
     oldsites = copy(Quantum(tn).sites)
     empty!(Quantum(tn).sites)
     for (site, index) in oldsites
@@ -350,9 +382,23 @@ function LinearAlgebra.adjoint!(tn::AbstractQuantum)
     return tn
 end
 
+"""
+    Base.merge(a::AbstractQuantum, b::AbstractQuantum; reset=true)
+
+Merge multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+
+See also: [`merge!`](@ref), [`@reindex!`](@ref).
+"""
 Base.merge(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), copy.(tns))
 Base.merge!(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), tns)
 
+"""
+    Base.merge!(::AbstractQuantum...; reset=true)
+
+Merge in-place multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+
+See also: [`merge`](@ref), [`@reindex!`](@ref).
+"""
 function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
     @assert isdisjoint(setdiff(sites(b; set=:outputs), adjoint.(sites(b; set=:inputs))), sites(a; set=:outputs)) "b cannot create new sites where is not connected"
@@ -371,6 +417,18 @@ function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
     return a
 end
 
+# NOTE do not document because we might move it down to `Ansatz`
+LinearAlgebra.normalize(ψ::AbstractQuantum; kwargs...) = normalize!(copy(ψ); kwargs...)
+
+"""
+    LinearAlgebra.norm(::AbstractQuantum, p=2; kwargs...)
+
+Return the Lp-norm of a [`AbstractQuantum`](@ref) Tensor Network.
+
+!!! warning
+
+    Only L2-norm is implemented yet.
+"""
 function LinearAlgebra.norm(ψ::AbstractQuantum, p::Real=2; kwargs...)
     p == 2 || throw(ArgumentError("only L2-norm is implemented yet"))
     return LinearAlgebra.norm2(ψ; kwargs...)

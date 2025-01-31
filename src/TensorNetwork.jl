@@ -5,7 +5,7 @@ using OMEinsum
 using LinearAlgebra
 using ScopedValues
 using Serialization
-using KeywordDispatch
+using Graphs: Graphs
 
 mutable struct CachedField{T}
     isvalid::Bool
@@ -26,23 +26,33 @@ end
 
 Abstract type for `TensorNetwork`-derived types.
 Its subtypes must implement conversion or extraction of the underlying `TensorNetwork` by overloading the `TensorNetwork` constructor.
+
+# Implementors interface
+
+Any implementor of the `AbstractTensorNetwork` interface (currently only [`TensorNetwork`](@ref)) must define the following methods:
+
+  - `inds`
+  - `tensors`
+  - `size`
 """
 abstract type AbstractTensorNetwork end
 
 """
     TensorNetwork
 
-Graph of interconnected tensors, representing a multilinear equation.
-Graph vertices represent tensors and graph edges, tensor indices.
+Hypergraph of interconnected tensors, representing a multilinear equation aka Tensor Network.
+Vertices represent tensors and edges, tensor indices.
 """
 struct TensorNetwork <: AbstractTensorNetwork
     indexmap::Dict{Symbol,Vector{Tensor}}
     tensormap::IdDict{Tensor,Vector{Symbol}}
 
     sorted_tensors::CachedField{Vector{Tensor}}
+    unsafe::Ref{Union{Nothing,UnsafeScope}}
 
-    function TensorNetwork(tensors)
-        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => inds(tensor) for tensor in tensors)
+    # TODO: Find a way to remove the `unsafe` keyword argument from the constructor
+    function TensorNetwork(tensors; unsafe::Union{Nothing,UnsafeScope}=nothing)
+        tensormap = IdDict{Tensor,Vector{Symbol}}(tensor => collect(inds(tensor)) for tensor in tensors)
 
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
             for index in inds(tensor)
@@ -52,25 +62,42 @@ struct TensorNetwork <: AbstractTensorNetwork
             dict
         end
 
-        # Check for inconsistent index dimensions
-        for ind in keys(indexmap)
-            dims = map(tensor -> size(tensor, ind), indexmap[ind])
-            length(unique(dims)) == 1 || throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
+        # Check index size consistency if not inside an `UnsafeScope`
+        if isnothing(unsafe)
+            for ind in keys(indexmap)
+                dims = map(tensor -> size(tensor, ind), indexmap[ind])
+                length(unique(dims)) == 1 ||
+                    throw(DimensionMismatch("Index $(ind) has inconsistent dimension: $(dims)"))
+            end
         end
 
-        return new(indexmap, tensormap, CachedField{Vector{Tensor}}())
+        return new(indexmap, tensormap, CachedField{Vector{Tensor}}(), Ref{Union{Nothing,UnsafeScope}}(unsafe))
     end
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
 TensorNetwork(tn::TensorNetwork) = tn
 
+get_unsafe_scope(tn::AbstractTensorNetwork) = TensorNetwork(tn).unsafe[]
+function set_unsafe_scope!(tn::AbstractTensorNetwork, uc::Union{Nothing,UnsafeScope})
+    TensorNetwork(tn).unsafe[] = uc
+    return tn
+end
+
 """
     copy(tn::TensorNetwork)
 
-Return a shallow copy of a [`TensorNetwork`](@ref).
+Return a shallow copy of a [`TensorNetwork`](@ref); i.e. changes to the copied `TensorNetwork` won't affect the original one, but changes to the tensors will.
 """
-Base.copy(tn::TensorNetwork) = TensorNetwork(tensors(tn))
+function Base.copy(tn::TensorNetwork)
+    new_tn = TensorNetwork(tensors(tn); unsafe=get_unsafe_scope(tn))
+
+    if !isnothing(get_unsafe_scope(tn))
+        push!(get_unsafe_scope(tn).refs, WeakRef(new_tn)) # Register the new copy to the proper UnsafeScope
+    end
+
+    return new_tn
+end
 
 Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
@@ -87,13 +114,22 @@ end
 
 Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
-Base.conj(tn::AbstractTensorNetwork) = conj!(deepcopy(tn))
+"""
+    conj(tn::AbstractTensorNetwork)
+
+Return a copy of the [`AbstractTensorNetwork`](@ref) with all tensors conjugated.
+"""
+function Base.conj(tn::AbstractTensorNetwork)
+    tn = copy(tn)
+    replace!(tn, tensors(tn) .=> conj.(tensors(tn)))
+    return tn
+end
+
 function Base.conj!(tn::AbstractTensorNetwork)
     foreach(conj!, tensors(tn))
     return tn
 end
 
-# TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
 """
     inds(tn::AbstractTensorNetwork, set = :all)
 
@@ -111,22 +147,22 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
 """
 function inds end
 
-@kwdispatch inds(tn::AbstractTensorNetwork)
-@kwmethod inds(tn::AbstractTensorNetwork;) = inds(tn; set=:all)
+inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
+inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
 
-@kwmethod function inds(tn::AbstractTensorNetwork; set)
+function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
-    if set === :all
+    if kwargs.set === :all
         collect(keys(tn.indexmap))
-    elseif set === :open
+    elseif kwargs.set === :open
         map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
-    elseif set === :inner
+    elseif kwargs.set === :inner
         map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
-    elseif set === :hyper
+    elseif kwargs.set === :hyper
         map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
     else
         throw(ArgumentError("""
-          Unknown query: set=$(set)
+          Unknown query: set=$(kwargs.set)
           Possible options are:
             - :all (default)
             - :open
@@ -139,23 +175,24 @@ function inds end
     end
 end
 
-@kwmethod function inds(tn::AbstractTensorNetwork; parallelto)
-    candidates = filter!(!=(parallelto), mapreduce(inds, ∩, tensors(tn; contains=parallelto)))
+function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
+    candidates = filter!(!=(kwargs.parallelto), mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto)))
     return filter(candidates) do i
-        length(tensors(tn; contains=i)) == length(tensors(tn; contains=parallelto))
+        length(tensors(tn; contains=i)) == length(tensors(tn; contains=kwargs.parallelto))
     end
 end
 
 """
-    ninds(tn::TensorNetwork)
+    ninds(tn::TensorNetwork; kwargs...)
 
-Return the number of indices in the `TensorNetwork`.
+Return the number of indices in the `TensorNetwork`. It accepts the same keyword arguments as [`inds`](@ref).
 
 See also: [`ntensors`](@ref)
 """
-ninds(tn::AbstractTensorNetwork) = length(TensorNetwork(tn).indexmap)
+ninds(tn::AbstractTensorNetwork; kwargs...) = ninds(values(kwargs), tn)
+ninds(::@NamedTuple{}, tn::AbstractTensorNetwork) = length(TensorNetwork(tn).indexmap)
+ninds(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(inds(kwargs, tn))
 
-# TODO would be simpler and easier by overloading `Core.kwcall`? ⚠️ it's an internal implementation detail
 """
     tensors(tn::AbstractTensorNetwork)
 
@@ -167,37 +204,37 @@ Return a list of the `Tensor`s in the [`AbstractTensorNetwork`](@ref).
 """
 function tensors end
 
-@kwdispatch tensors(tn::AbstractTensorNetwork)
+tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
-@kwmethod function tensors(tn::AbstractTensorNetwork;)
+function tensors(::@NamedTuple{}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
-        sort!(collect(keys(tn.tensormap)); by=inds)
+        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ inds)
     end
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; contains::Symbol) = copy(TensorNetwork(tn).indexmap[contains])
-@kwmethod function tensors(tn::AbstractTensorNetwork; contains::AbstractVecOrTuple{Symbol})
-    return tensors(⊆, TensorNetwork(tn), contains)
+tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork) = tensors(tn; contains=[kwargs.contains]) # copy(TensorNetwork(tn).indexmap[contains])
+function tensors(kwargs::@NamedTuple{contains::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
+    return filter(t -> issubset(kwargs.contains, inds(t)), tensors(tn))
 end
 
-@kwmethod tensors(tn::AbstractTensorNetwork; intersects::Symbol) = tensors(!isdisjoint, TensorNetwork(tn), [intersects])
-@kwmethod function tensors(tn::AbstractTensorNetwork; intersects::AbstractVecOrTuple{Symbol})
-    return tensors(!isdisjoint, TensorNetwork(tn), intersects)
+function tensors(kwargs::@NamedTuple{intersects::Symbol}, tn::AbstractTensorNetwork)
+    tensors(tn; intersects=[kwargs.intersects])
 end
-
-function tensors(selector, tn::TensorNetwork, is::AbstractVecOrTuple{Symbol})
-    return filter(Base.Fix1(selector, is) ∘ inds, tn.indexmap[first(is)])
+function tensors(kwargs::@NamedTuple{intersects::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
+    return filter(t -> !isdisjoint(inds(t), kwargs.intersects), tensors(tn))
 end
 
 """
     ntensors(tn::AbstractTensorNetwork)
 
-Return the number of tensors in the `TensorNetwork`.
+Return the number of tensors in the `TensorNetwork`. It accepts the same keyword arguments as [`tensors`](@ref).
 
 See also: [`ninds`](@ref)
 """
-ntensors(tn::AbstractTensorNetwork) = length(TensorNetwork(tn).tensormap)
+ntensors(tn::AbstractTensorNetwork; kwargs...) = ntensors(values(kwargs), tn)
+ntensors(::@NamedTuple{}, tn::AbstractTensorNetwork) = length(TensorNetwork(tn).tensormap)
+ntensors(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(tensors(kwargs, tn))
 
 # TODO move to `tensors` method
 function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
@@ -205,7 +242,18 @@ function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul::Int=1)
     return first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tn.indexmap[first(is)]), mul - 1))
 end
 
-arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
+"""
+    arrays(tn::AbstractTensorNetwork; kwargs...)
+
+Return a list of the arrays of in the `TensorNetwork`. It is equivalent to `parent.(tensors(tn; kwargs...))`.
+"""
+arrays(tn::AbstractTensorNetwork; kwargs...) = parent.(tensors(tn; kwargs...))
+
+"""
+    Base.collect(tn::AbstractTensorNetwork)
+
+Return a list of the `Tensor`s in the `TensorNetwork`. It is equivalent to `tensors(tn)`.
+"""
 Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
 """
@@ -215,8 +263,8 @@ Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 Return `true` if there is a `Tensor` in `tn` for which `==` evaluates to `true`.
 This method is equivalent to `tensor ∈ tensors(tn)` code, but it's faster on large amount of tensors.
 """
-Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = tensor ∈ keys(tn.tensormap)
-Base.in(index::Symbol, tn::AbstractTensorNetwork) = index ∈ keys(tn.indexmap)
+Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = tensor ∈ keys(TensorNetwork(tn).tensormap)
+Base.in(index::Symbol, tn::AbstractTensorNetwork) = index ∈ keys(TensorNetwork(tn).indexmap)
 
 Base.size(tn::AbstractTensorNetwork, args...) = size(TensorNetwork(tn), args...)
 """
@@ -249,20 +297,42 @@ function __check_index_sizes(tn)
     return true
 end
 
-const is_unsafe_region = ScopedValue(false) # global ScopedValue for the unsafe region
+Base.in(tn::TensorNetwork, uc::UnsafeScope) = tn ∈ values(uc)
 
-macro unsafe_region(tn, block)
+macro unsafe_region(tn_sym, block)
     return esc(
         quote
-            local old = copy($tn)
+            local old = copy($tn_sym)
+
+            # Create a new UnsafeScope and set it to the current tn
+            local _uc = Tenet.UnsafeScope()
+            Tenet.set_unsafe_scope!($tn_sym, _uc)
+
+            # Register the tensor network in the UnsafeScope
+            push!(Tenet.get_unsafe_scope($tn_sym).refs, WeakRef($tn_sym))
+
+            e = nothing
             try
-                $with($is_unsafe_region => true) do
-                    $block
-                end
+                $(block) # Execute the user-provided block
+            catch e
+                $(tn_sym) = old # Restore the original tensor network in case of an exception
+                rethrow(e)
             finally
-                if !Tenet.__check_index_sizes($tn)
-                    tn = old
-                    throw(DimensionMismatch("Inconsistent size of indices"))
+                if e === nothing
+                    # Perform checks of registered tensor networks
+                    for ref in Tenet.get_unsafe_scope($tn_sym).refs
+                        tn = ref.value
+                        if tn !== nothing && tn ∈ values(Tenet.get_unsafe_scope($tn_sym))
+                            if !Tenet.__check_index_sizes(tn)
+                                $(tn_sym) = old
+
+                                # Set `unsafe` field to `nothing`
+                                Tenet.set_unsafe_scope!($tn_sym, nothing)
+
+                                throw(DimensionMismatch("Inconsistent size of indices"))
+                            end
+                        end
+                    end
                 end
             end
         end,
@@ -280,8 +350,8 @@ function Base.push!(tn::AbstractTensorNetwork, tensor::Tensor)
     tn = TensorNetwork(tn)
     tensor ∈ keys(tn.tensormap) && return tn
 
-    # Only check index sizes if we are not in an unsafe region
-    if !is_unsafe_region[]
+    # Check index sizes if there isn't an active `UnsafeScope` in the Tensor Network
+    if isnothing(get_unsafe_scope(tn))
         for i in Iterators.filter(i -> size(tn, i) != size(tensor, i), inds(tensor) ∩ inds(tn))
             throw(
                 DimensionMismatch("size(tensor,$i)=$(size(tensor,i)) but should be equal to size(tn,$i)=$(size(tn,i))")
@@ -321,7 +391,7 @@ Base.pop!(tn::AbstractTensorNetwork, tensor::Tensor) = (delete!(TensorNetwork(tn
 Base.pop!(tn::AbstractTensorNetwork, i::Symbol) = pop!(TensorNetwork(tn), (i,))
 
 function Base.pop!(tn::AbstractTensorNetwork, i::AbstractVecOrTuple{Symbol})::Vector{Tensor}
-    tensorlist = tensors(tn; intersects=i)
+    tensorlist = tensors(tn; contains=i)
     for tensor in tensorlist
         _ = pop!(tn, tensor)
     end
@@ -381,8 +451,8 @@ Base.replace!(tn::AbstractTensorNetwork) = tn
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
-# FIXME return type should be the original type, not `TensorNetwork`
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
+    orig_tn = tn
     tn = TensorNetwork(tn)
     old, new = old_new
     old ∈ tn || throw(ArgumentError("index $old does not exist"))
@@ -395,7 +465,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
         delete!(tn, tensor)
     end
     tryprune!(tn, old)
-    return tn
+    return orig_tn
 end
 
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}})
@@ -436,6 +506,9 @@ end
 function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     tn = TensorNetwork(tn)
     old_tensor, new_tensor = pair
+
+    old_tensor === new_tensor && return tn
+
     issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
 
     push!(tn, new_tensor)
@@ -458,14 +531,19 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
     return tn
 end
 
-function resetindex!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
-    gen = IndexCounter(init)
-    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
+"""
+    resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+
+Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
+"""
+function resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+    mapping = resetinds!(Val(:return_mapping), tn; init=init)
+    return replace!(tn, mapping)
 end
 
-function resetindex!(tn::AbstractTensorNetwork; init::Int=1)
-    mapping = resetindex!(Val(:return_mapping), tn; init=init)
-    return replace!(tn, mapping)
+function resetinds!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
+    gen = IndexCounter(init)
+    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
 end
 
 """
@@ -480,7 +558,7 @@ Base.merge!(self::TensorNetwork, other::TensorNetwork) = append!(self, tensors(o
 Base.merge!(self::TensorNetwork, others::TensorNetwork...) = foldl(merge!, others; init=self)
 Base.merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = merge!(copy(self), others...)
 
-function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     @assert tensor ∈ tn "Tensor not found in TensorNetwork"
     tensors = mapreduce(∪, inds(tensor)) do index
         Tenet.tensors(tn; intersects=index)
@@ -489,7 +567,7 @@ function neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
     return tensors
 end
 
-function neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
+function Graphs.neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
     tensors = mapreduce(inds, ∪, Tenet.tensors(tn; intersects=i))
     # open && filter!(x -> x !== i, tensors)
@@ -597,15 +675,35 @@ function EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer=Greedy, outputs=i
     )
 end
 
-@kwdispatch contract(tn::AbstractTensorNetwork)
-@kwdispatch contract!(tn::AbstractTensorNetwork)
+"""
+    contract(tn::AbstractTensorNetwork; path=einexpr(tn))
 
-contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
+Contract a [`AbstractTensorNetwork`](@ref). If `path` is not specified, the contraction order will be computed by [`einexpr`](@ref).
+
+See also: [`einexpr`](@ref), [`contract!`](@ref).
+"""
+contract(tn::AbstractTensorNetwork; kwargs...) = contract(sort_nt(values(kwargs)), tn)
+contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; path=einexpr(tn)), tn)
+function contract(kwargs::NamedTuple{(:path,)}, tn::AbstractTensorNetwork)
+    length(kwargs.path.args) == 0 && return tn[inds(kwargs.path)...]
+
+    intermediates = map(subpath -> contract(tn; path=subpath), kwargs.path.args)
+    return contract(intermediates...; dims=suminds(kwargs.path))
+end
+
+"""
+    contract!(tn::AbstractTensorNetwork; path=einexpr(tn))
+
+Same as [`contract`](@ref) but in-place.
+
+See also: [`einexpr`](@ref).
+"""
+contract!(tn::AbstractTensorNetwork; kwargs...) = contract!(sort_nt(values(kwargs)), tn)
 
 # TODO sequence of indices?
 # TODO what if parallel neighbour indices?
 """
-    contract!(tn::TensorNetwork, index)
+    contract!(tn::AbstractTensorNetwork, index)
 
 In-place contraction of tensors connected to `index`.
 
@@ -620,6 +718,7 @@ function contract!(tn::AbstractTensorNetwork, i)
     return tn
 end
 contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
+contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
 
 function contract!(tn::AbstractTensorNetwork, t::Tensor; kwargs...)
     tn = TensorNetwork(tn)
@@ -629,23 +728,6 @@ end
 contract!(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract!(tn, t; kwargs...)
 contract(t::Tensor, tn::AbstractTensorNetwork; kwargs...) = contract(tn, t; kwargs...)
 
-# """
-#     contract(tn::AbstractTensorNetwork; kwargs...)
-
-# Contract a [`AbstractTensorNetwork`](@ref). The contraction order will be first computed by [`einexpr`](@ref).
-
-# The `kwargs` will be passed down to the [`einexpr`](@ref) function.
-
-# See also: [`einexpr`](@ref), [`contract!`](@ref).
-# """
-@kwmethod contract(tn::AbstractTensorNetwork;) = contract(tn; path=einexpr(tn))
-@kwmethod function contract(tn::AbstractTensorNetwork; path)
-    length(path.args) == 0 && return tn[inds(path)...]
-
-    intermediates = map(subpath -> contract(tn; path=subpath), path.args)
-    return contract(intermediates...; dims=suminds(path))
-end
-
 function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
     tensor = tn[left_inds ∪ right_inds...]
     U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
@@ -654,7 +736,7 @@ function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right
 end
 
 function LinearAlgebra.qr!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
-    tensor = tn[left_inds ∪ right_inds...]
+    tensor = only(tensors(tn; contains=left_inds ∪ right_inds))
     Q, R = qr(tensor; left_inds, right_inds, kwargs...)
     replace!(tn, tensor => TensorNetwork([Q, R]))
     return tn
@@ -729,6 +811,10 @@ end
 
 function Base.rand(::Type{TensorNetwork}, n::Integer, regularity::Integer; kwargs...)
     return rand(Random.default_rng(), TensorNetwork, n, regularity; kwargs...)
+end
+
+function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}
+    return rand(Random.default_rng(), T, args...; kwargs...)
 end
 
 function Serialization.serialize(s::AbstractSerializer, obj::TensorNetwork)

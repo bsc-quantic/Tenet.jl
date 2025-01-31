@@ -1,10 +1,8 @@
-# breaks in instantiation on Julia 1.9
-using Pkg
-Pkg.add("ITensorNetworks")
-
 @testset "ITensorNetworks" begin
+    using Tenet
+    using Graphs
     using ITensors: ITensors, ITensor, Index, array
-    using ITensorNetworks: ITensorNetwork, vertices
+    using ITensorNetworks: ITensorNetwork
 
     i = Index(2, "i")
     j = Index(3, "j")
@@ -17,13 +15,33 @@ Pkg.add("ITensorNetworks")
     c = ITensor(rand(5, 6), l, m)
     itn = ITensorNetwork([a, b, c])
 
-    tn = convert(TensorNetwork, itn)
-    @test tn isa TensorNetwork
-    @test issetequal(arrays(tn), array.([a, b, c]))
+    @testset let itn = itn
+        tn = convert(TensorNetwork, itn)
+        @test tn isa TensorNetwork
+        @test issetequal(arrays(tn), array.([a, b, c]))
 
-    itn = convert(ITensorNetwork, tn)
-    @test itn isa ITensorNetwork
-    @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
+        itn = convert(ITensorNetwork, tn)
+        @test itn isa ITensorNetwork
+        @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
+    end
 
-    # TODO test Quantum
+    @testset let itn = itn
+        tn = convert(Quantum, itn)
+        @test tn isa Quantum
+        @test issetequal(arrays(tn), array.([a, b, c]))
+
+        itn = convert(ITensorNetwork, tn)
+        @test itn isa ITensorNetwork
+        @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
+    end
+
+    @testset let itn = itn
+        tn = convert(Ansatz, itn)
+        @test tn isa Ansatz
+        @test issetequal(arrays(tn), array.([a, b, c]))
+
+        itn = convert(ITensorNetwork, tn)
+        @test itn isa ITensorNetwork
+        @test issetequal(map(v -> array(itn[v]), vertices(itn)), array.([a, b, c]))
+    end
 end

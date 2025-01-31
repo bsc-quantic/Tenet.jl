@@ -1,7 +1,11 @@
-@testset "ChainRules" begin
-    using Tenet: Tensor, contract
-    using ChainRulesTestUtils
+using Test
+using Tenet
+using Tenet: Tensor, contract, Lattice
+using ChainRulesTestUtils
+using Graphs
+using BijectiveDicts
 
+@testset "ChainRules" begin
     @testset "Tensor" begin
         test_frule(Tensor, ones(), Symbol[])
         test_rrule(Tensor, ones(), Symbol[])
@@ -190,30 +194,31 @@
     end
 
     @testset "Ansatz" begin
-        @testset "Product" begin
-            tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j]), Tensor(ones(2), [:k])])
-            qtn = Quantum(tn, Dict([site"1" => :i, site"2" => :j, site"3" => :k]))
+        tn = Quantum(TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
+        lattice = Lattice([lane"1"])
+        test_frule(Ansatz, tn, lattice)
+        test_rrule(Ansatz, tn, lattice)
+    end
 
-            test_frule(Product, qtn)
-            test_rrule(Product, qtn)
+    @testset "Product" begin
+        tn = Product([ones(2), ones(2), ones(2)])
+        test_frule(Product, Ansatz(tn))
+        test_rrule(Product, Ansatz(tn))
+    end
+
+    @testset "MPS" begin
+        @testset "Open" begin
+            tn = MPS([ones(2, 2), ones(2, 2, 2), ones(2, 2)])
+            # test_frule(MPS, Ansatz(tn), form(tn))
+            test_rrule(MPS, Ansatz(tn), form(tn))
         end
+    end
 
-        @testset "Chain" begin
-            tn = Chain(State(), Open(), [ones(2, 2), ones(2, 2, 2), ones(2, 2)])
-            # test_frule(Chain, Quantum(tn), Open())
-            test_rrule(Chain, Quantum(tn), Open())
-
-            tn = Chain(State(), Periodic(), [ones(2, 2, 2), ones(2, 2, 2), ones(2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Periodic())
-            test_rrule(Chain, Quantum(tn), Periodic())
-
-            tn = Chain(Operator(), Open(), [ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Open())
-            test_rrule(Chain, Quantum(tn), Open())
-
-            tn = Chain(Operator(), Periodic(), [ones(2, 2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2, 2)])
-            # test_frule(Chain, Quantum(tn), Periodic())
-            test_rrule(Chain, Quantum(tn), Periodic())
+    @testset "MPO" begin
+        @testset "Open" begin
+            tn = MPO([ones(2, 2, 2), ones(2, 2, 2, 2), ones(2, 2, 2)])
+            # test_frule(MPO, Ansatz(tn), form(tn))
+            test_rrule(MPO, Ansatz(tn), form(tn))
         end
     end
 end

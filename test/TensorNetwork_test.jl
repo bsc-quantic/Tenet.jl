@@ -1,6 +1,10 @@
-@testset "TensorNetwork" begin
-    using Serialization
+using Test
+using Tenet
+using Serialization
+using Graphs: neighbors
+using LinearAlgebra
 
+@testset "TensorNetwork" begin
     @testset "Constructors" begin
         @testset "empty" begin
             tn = TensorNetwork()
@@ -182,13 +186,13 @@
         end
 
         @testset "by symbols" begin
-            tensor = Tensor(zeros(2, 3), (:i, :j))
-            tn = TensorNetwork([tensor])
+            A = Tensor(zeros(2, 3), (:i, :j))
+            B = Tensor(zeros(3, 2), (:j, :k))
+            tn = TensorNetwork([A, B])
 
-            @test only(pop!(tn, (:i, :j))) === tensor
-            @test length(tensors(tn)) == 0
-            @test isempty(tensors(tn))
-            @test isempty(size(tn))
+            @test only(pop!(tn, (:i, :j))) === A
+            @test length(tensors(tn)) == 1
+            @test size(tn) == Dict(:j => 3, :k => 2)
         end
     end
 
@@ -296,11 +300,12 @@
         @test issetequal(tensors(tn; intersects=:k), (t_ik,))
         @test issetequal(tensors(tn; intersects=:l), (t_ilm, t_lm))
         @test issetequal(tensors(tn; intersects=:m), (t_ilm, t_lm))
+        @test issetequal(tensors(tn; intersects=(:i, :m)), (t_ij, t_ik, t_ilm, t_lm))
         @test issetequal(tensors(tn; contains=(:i, :j)), (t_ij,))
         @test issetequal(tensors(tn; contains=(:i, :k)), (t_ik,))
         @test issetequal(tensors(tn; contains=(:i, :l)), (t_ilm,))
         @test issetequal(tensors(tn; contains=(:l, :m)), (t_ilm, t_lm))
-        @test_throws KeyError tensors(tn, intersects=:_)
+        @test isempty(tensors(tn; intersects=:_))
         @test isempty(tensors(tn; contains=(:j, :l)))
     end
 
@@ -459,60 +464,75 @@
         end
 
         @testset "replace tensors" begin
-            t_ij = Tensor(zeros(2, 2), (:i, :j))
-            t_ik = Tensor(zeros(2, 2), (:i, :k))
-            t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
-            t_lm = Tensor(zeros(2, 2), (:l, :m))
-            tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
+            @testset "Basic replacement" begin
+                t_ij = Tensor(zeros(2, 2), (:i, :j))
+                t_ik = Tensor(zeros(2, 2), (:i, :k))
+                t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
+                t_lm = Tensor(zeros(2, 2), (:l, :m))
+                tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
 
-            old_tensor = t_lm
+                old_tensor = t_lm
 
-            @test_throws ArgumentError begin
-                new_tensor = Tensor(rand(2, 2), (:a, :b))
+                @test_throws ArgumentError begin
+                    new_tensor = Tensor(rand(2, 2), (:a, :b))
+                    replace!(tn, old_tensor => new_tensor)
+                end
+
+                new_tensor = Tensor(rand(2, 2), (:l, :m))
                 replace!(tn, old_tensor => new_tensor)
+
+                @test new_tensor === only(filter(t -> issetequal(inds(t), [:l, :m]), tensors(tn)))
+
+                # Check if connections are maintained
+                for ind in inds(new_tensor)
+                    tensors_with_ind = tn.indexmap[ind]
+                    @test new_tensor ∈ tensors_with_ind
+                    @test !(old_tensor ∈ tensors_with_ind)
+                end
             end
 
-            new_tensor = Tensor(rand(2, 2), (:l, :m))
-            replace!(tn, old_tensor => new_tensor)
+            @testset "TensorNetwork with tensors of equal indices" begin
+                A = Tensor(rand(2, 2), (:u, :w))
+                B = Tensor(rand(2, 2), (:u, :w))
+                tn = TensorNetwork([A, B])
 
-            @test new_tensor === only(filter(t -> issetequal(inds(t), [:l, :m]), tensors(tn)))
+                new_tensor = Tensor(rand(2, 2), (:u, :w))
 
-            # Check if connections are maintained
-            # for label in inds(new_tensor)
-            #     index = tn.inds[label]
-            #     @test new_tensor in index.links
-            #     @test !(old_tensor in index.links)
-            # end
+                replace!(tn, B => new_tensor)
+                @test A ∈ tensors(tn)
+                @test new_tensor ∈ tensors(tn)
 
-            # New tensor network with two tensors with the same inds
-            # A = Tensor(rand(2, 2), (:u, :w))
-            # B = Tensor(rand(2, 2), (:u, :w))
-            # tn = TensorNetwork([A, B])
+                tn = TensorNetwork([A, B])
+                replace!(tn, A => new_tensor)
 
-            # new_tensor = Tensor(rand(2, 2), (:u, :w))
+                @test issetequal(tensors(tn), [new_tensor, B])
+            end
 
-            # replace!(tn, B => new_tensor)
-            # @test A === tensors(tn)[1]
-            # @test new_tensor === tensors(tn)[2]
+            @testset "Sequence of replacements" begin
+                A = Tensor(zeros(2, 2), (:i, :j))
+                B = Tensor(zeros(2, 2), (:j, :k))
+                C = Tensor(zeros(2, 2), (:k, :l))
+                tn = TensorNetwork([A, B, C])
 
-            # tn = TensorNetwork([A, B])
-            # replace!(tn, A => new_tensor)
+                @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
 
-            # @test issetequal(tensors(tn), [new_tensor, B])
+                new_tensor = Tensor(rand(2, 2), (:i, :j))
+                new_tensor2 = Tensor(ones(2, 2), (:i, :j))
 
-            # # Test chain of replacements
-            # A = Tensor(zeros(2, 2), (:i, :j))
-            # B = Tensor(zeros(2, 2), (:j, :k))
-            # C = Tensor(zeros(2, 2), (:k, :l))
-            # tn = TensorNetwork([A, B, C])
+                replace!(tn, A => new_tensor, new_tensor => new_tensor2)
+                @test issetequal(tensors(tn), [new_tensor2, B, C])
+            end
 
-            # @test_throws ArgumentError replace!(tn, A => B, B => C, C => A)
+            @testset "Replace with itself" begin
+                A = Tensor(rand(2, 2), (:i, :j))
+                B = Tensor(rand(2, 2), (:j, :k))
+                C = Tensor(rand(2, 2), (:k, :l))
+                tn = TensorNetwork([A, B, C])
 
-            # new_tensor = Tensor(rand(2, 2), (:i, :j))
-            # new_tensor2 = Tensor(ones(2, 2), (:i, :j))
+                replace!(tn, A => A)
 
-            # replace!(tn, A => new_tensor, new_tensor => new_tensor2)
-            # @test issetequal(tensors(tn), [new_tensor2, B, C])
+                @test issetequal(tensors(tn), [A, B, C])
+            end
         end
 
         @testset "replace tensors by tensor network" begin
@@ -568,7 +588,7 @@
             replace!(tn, old_new...)
 
             @test issetequal(
-                inds.(tensors(tn)), [[:A, :P, :L], [:L, :B, :K, :U], [:U, :C, :V, :O], [:O, :D, :J, :N], [:N, :E, :M]]
+                inds.(tensors(tn)), [(:A, :P, :L), (:L, :B, :K, :U), (:U, :C, :V, :O), (:O, :D, :J, :N), (:N, :E, :M)]
             )
         end
     end
@@ -628,6 +648,14 @@
         @test issetequal(inds(projvirttn), [:i, :k])
     end
 
+    @testset "Base.conj" begin
+        tensor1 = Tensor(rand(ComplexF64, 3, 4), (:i, :j))
+        tensor2 = Tensor(rand(ComplexF64, 4, 5), (:j, :k))
+        complextn = TensorNetwork([tensor1, tensor2])
+
+        @test -imag.(tensors(complextn)) == imag.(tensors(conj(complextn)))
+    end
+
     @testset "Base.conj!" begin
         @testset "for complex" begin
             tensor1 = Tensor(rand(ComplexF64, 3, 4), (:i, :j))
@@ -685,6 +713,50 @@
                 @test tensors(tn)[1] === a
                 @test tensors(tn)[2] === b
             end
+
+            @testset "copy inside unsafe region" begin
+                tn = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = TensorNetwork([Tensor(ones(2, 2), [:a, :b]), Tensor(ones(2, 2), [:b, :c])])
+                    push!(tn2, tensor) # tn2 is not specified in @unsafe_region argument
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
+                # Here still errors since at the end `tn2` is inconsistent:
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    push!(tn2, tensor)
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
+                # Double copy should also throw an error:
+                @test_throws DimensionMismatch Tenet.@unsafe_region tn begin
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    tn3 = copy(tn2)
+                    push!(tn3, tensor)
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                end
+
+                Tenet.@unsafe_region tn begin # This should not throw an error
+                    tensor = Tensor(ones(3, 2), [:c, :d])
+                    push!(tn, tensor)
+                    tn2 = copy(tn)
+                    push!(tn2, tensor)  # tn2 is not specified in @unsafe_region
+                    @test length(tensors(tn)) == 3
+                    pop!(tn, tensor)
+                    pop!(tn2, tensor)
+                end
+            end
         end
     end
 
@@ -710,10 +782,12 @@
 
         F = qr(M)
         ctn = TensorNetwork([Tensor(M, indsM)])
+        qr!(ctn; left_inds, right_inds, virtualind=:k)
 
-        qr!(ctn; left_inds, right_inds)
-        @test isapprox([F.R, Matrix(F.Q)], tensors(ctn); rtol=1e-9)
-        @test isapprox(permutedims(contract(ctn), indsM), M; rtol=1e-9)
+        # `LinearAlgebra.qr` decomposition is full, but we truncate when matrix is not square in Tenet
+        @test F.Q[:, 1:3] ≈ parent(ctn[:i, :k])
+        @test F.R ≈ parent(ctn[:k, :j])
+        @test M ≈ parent(permutedims(contract(ctn), indsM))
     end
 
     @testset "LinearAlgebra.lu!" begin

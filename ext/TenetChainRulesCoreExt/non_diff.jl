@@ -1,6 +1,3 @@
-# NOTE fix problem with vector generator in `contract`
-@non_differentiable Tenet.__omeinsum_sym2str(x)
-
 # WARN type-piracy
 @non_differentiable setdiff(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
 @non_differentiable union(s::Base.AbstractVecOrTuple{Symbol}, itrs::Base.AbstractVecOrTuple{Symbol}...)
@@ -12,7 +9,7 @@
 
 @non_differentiable Tenet.currindex(::Tenet.IndexCounter)
 @non_differentiable Tenet.nextindex!(::Tenet.IndexCounter)
-@non_differentiable Tenet.resetindex!(::Tenet.IndexCounter)
+@non_differentiable Tenet.resetinds!(::Tenet.IndexCounter)
 
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)

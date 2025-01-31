@@ -1,6 +1,7 @@
-@testset "Product ansatz" begin
-    using LinearAlgebra
+using LinearAlgebra
+using Tenet: nsites, State, Operator
 
+@testset "Product" begin
     # TODO test `Product` with `Scalar` socket
 
     qtn = Product([rand(2) for _ in 1:3])
@@ -14,9 +15,7 @@
     end
     @test adjoint(qtn) isa Product
     @test socket(adjoint(qtn)) == State(; dual=true)
-
-    # conversion to `Quantum`
-    @test Quantum(qtn) isa Quantum
+    @test Ansatz(qtn) isa Ansatz
 
     qtn = Product([rand(2, 2) for _ in 1:3])
     @test socket(qtn) == Operator()
@@ -30,4 +29,5 @@
     end
     @test adjoint(qtn) isa Product
     @test socket(adjoint(qtn)) == Operator()
+    @test Ansatz(qtn) isa Ansatz
 end

@@ -1,6 +1,0 @@
-[deps]
-qibo = ""
-qiskit = ""
-
-[pip.deps]
-quimb = ""

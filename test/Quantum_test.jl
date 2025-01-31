@@ -1,5 +1,5 @@
 @testset "Quantum" begin
-    using Tenet
+    using Tenet: nsites, State, Operator, Scalar
 
     _tensors = Tensor[Tensor(zeros(2), [:i])]
     tn = TensorNetwork(_tensors)
@@ -54,6 +54,25 @@
     tn = TensorNetwork(_tensors)
     @test_throws ErrorException Quantum(tn, Dict(site"1" => :j))
     @test_throws ErrorException Quantum(tn, Dict(site"1" => :i))
+
+    @testset "Base.adjoint" begin
+        _tensors = Tensor[
+            Tensor(rand(ComplexF64, 2, 4, 2), [:i, :link, :j]), Tensor(rand(ComplexF64, 2, 4, 2), [:k, :link, :l])
+        ]
+        tn = TensorNetwork(_tensors)
+        qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :k, site"1'" => :j, site"2'" => :l))
+
+        adjoint_qtn = adjoint(qtn)
+
+        @test nsites(adjoint_qtn; set=:inputs) == nsites(adjoint_qtn; set=:outputs) == 2
+        @test issetequal(sites(adjoint_qtn), [site"1", site"2", site"1'", site"2'"])
+        @test socket(adjoint_qtn) == Operator()
+        @test inds(adjoint_qtn; at=site"1'") == :i # now the indices are flipped
+        @test inds(adjoint_qtn; at=site"1") == :j
+        @test inds(adjoint_qtn; at=site"2'") == :k
+        @test inds(adjoint_qtn; at=site"2") == :l
+        @test isapprox(tensors(adjoint_qtn), replace.(conj.(_tensors), :link => Symbol(:link, "'")))
+    end
 
     @testset "reindex!" begin
         @testset "manual indices" begin
@@ -131,6 +150,79 @@
 
             @test all(Site.(1:3)) do i
                 (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
+            end
+        end
+
+        @testset "state with more lanes than operator" begin
+            # MPS-like tensor network with 4 sites
+            mps4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]),
+                        Tensor(rand(2, 2, 2), [:j, :k, :l]),
+                        Tensor(rand(2, 2, 2), [:l, :m, :n]),
+                        Tensor(rand(2, 2), [:n, :o]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m, site"4" => :o),
+            )
+
+            # MPO-like tensor network with 3 sites
+            mpo3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2), [:o, :p, :n]),
+                    ],
+                ),
+                Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
+            )
+
+            Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
+
+            for lane in lanes(mpo3sites)
+                @test inds(mps4sites; at=Site(lane)) == inds(mpo3sites; at=Site(lane; dual=true))
+            end
+        end
+
+        @testset "state with less lanes than operator" begin
+            # MPS-like tensor network with 3 sites
+            mps3sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2), [:i, :j]), Tensor(rand(2, 2, 2), [:j, :k, :l]), Tensor(rand(2, 2), [:l, :m])
+                    ],
+                ),
+                Dict(site"1" => :i, site"2" => :k, site"3" => :m),
+            )
+
+            # MPO-like tensor network with 4 sites
+            mpo4sites = Quantum(
+                TensorNetwork(
+                    Tensor[
+                        Tensor(rand(2, 2, 2), [:i, :j, :k]),
+                        Tensor(rand(2, 2, 2, 2), [:l, :m, :k, :n]),
+                        Tensor(rand(2, 2, 2, 2), [:o, :p, :n, :q]),
+                        Tensor(rand(2, 2, 2), [:r, :s, :q]),
+                    ],
+                ),
+                Dict(
+                    site"1" => :i,
+                    site"1'" => :j,
+                    site"2" => :l,
+                    site"2'" => :m,
+                    site"3" => :o,
+                    site"3'" => :p,
+                    site"4" => :r,
+                    site"4'" => :s,
+                ),
+            )
+
+            Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
+
+            for lane in lanes(mps3sites)
+                @test inds(mps3sites; at=Site(lane)) == inds(mpo4sites; at=Site(lane; dual=true))
             end
         end
     end

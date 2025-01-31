@@ -1,10 +1,7 @@
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.develop(; path=joinpath(@__DIR__, ".."))
-Pkg.instantiate()
-
 using Documenter
+using DocumenterVitepress
 using DocumenterCitations
+using DocumenterMermaid
 using Tenet
 using CairoMakie
 using GraphMakie
@@ -18,28 +15,47 @@ makedocs(;
     modules=[Tenet, Base.get_extension(Tenet, :TenetGraphMakieExt)],
     sitename="Tenet.jl",
     authors="Sergio Sánchez Ramírez and contributors",
-    pages=Any[
+    pages=[
         "Home" => "index.md",
-        "Tensors" => "tensors.md",
-        "Tensor Networks" => "tensor-network.md",
-        "Contraction" => "contraction.md",
-        "Transformations" => "transformations.md",
-        "Quantum" => [
-            "Introduction" => "quantum.md",
-            "Ansatzes" => ["`Product` ansatz" => "ansatz/product.md", "`Chain` ansatz" => "ansatz/chain.md"],
+        "📖 Manual" => [
+            "The Design of Tenet" => [
+                "Introduction" => "manual/design/introduction.md",
+                "Tensors" => "manual/design/tensors.md",
+                "The TensorNetwork class" => "manual/design/tensor-network.md",
+                "The Quantum class" => "manual/design/quantum.md",
+                "The Ansatz class" => "manual/design/ansatz.md",
+                "The Product ansatz" => "manual/design/product.md",
+                "The MPS/MPO ansatz" => "manual/design/mps.md",
+            ],
+            "🤝 Interoperation" => "manual/interop.md",
+            "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],
-        "Visualization" => "visualization.md",
-        "Alternatives" => "alternatives.md",
-        "References" => "references.md",
-        "⚒️ Developer Reference" => ["`TensorNetwork` type hierarchy" => "developer/type-hierarchy.md"],
+        "🧭 API" => [
+            "Tensor" => "api/tensor.md",
+            "TensorNetwork" => "api/tensornetwork.md",
+            "Transformations" => "api/transformations.md",
+            "Quantum" => "api/quantum.md",
+            "Ansatz" => "api/ansatz.md",
+            "Product" => "api/product.md",
+            "MPS" => "api/mps.md",
+        ],
+        "⚒️ Internals" => [
+            "Hypergraph representation" => "developer/hypergraph.md",
+            "Type Hierarchy" => "developer/type-hierarchy.md",
+            "Unsafe region" => "developer/unsafe-region.md",
+            "Cached field" => "developer/cached-field.md",
+            "Keyword Dispatch" => "developer/keyword-dispatch.md",
+        ],
     ],
     pagesonly=true,
-    format=Documenter.HTML(;
-        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"]
+    format=DocumenterVitepress.MarkdownVitepress(;
+        repo="https://github.com/bsc-quantic/Tenet.jl",
+        assets=["assets/favicon.ico", "assets/citations.css", "assets/youtube.css"],
+        # build_vitepress=false,
     ),
     plugins=[bib],
     checkdocs=:exports,
     warnonly=true,
 )
 
-deploydocs(; repo="github.com/bsc-quantic/Tenet.jl.git", devbranch="master", push_preview=true)
+deploydocs(; repo="github.com/bsc-quantic/Tenet.jl.git", target="build", devbranch="master", push_preview=true)

@@ -1,8 +1,10 @@
 module Tenet
 
 import EinExprs: inds
+using Compat
 
 include("Helpers.jl")
+@compat public letter, nonunique, IndexCounter, currindex, nextindex!
 
 include("Tensor.jl")
 export Tensor, contract, dim, expand
@@ -10,41 +12,66 @@ export Tensor, contract, dim, expand
 include("Numerics.jl")
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, neighbors, slice!
-export contract, contract!, groupinds!
+export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, groupinds!
+@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!
 
 include("Transformations.jl")
 export transform, transform!
+#! format: off
+@compat public Transformation,
+    HyperFlatten,
+    HyperGroup,
+    ContractSimplification,
+    Truncate,
+    DiagonalReduction,
+    AntiDiagonalGauging,
+    SplitSimplification
+#! format: on
 
 include("Site.jl")
+export Lane, @lane_str
 export Site, @site_str, isdual
+@compat public id, Moment
 
 include("Quantum.jl")
-export Quantum, ninputs, noutputs, inputs, outputs, sites, nsites
+export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
+@compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
 
-include("Ansatz/Ansatz.jl")
-export Ansatz
-export socket, Scalar, State, Operator
-export boundary, Open, Periodic
+include("Circuit.jl")
+export Gate, Circuit, moments
 
-include("Ansatz/Product.jl")
+include("Lattice.jl")
+export Lattice
+
+include("Ansatz.jl")
+#! format: off
+export Ansatz,
+    boundary,
+    Open,
+    Periodic,
+    form,
+    NonCanonical,
+    MixedCanonical,
+    Canonical,
+    canonize,
+    canonize!,
+    mixed_canonize,
+    mixed_canonize!,
+    truncate!,
+    isisometry,
+    expect,
+    evolve!,
+    simple_update!,
+    overlap
+#! format: on
+@compat public AbstractAnsatz, Boundary, Form
+
+include("Product.jl")
 export Product
 
-include("Ansatz/Dense.jl")
-export Dense
-
-include("Ansatz/Chain.jl")
-export Chain
-export MPS, pMPS, MPO, pMPO
-export leftindex, rightindex, isleftcanonical, isrightcanonical
-export canonize_site, canonize_site!, truncate!
-export canonize, canonize!, mixed_canonize, mixed_canonize!
-
-include("Ansatz/Grid.jl")
-export Grid
-export PEPS, pPEPS, PEPO, pPEPO
-
-export evolve!, expect, overlap
+include("MPS.jl")
+export MPS, MPO
+@compat public AbstractMPS, AbstractMPO, defaultorder, check_form
 
 # reexports from EinExprs
 export einexpr, inds

@@ -25,9 +25,9 @@ letter(i) = Symbol(first(iterate(Iterators.drop(Iterators.filter(isletter, Itera
 
 # NOTE from https://stackoverflow.com/q/54652787
 function nonunique(x)
-    uniqueindexes = indexin(unique(x), x)
+    uniqueindexes = indexin(unique(x), collect(x))
     nonuniqueindexes = setdiff(1:length(x), uniqueindexes)
-    return unique(x[nonuniqueindexes])
+    return Tuple(unique(x[nonuniqueindexes]))
 end
 
 struct IndexCounter
@@ -43,9 +43,20 @@ function nextindex!(gen::IndexCounter)
     end
     return letter(Threads.atomic_add!(gen.counter, 1))
 end
-resetindex!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
+resetinds!(gen::IndexCounter) = letter(Threads.atomic_xchg!(gen.counter, 1))
 
 # eps wrapper so it handles Complex numbers
 # if is Complex, extract the parametric type and get the eps of that
 wrap_eps(x) = eps(x)
 wrap_eps(::Type{Complex{T}}) where {T} = eps(T)
+
+struct UnsafeScope
+    refs::Vector{WeakRef}
+
+    UnsafeScope() = new(Vector{WeakRef}())
+end
+
+Base.values(uc::UnsafeScope) = map(x -> x.value, uc.refs)
+
+# from https://discourse.julialang.org/t/sort-keys-of-namedtuple/94630/3
+@generated sort_nt(nt::NamedTuple{KS}) where {KS} = :(NamedTuple{$(Tuple(sort(collect(KS))))}(nt))
