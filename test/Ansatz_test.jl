@@ -52,7 +52,7 @@ using LinearAlgebra
     @testset "Complete connectivity" begin
         n = 2
         graph = Graphs.complete_graph(n)
-        lattice = Lattice([Lane(i) => i for i in 1:n], graph)
+        lattice = Lattice(Lane.(1:n), graph)
         tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])])
         qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2))
         ansatz = Ansatz(qtn, lattice)
