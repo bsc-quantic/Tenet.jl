@@ -2,7 +2,7 @@ module TenetGraphMakieExt
 
 using Tenet
 using GraphMakie
-using Graphs: Graphs
+using Graphs: Graphs, vertices
 using Makie
 using Combinatorics: combinations
 const NetworkLayout = GraphMakie.NetworkLayout
@@ -19,7 +19,7 @@ Plot a [`TensorNetwork`](@ref) as a graph.
   - `labels` If `true`, show the labels of the tensor indices. Defaults to `false`.
   - The rest of `kwargs` are passed to `GraphMakie.graphplot`.
 """
-function GraphMakie.graphplot(tn::Tenet.AbstractTensorNetwork; kwargs...)
+function GraphMakie.graphplot(tn::Union{Tenet.AbstractTensorNetwork,Lattice}; kwargs...)
     f = Figure()
     ax, p = graphplot!(f[1, 1], tn; kwargs...)
     return Makie.FigureAxisPlot(f, ax, p)
@@ -28,7 +28,7 @@ end
 # NOTE this is a hack! we did it in order not to depend on NetworkLayout but can be unstable
 __networklayout_dim(x) = first(typeof(x).super.parameters)
 
-function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::Tenet.AbstractTensorNetwork; kwargs...)
+function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::Union{Tenet.AbstractTensorNetwork,Lattice}; kwargs...)
     ax = if haskey(kwargs, :layout) && __networklayout_dim(kwargs[:layout]) == 3
         Axis3(f[1, 1])
     else
@@ -135,6 +135,14 @@ function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::Tenet.AbstractTensorNe
 
     # plot graph
     return graphplot!(ax, graph; kwargs...)
+end
+
+function GraphMakie.graphplot!(ax::Makie.AbstractAxis, lattice::Lattice; labels=false, kwargs...)
+    kwargs = Dict{Symbol,Any}(kwargs)
+    labels == true && get!(kwargs, :ilabels) do
+        return collect(string.(vertices(lattice)))
+    end
+    return graphplot!(ax, parent(lattice); kwargs...)
 end
 
 end
