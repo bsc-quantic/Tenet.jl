@@ -19,7 +19,7 @@ using BijectiveDicts: BijectiveDict
         add_vertex!(lattice, lane"1")
         @test nv(lattice) == 1
         @test ne(lattice) == 0
-        @test vertices(lattice) == [lane"1"]
+        @test issetequal(vertices(lattice), [lane"1"])
         @test isempty(edges(lattice))
         @test has_vertex(lattice, lane"1")
 
@@ -27,8 +27,8 @@ using BijectiveDicts: BijectiveDict
         add_edge!(lattice, lane"1", lane"2")
         @test nv(lattice) == 2
         @test ne(lattice) == 1
-        @test vertices(lattice) == [lane"1", lane"2"]
-        @test edges(lattice) == [Bond(lane"1", lane"2")]
+        @test issetequal(vertices(lattice), [lane"1", lane"2"])
+        @test issetequal(edges(lattice), [Bond(lane"1", lane"2")])
         @test has_edge(lattice, lane"1", lane"2")
     end
 

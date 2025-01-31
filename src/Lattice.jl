@@ -178,7 +178,7 @@ Create a rectangular lattice with `nrows` rows and `ncols` columns.
 """
 function Lattice(::Val{:rectangular}, nrows, ncols; periodic=false)
     graph = Graphs.grid((nrows, ncols); periodic)
-    lanes = vec([Lane(row, col) => row + (col - 1) * nrows for row in 1:nrows for col in 1:ncols])
+    lanes = vec([Lane(row, col) for row in 1:nrows for col in 1:ncols])
     Lattice(lanes, graph)
 end
 
@@ -202,12 +202,12 @@ function Lattice(::Val{:lieb}, ncellrows, ncellcols)
 
     # add horizontal edges
     for row in 1:2:nrows, col in 1:(ncols - 1)
-        Graphs.add_edge!(graph, Lane(row, col), Lane(row, col + 1))
+        Graphs.add_edge!(lattice, Lane(row, col), Lane(row, col + 1))
     end
 
     # add vertical edges
     for row in 1:(nrows - 1), col in 1:2:ncols
-        Graphs.add_edge!(graph, Lane(row, col), Lane(row + 1, col))
+        Graphs.add_edge!(lattice, Lane(row, col), Lane(row + 1, col))
     end
 
     return lattice

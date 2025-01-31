@@ -18,6 +18,7 @@ end
 Lane(lane::Lane) = lane
 Lane(id::Int) = Lane((id,))
 Lane(id::Vararg{Int,N}) where {N} = Lane(id)
+Lane(id::CartesianIndex) = Lane(Tuple(id))
 
 Base.copy(x::Lane) = x
 
@@ -57,6 +58,7 @@ end
 Site(id::Int; kwargs...) = Site(Lane(id); kwargs...)
 Site(@nospecialize(id::NTuple{N,Int}); kwargs...) where {N} = Site(Lane(id); kwargs...)
 Site(@nospecialize(id::Vararg{Int,N}); kwargs...) where {N} = Site(Lane(id); kwargs...)
+Site(@nospecialize(id::CartesianIndex); kwargs...) = Site(Lane(id); kwargs...)
 
 Lane(site::Site) = site.lane
 
