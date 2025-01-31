@@ -1,6 +1,5 @@
 using Tenet
 using Tenet: Lattice, simple_update!, AbstractLane
-using BijectiveDicts: BijectiveDict
 using Graphs
 using LinearAlgebra
 

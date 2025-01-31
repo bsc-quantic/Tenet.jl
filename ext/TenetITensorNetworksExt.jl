@@ -3,7 +3,6 @@ module TenetITensorNetworksExt
 using Tenet
 using ITensorNetworks: ITensorNetworks, ITensorNetwork, IndsNetwork, plev, rename_vertices
 using ITensors: ITensors, ITensor, Index, siteinds
-using BijectiveDicts: BijectiveDict
 using Graphs: vertices
 using DataGraphs: DataGraphs, underlying_graph
 using NamedGraphs: NamedGraph, position_graph

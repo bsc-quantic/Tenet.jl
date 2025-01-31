@@ -1,5 +1,4 @@
 using Graphs: Graphs
-using BijectiveDicts: BijectiveDict
 
 struct Bond{L<:AbstractLane}
     src::L

@@ -1,6 +1,5 @@
 using LinearAlgebra
 using Graphs: Graphs
-using BijectiveDicts
 
 """
     Product <: AbstractAnsatz
