@@ -47,13 +47,8 @@ function Base.convert(::Type{Lattice}, s::IndsNetwork)
     # TODO maybe we can use Vector for the mapping
     ng = underlying_graph(s) # namedgraph
     g = position_graph(ng) # simplegraph
-
-    mapping = BijectiveDict{Lane,Int}()
-    for (i, v) in enumerate(vertices(ng))
-        mapping[Lane(v)] = i
-    end
-
-    return Lattice(mapping, copy(g))
+    lanes = map(Lane, vertices(ng))
+    return Lattice(lanes, copy(g))
 end
 
 function Base.convert(::Type{IndsNetwork}, l::Lattice)
