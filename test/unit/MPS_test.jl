@@ -353,18 +353,17 @@ using LinearAlgebra
         @testset "two sites" begin
             mat = reshape(LinearAlgebra.I(4), 2, 2, 2, 2)
             gate = Gate(mat, [site"2", site"3", site"2'", site"3'"])
-            ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
 
             @testset "NonCanonical" begin
-                let ϕ = deepcopy(ψ)
-                    evolve!(ϕ, gate; threshold=1e-14)
-                    @test length(tensors(ϕ)) == 5
-                    @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
-                    @test isapprox(contract(ϕ), contract(ψ))
+                ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
+                ϕ = deepcopy(ψ)
+                evolve!(ϕ, gate; threshold=1e-14)
+                @test length(tensors(ϕ)) == 5
+                @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
+                @test isapprox(contract(ϕ), contract(ψ))
 
-                    evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
-                    @test norm(evolved) ≈ 1.0
-                end
+                evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
+                @test norm(evolved) ≈ 1.0
             end
 
             @testset "Canonical" begin
