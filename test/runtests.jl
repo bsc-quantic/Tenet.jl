@@ -73,6 +73,10 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             include("integration/ITensors_test.jl")
         end
 
+        @safetestset "ITensorMPS" begin
+            include("integration/ITensorMPS_test.jl")
+        end
+
         @safetestset "ITensorNetworks" begin
             include("integration/ITensorNetworks_test.jl")
         end
