@@ -1,5 +1,7 @@
 using Test
 using SafeTestsets
+using Tenet
+using OMEinsum
 
 include("Utils.jl")
 
