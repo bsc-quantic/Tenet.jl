@@ -178,7 +178,7 @@ Create a rectangular lattice with `nrows` rows and `ncols` columns.
 """
 function Lattice(::Val{:rectangular}, nrows, ncols; periodic=false)
     graph = Graphs.grid((nrows, ncols); periodic)
-    lanes = vec([Lane(row, col) for row in 1:nrows for col in 1:ncols])
+    lanes = vec([Lane(row, col) for col in 1:ncols for row in 1:nrows])
     Lattice(lanes, graph)
 end
 

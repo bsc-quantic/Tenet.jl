@@ -1,7 +1,6 @@
 using Tenet
 using Tenet: Lattice, Bond
 using Graphs
-using BijectiveDicts: BijectiveDict
 
 @testset "Lattice" begin
     @testset let graph = SimpleGraph(), lattice = Lattice()
