@@ -1,5 +1,4 @@
 @testset "quimb" begin
-    using PythonCall
     qtn = pyimport("quimb.tensor")
 
     # NOTE quimb.circuit.Circuit splits gates by default

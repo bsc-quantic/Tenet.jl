@@ -1,7 +1,6 @@
 using Random
 using LinearAlgebra
 using Graphs: Graphs
-using BijectiveDicts
 
 abstract type AbstractMPO <: AbstractAnsatz end
 abstract type AbstractMPS <: AbstractMPO end

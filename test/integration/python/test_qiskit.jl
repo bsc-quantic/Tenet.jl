@@ -1,5 +1,4 @@
 @testset "qiskit" begin
-    using PythonCall
     qiskit = pyimport("qiskit")
 
     circuit = qiskit.QuantumCircuit(3)

@@ -1,10 +1,10 @@
 module TenetITensorMPSExt
 
 using Tenet
+using Tenet: Tenet, MPS, tensors, form, inds, lanes, id, Site, Lane
 using ITensors
 using ITensorMPS
 using ITensors: ITensor, Index, dim
-using Tenet: MPS, tensors, form, inds
 
 # Convert an AbstractMPS to an ITensor MPS
 function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
@@ -13,27 +13,28 @@ function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
     ortho_center = form(mps).orthog_center
 
     itensors = ITensor[]
-    for (i, t) in enumerate(tensors(mps))
+    for lane in lanes(mps)
         t = Tenet.permutedims(
-            t,
+            tensors(mps; at=lane),
             Vector{Symbol}(
                 filter!(
                     !isnothing,
-                    [inds(mps; at=Site(i)), inds(mps; at=Site(i), dir=:left), inds(mps; at=Site(i), dir=:right)],
+                    [inds(mps; at=Site(lane)), inds(mps; at=lane, dir=:left), inds(mps; at=lane, dir=:right)],
                 ),
             ),
         )
 
-        site_index = Index(size(mps, inds(mps; at=Site(i))), "Site,n=$i")
+        i = Tenet.id(lane)
+        site_index = Index(size(mps, inds(mps; at=Site(lane))), "Site,n=$i")
         if i == 1
-            link_size = size(mps, inds(mps; at=Site(1), dir=:right))
+            link_size = size(mps, inds(mps; at=lane"1", dir=:right))
             link_indices = [Index(link_size, "Link,l=1")]
         else
             # Take index from previous tensor as the left link index
             prev_ind = ITensors.inds(itensors[end])[end]
 
             if i < length(tensors(mps))
-                next_link_size = size(mps, inds(mps; at=Site(i), dir=:right))
+                next_link_size = size(mps, inds(mps; at=lane, dir=:right))
                 next_ind = Index(next_link_size, "Link,l=$(i)")
                 link_indices = [prev_ind, next_ind]
             else
@@ -49,12 +50,12 @@ function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
     itensors_mps = ITensorMPS.MPS(itensors)
 
     # Set llim and rlim based on the orthogonality center
-    if isa(ortho_center, Site)
+    if ortho_center isa Lane
         n = Tenet.id(ortho_center)
-
         itensors_mps.llim = n - 1
         itensors_mps.rlim = n + 1
-    elseif isa(ortho_center, Vector{Site})
+
+    elseif ortho_center isa Vector{<:Lane}
         ids = Tenet.id.(ortho_center)
 
         # For multiple orthogonality centers, set llim and rlim accordingly
@@ -90,9 +91,9 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
 
     # Map llim and rlim to your MPS's orthogonality center(s)
     mps_form = if llim + 1 == rlim - 1
-        Tenet.MixedCanonical(Tenet.Site(llim + 1))
+        Tenet.MixedCanonical(Lane(llim + 1))
     elseif llim + 1 < rlim - 1
-        Tenet.MixedCanonical([Tenet.Site(j) for j in (llim + 1):(rlim - 1)])
+        Tenet.MixedCanonical([Lane(j) for j in (llim + 1):(rlim - 1)])
     else
         Tenet.NonCanonical()
     end
