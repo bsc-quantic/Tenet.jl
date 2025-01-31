@@ -1,8 +1,6 @@
 using Test
 using Tenet
 using ChainRulesTestUtils
-using Graphs
-using BijectiveDicts
 
 @testset "Tensor" begin
     test_frule(Tensor, ones(), Symbol[])
