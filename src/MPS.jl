@@ -369,7 +369,7 @@ contract(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO
 function contract!(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO)
     site1, site2 = kwargs.between
     Λᵢ = tensors(tn; between=kwargs.between)
-    Λᵢ === nothing && return tn
+    isnothing(Λᵢ) && return tn
 
     if kwargs.direction === :right
         Γᵢ₊₁ = tensors(tn; at=site2)
