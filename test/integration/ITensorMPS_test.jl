@@ -32,8 +32,8 @@ for (t1, t2) in zip(ITensors.tensors(itensor_mps), tensors(tenet_mps))
 end
 
 @test form(tenet_mps) isa MixedCanonical
-@test form(tenet_mps).orthog_center == Site(itensor_mps.llim + 1)
-@test form(tenet_mps).orthog_center == Site(itensor_mps.rlim - 1)
+@test form(tenet_mps).orthog_center == Lane(itensor_mps.llim + 1)
+@test form(tenet_mps).orthog_center == Lane(itensor_mps.rlim - 1)
 
 contracted = Tenet.contract(tenet_mps)
 permuted = permutedims(contracted, [inds(tenet_mps; at=Site(i)) for i in 1:length(tensors(tenet_mps))])

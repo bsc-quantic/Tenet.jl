@@ -1,7 +1,7 @@
 module TenetITensorMPSExt
 
 using Tenet
-using Tenet: Tenet, MPS, tensors, form, inds, lanes, id
+using Tenet: Tenet, MPS, tensors, form, inds, lanes, id, Site, Lane
 using ITensors
 using ITensorMPS
 using ITensors: ITensor, Index, dim
@@ -50,12 +50,12 @@ function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
     itensors_mps = ITensorMPS.MPS(itensors)
 
     # Set llim and rlim based on the orthogonality center
-    if isa(ortho_center, Site)
+    if ortho_center isa Lane
         n = Tenet.id(ortho_center)
-
         itensors_mps.llim = n - 1
         itensors_mps.rlim = n + 1
-    elseif isa(ortho_center, Vector{Site})
+
+    elseif ortho_center isa Vector{<:Lane}
         ids = Tenet.id.(ortho_center)
 
         # For multiple orthogonality centers, set llim and rlim accordingly
@@ -91,9 +91,9 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
 
     # Map llim and rlim to your MPS's orthogonality center(s)
     mps_form = if llim + 1 == rlim - 1
-        Tenet.MixedCanonical(Tenet.Site(llim + 1))
+        Tenet.MixedCanonical(Lane(llim + 1))
     elseif llim + 1 < rlim - 1
-        Tenet.MixedCanonical([Tenet.Site(j) for j in (llim + 1):(rlim - 1)])
+        Tenet.MixedCanonical([Lane(j) for j in (llim + 1):(rlim - 1)])
     else
         Tenet.NonCanonical()
     end
