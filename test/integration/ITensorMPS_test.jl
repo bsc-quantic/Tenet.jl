@@ -1,8 +1,9 @@
-@testset "ITensorMPS" begin
+@safetestset "ITensorMPS" begin
+    using Test
+    using Tenet: MPS, tensors, form, inds
     using ITensorMPS
     using ITensors
     using ITensors: ITensor, Index, dim, dims
-    using Tenet: MPS, tensors, form, inds
 
     # Tenet to ITensorMPS conversion
     tenet_mps = rand(MPS; n=5, maxdim=30)

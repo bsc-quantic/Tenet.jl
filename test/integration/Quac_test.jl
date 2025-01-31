@@ -1,9 +1,9 @@
-using Test
-using Tenet
-using Tenet: nsites, Operator
-using Quac: Quac
+@safetestset "Quac" begin
+    using Test
+    using Tenet
+    using Tenet: nsites, Operator
+    using Quac: Quac
 
-@testset "Quac" begin
     @testset "Gate" begin
         id_gate = 2
         gate = Quac.Z(id_gate)

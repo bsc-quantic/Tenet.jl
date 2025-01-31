@@ -1,8 +1,9 @@
-using Tenet
-using Dagger
-using Distributed
+@safetestset "Dagger" begin
+    using Test
+    using Tenet
+    using Distributed
+    using Dagger
 
-@testset "Dagger" begin
     addprocs(1)
     @everywhere using Dagger, Tenet
 

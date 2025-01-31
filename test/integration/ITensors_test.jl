@@ -1,4 +1,6 @@
-@testset "ITensors" begin
+@safetestset "ITensors" begin
+    using Test
+    using Tenet
     using ITensors: ITensors, ITensor, Index, array
 
     i = Index(2, "i")

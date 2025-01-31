@@ -1,5 +1,4 @@
 @testset "qibo" begin
-    using PythonCall
     qibo = pyimport("qibo")
 
     circuit = qibo.Circuit(3)

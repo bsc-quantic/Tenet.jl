@@ -1,4 +1,5 @@
-@testset "BlockArray" begin
+@safetestset "BlockArray" begin
+    using Test
     using Tenet: Tensor, contract, permutedims, svd
     using BlockArrays
 

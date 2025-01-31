@@ -1,4 +1,6 @@
-@testset "Visualization" begin
+@safetestset "Visualization" begin
+    using Test
+    using Tenet
     using GraphMakie
     using CairoMakie
     using NetworkLayout: Spring

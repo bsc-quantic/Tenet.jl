@@ -1,6 +1,9 @@
-using Reactant
+@safetestset "Reactant" begin
+    using Test
+    using Tenet
+    using Reactant
+    using Adapt
 
-@testset "Reactant" begin
     # TODO test `make_tracer`
     # TODO test `create_result`
     # TODO test `traced_getfield`

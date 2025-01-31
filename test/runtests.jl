@@ -1,7 +1,5 @@
 using Test
-using Tenet
-using OMEinsum
-using Adapt
+using SafeTestsets
 
 include("Utils.jl")
 
@@ -30,8 +28,14 @@ end
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
-        @testset "Python" begin
+        @safetestset "Python" begin
             run(`cp CondaPkg.toml ../CondaPkg.toml`)
+            using Test
+            using Tenet
+            using CondaPkg
+            CondaPkg.update()
+            using PythonCall
+
             include("integration/python/test_cirq.jl")
             include("integration/python/test_quimb.jl")
             include("integration/python/test_qiskit.jl")

@@ -1,7 +1,9 @@
-using Yao
-using YaoBlocks
+@safetestset "YaoBlocks" begin
+    using Test
+    using Tenet
+    using Yao
+    using YaoBlocks
 
-@testset "YaoBlocks" begin
     # NOTE qubit #3 left empty on purpose
     @testset let yaocirc = chain(3, put(1 => X), cnot(1, 2))
         circuit = convert(Circuit, yaocirc)

@@ -1,4 +1,5 @@
-@testset "ITensorNetworks" begin
+@safetestset "ITensorNetworks" begin
+    using Test
     using Tenet
     using Graphs
     using ITensors: ITensors, ITensor, Index, array

@@ -1,5 +1,6 @@
-@testset "KrylovKit.eigsolve" begin
-    using Tenet: Tensor
+@safetestset "KrylovKit.eigsolve" begin
+    using Test
+    using Tenet
     using KrylovKit
     using LinearAlgebra
 

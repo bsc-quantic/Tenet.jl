@@ -1,11 +1,10 @@
-using Test
-using Tenet
-using Tenet: Tensor, contract, Lattice
-using ChainRulesTestUtils
-using Graphs
-using BijectiveDicts
+@safetestset "ChainRules" begin
+    using Test
+    using Tenet
+    using ChainRulesTestUtils
+    using Graphs
+    using BijectiveDicts
 
-@testset "ChainRules" begin
     @testset "Tensor" begin
         test_frule(Tensor, ones(), Symbol[])
         test_rrule(Tensor, ones(), Symbol[])
