@@ -1,10 +1,9 @@
 using Tenet
 using Tenet: Lattice, Bond
 using Graphs
-using BijectiveDicts: BijectiveDict
 
 @testset "Lattice" begin
-    @testset let graph = SimpleGraph(), mapping = BijectiveDict{Lane,Int}(), lattice = Lattice(mapping, graph)
+    @testset let graph = SimpleGraph(), lattice = Lattice()
         @test lattice == zero(Lattice)
         @test lattice == copy(lattice) && lattice !== copy(lattice)
         @test nv(lattice) == 0
@@ -15,6 +14,21 @@ using BijectiveDicts: BijectiveDict
         @test !has_edge(lattice, lane"1", lane"2")
         @test !has_edge(lattice, Bond(lane"1", lane"2"))
         @test_throws ArgumentError neighbors(lattice, lane"1")
+
+        add_vertex!(lattice, lane"1")
+        @test nv(lattice) == 1
+        @test ne(lattice) == 0
+        @test issetequal(vertices(lattice), [lane"1"])
+        @test isempty(edges(lattice))
+        @test has_vertex(lattice, lane"1")
+
+        add_vertex!(lattice, lane"2")
+        add_edge!(lattice, lane"1", lane"2")
+        @test nv(lattice) == 2
+        @test ne(lattice) == 1
+        @test issetequal(vertices(lattice), [lane"1", lane"2"])
+        @test issetequal(edges(lattice), [Bond(lane"1", lane"2")])
+        @test has_edge(lattice, lane"1", lane"2")
     end
 
     @testset "Chain" begin

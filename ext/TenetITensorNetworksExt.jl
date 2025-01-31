@@ -44,16 +44,10 @@ end
 
 function Base.convert(::Type{Lattice}, s::IndsNetwork)
     # NOTE they don't suffer from the issue of removing a vertex from SimpleGraph (i.e. vertex renaming), because their vertice list keeps ordered
-    # TODO maybe we can use Vector for the mapping
     ng = underlying_graph(s) # namedgraph
     g = position_graph(ng) # simplegraph
-
-    mapping = BijectiveDict{Lane,Int}()
-    for (i, v) in enumerate(vertices(ng))
-        mapping[Lane(v)] = i
-    end
-
-    return Lattice(mapping, copy(g))
+    lanes = Lane.(collect(vertices(ng)))
+    return Lattice(lanes, copy(g))
 end
 
 function Base.convert(::Type{IndsNetwork}, l::Lattice)

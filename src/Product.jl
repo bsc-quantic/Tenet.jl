@@ -32,11 +32,9 @@ function Product(arrays::AbstractArray{<:AbstractVector})
         Tensor(arrays[i], [symbols[i]])
     end
 
-    sitemap = Dict(Site(i) => symbols[i] for i in eachindex(arrays))
+    sitemap = Dict(Site(i) => symbols[i] for i in eachindex(IndexCartesian(), arrays))
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
-    graph = Graphs.Graph(n)
-    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
-    lattice = Lattice(mapping, graph)
+    lattice = Lattice(Lane.(eachindex(IndexCartesian(), arrays)))
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end
@@ -56,9 +54,7 @@ function Product(arrays::AbstractArray{<:AbstractMatrix})
         Dict(Site(i) => symbols[i][2] for i in eachindex(arrays)),
     )
     qtn = Quantum(TensorNetwork(_tensors), sitemap)
-    graph = Graphs.Graph(n)
-    mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane => i for (i, lane) in enumerate(lanes(qtn))])
-    lattice = Lattice(mapping, graph)
+    lattice = Lattice(Lane.(eachindex(IndexCartesian(), arrays)))
     ansatz = Ansatz(qtn, lattice)
     return Product(ansatz)
 end

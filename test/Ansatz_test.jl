@@ -9,9 +9,10 @@ using LinearAlgebra
         n = 2
         tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j])])
         qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j))
-        graph = Graph(n)
-        mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[Lane(i) => i for i in 1:n])
-        lattice = Lattice(mapping, graph)
+
+        @test Lattice(Lane.(1:n), Graph(n)) == Lattice(Lane.(1:n))
+
+        lattice = Lattice(Lane.(1:n))
         ansatz = Ansatz(qtn, lattice)
 
         @test zero(ansatz) == Ansatz(zero(qtn), lattice)
@@ -51,8 +52,7 @@ using LinearAlgebra
     @testset "Complete connectivity" begin
         n = 2
         graph = Graphs.complete_graph(n)
-        mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[Lane(i) => i for i in 1:n])
-        lattice = Lattice(mapping, graph)
+        lattice = Lattice(Lane.(1:n), graph)
         tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])])
         qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2))
         ansatz = Ansatz(qtn, lattice)

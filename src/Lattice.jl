@@ -26,61 +26,93 @@ It is used for representing the topology of a [`Ansatz`](@ref) Tensor Network.
 It fulfills the [`AbstractGraph`](https://juliagraphs.org/Graphs.jl/stable/core_functions/interface/) interface.
 """
 struct Lattice <: Graphs.AbstractGraph{Lane}
-    mapping::BijectiveDict{Lane,Int,Dict{Lane,Int},Dict{Int,Lane}}
-    graph::Graphs.SimpleGraph{Int} # TODO replace graph format because `rem_vertex!` renames vertices
+    lanes::Vector{Lane}
+    graph::Graphs.SimpleGraph{Int}
+
+    function Lattice(lanes, graph)
+        length(lanes) == Graphs.nv(graph) || throw(ArgumentError("number of lanes must match number of vertices"))
+        new(lanes, graph)
+    end
 end
 
-Base.copy(lattice::Lattice) = Lattice(copy(lattice.mapping), copy(lattice.graph))
-Base.:(==)(a::Lattice, b::Lattice) = a.mapping == b.mapping && a.graph == b.graph
+Lattice() = Lattice(Lane[], Graphs.SimpleGraph{Int}())
+Lattice(lanes) = Lattice(lanes, Graphs.SimpleGraph{Int}(length(lanes)))
+
+Base.parent(lattice::Lattice) = lattice.graph
+parent_vertex(lattice::Lattice, lane::Lane) = findfirst(==(lane), lattice.lanes)
+child_vertex(lattice::Lattice, vertex::Int) = lattice.lanes[vertex]
+
+Base.copy(lattice::Lattice) = Lattice(copy(lattice.lanes), copy(lattice.graph))
+Base.:(==)(a::Lattice, b::Lattice) = a.lanes == b.lanes && a.graph == b.graph
 
 # TODO these where needed by ChainRulesTestUtils, do we still need them?
-Base.zero(::Type{Lattice}) = Lattice(BijectiveDict{Lane,Int}(), zero(Graphs.SimpleGraph{Int}))
+Base.zero(::Type{Lattice}) = Lattice(Lane[], zero(Graphs.SimpleGraph{Int}))
 Base.zero(::Lattice) = zero(Lattice)
 
-Base.in(v::Lane, lattice::Lattice) = v ∈ keys(lattice.mapping)
-Base.in(v::Site, lattice::Lattice) = Lane(v) ∈ keys(lattice.mapping)
+Base.in(v::Lane, lattice::Lattice) = v ∈ lattice.lanes
+Base.in(v::Site, lattice::Lattice) = Lane(v) ∈ lattice
 Base.in(e::Bond, lattice::Lattice) = e ∈ edges(lattice)
 
 Graphs.is_directed(::Type{Lattice}) = false
+
+function Graphs.add_vertex!(lattice::Lattice, lane::Lane)
+    if !Graphs.add_vertex!(parent(lattice))
+        throw(ErrorException("Could not add vertex to parent graph"))
+    end
+    push!(lattice.lanes, lane)
+    return lattice
+end
+
+function Graphs.add_edge!(lattice::Lattice, a::Lane, b::Lane)
+    if !Graphs.add_edge!(lattice.graph, parent_vertex(lattice, a), parent_vertex(lattice, b))
+        throw(ErrorException("Could not add edge to parent graph"))
+    end
+    return lattice
+end
+
+function Graphs.rem_vertex!(lattice::Lattice, lane::Lane)
+    vertex = parent_vertex(lattice, lane)
+    res = Graphs.remove_vertex!(lattice.graph, vertex)
+    res && deleteat!(lattice.lanes, vertex)
+    return res
+end
+
+Graphs.rem_edge!(lattice::Lattice, edge::Bond) = Graphs.rem_edge!(lattice, Graphs.src(edge), Graphs.dst(edge))
 
 """
     Graphs.vertices(::Lattice)
 
 Return the vertices of the lattice; i.e. the list of [`Lane`](@ref)s.
 """
-function Graphs.vertices(lattice::Lattice)
-    return map(Graphs.vertices(lattice.graph)) do vertex
-        lattice.mapping'[vertex]
-    end
-end
+Graphs.vertices(lattice::Lattice) = Tuple(lattice.lanes)
 
 """
     Graphs.edges(::Lattice)
 
 Return the edges of the lattice; i.e. pairs of [`Lane`](@ref)s.
 """
-Graphs.edges(lattice::Lattice) = BondIterator(Graphs.edges(lattice.graph), lattice)
+Graphs.edges(lattice::Lattice) = BondIterator(Graphs.edges(parent(lattice)), lattice)
 
 """
     Graphs.nv(::Lattice)
 
 Return the number of vertices; i.e. [`Lane`](@ref)s, in the lattice.
 """
-Graphs.nv(lattice::Lattice) = Graphs.nv(lattice.graph)
+Graphs.nv(lattice::Lattice) = Graphs.nv(parent(lattice))
 
 """
     Graphs.ne(::Lattice)
 
 Return the number of edges in the lattice.
 """
-Graphs.ne(lattice::Lattice) = Graphs.ne(lattice.graph)
+Graphs.ne(lattice::Lattice) = Graphs.ne(parent(lattice))
 
 """
     Graphs.has_vertex(lattice::Lattice, lane::AbstractLane)
 
 Return `true` if the lattice has the given [`Lane`](@ref).
 """
-Graphs.has_vertex(lattice::Lattice, lane::AbstractLane) = haskey(lattice.mapping, lane)
+Graphs.has_vertex(lattice::Lattice, lane::AbstractLane) = lane ∈ lattice
 
 """
     Graphs.has_edge(lattice::Lattice, edge)
@@ -92,7 +124,7 @@ Graphs.has_edge(lattice::Lattice, edge::Bond) = Graphs.has_edge(lattice, edge.sr
 function Graphs.has_edge(lattice::Lattice, a::AbstractLane, b::AbstractLane)
     return Graphs.has_vertex(lattice, a) &&
            Graphs.has_vertex(lattice, b) &&
-           Graphs.has_edge(lattice.graph, lattice.mapping[a], lattice.mapping[b])
+           Graphs.has_edge(parent(lattice), parent_vertex(lattice, a), parent_vertex(lattice, b))
 end
 
 """
@@ -102,9 +134,9 @@ Return the neighbors [`Lane`](@ref)s of the given [`Lane`](@ref).
 """
 function Graphs.neighbors(lattice::Lattice, lane::AbstractLane)
     Graphs.has_vertex(lattice, lane) || throw(ArgumentError("lane not in lattice"))
-    vertex = lattice.mapping[lane]
-    return map(Graphs.neighbors(lattice.graph, vertex)) do neighbor
-        lattice.mapping'[neighbor]
+    vertex = parent_vertex(lattice, lane)
+    return map(Graphs.neighbors(parent(lattice), vertex)) do neighbor
+        child_vertex(lattice, neighbor)
     end
 end
 
@@ -123,7 +155,9 @@ function Base.iterate(iterator::BondIterator, state=nothing)
     itres = isnothing(state) ? iterate(iterator.simpleit) : iterate(iterator.simpleit, state)
     isnothing(itres) && return nothing
     edge, state = itres
-    return Bond(iterator.lattice.mapping'[Graphs.src(edge)], iterator.lattice.mapping'[Graphs.dst(edge)]), state
+    a = child_vertex(iterator.lattice, Graphs.src(edge))
+    b = child_vertex(iterator.lattice, Graphs.dst(edge))
+    return Bond(a, b), state
 end
 
 """
@@ -133,8 +167,8 @@ Create a chain lattice with `n` sites.
 """
 function Lattice(::Val{:chain}, n; periodic=false)
     graph = periodic ? Graphs.cycle_graph(n) : Graphs.path_graph(n)
-    mapping = BijectiveDict{Lane,Int}([Lane(i) => i for i in 1:n])
-    Lattice(mapping, graph)
+    lanes = [Lane(i) for i in 1:n]
+    Lattice(lanes, graph)
 end
 
 """
@@ -144,8 +178,8 @@ Create a rectangular lattice with `nrows` rows and `ncols` columns.
 """
 function Lattice(::Val{:rectangular}, nrows, ncols; periodic=false)
     graph = Graphs.grid((nrows, ncols); periodic)
-    mapping = BijectiveDict{Lane,Int}([Lane(row, col) => row + (col - 1) * nrows for row in 1:nrows for col in 1:ncols])
-    Lattice(mapping, graph)
+    lanes = vec([Lane(row, col) for col in 1:ncols for row in 1:nrows])
+    Lattice(lanes, graph)
 end
 
 """
@@ -154,25 +188,27 @@ end
 Create a Lieb lattice with `nrows` cell rows and `ncols` cell columns.
 """
 function Lattice(::Val{:lieb}, ncellrows, ncellcols)
+    lattice = Lattice()
     nrows, ncols = 1 .+ 2 .* (ncellrows, ncellcols)
 
-    lanes = [Lane(row, col) for row in 1:nrows for col in 1:ncols if !(row % 2 == 0 && col % 2 == 0)]
-    mapping = BijectiveDict{Lane,Int}([lane => i for (i, lane) in enumerate(lanes)])
-    graph = Graphs.SimpleGraph{Int}(length(lanes))
+    # add vertices
+    for row in 1:nrows, col in 1:ncols
+        # skip holes
+        row % 2 == 0 && col % 2 == 0 && continue
+
+        lane = Lane(row, col)
+        Graphs.add_vertex!(lattice, lane)
+    end
 
     # add horizontal edges
     for row in 1:2:nrows, col in 1:(ncols - 1)
-        i = mapping[Lane(row, col)]
-        j = mapping[Lane(row, col + 1)]
-        Graphs.add_edge!(graph, i, j)
+        Graphs.add_edge!(lattice, Lane(row, col), Lane(row, col + 1))
     end
 
     # add vertical edges
     for row in 1:(nrows - 1), col in 1:2:ncols
-        i = mapping[Lane(row, col)]
-        j = mapping[Lane(row + 1, col)]
-        Graphs.add_edge!(graph, i, j)
+        Graphs.add_edge!(lattice, Lane(row, col), Lane(row + 1, col))
     end
 
-    return Lattice(mapping, graph)
+    return lattice
 end

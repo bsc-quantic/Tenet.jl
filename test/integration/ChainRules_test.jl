@@ -195,9 +195,7 @@ using BijectiveDicts
 
     @testset "Ansatz" begin
         tn = Quantum(TensorNetwork([Tensor(ones(2), [:i])]), Dict{Site,Symbol}(site"1" => :i))
-        graph = Graph(1)
-        mapping = BijectiveDict{Lane,Int}(Pair{Lane,Int}[lane"1" => 1])
-        lattice = Lattice(mapping, graph)
+        lattice = Lattice([lane"1"])
         test_frule(Ansatz, tn, lattice)
         test_rrule(Ansatz, tn, lattice)
     end
