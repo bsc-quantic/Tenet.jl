@@ -4,6 +4,7 @@ using Tenet
 using OMEinsum
 
 include("Utils.jl")
+include("Interfaces.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 

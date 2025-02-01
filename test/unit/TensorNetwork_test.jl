@@ -30,6 +30,18 @@ using LinearAlgebra
     end
 end
 
+@testset "Inteface" begin
+    test_tensornetwork(TensorNetwork())
+    test_tensornetwork(
+        TensorNetwork([
+            Tensor(zeros(2, 2), (:i, :j)),
+            Tensor(zeros(2, 2), (:j, :k)),
+            Tensor(zeros(2), (:k,)),
+            Tensor(zeros(2), (:k,)),
+        ]),
+    )
+end
+
 @testset "Base.similar" begin
     listtensors = [Tensor(rand(2, 3, 4), (:i, :j, :k)), Tensor(rand(4, 3, 2), (:l, :j, :m))]
     tn = TensorNetwork(listtensors)
@@ -817,9 +829,5 @@ end
     read_buffer = IOBuffer(content)
     tn2 = deserialize(read_buffer)
 
-        @test tn == tn2
-        @test tn == tn2
-    end
     @test tn == tn2
-    end
 end
