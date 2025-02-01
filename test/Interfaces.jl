@@ -278,7 +278,7 @@ end
 
 function test_pluggable_socket(tn)
     # `socket` returns the socket of the Tensor Network
-    @test socket(tn) isa Socket
+    @test socket(tn) isa Tenet.Socket
 end
 
 function test_pluggable_inds(tn)
