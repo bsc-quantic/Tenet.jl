@@ -176,7 +176,7 @@ function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
 end
 
 function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
-    candidates = filter!(!=(kwargs.parallelto), mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto)))
+    candidates = filter!(!=(kwargs.parallelto), collect(mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto))))
     return filter(candidates) do i
         length(tensors(tn; contains=i)) == length(tensors(tn; contains=kwargs.parallelto))
     end
