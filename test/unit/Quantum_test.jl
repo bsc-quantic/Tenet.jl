@@ -1,53 +1,67 @@
-
+using Test
+using Tenet
 using Tenet: nsites, State, Operator, Scalar
 
-_tensors = Tensor[Tensor(zeros(2), [:i])]
-tn = TensorNetwork(_tensors)
-qtn = Quantum(tn, Dict(site"1" => :i))
-@test nsites(qtn; set=:inputs) == 0
-@test nsites(qtn; set=:outputs) == 1
-@test issetequal(sites(qtn), [site"1"])
-@test socket(qtn) == State(; dual=false)
-@test inds(qtn; at=site"1") == :i
-@test issetequal(inds(qtn; set=:physical), [:i])
-@test isempty(inds(qtn; set=:virtual))
+@testset "Interfaces" begin
+    _tensors = Tensor[Tensor(zeros(2), [:i])]
+    tn = TensorNetwork(_tensors)
+    qtn = Quantum(tn, Dict{Site{1},Symbol}())
 
-# forwarded methods to `TensorNetwork`
-@test TensorNetwork(qtn) == tn
-@test tensors(qtn) == _tensors
+    _tensors = Tensor[Tensor(zeros(2), [:i])]
+    tn = TensorNetwork(_tensors)
+    qtn = Quantum(tn, Dict(site"1" => :i))
+    @test issetequal(sites(qtn), [site"1"])
+    @test socket(qtn) == State(; dual=false)
+    @test inds(qtn; at=site"1") == :i
+    @test issetequal(inds(qtn; set=:physical), [:i])
+    @test isempty(inds(qtn; set=:virtual))
 
-_tensors = Tensor[Tensor(zeros(2), [:i])]
-tn = TensorNetwork(_tensors)
-qtn = Quantum(tn, Dict(site"1'" => :i))
-@test nsites(qtn; set=:inputs) == 1
-@test nsites(qtn; set=:outputs) == 0
-@test issetequal(sites(qtn), [site"1'"])
-@test socket(qtn) == State(; dual=true)
-@test inds(qtn; at=site"1'") == :i
-@test issetequal(inds(qtn; set=:physical), [:i])
-@test isempty(inds(qtn; set=:virtual))
+    test_tensornetwork(qtn)
+    test_pluggable(qtn)
 
-_tensors = Tensor[Tensor(zeros(2, 2), [:i, :j])]
-tn = TensorNetwork(_tensors)
-qtn = Quantum(tn, Dict(site"1" => :i, site"1'" => :j))
-@test nsites(qtn; set=:inputs) == 1
-@test nsites(qtn; set=:outputs) == 1
-@test issetequal(sites(qtn), [site"1", site"1'"])
-@test socket(qtn) == Operator()
-@test inds(qtn; at=site"1") == :i
-@test inds(qtn; at=site"1'") == :j
-@test issetequal(inds(qtn; set=:physical), [:i, :j])
-@test isempty(inds(qtn; set=:virtual))
+    # forwarded methods to `TensorNetwork`
+    @test TensorNetwork(qtn) == tn
+    @test tensors(qtn) == _tensors
 
-_tensors = Tensor[Tensor(fill(0))]
-tn = TensorNetwork(_tensors)
-qtn = Quantum(tn, Dict())
-@test nsites(qtn; set=:inputs) == 0
-@test nsites(qtn; set=:outputs) == 0
-@test isempty(sites(qtn))
-@test socket(qtn) == Scalar()
-@test isempty(inds(qtn; set=:physical))
-@test isempty(inds(qtn; set=:virtual))
+    _tensors = Tensor[Tensor(zeros(2), [:i])]
+    tn = TensorNetwork(_tensors)
+    qtn = Quantum(tn, Dict(site"1'" => :i))
+    @test nsites(qtn; set=:inputs) == 1
+    @test nsites(qtn; set=:outputs) == 0
+    @test issetequal(sites(qtn), [site"1'"])
+    @test socket(qtn) == State(; dual=true)
+    @test inds(qtn; at=site"1'") == :i
+    @test issetequal(inds(qtn; set=:physical), [:i])
+    @test isempty(inds(qtn; set=:virtual))
+    test_tensornetwork(qtn)
+    test_pluggable(qtn)
+
+    _tensors = Tensor[Tensor(zeros(2, 2), [:i, :j])]
+    tn = TensorNetwork(_tensors)
+    qtn = Quantum(tn, Dict(site"1" => :i, site"1'" => :j))
+    @test nsites(qtn; set=:inputs) == 1
+    @test nsites(qtn; set=:outputs) == 1
+    @test issetequal(sites(qtn), [site"1", site"1'"])
+    @test socket(qtn) == Operator()
+    @test inds(qtn; at=site"1") == :i
+    @test inds(qtn; at=site"1'") == :j
+    @test issetequal(inds(qtn; set=:physical), [:i, :j])
+    @test isempty(inds(qtn; set=:virtual))
+    test_tensornetwork(qtn)
+    test_pluggable(qtn)
+
+    _tensors = Tensor[Tensor(fill(0))]
+    tn = TensorNetwork(_tensors)
+    qtn = Quantum(tn, Dict())
+    @test nsites(qtn; set=:inputs) == 0
+    @test nsites(qtn; set=:outputs) == 0
+    @test isempty(sites(qtn))
+    @test socket(qtn) == Scalar()
+    @test isempty(inds(qtn; set=:physical))
+    @test isempty(inds(qtn; set=:virtual))
+    test_tensornetwork(qtn)
+    test_pluggable(qtn)
+end
 
 # detect errors
 _tensors = Tensor[Tensor(zeros(2), [:i]), Tensor(zeros(2), [:i])]

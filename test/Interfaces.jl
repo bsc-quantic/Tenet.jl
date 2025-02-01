@@ -15,16 +15,18 @@ function test_tensornetwork(
     replace=true,
     contract=true,
 )
-    inds && test_tensornetwork_inds(tn)
-    ninds && test_tensornetwork_ninds(tn)
-    tensors && test_tensornetwork_tensors(tn)
-    ntensors && test_tensornetwork_ntensors(tn)
-    arrays && test_tensornetwork_arrays(tn)
-    size && test_tensornetwork_size(tn)
-    inclusion && test_tensornetwork_in(tn)
-    replace && test_tensornetwork_replace!(tn)
-    contract && test_tensornetwork_contract(tn)
-    contract && test_tensornetwork_contract!(tn)
+    @testset "TensorNetwork interface" begin
+        inds && test_tensornetwork_inds(tn)
+        ninds && test_tensornetwork_ninds(tn)
+        tensors && test_tensornetwork_tensors(tn)
+        ntensors && test_tensornetwork_ntensors(tn)
+        arrays && test_tensornetwork_arrays(tn)
+        size && test_tensornetwork_size(tn)
+        inclusion && test_tensornetwork_in(tn)
+        replace && test_tensornetwork_replace!(tn)
+        contract && test_tensornetwork_contract(tn)
+        contract && test_tensornetwork_contract!(tn)
+    end
 end
 
 function test_tensornetwork_inds(tn)
@@ -241,11 +243,13 @@ function test_tensornetwork_contract!(tn)
 end
 
 # Pluggable interface
-function test_pluggable(tn)
-    test_pluggable_sites(tn)
-    test_pluggable_socket(tn)
-    test_pluggable_inds(tn)
-    test_pluggable_ninds(tn)
+function test_pluggable(tn; sites=true, socket=true, inds=true, ninds=true)
+    @testset "Pluggable interface" begin
+        sites && test_pluggable_sites(tn)
+        socket && test_pluggable_socket(tn)
+        inds && test_pluggable_inds(tn)
+        ninds && test_pluggable_ninds(tn)
+    end
 end
 
 function test_pluggable_sites(tn)
@@ -304,10 +308,12 @@ function test_pluggable_ninds(tn)
 end
 
 # Ansatz interface
-function test_ansatz(tn)
-    test_ansatz_lanes(tn)
-    test_ansatz_lattice(tn)
-    test_ansatz_tensors(tn)
+function test_ansatz(tn; lanes=true, lattice=true, tensors=true)
+    @testset "Ansatz interface" begin
+        lanes && test_ansatz_lanes(tn)
+        lattice && test_ansatz_lattice(tn)
+        tensors && test_ansatz_tensors(tn)
+    end
 end
 
 function test_ansatz_lanes(tn)

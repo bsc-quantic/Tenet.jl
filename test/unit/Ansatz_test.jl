@@ -7,11 +7,11 @@ using LinearAlgebra
     n = 2
     tn = TensorNetwork([Tensor(ones(2), [:i]), Tensor(ones(2), [:j])])
     qtn = Quantum(tn, Dict(site"1" => :i, site"2" => :j))
-
-    @test Lattice(Lane.(1:n), Graph(n)) == Lattice(Lane.(1:n))
-
     lattice = Lattice(Lane.(1:n))
     ansatz = Ansatz(qtn, lattice)
+
+    test_tensornetwork(ansatz)
+    test_pluggable(ansatz)
 
     @test zero(ansatz) == Ansatz(zero(qtn), lattice)
     @test Tenet.lattice(ansatz) == lattice
