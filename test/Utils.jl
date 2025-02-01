@@ -38,17 +38,15 @@ end
 Test `expr` but return `false` if a `MethodError` is thrown.
 """
 macro testimpl(expr)
-    quote
-        @test begin
-            try
-                $expr
-            catch e
-                if e isa MethodError
-                    return false
-                else
-                    rethrow(e)
-                end
+    return Base.remove_linenums!(:(
+        try
+            @test $(esc(expr))
+        catch e
+            if e isa MethodError
+                return false
+            else
+                rethrow(e)
             end
         end
-    end
+    ))
 end
