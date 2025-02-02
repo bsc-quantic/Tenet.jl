@@ -1,32 +1,55 @@
 using Tenet: nsites, State, canonize_site, canonize_site!
 using LinearAlgebra
 
-ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-@test socket(ψ) == State()
-@test nsites(ψ; set=:inputs) == 0
-@test nsites(ψ; set=:outputs) == 3
-@test issetequal(sites(ψ), [site"1", site"2", site"3"])
-@test boundary(ψ) == Open()
-@test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) == nothing
+@testset "Interfaces" begin
+    @testset "case 1" begin
+        ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
-arrays = [rand(2, 1), rand(2, 1, 3), rand(2, 3)]
-ψ = MPS(arrays) # Default order (:o, :l, :r)
-@test size(tensors(ψ; at=site"1")) == (2, 1)
-@test size(tensors(ψ; at=site"2")) == (2, 1, 3)
-@test size(tensors(ψ; at=site"3")) == (2, 3)
-@test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
-@test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right)
-@test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right)
+        test_tensornetwork(ψ; contract_mut=false)
+        test_pluggable(ψ)
+        test_ansatz(ψ)
 
-arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
-ψ = MPS(arrays; order=[:r, :o, :l])
-@test size(tensors(ψ; at=site"1")) == (1, 2)
-@test size(tensors(ψ; at=site"2")) == (3, 2, 1)
-@test size(tensors(ψ; at=site"3")) == (2, 3)
-@test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
-@test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right) !== nothing
-@test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right) !== nothing
-@test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
+        @test socket(ψ) == State()
+        @test nsites(ψ; set=:inputs) == 0
+        @test nsites(ψ; set=:outputs) == 3
+        @test issetequal(sites(ψ), [site"1", site"2", site"3"])
+        @test boundary(ψ) == Open()
+        @test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) == nothing
+    end
+
+    @testset "case 2" begin
+        arrays = [rand(2, 1), rand(2, 1, 3), rand(2, 3)]
+        ψ = MPS(arrays) # Default order (:o, :l, :r)
+
+        test_tensornetwork(ψ; contract_mut=false)
+        test_pluggable(ψ)
+        test_ansatz(ψ)
+
+        @test size(tensors(ψ; at=site"1")) == (2, 1)
+        @test size(tensors(ψ; at=site"2")) == (2, 1, 3)
+        @test size(tensors(ψ; at=site"3")) == (2, 3)
+        @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
+        @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right)
+        @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right)
+    end
+
+    @testset "case 3: order = [:r, :o, :l]" begin
+        arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
+        ψ = MPS(arrays; order=[:r, :o, :l])
+
+        test_tensornetwork(ψ; contract_mut=false)
+        test_pluggable(ψ)
+        test_ansatz(ψ)
+
+        @test size(tensors(ψ; at=site"1")) == (1, 2)
+        @test size(tensors(ψ; at=site"2")) == (3, 2, 1)
+        @test size(tensors(ψ; at=site"3")) == (2, 3)
+        @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
+        @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right) !== nothing
+        @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right) !== nothing
+        @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
+    end
+end
 
 @testset "identity constructor" begin
     nsites_cases = [6, 7, 6, 7]
