@@ -1,6 +1,6 @@
 using Test
 using Tenet
-using Tenet: ninds, ntensors, lattice
+using Tenet: ninds, ntensors, nsites, lattice
 
 # TensorNetwork interface
 function test_tensornetwork(
