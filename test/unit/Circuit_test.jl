@@ -1,6 +1,6 @@
 
-# test empty circuit
-@testset let circuit = Circuit()
+@testset "empty circuit" begin
+    circuit = Circuit()
     test_tensornetwork(circuit)
     test_pluggable(circuit)
 
@@ -18,8 +18,9 @@
     @test issetequal(tensors(qtn), tensors(circuit))
 end
 
-# test applying a single lane gate
-@testset let circuit = Circuit(), gate = Gate(zeros(2, 2), [site"1'", site"1"])
+@testset "apply single-lane gate" begin
+    circuit = Circuit()
+    gate = Gate(zeros(2, 2), [site"1'", site"1"])
     push!(circuit, gate)
 
     test_tensornetwork(circuit)
@@ -46,8 +47,9 @@ end
     @test issetequal(tensors(qtn), tensors(circuit))
 end
 
-# test applying a gate with multiple lanes
-@testset let circuit = Circuit(), gate = Gate(zeros(2, 2, 2, 2), [site"1'", site"2'", site"1", site"2"])
+@testset "apply multi-lane gate" begin
+    circuit = Circuit()
+    gate = Gate(zeros(2, 2, 2, 2), [site"1'", site"2'", site"1", site"2"])
     push!(circuit, gate)
 
     test_tensornetwork(circuit)
@@ -76,10 +78,9 @@ end
     @test issetequal(tensors(qtn), tensors(circuit))
 end
 
-# test applying two gates in the same lane
-@testset let circuit = Circuit(),
-    gate1 = Gate(zeros(2, 2), [site"1'", site"1"]),
-    gate2 = Gate(ones(2, 2), [site"1'", site"1"])
+@testset "apply two gates in the same lane" begin
+    circuit = Circuit()
+    gate1 = Gate(zeros(2, 2), [site"1'", site"1"]), gate2 = Gate(ones(2, 2), [site"1'", site"1"])
 
     push!(circuit, gate1)
     push!(circuit, gate2)
@@ -109,8 +110,9 @@ end
     @test issetequal(tensors(qtn), tensors(circuit))
 end
 
-# test applying the same gate twice
-@testset let circuit = Circuit(), gate = Gate(zeros(2, 2), [site"1'", site"1"])
+@testset "apply the same gate twice" begin
+    circuit = Circuit()
+    gate = Gate(zeros(2, 2), [site"1'", site"1"])
     push!(circuit, gate)
     push!(circuit, gate)
 
@@ -140,8 +142,9 @@ end
 end
 
 # test applying two gates in different lanes
-@testset let circuit = Circuit(),
-    gate1 = Gate(zeros(2, 2), [site"1'", site"1"]),
+@testset "apply two gates in different lanes" begin
+    circuit = Circuit()
+    gate1 = Gate(zeros(2, 2), [site"1'", site"1"])
     gate2 = Gate(ones(2, 2), [site"2'", site"2"])
 
     push!(circuit, gate1)
@@ -176,9 +179,9 @@ end
     @test issetequal(tensors(qtn), tensors(circuit))
 end
 
-# test applying two gates with a shared lane
-@testset let circuit = Circuit(),
-    gate1 = Gate(zeros(2, 2), [site"1'", site"1"]),
+@testset "apply two gates with a shared lane" begin
+    circuit = Circuit()
+    gate1 = Gate(zeros(2, 2), [site"1'", site"1"])
     gate2 = Gate(ones(2, 2, 2, 2), [site"1'", site"2'", site"1", site"2"])
 
     push!(circuit, gate1)
