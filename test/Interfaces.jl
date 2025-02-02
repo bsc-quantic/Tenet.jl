@@ -32,7 +32,7 @@ end
 
 function test_tensornetwork_inds(tn)
     @testset "`inds` returns a list of the indices in the Tensor Network" begin
-        @test inds(tn) isa AbstractVector{Symbol}
+        @test inds(tn) isa Base.AbstractVecOrTuple{Symbol}
     end
 
     @testset "`inds(; set = :all)` is equal to naive `inds`" begin
@@ -40,19 +40,19 @@ function test_tensornetwork_inds(tn)
     end
 
     @testset "`inds(; set = :open)` returns a list of indices of the Tensor Network" begin
-        @test inds(tn; set=:open) isa AbstractVector{Symbol}
+        @test inds(tn; set=:open) isa Base.AbstractVecOrTuple{Symbol}
     end
 
     @testset "`inds(; set = :inner)` returns a list of indices of the Tensor Network" begin
-        @test inds(tn; set=:inner) isa AbstractVector{Symbol}
+        @test inds(tn; set=:inner) isa Base.AbstractVecOrTuple{Symbol}
     end
 
     @testset "`inds(; set = :hyper)` returns a list of indices of the Tensor Network" begin
-        @test inds(tn; set=:hyper) isa AbstractVector{Symbol}
+        @test inds(tn; set=:hyper) isa Base.AbstractVecOrTuple{Symbol}
     end
 
     @testset "`inds(; parallelto)` returns a list of indices parallel to `i` in the graph" begin
-        @testif pred = !isempty(inds(tn)) inds(tn; parallelto=first(inds(tn))) isa AbstractVector{Symbol}
+        @testif pred = !isempty(inds(tn)) inds(tn; parallelto=first(inds(tn))) isa Base.AbstractVecOrTuple{Symbol}
     end
 end
 
@@ -80,15 +80,15 @@ end
 
 function test_tensornetwork_tensors(tn)
     @testset "`tensors` returns a list of the tensors in the Tensor Network" begin
-        @test tensors(tn) isa AbstractVector{<:Tensor}
+        @test tensors(tn) isa Base.AbstractVecOrTuple{<:Tensor}
     end
 
     @testset "`tensors(; contains = i)` returns a list of tensors containing index `i`" begin
-        @testif pred = !isempty(inds(tn)) tensors(tn; contains=first(inds(tn))) isa AbstractVector{<:Tensor}
+        @testif pred = !isempty(inds(tn)) tensors(tn; contains=first(inds(tn))) isa Base.AbstractVecOrTuple{<:Tensor}
     end
 
     @testset "`tensors(; intersects = i)` returns a list of tensors intersecting index `i`" begin
-        @testif pred = !isempty(inds(tn)) tensors(tn; intersects=first(inds(tn))) isa AbstractVector{<:Tensor}
+        @testif pred = !isempty(inds(tn)) tensors(tn; intersects=first(inds(tn))) isa Base.AbstractVecOrTuple{<:Tensor}
     end
 end
 
@@ -196,7 +196,7 @@ end
 
 function test_pluggable_sites(tn)
     @testset "`sites` returns a list of the sites in the Tensor Network" begin
-        @test sites(tn) isa AbstractVector{<:Site}
+        @test sites(tn) isa Base.AbstractVecOrTuple{<:Site}
     end
 
     @testset "`sites(; set = :all)` is equal to naive `sites`" begin
@@ -204,11 +204,11 @@ function test_pluggable_sites(tn)
     end
 
     @testset "`sites(; set = :inputs)` returns a list of input sites (i.e. dual) in the Tensor Network" begin
-        @test sites(tn; set=:inputs) isa AbstractVector{<:Site} && all(isdual, sites(tn; set=:inputs))
+        @test sites(tn; set=:inputs) isa Base.AbstractVecOrTuple{<:Site} && all(isdual, sites(tn; set=:inputs))
     end
 
     @testset "`sites(; set = :outputs)` returns a list of output sites (i.e. non-dual) in the Tensor Network" begin
-        @test sites(tn; set=:outputs) isa AbstractVector{<:Site} && all(!isdual, sites(tn; set=:outputs))
+        @test sites(tn; set=:outputs) isa Base.AbstractVecOrTuple{<:Site} && all(!isdual, sites(tn; set=:outputs))
     end
 
     @testset "`sites(; at::Symbol)` returns the site linked to the index" begin
@@ -257,7 +257,7 @@ end
 
 function test_ansatz_lanes(tn)
     @testset "`lanes` returns a list of the lanes in the Tensor Network" begin
-        @test lanes(tn) isa AbstractVector{<:Lane}
+        @test lanes(tn) isa Base.AbstractVecOrTuple{<:Lane}
     end
 end
 
