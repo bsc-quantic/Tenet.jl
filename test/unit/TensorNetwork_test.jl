@@ -31,7 +31,7 @@ using LinearAlgebra
 end
 
 @testset "Interface" begin
-    test_tensornetwork(TensorNetwork(); contract=false)
+    test_tensornetwork(TensorNetwork(); contract=false, contract_mut=false)
     test_tensornetwork(
         TensorNetwork([
             Tensor(zeros(2, 2), (:i, :j)),
