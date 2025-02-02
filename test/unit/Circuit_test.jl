@@ -1,6 +1,9 @@
 
 # test empty circuit
 @testset let circuit = Circuit()
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test TensorNetwork(circuit) == TensorNetwork()
     @test isempty(sites(circuit))
     @test isempty(lanes(circuit))
@@ -18,6 +21,10 @@ end
 # test applying a single lane gate
 @testset let circuit = Circuit(), gate = Gate(zeros(2, 2), [site"1'", site"1"])
     push!(circuit, gate)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1"])
     @test issetequal(lanes(circuit), [Lane(1)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'"])
@@ -42,6 +49,10 @@ end
 # test applying a gate with multiple lanes
 @testset let circuit = Circuit(), gate = Gate(zeros(2, 2, 2, 2), [site"1'", site"2'", site"1", site"2"])
     push!(circuit, gate)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1", site"2'", site"2"])
     @test issetequal(lanes(circuit), [Lane(1), Lane(2)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'", site"2'"])
@@ -72,6 +83,10 @@ end
 
     push!(circuit, gate1)
     push!(circuit, gate2)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1"])
     @test issetequal(lanes(circuit), [Lane(1)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'"])
@@ -98,6 +113,10 @@ end
 @testset let circuit = Circuit(), gate = Gate(zeros(2, 2), [site"1'", site"1"])
     push!(circuit, gate)
     push!(circuit, gate)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1"])
     @test issetequal(lanes(circuit), [Lane(1)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'"])
@@ -127,6 +146,10 @@ end
 
     push!(circuit, gate1)
     push!(circuit, gate2)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1", site"2'", site"2"])
     @test issetequal(lanes(circuit), [Lane(1), Lane(2)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'", site"2'"])
@@ -160,6 +183,10 @@ end
 
     push!(circuit, gate1)
     push!(circuit, gate2)
+
+    test_tensornetwork(circuit)
+    test_pluggable(circuit)
+
     @test issetequal(sites(circuit), [site"1'", site"1", site"2'", site"2"])
     @test issetequal(lanes(circuit), [Lane(1), Lane(2)])
     @test issetequal(sites(circuit; set=:inputs), [site"1'", site"2'"])
