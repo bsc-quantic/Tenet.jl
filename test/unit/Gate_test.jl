@@ -1,6 +1,11 @@
+using Test
+using Tenet
 
 @testset let data = zeros(2, 2), tensor = Tensor(data, (:i, :j))
     gate = Gate(tensor, [site"1'", site"1"])
+
+    test_pluggable(gate)
+
     @test gate isa Gate
     @test Tensor(gate) == tensor
     @test Tensor(gate) == tensor
