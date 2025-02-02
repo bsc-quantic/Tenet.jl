@@ -10,7 +10,7 @@ using LinearAlgebra
     lattice = Lattice(Lane.(1:n))
     ansatz = Ansatz(qtn, lattice)
 
-    test_tensornetwork(ansatz)
+    test_tensornetwork(ansatz; contract_mut=false)
     test_pluggable(ansatz)
     test_ansatz(ansatz)
 

@@ -1,6 +1,6 @@
 using Test
 using Tenet
-using Tenet: ninds, ntensors
+using Tenet: ninds, ntensors, lattice
 
 # TensorNetwork interface
 function test_tensornetwork(
@@ -176,8 +176,8 @@ end
 
 function test_tensornetwork_contract!(tn)
     @testset "`contract!` on `Symbol` contracts an index in-place" begin
-        @testif pred = !isempty(inds(tn)) let tn = deepcopy(tn)
-            ind = first(inds(tn))
+        @testif pred = !isempty(inds(tn; set=:inner)) let tn = deepcopy(tn)
+            ind = first(inds(tn; set=:inner))
             contract!(tn, ind)
             ind ∉ tn
         end
