@@ -14,6 +14,7 @@ function test_tensornetwork(
     inclusion=true,
     replace=true,
     contract=true,
+    contract_mut=true,
 )
     @testset "TensorNetwork interface" begin
         inds && test_tensornetwork_inds(tn)
@@ -25,220 +26,161 @@ function test_tensornetwork(
         inclusion && test_tensornetwork_in(tn)
         replace && test_tensornetwork_replace!(tn)
         contract && test_tensornetwork_contract(tn)
-        contract && test_tensornetwork_contract!(tn)
+        contract_mut && test_tensornetwork_contract!(tn)
     end
 end
 
 function test_tensornetwork_inds(tn)
-    # `inds` returns a list of the indices in the Tensor Network
-    @test inds(tn) isa AbstractVector{Symbol}
+    @testset "`inds` returns a list of the indices in the Tensor Network" begin
+        @test inds(tn) isa AbstractVector{Symbol}
+    end
 
-    # `inds(; set = :all)` is equal to naive `inds`
-    @test inds(tn; set=:all) == inds(tn)
+    @testset "`inds(; set = :all)` is equal to naive `inds`" begin
+        @test inds(tn; set=:all) == inds(tn)
+    end
 
-    # `inds(; set = :open)` returns a list of indices of the Tensor Network
-    @test inds(tn; set=:open) isa AbstractVector{Symbol}
+    @testset "`inds(; set = :open)` returns a list of indices of the Tensor Network" begin
+        @test inds(tn; set=:open) isa AbstractVector{Symbol}
+    end
 
-    # `inds(; set = :inner)` returns a list of indices of the Tensor Network
-    @test inds(tn; set=:inner) isa AbstractVector{Symbol}
+    @testset "`inds(; set = :inner)` returns a list of indices of the Tensor Network" begin
+        @test inds(tn; set=:inner) isa AbstractVector{Symbol}
+    end
 
-    # `inds(; set = :hyper)` returns a list of indices of the Tensor Network
-    @test inds(tn; set=:hyper) isa AbstractVector{Symbol}
+    @testset "`inds(; set = :hyper)` returns a list of indices of the Tensor Network" begin
+        @test inds(tn; set=:hyper) isa AbstractVector{Symbol}
+    end
 
-    # `inds(; parallelto)` returns a list of indices parallel to `i` in the graph
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        inds(tn; parallelto=first(_inds)) isa AbstractVector{Symbol}
+    @testset "`inds(; parallelto)` returns a list of indices parallel to `i` in the graph" begin
+        @testif pred = !isempty(inds(tn)) inds(tn; parallelto=first(inds(tn))) isa AbstractVector{Symbol}
     end
 end
 
 function test_tensornetwork_ninds(tn)
-    # `ninds` returns the number of indices in the Tensor Network
-    @test ninds(tn) == length(inds(tn))
+    @testset "`ninds` returns the number of indices in the Tensor Network" begin
+        @test ninds(tn) == length(inds(tn))
+    end
 
-    # `ninds(; set = :all)` is equal to naive `ninds`
-    @test ninds(tn; set=:all) == ninds(tn)
+    @testset "`ninds(; set = :all)` is equal to naive `ninds`" begin
+        @test ninds(tn; set=:all) == ninds(tn)
+    end
 
-    # `ninds(; set = :open)` returns the number of open indices in the Tensor Network
-    @test ninds(tn; set=:open) == length(inds(tn; set=:open))
+    @testset "`ninds(; set = :open)` returns the number of open indices in the Tensor Network" begin
+        @test ninds(tn; set=:open) == length(inds(tn; set=:open))
+    end
 
-    # `ninds(; set = :inner)` returns the number of inner indices in the Tensor Network
-    @test ninds(tn; set=:inner) == length(inds(tn; set=:inner))
+    @testset "`ninds(; set = :inner)` returns the number of inner indices in the Tensor Network" begin
+        @test ninds(tn; set=:inner) == length(inds(tn; set=:inner))
+    end
 
-    # `ninds(; set = :hyper)` returns the number of hyper indices in the Tensor Network
-    @test ninds(tn; set=:hyper) == length(inds(tn; set=:hyper))
+    @testset "`ninds(; set = :hyper)` returns the number of hyper indices in the Tensor Network" begin
+        @test ninds(tn; set=:hyper) == length(inds(tn; set=:hyper))
+    end
 end
 
 function test_tensornetwork_tensors(tn)
-    # `tensors` returns a list of the tensors in the Tensor Network
-    @test tensors(tn) isa AbstractVector{<:Tensor}
-
-    # `tensors(; contains = i)` returns a list of tensors containing index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        tensors(tn; contains=first(_inds)) isa AbstractVector{<:Tensor}
+    @testset "`tensors` returns a list of the tensors in the Tensor Network" begin
+        @test tensors(tn) isa AbstractVector{<:Tensor}
     end
 
-    # `tensors(; intersects = i)` returns a list of tensors intersecting index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        tensors(tn; intersects=first(_inds)) isa AbstractVector{<:Tensor}
+    @testset "`tensors(; contains = i)` returns a list of tensors containing index `i`" begin
+        @testif pred = !isempty(inds(tn)) tensors(tn; contains=first(inds(tn))) isa AbstractVector{<:Tensor}
+    end
+
+    @testset "`tensors(; intersects = i)` returns a list of tensors intersecting index `i`" begin
+        @testif pred = !isempty(inds(tn)) tensors(tn; intersects=first(inds(tn))) isa AbstractVector{<:Tensor}
     end
 end
 
 function test_tensornetwork_ntensors(tn)
-    #`ntensors` returns the number of tensors in the Tensor Network
-    @test ntensors(tn) == length(tensors(tn))
-
-    #`ntensors(; contains = i)` returns the number of tensors containing index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        ntensors(tn; contains=first(_inds)) == length(tensors(tn; contains=first(_inds)))
+    @testset "`ntensors` returns the number of tensors in the Tensor Network" begin
+        @test ntensors(tn) == length(tensors(tn))
     end
 
-    #`ntensors(; intersects = i)` returns the number of tensors intersecting index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        ntensors(tn; intersects=first(_inds)) == length(tensors(tn; contains=first(_inds)))
+    @testset "`ntensors(; contains = i)` returns the number of tensors containing index `i`" begin
+        @testif pred = !isempty(inds(tn)) ntensors(tn; contains=first(inds(tn))) ==
+            length(tensors(tn; contains=first(inds(tn))))
+    end
+
+    @testset "`ntensors(; intersects = i)` returns the number of tensors intersecting index `i`" begin
+        @testif pred = !isempty(inds(tn)) ntensors(tn; intersects=first(inds(tn))) ==
+            length(tensors(tn; contains=first(inds(tn))))
     end
 end
 
 function test_tensornetwork_arrays(tn)
-    # `arrays` returns a list of the arrays in the Tensor Network
-    @test arrays(tn) == parent.(tensors(tn))
-
-    # `arrays(; contains = i)` returns a list of arrays containing index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        arrays(tn; contains=first(_inds)) == parent.(tensors(tn; contains=first(_inds)))
+    @testset "`arrays` returns a list of the arrays in the Tensor Network" begin
+        @test arrays(tn) == parent.(tensors(tn))
     end
 
-    # `arrays(; intersects = i)` returns a list of arrays intersecting index `i`
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        arrays(tn; intersects=first(_inds)) == parent.(tensors(tn; contains=first(_inds)))
+    @testset "`arrays(; contains = i)` returns a list of arrays containing index `i`" begin
+        @testif pred = !isempty(inds(tn)) arrays(tn; contains=first(inds(tn))) ==
+            parent.(tensors(tn; contains=first(inds(tn))))
+    end
+
+    @testset "`arrays(; intersects = i)` returns a list of arrays intersecting index `i`" begin
+        @testif pred = !isempty(inds(tn)) arrays(tn; intersects=first(inds(tn))) ==
+            parent.(tensors(tn; contains=first(inds(tn))))
     end
 end
 
 function test_tensornetwork_size(tn)
-    # `size` returns a mapping from indices to their dimensionalities
-    @test size(tn) isa AbstractDict{Symbol,Int}
+    @testset "`size` returns a mapping from indices to their dimensionalities" begin
+        @test size(tn) isa AbstractDict{Symbol,Int}
+    end
 
-    # `size` on Symbol returns the dimensionality of that index
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        size(tn, first(_inds)) isa Int
+    @testset "`size` on Symbol returns the dimensionality of that index" begin
+        @testif pred = !isempty(inds(tn)) size(tn, first(inds(tn))) isa Int
     end
 end
 
 function test_tensornetwork_in(tn)
-    # `in` on `Symbol` returns if the index is present in the Tensor Network
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        in(first(_inds), tn) == true
+    @testset "`in` on `Symbol` returns if the index is present in the Tensor Network" begin
+        @testif pred = !isempty(inds(tn)) first(inds(tn)) ∈ tn
     end
 
-    # `in` on `Tensor` returns if that exact object is present in the Tensor Network
-    @test let tn = tn
-        _tensors = tensors(tn)
-        if isempty(_tensors)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        in(first(_tensors), tn) == true
+    @testset "`in` on `Tensor` returns if that exact object is present in the Tensor Network" begin
+        @testif pred = !isempty(tensors(tn)) first(tensors(tn)) ∈ tn
     end
 
-    # `in` on copied `Tensor` is never included
-    @test let tn = tn
-        _tensors = tensors(tn)
-        if isempty(_tensors)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        in(copy(first(_tensors)), tn) == false
+    @testset "`in` on copied `Tensor` is never included" begin
+        @testif pred = !isempty(tensors(tn)) copy(first(tensors(tn))) ∉ tn
     end
 end
 
 function test_tensornetwork_replace!(tn)
-    # `replace!` on `Symbol` replaces an index in the Tensor Network
-    @test let tn = deepcopy(tn)
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
+    @testset "`replace!` on `Symbol` replaces an index in the Tensor Network" begin
+        @testif pred = !isempty(inds(tn)) let tn = deepcopy(tn)
+            ind = first(inds(tn))
+            new_ind = gensym(:new)
+            replace!(tn, ind => new_ind)
+            new_ind ∈ tn
         end
-        ind = first(_inds)
-        new_ind = gensym(:new)
-        replace!(tn, ind => new_ind)
-        new_ind ∈ tn
     end
 
-    # `replace!` on `Tensor` replaces a tensor in the Tensor Network
-    @test let tn = deepcopy(tn)
-        _tensors = tensors(tn)
-        if isempty(_tensors)
-            # TODO it should skip here but let's just return true for now
-            return true
+    @testset "`replace!` on `Tensor` replaces a tensor in the Tensor Network" begin
+        @testif pred = !isempty(tensors(tn)) let tn = deepcopy(tn)
+            tensor = first(tensors(tn))
+            new_tensor = copy(tensor)
+            replace!(tn, tensor => new_tensor)
+            new_tensor ∈ tn
         end
-        tensor = first(_tensors)
-        new_tensor = copy(tensor)
-        replace!(tn, tensor => new_tensor)
-        new_tensor ∈ tn
     end
 end
 
 function test_tensornetwork_contract(tn)
-    # `contract` returns a `Tensor`
-    @test contract(tn) isa Tensor
+    @testset "`contract` returns a `Tensor`" begin
+        @test contract(tn) isa Tensor
+    end
 end
 
 function test_tensornetwork_contract!(tn)
-    # `contract!` on `Symbol` contracts an index in-place
-    @test let tn = deepcopy(tn)
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
+    @testset "`contract!` on `Symbol` contracts an index in-place" begin
+        @testif pred = !isempty(inds(tn)) let tn = deepcopy(tn)
+            ind = first(inds(tn))
+            contract!(tn, ind)
+            ind ∉ tn
         end
-        ind = first(_inds)
-        contract!(tn, ind)
-        ind ∉ tn
     end
 end
 
@@ -248,63 +190,60 @@ function test_pluggable(tn; sites=true, socket=true, inds=true, ninds=true)
         sites && test_pluggable_sites(tn)
         socket && test_pluggable_socket(tn)
         inds && test_pluggable_inds(tn)
-        ninds && test_pluggable_ninds(tn)
+        ninds && test_pluggable_nsites(tn)
     end
 end
 
 function test_pluggable_sites(tn)
-    # `sites` returns a list of the sites in the Tensor Network
-    @test sites(tn) isa AbstractVector{<:Site}
+    @testset "`sites` returns a list of the sites in the Tensor Network" begin
+        @test sites(tn) isa AbstractVector{<:Site}
+    end
 
-    # `sites(; set = :all)` is equal to naive `sites`
-    @test sites(tn; set=:all) == sites(tn)
+    @testset "`sites(; set = :all)` is equal to naive `sites`" begin
+        @test sites(tn; set=:all) == sites(tn)
+    end
 
-    # `sites(; set = :inputs)` returns a list of input sites (i.e. dual) in the Tensor Network
-    @test sites(tn; set=:inputs) isa AbstractVector{<:Site} && all(isdual, sites(tn; set=:inputs))
+    @testset "`sites(; set = :inputs)` returns a list of input sites (i.e. dual) in the Tensor Network" begin
+        @test sites(tn; set=:inputs) isa AbstractVector{<:Site} && all(isdual, sites(tn; set=:inputs))
+    end
 
-    # `sites(; set = :outputs)` returns a list of output sites (i.e. non-dual) in the Tensor Network
-    @test sites(tn; set=:outputs) isa AbstractVector{<:Site} && all(!isdual, sites(tn; set=:outputs))
+    @testset "`sites(; set = :outputs)` returns a list of output sites (i.e. non-dual) in the Tensor Network" begin
+        @test sites(tn; set=:outputs) isa AbstractVector{<:Site} && all(!isdual, sites(tn; set=:outputs))
+    end
 
-    # `sites(; at::Symbol)` returns the site linked to the index
-    @test let tn = tn
-        _inds = inds(tn)
-        if isempty(_inds)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        sites(tn; at=first(_inds)) isa Site
+    @testset "`sites(; at::Symbol)` returns the site linked to the index" begin
+        @testif pred = !isempty(inds(tn)) && !isempty(sites(tn)) sites(tn; at=first(inds(tn))) isa Site
     end
 end
 
 function test_pluggable_socket(tn)
-    # `socket` returns the socket of the Tensor Network
-    @test socket(tn) isa Tenet.Socket
-end
-
-function test_pluggable_inds(tn)
-    # `inds` returns a list of the indices in the Tensor Network
-    @test let tn = tn
-        _sites = sites(tn)
-        if isempty(_sites)
-            # TODO it should skip here but let's just return true for now
-            return true
-        end
-        inds(tn; at=first(_sites)) isa Site
+    @testset "`socket` returns the socket of the Tensor Network" begin
+        @test socket(tn) isa Tenet.Socket
     end
 end
 
-function test_pluggable_ninds(tn)
-    # `ninds` returns the number of sites in the Tensor Network
-    @test nsites(tn) == length(sites(tn))
+function test_pluggable_inds(tn)
+    @testset "`inds(; at::Site)` returns the index linked to the `Site`" begin
+        @testif pred = !isempty(sites(tn)) inds(tn; at=first(sites(tn))) isa Symbol
+    end
+end
 
-    # `ninds(; set = :all)` is equal to naive `ninds`
-    @test nsites(tn; set=:all) == nsites(tn)
+function test_pluggable_nsites(tn)
+    @testset "`nsites` returns the number of sites in the Tensor Network" begin
+        @test nsites(tn) == length(sites(tn))
+    end
 
-    # `ninds(; set = :inputs)` returns the number of input sites in the Tensor Network
-    @test nsites(tn; set=:inputs) == length(sites(tn; set=:inputs))
+    @testset "`nsites(; set = :all)` is equal to naive `nsites`" begin
+        @test nsites(tn; set=:all) == nsites(tn)
+    end
 
-    # `ninds(; set = :outputs)` returns the number of output sites in the Tensor Network
-    @test nsites(tn; set=:outputs) == length(sites(tn; set=:inputs))
+    @testset "`nsites(; set = :inputs)` returns the number of input sites in the Tensor Network" begin
+        @test nsites(tn; set=:inputs) == length(sites(tn; set=:inputs))
+    end
+
+    @testset "`nsites(; set = :outputs)` returns the number of output sites in the Tensor Network" begin
+        @test nsites(tn; set=:outputs) == length(sites(tn; set=:outputs))
+    end
 end
 
 # Ansatz interface
@@ -317,16 +256,19 @@ function test_ansatz(tn; lanes=true, lattice=true, tensors=true)
 end
 
 function test_ansatz_lanes(tn)
-    # `lanes` returns a list of the lanes in the Tensor Network
-    @test lanes(tn) isa AbstractVector{<:Lane}
+    @testset "`lanes` returns a list of the lanes in the Tensor Network" begin
+        @test lanes(tn) isa AbstractVector{<:Lane}
+    end
 end
 
 function test_ansatz_lattice(tn)
-    # `lattice` returns the lattice of the Tensor Network
-    @test lattice(tn) isa Lattice
+    @testset "`lattice` returns the lattice of the Tensor Network" begin
+        @test lattice(tn) isa Lattice
+    end
 end
 
 function test_ansatz_tensors(tn)
-    # `tensors(; at::Lane)` returns the `Tensor` linked to a `Lane`
-    @test tensors(tn; at=first(lanes(tn))) isa Tensor
+    @testset "`tensors(; at::Lane)` returns the `Tensor` linked to a `Lane`" begin
+        @test tensors(tn; at=first(lanes(tn))) isa Tensor
+    end
 end
