@@ -12,6 +12,7 @@ using LinearAlgebra
 
     test_tensornetwork(ansatz)
     test_pluggable(ansatz)
+    test_ansatz(ansatz)
 
     @test zero(ansatz) == Ansatz(zero(qtn), lattice)
     @test Tenet.lattice(ansatz) == lattice
@@ -52,6 +53,10 @@ end
     tn = TensorNetwork([Tensor(ones(2, 2), [:s1, :i]), Tensor(ones(2, 2), [:s2, :i])])
     qtn = Quantum(tn, Dict(site"1" => :s1, site"2" => :s2))
     ansatz = Ansatz(qtn, lattice)
+
+    test_tensornetwork(ansatz)
+    test_pluggable(ansatz)
+    test_ansatz(ansatz)
 
     @test zero(ansatz) == Ansatz(zero(qtn), lattice)
     @test Tenet.lattice(ansatz) == lattice
