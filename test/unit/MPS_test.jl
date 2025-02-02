@@ -18,8 +18,7 @@ using LinearAlgebra
     end
 
     @testset "case 2" begin
-        arrays = [rand(2, 1), rand(2, 1, 3), rand(2, 3)]
-        ψ = MPS(arrays) # Default order (:o, :l, :r)
+        ψ = MPS([rand(2, 1), rand(2, 1, 3), rand(2, 3)]) # Default order (:o, :l, :r)
 
         test_tensornetwork(ψ; contract_mut=false)
         test_pluggable(ψ)
@@ -34,8 +33,7 @@ using LinearAlgebra
     end
 
     @testset "case 3: order = [:r, :o, :l]" begin
-        arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
-        ψ = MPS(arrays; order=[:r, :o, :l])
+        ψ = MPS([rand(1, 2), rand(3, 2, 1), rand(3, 2)]; order=[:r, :o, :l])
 
         test_tensornetwork(ψ; contract_mut=false)
         test_pluggable(ψ)
