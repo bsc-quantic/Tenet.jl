@@ -33,7 +33,7 @@ using LinearAlgebra
     end
 
     @testset "case 3: order = [:r, :o, :l]" begin
-        ψ = MPS([rand(1, 2), rand(3, 2, 1), rand(3, 2)]; order=[:r, :o, :l])
+        ψ = MPS([rand(1, 2), rand(3, 2, 1), rand(2, 3)]; order=[:r, :o, :l])
 
         test_tensornetwork(ψ; contract_mut=false)
         test_pluggable(ψ)
