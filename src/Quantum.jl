@@ -87,8 +87,7 @@ function Base.:(==)(a::AbstractQuantum, b::AbstractQuantum)
     return Quantum(a).sites == Quantum(b).sites && ==(TensorNetwork(a), TensorNetwork(b))
 end
 function Base.isapprox(a::AbstractQuantum, b::AbstractQuantum; kwargs...)
-    return Quantum(a).sites == Quantum(b).sites &&
-           isapprox(TensorNetwork(a), TensorNetwork(b); kwargs...)
+    return Quantum(a).sites == Quantum(b).sites && isapprox(TensorNetwork(a), TensorNetwork(b); kwargs...)
 end
 
 Base.summary(io::IO, tn::AbstractQuantum) = print(io, "$(ntensors(tn))-tensors Quantum")
