@@ -236,11 +236,4 @@ function Base.conj(@nospecialize(x::Tensor{TracedRNumber{T},N,<:TracedRArray})) 
     Tensor(conj(parent(x)), inds(x))
 end
 
-# fix infinite recursion on Reactant rewrite of invoke/call step
-@reactant_overlay @noinline function Base.replace!(
-    tn::Tenet.AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}}
-)
-    Base.inferencebarrier(Base.replace!)(tn, old_new)
-end
-
 end
