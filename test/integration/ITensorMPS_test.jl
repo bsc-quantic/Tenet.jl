@@ -1,11 +1,11 @@
 using Test
-using Tenet: Tenet, MPS, form, Site, Lane, MixedCanonical
+using Tenet: Tenet, form, Site, Lane, MixedCanonical
 using ITensorMPS
 using ITensors
 using ITensors: ITensor, Index, dim, dims
 
 # Tenet to ITensorMPS conversion
-tenet_mps = rand(MPS; n=5, maxdim=30)
+tenet_mps = rand(Tenet.MPS; n=5, maxdim=30)
 itensor_mps = convert(ITensorMPS.MPS, tenet_mps)
 
 @test length(Tenet.tensors(tenet_mps)) == length(ITensorMPS.tensors(itensor_mps))
@@ -23,7 +23,7 @@ permuted = permutedims(contracted, [Tenet.inds(tenet_mps; at=Site(i)) for i in 1
 
 # ITensorMPS to Tenet conversion
 itensor_mps = ITensorMPS.random_mps(siteinds(4, 5); linkdims=7)
-tenet_mps = convert(MPS, itensor_mps)
+tenet_mps = convert(Tenet.MPS, itensor_mps)
 
 @test length(ITensorMPS.tensors(itensor_mps)) == length(Tenet.tensors(tenet_mps))
 
