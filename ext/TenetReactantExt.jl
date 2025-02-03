@@ -11,25 +11,25 @@ const Enzyme = Reactant.Enzyme
 
 # we specify `mode` and `track_numbers` types due to ambiguity
 Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(::Type{Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+    @nospecialize(_::Type{Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
 )
     return Tensor
 end
 
 Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(::Type{Tensor{T}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+    @nospecialize(_::Type{Tensor{T}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
 ) where {T}
     return Tensor{TracedRNumber{T}}
 end
 
 Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(::Type{Tensor{T,N}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+    @nospecialize(_::Type{Tensor{T,N}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
 ) where {T,N}
     return Tensor{TracedRNumber{T,N}}
 end
 
 Base.@nospecializeinfer function Reactant.traced_type_inner(
-    @nospecialize(::Type{Tensor{T,N,A}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+    @nospecialize(_::Type{Tensor{T,N,A}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
 ) where {T,N,A}
     A_traced = Reactant.traced_type_inner(A, seen, mode, track_numbers)
     T_traced = eltype(A_traced)
