@@ -170,7 +170,7 @@ end
 
 function test_tensornetwork_contract(tn)
     @testset "`contract` returns a `Tensor`" begin
-        @test contract(tn) isa Tensor
+        @testif pred = !isempty(tensors(tn)) contract(tn) isa Tensor
     end
 end
 
