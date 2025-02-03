@@ -88,7 +88,7 @@ end
     @test isapprox(norm(ψ), norm(canonized))
 
     # Extract the singular values between each adjacent pair of sites in the canonized chain
-    Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
+    Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
 
     norm_psi = norm(ψ)
     @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
@@ -100,10 +100,10 @@ end
             @test isleftcanonical(canonized, Lane(i))
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
             @test isleftcanonical(canonized, Lane(i))
         else
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
             @test isleftcanonical(canonized, Lane(i))
         end
     end
@@ -113,12 +113,12 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
             @test isrightcanonical(canonized, Lane(i))
         elseif i == 5
             @test isrightcanonical(canonized, Lane(i))
         else
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
             @test isrightcanonical(canonized, Lane(i))
         end
     end

@@ -152,13 +152,12 @@ end
 
 function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
     for i in 1:nlanes(mps)
-        if i > 1 &&
-            !isisometry(contract(mps; between=(Lane(i - 1), Lane(i)), direction=:right), Lane(i); dir=:right, atol)
+        if i > 1 && !isisometry(contract(mps; bond=(Lane(i - 1), Lane(i)), direction=:right), Lane(i); dir=:right, atol)
             throw(ArgumentError("Can not form a left-canonical tensor in Lane($i) from Γ and λ contraction."))
         end
 
         if i < nlanes(mps) &&
-            !isisometry(contract(mps; between=(Lane(i), Lane(i + 1)), direction=:left), Lane(i); dir=:left, atol)
+            !isisometry(contract(mps; bond=(Lane(i), Lane(i + 1)), direction=:left), Lane(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
@@ -357,25 +356,25 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
 
-# TODO deprecate contract(; between) and generalize it to AbstractAnsatz
+# TODO deprecate contract(; bond) and generalize it to AbstractAnsatz
 """
-    Tenet.contract!(tn::AbstractMPO; between=(site1, site2), direction::Symbol = :left, delete_Λ = true)
+    Tenet.contract!(tn::AbstractMPO; bond=(lane1, lane2), direction::Symbol = :left, delete_Λ = true)
 
-For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values Λ between two sites `site1` and `site2`.
+For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values Λ located in the bond between lanes `lane1` and `lane2`.
 The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
 specifies whether to delete the singular values tensor after the contraction.
 """
-contract(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO) = contract!(kwargs, copy(tn))
-function contract!(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::AbstractMPO)
-    site1, site2 = kwargs.between
-    Λᵢ = tensors(tn; between=kwargs.between)
+contract(kwargs::NamedTuple{(:bond, :delete_Λ, :direction)}, tn::AbstractMPO) = contract!(kwargs, copy(tn))
+function contract!(kwargs::NamedTuple{(:bond, :delete_Λ, :direction)}, tn::AbstractMPO)
+    lane1, lane2 = kwargs.bond
+    Λᵢ = tensors(tn; bond=kwargs.bond)
     isnothing(Λᵢ) && return tn
 
     if kwargs.direction === :right
-        Γᵢ₊₁ = tensors(tn; at=site2)
+        Γᵢ₊₁ = tensors(tn; at=lane2)
         replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
     elseif kwargs.direction === :left
-        Γᵢ = tensors(tn; at=site1)
+        Γᵢ = tensors(tn; at=lane1)
         replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
     else
         throw(ArgumentError("Unknown direction=:$(kwargs.direction)"))
@@ -385,10 +384,10 @@ function contract!(kwargs::NamedTuple{(:between, :delete_Λ, :direction)}, tn::A
 
     return tn
 end
-contract(kwargs::NamedTuple{(:between,)}, tn::AbstractMPO) = contract(tn; kwargs..., direction=:left, delete_Λ=true)
-contract!(kwargs::NamedTuple{(:between,)}, tn::AbstractMPO) = contract!(tn; kwargs..., direction=:left, delete_Λ=true)
-contract(kwargs::NamedTuple{(:between, :direction)}, tn::AbstractMPO) = contract(tn; kwargs..., delete_Λ=true)
-contract!(kwargs::NamedTuple{(:between, :direction)}, tn::AbstractMPO) = contract!(tn; kwargs..., delete_Λ=true)
+contract(kwargs::NamedTuple{(:bond,)}, tn::AbstractMPO) = contract(tn; kwargs..., direction=:left, delete_Λ=true)
+contract!(kwargs::NamedTuple{(:bond,)}, tn::AbstractMPO) = contract!(tn; kwargs..., direction=:left, delete_Λ=true)
+contract(kwargs::NamedTuple{(:bond, :direction)}, tn::AbstractMPO) = contract(tn; kwargs..., delete_Λ=true)
+contract!(kwargs::NamedTuple{(:bond, :direction)}, tn::AbstractMPO) = contract!(tn; kwargs..., delete_Λ=true)
 
 # TODO change it to `lanes`?
 # TODO refactor to use `Lattice`
@@ -515,7 +514,7 @@ function canonize!(ψ::AbstractMPO; normalize=false)
         canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
 
         # extract the singular values and contract them with the next tensor
-        Λᵢ = pop!(ψ, tensors(ψ; between=(Lane(i), Lane(i + 1))))
+        Λᵢ = pop!(ψ, tensors(ψ; bond=(Lane(i), Lane(i + 1))))
         normalize && (Λᵢ ./= norm(Λᵢ))
         Aᵢ₊₁ = tensors(ψ; at=Lane(i + 1))
         replace!(ψ, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=()))
@@ -523,7 +522,7 @@ function canonize!(ψ::AbstractMPO; normalize=false)
     end
 
     for i in 2:nlanes(ψ) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
-        Λᵢ = Λ[i - 1] # singular values start between site 1 and 2
+        Λᵢ = Λ[i - 1] # singular values start between lane 1 and 2
         A = tensors(ψ; at=Lane(i))
         Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ)); dims=())
         replace!(ψ, A => Γᵢ)
@@ -627,7 +626,7 @@ end
 function evolve!(::Canonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     # We first join the λs to the Γs to get MixedCanonical(lane"1") form
     for i in 1:(nlanes(ψ) - 1)
-        contract!(ψ; between=(Lane(i), Lane(i + 1)), direction=:right)
+        contract!(ψ; bond=(Lane(i), Lane(i + 1)), direction=:right)
     end
 
     # set `maxdim` and `threshold` to `nothing` so we later truncate in the `Canonical` form
@@ -662,7 +661,7 @@ function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; kwargs...)
         canonize_site!(ψ, Lane(i); direction=:right, method=:svd)
 
         truncate!(ψ, [Lane(i), Lane(i + 1)]; kwargs..., compute_local_svd=false)
-        contract!(ψ; between=(Lane(i), Lane(i + 1)), direction=:right)
+        contract!(ψ; bond=(Lane(i), Lane(i + 1)), direction=:right)
     end
 
     ψ.form = MixedCanonical(Lane(nlanes(ψ)))
@@ -714,15 +713,15 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothing)
+function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
     old_norm = norm(ψ)
     if isnothing(bond) # Normalize all λ tensors
         for i in 1:(nlanes(ψ) - 1)
-            λ = tensors(ψ; between=(Lane(i), Lane(i + 1)))
+            λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
             replace!(ψ, λ => λ ./ old_norm^(1 / (nlanes(ψ) - 1)))
         end
     else
-        λ = tensors(ψ; between=bond)
+        λ = tensors(ψ; bond)
         replace!(ψ, λ => λ ./ old_norm)
     end
 

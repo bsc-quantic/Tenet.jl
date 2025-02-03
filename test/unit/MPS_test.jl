@@ -135,7 +135,7 @@ end
         truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1)
         @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
-        singular_values = tensors(ψ; between=(lane"2", lane"3"))
+        singular_values = tensors(ψ; bond=(lane"2", lane"3"))
         truncated = truncate(ψ, [lane"2", lane"3"]; threshold=singular_values[2] + 0.1)
         @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
@@ -268,7 +268,7 @@ end
     @test isapprox(norm(ψ), norm(canonized))
 
     # Extract the singular values between each adjacent pair of sites in the canonized chain
-    Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
+    Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
 
     norm_psi = norm(ψ)
     @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
@@ -280,10 +280,10 @@ end
             @test isleftcanonical(canonized, Lane(i))
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
             @test isleftcanonical(canonized, Lane(i))
         else
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
             @test isleftcanonical(canonized, Lane(i))
         end
     end
@@ -293,12 +293,12 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
             @test isrightcanonical(canonized, Lane(i))
         elseif i == 5
             @test isrightcanonical(canonized, Lane(i))
         else
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
             @test isrightcanonical(canonized, Lane(i))
         end
     end
@@ -467,26 +467,26 @@ end
 end
 
 # TODO rename when method is renamed
-@testset "contract between" begin
+@testset "contract bond" begin
     ψ = rand(MPS; n=5, maxdim=20)
     let canonized = canonize(ψ)
-        @test_throws ArgumentError contract!(canonized; between=(lane"1", lane"2"), direction=:dummy)
+        @test_throws ArgumentError contract!(canonized; bond=(lane"1", lane"2"), direction=:dummy)
     end
 
     canonized = canonize(ψ)
 
     for i in 1:4
-        contract_some = contract(canonized; between=(Lane(i), Lane(i + 1)))
+        contract_some = contract(canonized; bond=(Lane(i), Lane(i + 1)))
         Bᵢ = tensors(contract_some; at=Lane(i))
 
         @test isapprox(contract(contract_some), contract(ψ))
-        @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; between=(Lane(i), Lane(i + 1)))
+        @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; bond=(Lane(i), Lane(i + 1)))
 
         @test isrightcanonical(contract_some, Lane(i))
-        @test isleftcanonical(contract(canonized; between=(Lane(i), Lane(i + 1)), direction=:right), Lane(i + 1))
+        @test isleftcanonical(contract(canonized; bond=(Lane(i), Lane(i + 1)), direction=:right), Lane(i + 1))
 
         Γᵢ = tensors(canonized; at=Lane(i))
-        Λᵢ₊₁ = tensors(canonized; between=(Lane(i), Lane(i + 1)))
+        Λᵢ₊₁ = tensors(canonized; bond=(Lane(i), Lane(i + 1)))
         @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims=())
     end
 end
