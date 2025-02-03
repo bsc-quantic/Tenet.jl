@@ -3,10 +3,9 @@ module TenetITensorNetworksExt
 using Tenet
 using ITensorNetworks: ITensorNetworks, ITensorNetwork, IndsNetwork, plev, rename_vertices
 using ITensors: ITensors, ITensor, Index, siteinds
-using BijectiveDicts: BijectiveDict
 using Graphs: vertices
-using DataGraphs: DataGraphs, underlying_graph
-using NamedGraphs: NamedGraph, position_graph
+const DataGraphs = ITensorNetworks.DataGraphs
+const NamedGraphs = ITensorNetworks.NamedGraphs
 const TenetITensorsExt = Base.get_extension(Tenet, :TenetITensorsExt)
 
 Base.convert(::Type{TensorNetwork}, tn::ITensorNetwork) = TensorNetwork([convert(Tensor, tn[v]) for v in vertices(tn)])
@@ -44,14 +43,14 @@ end
 
 function Base.convert(::Type{Lattice}, s::IndsNetwork)
     # NOTE they don't suffer from the issue of removing a vertex from SimpleGraph (i.e. vertex renaming), because their vertice list keeps ordered
-    ng = underlying_graph(s) # namedgraph
-    g = position_graph(ng) # simplegraph
+    ng = DataGraphs.underlying_graph(s) # namedgraph
+    g = NamedGraphs.position_graph(ng) # simplegraph
     lanes = Lane.(collect(vertices(ng)))
     return Lattice(lanes, copy(g))
 end
 
 function Base.convert(::Type{IndsNetwork}, l::Lattice)
-    return NamedGraph(copy(l.graph), Tenet.id.(vertices(l)))
+    return NamedGraphs.NamedGraph(copy(l.graph), Tenet.id.(vertices(l)))
 end
 
 function Base.convert(::Type{Ansatz}, tn::ITensorNetwork)

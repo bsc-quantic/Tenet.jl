@@ -1,8 +1,3 @@
-using PythonCall
-using CondaPkg
-
-CondaPkg.update()
-
 @testset "cirq" begin
     cirq = pyimport("cirq")
 

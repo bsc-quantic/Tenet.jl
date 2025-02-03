@@ -1,37 +1,44 @@
 using Test
+using SafeTestsets
 using Tenet
 using OMEinsum
-using Adapt
 
 include("Utils.jl")
+include("Interfaces.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin
-        include("Helpers_test.jl")
-        include("Tensor_test.jl")
-        include("Numerics_test.jl")
-        include("TensorNetwork_test.jl")
-        include("Transformations_test.jl")
-        include("Lane_test.jl")
-        include("Site_test.jl")
-        include("Moment_test.jl")
-        include("Quantum_test.jl")
-        include("Gate_test.jl")
-        include("Circuit_test.jl")
-        include("Lattice_test.jl")
-        include("Ansatz_test.jl")
-        include("Product_test.jl")
-        include("MPS_test.jl")
-        include("MPO_test.jl")
+        @testset "Helpers" include("unit/Helpers_test.jl")
+        @testset "Tensor" include("unit/Tensor_test.jl")
+        @testset "Numerics" include("unit/Numerics_test.jl")
+        @testset "TensorNetwork" include("unit/TensorNetwork_test.jl")
+        @testset "Transformations" include("unit/Transformations_test.jl")
+        @testset "Lane" include("unit/Lane_test.jl")
+        @testset "Site" include("unit/Site_test.jl")
+        @testset "Moment" include("unit/Moment_test.jl")
+        @testset "Quantum" include("unit/Quantum_test.jl")
+        @testset "Gate" include("unit/Gate_test.jl")
+        @testset "Circuit" include("unit/Circuit_test.jl")
+        @testset "Lattice" include("unit/Lattice_test.jl")
+        @testset "Ansatz" include("unit/Ansatz_test.jl")
+        @testset "Product" include("unit/Product_test.jl")
+        @testset "MPS" include("unit/MPS_test.jl")
+        @testset "MPO" include("unit/MPO_test.jl")
     end
 end
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
-        @testset "Python" begin
+        @safetestset "Python" begin
             run(`cp CondaPkg.toml ../CondaPkg.toml`)
+            using Test
+            using Tenet
+            using CondaPkg
+            CondaPkg.update()
+            using PythonCall
+
             include("integration/python/test_cirq.jl")
             include("integration/python/test_quimb.jl")
             include("integration/python/test_qiskit.jl")
@@ -39,16 +46,45 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             run(`rm ../CondaPkg.toml`)
         end
 
-        include("integration/Reactant_test.jl")
-        include("integration/ChainRules_test.jl")
-        # include("integration/BlockArray_test.jl")
-        include("integration/Dagger_test.jl")
-        include("integration/Makie_test.jl")
-        include("integration/KrylovKit_test.jl")
-        include("integration/Quac_test.jl")
-        include("integration/ITensors_test.jl")
-        include("integration/ITensorNetworks_test.jl")
-        include("integration/YaoBlocks_test.jl")
+        @safetestset "Reactant" begin
+            include("integration/Reactant_test.jl")
+        end
+
+        @safetestset "ChainRules" begin
+            include("integration/ChainRules_test.jl")
+        end
+
+        @safetestset "Dagger" begin
+            include("integration/Dagger_test.jl")
+        end
+
+        @safetestset "Makie" begin
+            include("integration/Makie_test.jl")
+        end
+
+        @safetestset "KrylovKit" begin
+            include("integration/KrylovKit_test.jl")
+        end
+
+        @safetestset "Quac" begin
+            include("integration/Quac_test.jl")
+        end
+
+        @safetestset "ITensors" begin
+            include("integration/ITensors_test.jl")
+        end
+
+        @safetestset "ITensorMPS" begin
+            include("integration/ITensorMPS_test.jl")
+        end
+
+        @safetestset "ITensorNetworks" begin
+            include("integration/ITensorNetworks_test.jl")
+        end
+
+        @safetestset "YaoBlocks" begin
+            include("integration/YaoBlocks_test.jl")
+        end
     end
 end
 

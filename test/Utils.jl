@@ -31,3 +31,41 @@ macro testset_skip(args...)
 
     return ex
 end
+
+"""
+    @testimpl expr
+
+Test `expr` but return `false` if a `MethodError` is thrown.
+"""
+macro testimpl(expr)
+    return Base.remove_linenums!(:(
+        try
+            @test $(esc(expr))
+        catch e
+            if e isa MethodError
+                return false
+            else
+                rethrow(e)
+            end
+        end
+    ))
+end
+
+"""
+    @testif pred=predexpr testexpr
+
+Test `expr` if `predexpr` is true.
+"""
+macro testif(pred, expr)
+    @assert Meta.isexpr(pred, :(=), 2)
+    @assert pred.args[1] == :pred
+    predexpr = pred.args[2]
+    return quote
+        if $predexpr
+            @test $expr
+        else
+            # TODO it should skip here but let's just return true for now
+            @test $expr skip = true
+        end
+    end |> esc
+end

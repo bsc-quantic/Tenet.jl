@@ -63,8 +63,11 @@ tensors(::@NamedTuple{}, gate::Gate) = Tensor[Tensor(gate)]
 # AbstractQuantum methods
 sites(gate::Gate; kwargs...) = sites(sort_nt(values(kwargs)), gate)
 sites(::@NamedTuple{}, gate::Gate) = Tuple(gate.sites)
+
 function sites(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
-    pred = if kwargs.set === :outputs
+    pred = if kwargs.set === :all
+        _ -> true
+    elseif kwargs.set === :outputs
         !isdual
     elseif kwargs.set === :inputs
         isdual
@@ -74,8 +77,21 @@ function sites(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
     return filter(pred, sites(gate))
 end
 
+function sites(kwargs::@NamedTuple{at::Symbol}, gate::Gate)
+    loc = findfirst(==(kwargs.at), inds(gate))
+    if isnothing(log)
+        throw(ArgumentError("Index $(kwargs.at) not found in $(inds(gate))"))
+    end
+
+    return sites(gate)[loc]
+end
+
+nsites(gate::Gate; kwargs...) = length(sites(gate; kwargs...))
+
 nlanes(gate::Gate) = length(lanes(gate))
 lanes(gate::Gate) = unique(Iterators.map(Tenet.Lane, sites(gate)))
+
+socket(::Gate) = Operator()
 
 Base.:(==)(a::Gate, b::Gate) = sites(a) == sites(b) && Tensor(a) == Tensor(b)
 
@@ -148,15 +164,15 @@ end
 
 # NOTE `tensors(; at::Moment)` not fully defined
 
-function sites(::@NamedTuple{}, circuit::Circuit)
-    Site[Site.(keys(circuit.inputs); dual=true)..., Site.(keys(circuit.outputs))...]
-end
+sites(::@NamedTuple{}, circuit::Circuit) = vcat(sites(circuit; set=:inputs), sites(circuit; set=:outputs))
 
 function sites(kwargs::@NamedTuple{set::Symbol}, circuit::Circuit)
-    if kwargs.set === :inputs
-        return Site.(keys(circuit.inputs); dual=true)
+    if kwargs.set === :all
+        sites(circuit)
+    elseif kwargs.set === :inputs
+        return Site[Site.(keys(circuit.inputs); dual=true)...]
     elseif kwargs.set === :outputs
-        return Site.(keys(circuit.outputs))
+        return Site[Site.(keys(circuit.outputs))...]
     else
         throw(ArgumentError("Expected set to be one of `:inputs` or `:outputs`, but got $(kwargs.set)"))
     end
