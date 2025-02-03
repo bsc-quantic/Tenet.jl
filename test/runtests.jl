@@ -4,27 +4,28 @@ using Tenet
 using OMEinsum
 
 include("Utils.jl")
+include("Interfaces.jl")
 
 const TENET_TEST_GROUP = lowercase(get(ENV, "TENET_TEST_GROUP", "all"))
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
     @testset "Unit tests" verbose = true begin
-        include("unit/Helpers_test.jl")
-        include("unit/Tensor_test.jl")
-        include("unit/Numerics_test.jl")
-        include("unit/TensorNetwork_test.jl")
-        include("unit/Transformations_test.jl")
-        include("unit/Lane_test.jl")
-        include("unit/Site_test.jl")
-        include("unit/Moment_test.jl")
-        include("unit/Quantum_test.jl")
-        include("unit/Gate_test.jl")
-        include("unit/Circuit_test.jl")
-        include("unit/Lattice_test.jl")
-        include("unit/Ansatz_test.jl")
-        include("unit/Product_test.jl")
-        include("unit/MPS_test.jl")
-        include("unit/MPO_test.jl")
+        @testset "Helpers" include("unit/Helpers_test.jl")
+        @testset "Tensor" include("unit/Tensor_test.jl")
+        @testset "Numerics" include("unit/Numerics_test.jl")
+        @testset "TensorNetwork" include("unit/TensorNetwork_test.jl")
+        @testset "Transformations" include("unit/Transformations_test.jl")
+        @testset "Lane" include("unit/Lane_test.jl")
+        @testset "Site" include("unit/Site_test.jl")
+        @testset "Moment" include("unit/Moment_test.jl")
+        @testset "Quantum" include("unit/Quantum_test.jl")
+        @testset "Gate" include("unit/Gate_test.jl")
+        @testset "Circuit" include("unit/Circuit_test.jl")
+        @testset "Lattice" include("unit/Lattice_test.jl")
+        @testset "Ansatz" include("unit/Ansatz_test.jl")
+        @testset "Product" include("unit/Product_test.jl")
+        @testset "MPS" include("unit/MPS_test.jl")
+        @testset "MPO" include("unit/MPO_test.jl")
     end
 end
 
