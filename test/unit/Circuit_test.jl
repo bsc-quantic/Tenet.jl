@@ -1,3 +1,6 @@
+using Test
+using Tenet
+using Tenet: Moment, nsites
 
 @testset "empty circuit" begin
     circuit = Circuit()
@@ -80,7 +83,8 @@ end
 
 @testset "apply two gates in the same lane" begin
     circuit = Circuit()
-    gate1 = Gate(zeros(2, 2), [site"1'", site"1"]), gate2 = Gate(ones(2, 2), [site"1'", site"1"])
+    gate1 = Gate(zeros(2, 2), [site"1'", site"1"])
+    gate2 = Gate(ones(2, 2), [site"1'", site"1"])
 
     push!(circuit, gate1)
     push!(circuit, gate2)
