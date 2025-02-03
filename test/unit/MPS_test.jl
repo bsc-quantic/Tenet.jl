@@ -130,7 +130,7 @@ end
 @testset "truncate!" begin
     @testset "NonCanonical" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-        canonize_site!(ψ, lane"2"; direction=:right, method=:svd)
+        canonize_site!(ψ, lane"2"; dir=:right, method=:svd)
 
         truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1)
         @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
@@ -230,29 +230,29 @@ end
 @testset "canonize_site!" begin
     ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
-    @test_throws ArgumentError canonize_site!(ψ, lane"1"; direction=:left)
-    @test_throws ArgumentError canonize_site!(ψ, lane"3"; direction=:right)
+    @test_throws ArgumentError canonize_site!(ψ, lane"1"; dir=:left)
+    @test_throws ArgumentError canonize_site!(ψ, lane"3"; dir=:right)
 
     for method in [:qr, :svd]
-        canonized = canonize_site(ψ, lane"1"; direction=:right, method=method)
+        canonized = canonize_site(ψ, lane"1"; dir=:right, method=method)
         @test isisometry(canonized, lane"1"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"2"; direction=:right, method=method)
+        canonized = canonize_site(ψ, lane"2"; dir=:right, method=method)
         @test isisometry(canonized, lane"2"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"2"; direction=:left, method=method)
+        canonized = canonize_site(ψ, lane"2"; dir=:left, method=method)
         @test isisometry(canonized, lane"2"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"3"; direction=:left, method=method)
+        canonized = canonize_site(ψ, lane"3"; dir=:left, method=method)
         @test isisometry(canonized, lane"3"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
     end
 
     # Ensure that svd creates a new tensor
-    @test length(tensors(canonize_site(ψ, lane"2"; direction=:left, method=:svd))) == 4
+    @test length(tensors(canonize_site(ψ, lane"2"; dir=:left, method=:svd))) == 4
 end
 
 @testset "canonize!" begin
@@ -278,10 +278,10 @@ end
             @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         else
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
+            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
@@ -291,12 +291,12 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
             @test isisometry(canonized, Lane(i); dir=:left)
         else
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
+            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
@@ -468,7 +468,7 @@ end
 @testset "contract bond" begin
     ψ = rand(MPS; n=5, maxdim=20)
     let canonized = canonize(ψ)
-        @test_throws ArgumentError contract!(canonized; bond=(lane"1", lane"2"), direction=:dummy)
+        @test_throws ArgumentError contract!(canonized; bond=(lane"1", lane"2"), dir=:dummy)
     end
 
     canonized = canonize(ψ)
