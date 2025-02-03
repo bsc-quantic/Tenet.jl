@@ -152,12 +152,12 @@ end
 
 function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
     for i in 1:nlanes(mps)
-        if i > 1 && !isisometry(contract(mps; bond=(Lane(i - 1), Lane(i)), direction=:right), Lane(i); dir=:right, atol)
+        if i > 1 && !isisometry(contract(mps; bond=(Lane(i - 1), Lane(i)), dir=:right), Lane(i); dir=:right, atol)
             throw(ArgumentError("Can not form a left-canonical tensor in Lane($i) from Γ and λ contraction."))
         end
 
         if i < nlanes(mps) &&
-            !isisometry(contract(mps; bond=(Lane(i), Lane(i + 1)), direction=:left), Lane(i); dir=:left, atol)
+            !isisometry(contract(mps; bond=(Lane(i), Lane(i + 1)), dir=:left), Lane(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
@@ -454,8 +454,8 @@ function isisometry(ψ::AbstractMPO, site; dir, atol::Real=1e-12)
     return isapprox(contracted, I(n); atol)
 end
 
-@deprecate isleftcanonical(ψ::AbstractMPO, site; atol::Real=1e-12) isisometry(ψ, site; dir=:right, atol)
-@deprecate isrightcanonical(ψ::AbstractMPO, site; atol::Real=1e-12) isisometry(ψ, site; dir=:left, atol)
+@deprecate isleftcanonical(ψ::AbstractMPO, lane; atol::Real=1e-12) isisometry(ψ, lane; dir=:right, atol)
+@deprecate isrightcanonical(ψ::AbstractMPO, lane; atol::Real=1e-12) isisometry(ψ, lane; dir=:left, atol)
 
 # TODO generalize to AbstractAnsatz
 # NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!

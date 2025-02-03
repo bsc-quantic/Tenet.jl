@@ -235,19 +235,19 @@ end
 
     for method in [:qr, :svd]
         canonized = canonize_site(ψ, lane"1"; direction=:right, method=method)
-        @test isleftcanonical(canonized, lane"1")
+        @test isisometry(canonized, lane"1"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
         canonized = canonize_site(ψ, lane"2"; direction=:right, method=method)
-        @test isleftcanonical(canonized, lane"2")
+        @test isisometry(canonized, lane"2"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
         canonized = canonize_site(ψ, lane"2"; direction=:left, method=method)
-        @test isrightcanonical(canonized, lane"2")
+        @test isisometry(canonized, lane"2"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
         canonized = canonize_site(ψ, lane"3"; direction=:left, method=method)
-        @test isrightcanonical(canonized, lane"3")
+        @test isisometry(canonized, lane"3"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
     end
 
@@ -256,8 +256,6 @@ end
 end
 
 @testset "canonize!" begin
-    using Tenet: isleftcanonical, isrightcanonical
-
     ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
     canonized = canonize(ψ)
 
@@ -277,14 +275,14 @@ end
         canonized = canonize(ψ)
 
         if i == 1
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
             contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         else
             contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
 
@@ -294,12 +292,12 @@ end
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
             contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         else
             contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
 end
@@ -482,8 +480,8 @@ end
         @test isapprox(contract(contract_some), contract(ψ))
         @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; bond=(Lane(i), Lane(i + 1)))
 
-        @test isrightcanonical(contract_some, Lane(i))
-        @test isleftcanonical(contract(canonized; bond=(Lane(i), Lane(i + 1)), direction=:right), Lane(i + 1))
+        @test isisometry(contract_some, Lane(i); dir=:left)
+        @test isisometry(contract(canonized; bond=(Lane(i), Lane(i + 1)), dir=:right), Lane(i + 1); dir=:right)
 
         Γᵢ = tensors(canonized; at=Lane(i))
         Λᵢ₊₁ = tensors(canonized; bond=(Lane(i), Lane(i + 1)))

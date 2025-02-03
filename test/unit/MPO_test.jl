@@ -1,3 +1,5 @@
+using Test
+using Tenet
 
 H = MPO([rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
 @test socket(H) == Operator()
@@ -76,8 +78,6 @@ end
 end
 
 @testset "canonize!" begin
-    using Tenet: isleftcanonical, isrightcanonical
-
     ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
     canonized = canonize(ψ)
 
@@ -97,14 +97,14 @@ end
         canonized = canonize(ψ)
 
         if i == 1
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
             contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         else
             contract!(canonized; bond=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
 
@@ -114,12 +114,12 @@ end
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
             contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         else
             contract!(canonized; bond=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
 end
