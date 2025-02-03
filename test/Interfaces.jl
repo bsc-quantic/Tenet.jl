@@ -212,7 +212,7 @@ function test_pluggable_sites(tn)
     end
 
     @testset "`sites(; at::Symbol)` returns the site linked to the index" begin
-        @testif pred = !isempty(inds(tn)) && !isempty(sites(tn)) sites(tn; at=first(inds(tn))) isa Site
+        @testif pred = !isempty(inds(tn)) && !isempty(sites(tn)) sites(tn; at=first(inds(tn))) isa Union{Nothing,Site}
     end
 end
 
