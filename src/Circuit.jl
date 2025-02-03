@@ -164,15 +164,15 @@ end
 
 # NOTE `tensors(; at::Moment)` not fully defined
 
-function sites(::@NamedTuple{}, circuit::Circuit)
-    Site[Site.(keys(circuit.inputs); dual=true)..., Site.(keys(circuit.outputs))...]
-end
+sites(::@NamedTuple{}, circuit::Circuit) = vcat(sites(circuit; set=:inputs), sites(circuit; set=:outputs))
 
 function sites(kwargs::@NamedTuple{set::Symbol}, circuit::Circuit)
-    if kwargs.set === :inputs
-        return Site.(keys(circuit.inputs); dual=true)
+    if kwargs.set === :all
+        sites(circuit)
+    elseif kwargs.set === :inputs
+        return Site[Site.(keys(circuit.inputs); dual=true)...]
     elseif kwargs.set === :outputs
-        return Site.(keys(circuit.outputs))
+        return Site[Site.(keys(circuit.outputs))...]
     else
         throw(ArgumentError("Expected set to be one of `:inputs` or `:outputs`, but got $(kwargs.set)"))
     end
