@@ -84,11 +84,10 @@ Base.similar(tn::Quantum) = Quantum(similar(TensorNetwork(tn)), copy(tn.sites))
 Base.zero(tn::Quantum) = Quantum(zero(TensorNetwork(tn)), copy(tn.sites))
 
 function Base.:(==)(a::AbstractQuantum, b::AbstractQuantum)
-    return Quantum(a).sites == Quantum(b).sites && @invoke ==(a::AbstractTensorNetwork, b::AbstractTensorNetwork)
+    return Quantum(a).sites == Quantum(b).sites && ==(TensorNetwork(a), TensorNetwork(b))
 end
 function Base.isapprox(a::AbstractQuantum, b::AbstractQuantum; kwargs...)
-    return Quantum(a).sites == Quantum(b).sites &&
-           @invoke isapprox(a::AbstractTensorNetwork, b::AbstractTensorNetwork; kwargs...)
+    return Quantum(a).sites == Quantum(b).sites && isapprox(TensorNetwork(a), TensorNetwork(b); kwargs...)
 end
 
 Base.summary(io::IO, tn::AbstractQuantum) = print(io, "$(ntensors(tn))-tensors Quantum")
@@ -119,7 +118,7 @@ end
 
 # `pop!` / `delete!` methods call this method
 function Base.pop!(tn::AbstractQuantum, tensor::Tensor)
-    @invoke pop!(tn::AbstractTensorNetwork, tensor)
+    pop!(TensorNetwork(tn), tensor)
 
     # TODO replace with `inds(tn; set=:physical)` when implemented
     targets = values(Quantum(tn).sites) ∩ inds(tensor)
@@ -134,7 +133,7 @@ function Base.replace!(tn::AbstractQuantum, old_new::Pair{Symbol,Symbol})
     tn = Quantum(tn)
 
     # replace indices in underlying Tensor Network
-    @invoke replace!(tn::AbstractTensorNetwork, old_new)
+    replace!(TensorNetwork(tn), old_new)
 
     # replace indices in site information
     site = sites(tn; at=first(old_new))
@@ -151,7 +150,7 @@ function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pai
     tn = Quantum(tn)
 
     # replace indices in underlying Tensor Network
-    @invoke replace!(tn::AbstractTensorNetwork, old_new)
+    replace!(TensorNetwork(tn), old_new)
 
     # replace indices in site information
     from, to = first.(old_new), last.(old_new)
