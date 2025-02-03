@@ -7,20 +7,6 @@ using ScopedValues
 using Serialization
 using Graphs: Graphs
 
-mutable struct CachedField{T}
-    isvalid::Bool
-    value::T
-end
-
-CachedField{T}() where {T} = CachedField{T}(false, T())
-
-invalidate!(cf::CachedField) = cf.isvalid = false
-function Base.get!(f, cf::CachedField)
-    !cf.isvalid && (cf.value = f())
-    cf.isvalid = true
-    return cf.value
-end
-
 """
     AbstractTensorNetwork
 
