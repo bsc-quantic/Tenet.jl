@@ -485,10 +485,10 @@ function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs..
     gate = copy(gate)
 
     # contract involved sites
-    bond = (sitel, siter) = extrema(lanes(gate))
+    bond = (lanel, laner) = extrema(lanes(gate))
     vind = inds(ψ; bond)
-    linds = filter(!=(vind), inds(tensors(ψ; at=sitel)))
-    rinds = filter(!=(vind), inds(tensors(ψ; at=siter)))
+    linds = filter(!=(vind), inds(tensors(ψ; at=lanel)))
+    rinds = filter(!=(vind), inds(tensors(ψ; at=laner)))
     contract!(ψ; bond)
 
     # TODO replace for `merge!` when #243 is fixed
@@ -519,20 +519,20 @@ end
 # TODO remove `normalize` argument?
 function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, normalize=false, canonize=true)
     # Contract the exterior Λ tensors
-    sitel, siter = extrema(lanes(gate))
-    (0 < id(sitel) < nlanes(ψ) || 0 < id(siter) < nlanes(ψ)) ||
+    lanel, laner = extrema(lanes(gate))
+    (0 < id(lanel) < nlanes(ψ) || 0 < id(laner) < nlanes(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nlanes(ψ))"))
 
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Lane(id(sitel) - 1), sitel))
-    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Lane(id(siter) + 1)))
+    Λᵢ₋₁ = id(lanel) == 1 ? nothing : tensors(ψ; between=(Lane(id(lanel) - 1), lanel))
+    Λᵢ₊₁ = id(lanel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(laner, Lane(id(laner) + 1)))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Lane(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Lane(id(siter) + 1)), direction=:left, delete_Λ=false)
+    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Lane(id(lanel) - 1), lanel), direction=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(laner, Lane(id(laner) + 1)), direction=:left, delete_Λ=false)
 
     simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 
     # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
-    U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
+    U, Vt = tensors(ψ; at=lanel), tensors(ψ; at=laner)
     Γᵢ₋₁ = if isnothing(Λᵢ₋₁)
         U
     else
@@ -545,13 +545,13 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     end
 
     # Update the tensors in the tensor network
-    replace!(ψ, tensors(ψ; at=sitel) => Γᵢ₋₁)
-    replace!(ψ, tensors(ψ; at=siter) => Γᵢ)
+    replace!(ψ, tensors(ψ; at=lanel) => Γᵢ₋₁)
+    replace!(ψ, tensors(ψ; at=laner) => Γᵢ)
 
     if canonize
         canonize!(ψ; normalize)
     else
-        normalize && normalize!(ψ, collect((sitel, siter)))
+        normalize && normalize!(ψ, collect((lanel, laner)))
     end
 
     return ψ
