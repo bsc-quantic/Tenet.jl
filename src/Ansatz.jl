@@ -526,8 +526,8 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     Λᵢ₋₁ = id(lanel) == 1 ? nothing : tensors(ψ; bond=(Lane(id(lanel) - 1), lanel))
     Λᵢ₊₁ = id(lanel) == nsites(ψ) - 1 ? nothing : tensors(ψ; bond=(laner, Lane(id(laner) + 1)))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ; bond=(Lane(id(lanel) - 1), lanel), dir=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ; bond=(laner, Lane(id(laner) + 1)), dir=:left, delete_Λ=false)
+    !isnothing(Λᵢ₋₁) && absorb!(ψ; bond=(Lane(id(lanel) - 1), lanel), dir=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && absorb!(ψ; bond=(laner, Lane(id(laner) + 1)), dir=:left, delete_Λ=false)
 
     simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 

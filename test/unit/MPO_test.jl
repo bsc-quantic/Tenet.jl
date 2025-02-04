@@ -100,10 +100,10 @@ end
             @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         else
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
@@ -113,12 +113,12 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
             @test isisometry(canonized, Lane(i); dir=:left)
         else
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         end
     end

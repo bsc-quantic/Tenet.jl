@@ -70,7 +70,7 @@ include("Product.jl")
 export Product
 
 include("MPS.jl")
-export MPS, MPO
+export MPS, MPO, absorb, absorb!
 @compat public AbstractMPS, AbstractMPO, defaultorder, check_form
 
 # reexports from EinExprs

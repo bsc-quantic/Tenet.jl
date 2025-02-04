@@ -152,12 +152,11 @@ end
 
 function check_form(::Canonical, mps::AbstractMPO; atol=1e-12)
     for i in 1:nlanes(mps)
-        if i > 1 && !isisometry(contract(mps; bond=(Lane(i - 1), Lane(i)), dir=:right), Lane(i); dir=:right, atol)
+        if i > 1 && !isisometry(absorb(mps; bond=(Lane(i - 1), Lane(i)), dir=:right), Lane(i); dir=:right, atol)
             throw(ArgumentError("Can not form a left-canonical tensor in Lane($i) from Γ and λ contraction."))
         end
 
-        if i < nlanes(mps) &&
-            !isisometry(contract(mps; bond=(Lane(i), Lane(i + 1)), dir=:left), Lane(i); dir=:left, atol)
+        if i < nlanes(mps) && !isisometry(absorb(mps; bond=(Lane(i), Lane(i + 1)), dir=:left), Lane(i); dir=:left, atol)
             throw(ArgumentError("Can not form a right-canonical tensor in Site($i) from Γ and λ contraction."))
         end
     end
@@ -356,9 +355,10 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
 
-# TODO deprecate contract(; bond) and generalize it to AbstractAnsatz
+# TODO generalize it to AbstractAnsatz
+# TODO instead of `delete_Λ`, make another function for the reduced density matrix
 """
-    Tenet.contract!(tn::AbstractMPO; bond=(lane1, lane2), dir::Symbol = :left, delete_Λ = true)
+    absorb!(tn::AbstractMPO; bond=(lane1, lane2), dir::Symbol = :left, delete_Λ = true)
 
 For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values Λ located in the bond between lanes `lane1` and `lane2`.
 
@@ -368,30 +368,32 @@ For a given [`AbstractMPO`](@ref) Tensor Network, contract the singular values �
     - `dir` The direction of the contraction. Defaults to `:left`.
     - `delete_Λ` Whether to delete the singular values tensor after the contraction. Defaults to `true`.
 """
-contract(kwargs::NamedTuple{(:bond, :delete_Λ, :dir)}, tn::AbstractMPO) = contract!(kwargs, copy(tn))
-function contract!(kwargs::NamedTuple{(:bond, :delete_Λ, :dir)}, tn::AbstractMPO)
-    lane1, lane2 = kwargs.bond
-    Λᵢ = tensors(tn; bond=kwargs.bond)
+function absorb!(tn::AbstractMPO; bond, delete_Λ=true, dir=:left)
+    lane1, lane2 = bond
+    Λᵢ = tensors(tn; bond=bond)
     isnothing(Λᵢ) && return tn
 
-    if kwargs.dir === :right
+    if dir === :right
         Γᵢ₊₁ = tensors(tn; at=lane2)
         replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
-    elseif kwargs.dir === :left
+    elseif dir === :left
         Γᵢ = tensors(tn; at=lane1)
         replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
     else
-        throw(ArgumentError("Unknown direction=:$(kwargs.dir)"))
+        throw(ArgumentError("Unknown direction=:$(dir)"))
     end
 
-    kwargs.delete_Λ && delete!(TensorNetwork(tn), Λᵢ)
+    delete_Λ && delete!(TensorNetwork(tn), Λᵢ)
 
     return tn
 end
-contract(kwargs::NamedTuple{(:bond,)}, tn::AbstractMPO) = contract(tn; kwargs..., dir=:left, delete_Λ=true)
-contract!(kwargs::NamedTuple{(:bond,)}, tn::AbstractMPO) = contract!(tn; kwargs..., dir=:left, delete_Λ=true)
-contract(kwargs::NamedTuple{(:bond, :dir)}, tn::AbstractMPO) = contract(tn; kwargs..., delete_Λ=true)
-contract!(kwargs::NamedTuple{(:bond, :dir)}, tn::AbstractMPO) = contract!(tn; kwargs..., delete_Λ=true)
+
+"""
+    absorb(tn::AbstractMPO; kwargs...)
+
+Non-mutating version of [`absorb!`](@ref).
+"""
+absorb(tn::AbstractMPO; kwargs...) = absorb!(copy(tn); kwargs...)
 
 # TODO change it to `lanes`?
 # TODO refactor to use `Lattice`
@@ -630,7 +632,7 @@ end
 function evolve!(::Canonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
     # We first join the λs to the Γs to get MixedCanonical(lane"1") form
     for i in 1:(nlanes(ψ) - 1)
-        contract!(ψ; bond=(Lane(i), Lane(i + 1)), dir=:right)
+        absorb!(ψ; bond=(Lane(i), Lane(i + 1)), dir=:right)
     end
 
     # set `maxdim` and `threshold` to `nothing` so we later truncate in the `Canonical` form
@@ -665,7 +667,7 @@ function truncate_sweep!(::NonCanonical, ψ::AbstractMPO; kwargs...)
         canonize_site!(ψ, Lane(i); dir=:right, method=:svd)
 
         truncate!(ψ, [Lane(i), Lane(i + 1)]; kwargs..., compute_local_svd=false)
-        contract!(ψ; bond=(Lane(i), Lane(i + 1)), dir=:right)
+        absorb!(ψ; bond=(Lane(i), Lane(i + 1)), dir=:right)
     end
 
     ψ.form = MixedCanonical(Lane(nlanes(ψ)))

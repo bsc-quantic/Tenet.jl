@@ -278,10 +278,10 @@ end
             @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         else
-            contract!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
             @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
@@ -291,12 +291,12 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
             @test isisometry(canonized, Lane(i); dir=:left)
         else
-            contract!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
             @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
@@ -468,20 +468,20 @@ end
 @testset "contract bond" begin
     ψ = rand(MPS; n=5, maxdim=20)
     let canonized = canonize(ψ)
-        @test_throws ArgumentError contract!(canonized; bond=(lane"1", lane"2"), dir=:dummy)
+        @test_throws ArgumentError absorb!(canonized; bond=(lane"1", lane"2"), dir=:dummy)
     end
 
     canonized = canonize(ψ)
 
     for i in 1:4
-        contract_some = contract(canonized; bond=(Lane(i), Lane(i + 1)))
+        contract_some = absorb(canonized; bond=(Lane(i), Lane(i + 1)))
         Bᵢ = tensors(contract_some; at=Lane(i))
 
         @test isapprox(contract(contract_some), contract(ψ))
         @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; bond=(Lane(i), Lane(i + 1)))
 
         @test isisometry(contract_some, Lane(i); dir=:left)
-        @test isisometry(contract(canonized; bond=(Lane(i), Lane(i + 1)), dir=:right), Lane(i + 1); dir=:right)
+        @test isisometry(absorb(canonized; bond=(Lane(i), Lane(i + 1)), dir=:right), Lane(i + 1); dir=:right)
 
         Γᵢ = tensors(canonized; at=Lane(i))
         Λᵢ₊₁ = tensors(canonized; bond=(Lane(i), Lane(i + 1)))
