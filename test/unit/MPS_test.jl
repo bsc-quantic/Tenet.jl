@@ -130,12 +130,12 @@ end
 @testset "truncate!" begin
     @testset "NonCanonical" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-        canonize_site!(ψ, lane"2"; direction=:right, method=:svd)
+        canonize_site!(ψ, lane"2"; dir=:right, method=:svd)
 
         truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1)
         @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
-        singular_values = tensors(ψ; between=(lane"2", lane"3"))
+        singular_values = tensors(ψ; bond=(lane"2", lane"3"))
         truncated = truncate(ψ, [lane"2", lane"3"]; threshold=singular_values[2] + 0.1)
         @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
@@ -230,34 +230,32 @@ end
 @testset "canonize_site!" begin
     ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
-    @test_throws ArgumentError canonize_site!(ψ, lane"1"; direction=:left)
-    @test_throws ArgumentError canonize_site!(ψ, lane"3"; direction=:right)
+    @test_throws ArgumentError canonize_site!(ψ, lane"1"; dir=:left)
+    @test_throws ArgumentError canonize_site!(ψ, lane"3"; dir=:right)
 
     for method in [:qr, :svd]
-        canonized = canonize_site(ψ, lane"1"; direction=:right, method=method)
-        @test isleftcanonical(canonized, lane"1")
+        canonized = canonize_site(ψ, lane"1"; dir=:right, method=method)
+        @test isisometry(canonized, lane"1"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"2"; direction=:right, method=method)
-        @test isleftcanonical(canonized, lane"2")
+        canonized = canonize_site(ψ, lane"2"; dir=:right, method=method)
+        @test isisometry(canonized, lane"2"; dir=:right)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"2"; direction=:left, method=method)
-        @test isrightcanonical(canonized, lane"2")
+        canonized = canonize_site(ψ, lane"2"; dir=:left, method=method)
+        @test isisometry(canonized, lane"2"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
 
-        canonized = canonize_site(ψ, lane"3"; direction=:left, method=method)
-        @test isrightcanonical(canonized, lane"3")
+        canonized = canonize_site(ψ, lane"3"; dir=:left, method=method)
+        @test isisometry(canonized, lane"3"; dir=:left)
         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
     end
 
     # Ensure that svd creates a new tensor
-    @test length(tensors(canonize_site(ψ, lane"2"; direction=:left, method=:svd))) == 4
+    @test length(tensors(canonize_site(ψ, lane"2"; dir=:left, method=:svd))) == 4
 end
 
 @testset "canonize!" begin
-    using Tenet: isleftcanonical, isrightcanonical
-
     ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
     canonized = canonize(ψ)
 
@@ -268,7 +266,7 @@ end
     @test isapprox(norm(ψ), norm(canonized))
 
     # Extract the singular values between each adjacent pair of sites in the canonized chain
-    Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
+    Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
 
     norm_psi = norm(ψ)
     @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
@@ -277,14 +275,14 @@ end
         canonized = canonize(ψ)
 
         if i == 1
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            @test isisometry(canonized, Lane(i); dir=:right)
         else
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
 
@@ -293,13 +291,13 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         else
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
 end
@@ -467,26 +465,26 @@ end
 end
 
 # TODO rename when method is renamed
-@testset "contract between" begin
+@testset "contract bond" begin
     ψ = rand(MPS; n=5, maxdim=20)
     let canonized = canonize(ψ)
-        @test_throws ArgumentError contract!(canonized; between=(lane"1", lane"2"), direction=:dummy)
+        @test_throws ArgumentError absorb!(canonized; bond=(lane"1", lane"2"), dir=:dummy)
     end
 
     canonized = canonize(ψ)
 
     for i in 1:4
-        contract_some = contract(canonized; between=(Lane(i), Lane(i + 1)))
+        contract_some = absorb(canonized; bond=(Lane(i), Lane(i + 1)))
         Bᵢ = tensors(contract_some; at=Lane(i))
 
         @test isapprox(contract(contract_some), contract(ψ))
-        @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; between=(Lane(i), Lane(i + 1)))
+        @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; bond=(Lane(i), Lane(i + 1)))
 
-        @test isrightcanonical(contract_some, Lane(i))
-        @test isleftcanonical(contract(canonized; between=(Lane(i), Lane(i + 1)), direction=:right), Lane(i + 1))
+        @test isisometry(contract_some, Lane(i); dir=:left)
+        @test isisometry(absorb(canonized; bond=(Lane(i), Lane(i + 1)), dir=:right), Lane(i + 1); dir=:right)
 
         Γᵢ = tensors(canonized; at=Lane(i))
-        Λᵢ₊₁ = tensors(canonized; between=(Lane(i), Lane(i + 1)))
+        Λᵢ₊₁ = tensors(canonized; bond=(Lane(i), Lane(i + 1)))
         @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims=())
     end
 end
