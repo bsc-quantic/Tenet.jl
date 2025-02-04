@@ -33,7 +33,7 @@ export Lane, @lane_str
 export Site, @site_str, isdual
 @compat public id, Moment
 
-include("Quantum.jl")
+include("Pluggable.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 @compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
 
