@@ -3,23 +3,15 @@
 Julia doesn't have a formal definition of interface built into the language. Instead it relies on [duck typing](https://wikipedia.org/wiki/Duck_typing).
 Any declaration of a formal interface is then the documentation written for it.
 
-## [TensorNetwork](@id man-interface-tensornetwork)
+## [TensorNetwork](@id man-interface-tensornetwork) interface
 
-A [`TensorNetwork` (interface)](@ref man-interface-tensornetwork) is a collection of [`Tensor`](@ref)s forming a graph structure.
+A [TensorNetwork (interface)](@ref man-interface-tensornetwork) is a collection of [`Tensor`](@ref)s forming a graph structure.
 
-| Required method                      | Brief description                                     |
-| :----------------------------------- | :---------------------------------------------------- |
-| [`tensors(tn)`](@ref tensors)        | Returns the list of [`Tensor`](@ref)s present in `tn` |
-| `inds_set_all`                       |                                                       |
-| `inds_set_open`                      |                                                       |
-| `inds_set_inner`                     |                                                       |
-| `inds_set_hyper`                     |                                                       |
-| `replace!(tn, index => new_index)`   |                                                       |
-| `replace!(tn, tensor => new_tensor)` |                                                       |
-
-!!! todo
-    - Are `contract` and `contract!` required methods for the interface?
-    - Is conversion to `TensorNetwork` a required method method for the interface?
+| Required method                      | Brief description                                              |
+| :----------------------------------- | :------------------------------------------------------------- |
+| [`tensors(tn)`](@ref tensors)        | Returns the list of [`Tensor`](@ref)s present in `tn`          |
+| `replace!(tn, index => new_index)`   | Rename the `index` with `new_index`, if `index` is in `tn`     |
+| `replace!(tn, tensor => new_tensor)` | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn` |
 
 The `inds_set_all`, `inds_set_inner`, `inds_set_open` and `inds_set_hyper` are the underlying functions used by `inds(tn; set)`, so they are required for it to work.
 
@@ -29,17 +21,31 @@ The `inds_set_all`, `inds_set_inner`, `inds_set_open` and `inds_set_hyper` are t
 
 The following methods are optional but you might be interested on implementing them for performance purposes.
 
-| Method           | Default definition                                           | Brief description                                                 |
-| :--------------- | :----------------------------------------------------------- | :---------------------------------------------------------------- |
-| `size(tn)`       | Get index sizes from `tensors(tn)`                           | Returns a `Dict` that maps indices to their sizes                 |
-| `size(tn, i)`    | Get first matching tensor from `tensors(tn)` and query to it | Returns the size of the given index `i`                           |
-| `arrays`         | `parent.(tensors(tn))`                                       | Returns the arrays wrapped by the [`Tensor`](@ref)s in `tn`       |
-| `ninds`          | `length(inds(tn))`                                           | Returns the number of indices in `tn`                             |
-| `ntensors`       | `length(tensors(tn))`                                        | Returns the number of tensors contained in `tn`                   |
-| `in(index, tn)`  | `in(index, inds(tn))`                                        | Returns `true` if `index` is a existing index in `tn`             |
-| `in(tensor, tn)` | `in(tensor, tensors(tn))`                                    | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn` |
+| Method                      | Default definition                                             | Brief description                                                                            |
+| :-------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| `size(tn)`                  | Get index sizes from `tensors(tn)`                             | Returns a `Dict` that maps indices to their sizes                                            |
+| `size(tn, i)`               | Get first matching tensor from `tensors(tn)` and query to it   | Returns the size of the given index `i`                                                      |
+| `arrays`                    | `parent.(tensors(tn))`                                         | Returns the arrays wrapped by the [`Tensor`](@ref)s in `tn`                                  |
+| `inds_set(tn, Val(:all))`   | `mapreduce(inds, ∪, tensors(tn))`                              | Return all the indices present in `tn`. Dispatched by `inds(tn)` and `inds(tn; set)`.        |
+| `inds_set(tn, Val(:open))`  | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing only in one [`Tensor`](@ref). Dispatched by `inds(tn; set)`.        |
+| `inds_set(tn, Val(:inner))` | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing in two [`Tensor`](@ref)s. Dispatched by `inds(tn; set)`.            |
+| `inds_set(tn, Val(:hyper))` | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing in at least three [`Tensor`](@ref)s. Dispatched by `inds(tn; set)`. |
+| `ninds(tn; kwargs...)`      | `length(inds(tn; kwargs...))`                                  | Returns the number of indices in `tn`                                                        |
+| `ntensors(tn; kwargs...)`   | `length(tensors(tn; kwargs...))`                               | Returns the number of tensors contained in `tn`                                              |
+| `in(index, tn)`             | `in(index, inds(tn))`                                          | Returns `true` if `index` is a existing index in `tn`                                        |
+| `in(tensor, tn)`            | `in(tensor, tensors(tn))`                                      | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn`                            |
 
-## [Pluggable](@id man-interface-pluggable)
+### [WrapsTensorNetwork](@id man-interface-wrapstensornetwork) trait
+
+Many of the types in Tenet work by composing [`TensorNetwork` (type)](@ref TensorNetwork) and all of the optional methods above have a faster implementation for it.
+By just forwarding to their [`TensorNetwork` (type)](@ref TensorNetwork) field, wrapper types can accelerate their [TensorNetwork (interface)](@ref man-interface-tensornetwork) methods.
+
+| Required method                    | Default definition | Brief description                                                |
+| :--------------------------------- | :----------------- | :--------------------------------------------------------------- |
+| `Wraps(::Type{TensorNetwork}, tn)` | `No()`             | Return `Yes()` if `tn` contains a [`TensorNetwork`](@ref) object |
+| `TensorNetwork(tn)`                | (_undefined_)      | Return the [`TensorNetwork`](@ref) object wrapped by `tn`        |
+
+## [Pluggable](@id man-interface-pluggable) interface
 
 A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Site`](@ref)s and open indices.
 
@@ -58,7 +64,7 @@ A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-in
 !!! danger
     Do not just forward calls to `replace!(tn, index => new_index)` because it would break the mapping between [`Site`](@ref)s and indices when a mapped index is replaced.
 
-## [Ansatz](@id man-interface-ansatz)
+## [Ansatz](@id man-interface-ansatz) interface
 
 A [`Ansatz`](@ref man-interface-ansatz) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Lane`](@ref)s and [`Tensor`](@ref)s.
 
