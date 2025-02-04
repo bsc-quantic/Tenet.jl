@@ -74,3 +74,17 @@ function Base.get!(f, cf::CachedField)
     cf.isvalid = true
     return cf.value
 end
+
+struct Yes end
+struct No end
+
+function hist(x; init=Dict{eltype(x),Int}())
+    for xi in x
+        if haskey(init, xi)
+            init[xi] += 1
+        else
+            init[xi] = 1
+        end
+    end
+    return init
+end
