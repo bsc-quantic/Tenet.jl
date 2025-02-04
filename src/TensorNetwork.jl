@@ -8,22 +8,6 @@ using Serialization
 using Graphs: Graphs
 
 """
-    AbstractTensorNetwork
-
-Abstract type for `TensorNetwork`-derived types.
-Its subtypes must implement conversion or extraction of the underlying `TensorNetwork` by overloading the `TensorNetwork` constructor.
-
-# Implementors interface
-
-Any implementor of the `AbstractTensorNetwork` interface (currently only [`TensorNetwork`](@ref)) must define the following methods:
-
-  - `inds`
-  - `tensors`
-  - `size`
-"""
-abstract type AbstractTensorNetwork end
-
-"""
     TensorNetwork
 
 Hypergraph of interconnected tensors, representing a multilinear equation aka Tensor Network.
@@ -62,6 +46,10 @@ struct TensorNetwork <: AbstractTensorNetwork
 end
 
 TensorNetwork() = TensorNetwork(Tensor[])
+
+# `WrapsTensorNetwork`-trait
+# returns `No` because we `TensorNetwork` methods will already correctly dispatch correctly
+Wraps(::Type{TensorNetwork}, _) = No()
 TensorNetwork(tn::TensorNetwork) = tn
 
 get_unsafe_scope(tn::AbstractTensorNetwork) = TensorNetwork(tn).unsafe[]
@@ -117,7 +105,7 @@ function Base.conj!(tn::AbstractTensorNetwork)
 end
 
 """
-    inds(tn::AbstractTensorNetwork, set = :all)
+    inds(tn; set = :all)
 
 Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
 
@@ -129,13 +117,7 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:open` Indices only mentioned in one tensor.
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
-      + `:parallelto` Indices parallel to `i` in the graph (`i` included).
 """
-function inds end
-
-inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
-inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
-
 function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
     if kwargs.set === :all
@@ -161,6 +143,11 @@ function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork)
     end
 end
 
+"""
+    inds(tn; parallelto)
+
+Return the indices parallel to an index in the [`AbstractTensorNetwork`](@ref).
+"""
 function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
     candidates = filter!(!=(kwargs.parallelto), collect(mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto))))
     return filter(candidates) do i
@@ -168,29 +155,11 @@ function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
     end
 end
 
-"""
-    ninds(tn::TensorNetwork; kwargs...)
-
-Return the number of indices in the `TensorNetwork`. It accepts the same keyword arguments as [`inds`](@ref).
-
-See also: [`ntensors`](@ref)
-"""
-ninds(tn::AbstractTensorNetwork; kwargs...) = ninds(values(kwargs), tn)
-ninds(::@NamedTuple{}, tn::AbstractTensorNetwork) = length(TensorNetwork(tn).indexmap)
-ninds(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(inds(kwargs, tn))
-
-"""
-    tensors(tn::AbstractTensorNetwork)
-
-Return a list of the `Tensor`s in the [`AbstractTensorNetwork`](@ref).
-
-# Implementation details
-
-  - As the tensors of a [`AbstractTensorNetwork`](@ref) are stored as keys of the `.tensormap` dictionary and it uses `objectid` as hash, order is not stable so it sorts for repeated evaluations.
-"""
-function tensors end
-
-tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
+# here for performance reasons
+# on my macbook M1 pro with a TensorNetwork of 100 tensors, 250 indices
+# - `ninds` takes 50 ns
+# - `length(inds(tn))` takes 1 μs
+ninds(::@NamedTuple{}, tn::TensorNetwork) = length(TensorNetwork(tn).indexmap)
 
 function tensors(::@NamedTuple{}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
