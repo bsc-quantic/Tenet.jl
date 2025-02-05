@@ -2,8 +2,8 @@ module TenetITensorMPSExt
 
 using Tenet
 using Tenet: Tenet, MPS, tensors, form, inds, lanes, Site, Lane
-using ITensors: ITensors, ITensor, Index, dim, siteinds, linkinds
-using ITensorMPS: ITensorMPS
+using ITensors: ITensors, ITensor, Index, dim, siteinds
+using ITensorMPS: ITensorMPS, linkinds
 
 # Convert an AbstractMPS to an ITensor MPS
 function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
