@@ -1,10 +1,9 @@
 module TenetITensorMPSExt
 
 using Tenet
-using Tenet: Tenet, MPS, tensors, form, inds, lanes, id, Site, Lane
-using ITensors
-using ITensorMPS
-using ITensors: ITensor, Index, dim
+using Tenet: Tenet, MPS, tensors, form, inds, lanes, Site, Lane
+using ITensors: ITensors, ITensor, Index, dim, siteinds, linkinds
+using ITensorMPS: ITensorMPS
 
 # Convert an AbstractMPS to an ITensor MPS
 function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
@@ -76,15 +75,15 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
     links = linkinds(itensors_mps)
 
     tensors_vec = []
-    first_ten = array(itensors_mps[1], sites[1], links[1])
+    first_ten = ITensors.array(itensors_mps[1], sites[1], links[1])
     push!(tensors_vec, first_ten)
 
     # Extract the bulk tensors
     for j in 2:(length(itensors_mps) - 1)
-        ten = array(itensors_mps[j], sites[j], links[j - 1], links[j]) # Indices are ordered as (site index, left link, right link)
+        ten = ITensors.array(itensors_mps[j], sites[j], links[j - 1], links[j]) # Indices are ordered as (site index, left link, right link)
         push!(tensors_vec, ten)
     end
-    last_ten = array(itensors_mps[end], sites[end], links[end])
+    last_ten = ITensors.array(itensors_mps[end], sites[end], links[end])
     push!(tensors_vec, last_ten)
 
     mps = Tenet.MPS(tensors_vec)
