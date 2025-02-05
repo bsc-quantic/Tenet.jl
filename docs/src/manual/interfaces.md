@@ -78,17 +78,24 @@ A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-in
 
 | Required method | Brief description                                   |
 | :-------------- | :-------------------------------------------------- |
-| `sites(tn)`     | Returns the list of [`Site`](@ref)s present in `tn` |
-| `inds(tn; at)`  | Return the index linked to `at` index               |
+| `sites(tn;)`    | Returns the list of [`Site`](@ref)s present in `tn` |
+| `inds(tn; at)`  | Return the index linked to `at` [`Site`](@ref)      |
 | `sites(tn; at)` | Return the [`Site`](@ref) linked to the index `at`  |
 
 As with the interface above, there are optional methods with default implementations that you might be interested in overriding for performance reasons.
 
-| Method                  | Default definition             | Brief description                                                                            |
-| :---------------------- | :----------------------------- | :------------------------------------------------------------------------------------------- |
-| `inds(tn; plugs)`       | ...                            | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
-| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))` | Returns the number of [`Site`](@ref)s present in `tn`                                        |
-| `hassite(site, tn)`     | `site in sites(tn))`           | Returns `true` if `site` exists in `tn`                                                      |
+| Method                  | Default definition             | Brief description                                     |
+| :---------------------- | :----------------------------- | :---------------------------------------------------- |
+| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))` | Returns the number of [`Site`](@ref)s present in `tn` |
+| `hassite(site, tn)`     | `site in sites(tn))`           | Returns `true` if `site` exists in `tn`               |
+
+### Keyword methods
+
+| Method             | Brief description                                                                            |
+| :----------------- | :------------------------------------------------------------------------------------------- |
+| `sites(tn;)`       | Returns all the [`Site`](@ref)s                                                              |
+| `sites(tn; plugs)` |                                                                                              |
+| `inds(tn; plugs)`  | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
 
 ### Mutating methods
 
