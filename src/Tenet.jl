@@ -12,6 +12,8 @@ export Tensor, contract, dim, expand
 include("Numerics.jl")
 
 include("Interfaces/TensorNetwork.jl")
+include("Interfaces/Pluggable.jl")
+include("Interfaces/Ansatz.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, groupinds!
