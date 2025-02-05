@@ -9,31 +9,22 @@ A [TensorNetwork (interface)](@ref man-interface-tensornetwork) is a collection 
 
 | Required method                      | Brief description                                              |
 | :----------------------------------- | :------------------------------------------------------------- |
-| [`tensors(tn)`](@ref tensors)        | Returns the list of [`Tensor`](@ref)s present in `tn`          |
-| `replace!(tn, index => new_index)`   | Rename the `index` with `new_index`, if `index` is in `tn`     |
+| `tensors(tn; kwargs...)`             | Returns a list of [`Tensor`](@ref)s present in `tn`            |
+| `copy(tn)`                           | Returns a shallow copy of `tn`                                 |
+| `replace!(tn, index => new_index)`   | Renames the `index` with `new_index`, if `index` is in `tn`    |
 | `replace!(tn, tensor => new_tensor)` | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn` |
 
-The `inds_set_all`, `inds_set_inner`, `inds_set_open` and `inds_set_hyper` are the underlying functions used by `inds(tn; set)`, so they are required for it to work.
+The following methods are optional but you might be interested on implementing them for performance reasons.
 
-!!! todo
-    We are looking for a better way to add value-dispatch to [`inds`](@ref) (specifically, the `inds(tn; set)` method) without incurring in huge dynamic dispatch overhead (like the `Val`-dispatch method).
-    We might be interested in studying the internal mechanism used in [ValSplit.jl](https://github.com/ztangent/ValSplit.jl).
-
-The following methods are optional but you might be interested on implementing them for performance purposes.
-
-| Method                      | Default definition                                             | Brief description                                                                            |
-| :-------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| `size(tn)`                  | Get index sizes from `tensors(tn)`                             | Returns a `Dict` that maps indices to their sizes                                            |
-| `size(tn, i)`               | Get first matching tensor from `tensors(tn)` and query to it   | Returns the size of the given index `i`                                                      |
-| `arrays`                    | `parent.(tensors(tn))`                                         | Returns the arrays wrapped by the [`Tensor`](@ref)s in `tn`                                  |
-| `inds_set(tn, Val(:all))`   | `mapreduce(inds, ∪, tensors(tn))`                              | Return all the indices present in `tn`. Dispatched by `inds(tn)` and `inds(tn; set)`.        |
-| `inds_set(tn, Val(:open))`  | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing only in one [`Tensor`](@ref). Dispatched by `inds(tn; set)`.        |
-| `inds_set(tn, Val(:inner))` | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing in two [`Tensor`](@ref)s. Dispatched by `inds(tn; set)`.            |
-| `inds_set(tn, Val(:hyper))` | Count occurrences in `tensors(tn)` and show depending on `set` | Return indices appearing in at least three [`Tensor`](@ref)s. Dispatched by `inds(tn; set)`. |
-| `ninds(tn; kwargs...)`      | `length(inds(tn; kwargs...))`                                  | Returns the number of indices in `tn`                                                        |
-| `ntensors(tn; kwargs...)`   | `length(tensors(tn; kwargs...))`                               | Returns the number of tensors contained in `tn`                                              |
-| `in(index, tn)`             | `in(index, inds(tn))`                                          | Returns `true` if `index` is a existing index in `tn`                                        |
-| `in(tensor, tn)`            | `in(tensor, tensors(tn))`                                      | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn`                            |
+| Method                    | Default definition                                           | Brief description                                                 |
+| :------------------------ | :----------------------------------------------------------- | :---------------------------------------------------------------- |
+| `inds(tn; kwargs...)`     | `mapreduce(inds, ∪, tensors(tn))`                            | Returns a list of indices present in `tn`                         |
+| `hasind(tn, ind)`         | `in(index, inds(tn))`                                        | Returns `true` if `index` is a existing index in `tn`             |
+| `hastensor(tn, tensor)`   | `in(tensor, tensors(tn))`                                    | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn` |
+| `size(tn)`                | Get index sizes from `tensors(tn)`                           | Returns a `Dict` that maps indices to their sizes                 |
+| `size(tn, i)`             | Get first matching tensor from `tensors(tn)` and query to it | Returns the size of the given index `i`                           |
+| `ntensors(tn; kwargs...)` | `length(tensors(tn; kwargs...))`                             | Returns the number of tensors contained in `tn`                   |
+| `ninds(tn; kwargs...)`    | `length(inds(tn; kwargs...))`                                | Returns the number of indices in `tn`                             |
 
 ### [WrapsTensorNetwork](@id man-interface-wrapstensornetwork) trait
 
@@ -45,21 +36,35 @@ By just forwarding to their [`TensorNetwork` (type)](@ref TensorNetwork) field, 
 | `Wraps(::Type{TensorNetwork}, tn)` | `No()`             | Return `Yes()` if `tn` contains a [`TensorNetwork`](@ref) object |
 | `TensorNetwork(tn)`                | (_undefined_)      | Return the [`TensorNetwork`](@ref) object wrapped by `tn`        |
 
+### `tensors` keyword methods
+
+| Method                       | Default implementation                | Default Brief description                                         |
+| :--------------------------- | :------------------------------------ | :---------------------------------------------------------------- |
+| `tensors(tn; contains=is)`   | `filter(⊇(is), tensors(tn))`          | Returns the [`Tensor`](@ref)s containing at all the indices `is`. |
+| `tensors(tn; intersects=is)` | `filter(isdisjoint(is), tensors(tn))` | Returns the [`Tensor`](@ref)s intersecting with the indices `is`. |
+
+### `inds` keyword methods
+
+| Method                 | Brief description                                                                                          |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `inds(tn; set)`        | Return a subset of the indices present in `tn`. `set` can be one of `:all`, `:open`, `:inner` or `:hyper`. |
+| `inds(tn; parallelto)` | Return the indices parallel to the index `parallelto`.                                                     |
+
 ## [Pluggable](@id man-interface-pluggable) interface
 
 A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Site`](@ref)s and open indices.
 
-| Required method           | Brief description                                                                       |
-| :------------------------ | :-------------------------------------------------------------------------------------- |
-| [`sites(tn)`](@ref sites) | Returns the list of [`Site`](@ref)s present in `tn`                                     |
-| `ind_at(tn, at)`          | Return the index linked to the `at` `Symbol`                                            |
-| `site_at(tn, at)`         | Return the [`Site`](@ref) linked to the index `at`                                      |
-| `inds_set_physical(tn)`   | Return the indices linked to [`Site`](@ref); i.e. the ones behaving as physical indices |
+| Required method  | Brief description                                   |
+| :--------------- | :-------------------------------------------------- |
+| `sites(tn)`      | Returns the list of [`Site`](@ref)s present in `tn` |
+| `indat(tn, at)`  | Return the index linked to the `at` `Symbol`        |
+| `siteat(tn, at)` | Return the [`Site`](@ref) linked to the index `at`  |
 
-| Method                  | Default definition             | Brief description                                     |
-| :---------------------- | :----------------------------- | :---------------------------------------------------- |
-| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))` | Returns the number of [`Site`](@ref)s present in `tn` |
-| `in(site, tn)`          | `in(site, sites(tn))`          | Returns `true` if `site` exists in `tn`               |
+| Method                  | Default definition                      | Brief description                                                                       |
+| :---------------------- | :-------------------------------------- | :-------------------------------------------------------------------------------------- |
+| `inds_set_physical(tn)` | `map(at -> site_at(tn, at), sites(tn))` | Return the indices linked to [`Site`](@ref); i.e. the ones behaving as physical indices |
+| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))`          | Returns the number of [`Site`](@ref)s present in `tn`                                   |
+| `hassite(site, tn)`     | `in(site, sites(tn))`                   | Returns `true` if `site` exists in `tn`                                                 |
 
 !!! danger
     Do not just forward calls to `replace!(tn, index => new_index)` because it would break the mapping between [`Site`](@ref)s and indices when a mapped index is replaced.
@@ -68,16 +73,16 @@ A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-in
 
 A [`Ansatz`](@ref man-interface-ansatz) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Lane`](@ref)s and [`Tensor`](@ref)s.
 
-| Required method           | Brief description                                                                                          |
-| :------------------------ | :--------------------------------------------------------------------------------------------------------- |
-| [`lanes(tn)`](@ref lanes) | Returns the list of [`Lane`](@ref)s present in `tn`                                                        |
-| `tensor_at(tn, at)`       | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref). Dispatched through `tensors(tn; at::Lane)` |
-| `lattice(tn)`             | Returns the [`Lattice`](@ref) associated to `tn`                                                           |
+| Required method    | Brief description                                                                                          |
+| :----------------- | :--------------------------------------------------------------------------------------------------------- |
+| `lanes(tn)`        | Returns the list of [`Lane`](@ref)s present in `tn`                                                        |
+| `tensorat(tn, at)` | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref). Dispatched through `tensors(tn; at::Lane)` |
+| `lattice(tn)`      | Returns the [`Lattice`](@ref) associated to `tn`                                                           |
 
-| Method         | Default definition    | Brief description                                     |
-| :------------- | :-------------------- | :---------------------------------------------------- |
-| `nlanes(tn)`   | `length(lanes(tn))`   | Returns the number of [`Lane`](@ref)s present in `tn` |
-| `in(lane, tn)` | `in(lane, lanes(tn))` | Returns `true` if `lane` exists in `tn`               |
+| Method       | Default definition  | Brief description                                     |
+| :----------- | :------------------ | :---------------------------------------------------- |
+| `nlanes(tn)` | `length(lanes(tn))` | Returns the number of [`Lane`](@ref)s present in `tn` |
+| `haslane`    | ...                 | Returns `true` if `lane` exists in `tn`               |
 
 !!! danger
     Do not just forward calls to `replace!(tn, index => new_index)` nor `replace!(tn, tensor => new_tensor)` because it would break the mapping between [`Lane`](@ref)s and [`Tensor`](@ref)s when a mapped [`Tensor`] is replaced.
