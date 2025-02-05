@@ -7,12 +7,10 @@ Any declaration of a formal interface is then the documentation written for it.
 
 A [TensorNetwork (interface)](@ref man-interface-tensornetwork) is a collection of [`Tensor`](@ref)s forming a graph structure.
 
-| Required method                      | Brief description                                              |
-| :----------------------------------- | :------------------------------------------------------------- |
-| `tensors(tn; kwargs...)`             | Returns a list of [`Tensor`](@ref)s present in `tn`            |
-| `copy(tn)`                           | Returns a shallow copy of `tn`                                 |
-| `replace!(tn, index => new_index)`   | Renames the `index` with `new_index`, if `index` is in `tn`    |
-| `replace!(tn, tensor => new_tensor)` | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn` |
+| Required method          | Brief description                                   |
+| :----------------------- | :-------------------------------------------------- |
+| `tensors(tn; kwargs...)` | Returns a list of [`Tensor`](@ref)s present in `tn` |
+| `copy(tn)`               | Returns a shallow copy of `tn`                      |
 
 The following methods are optional but you might be interested on implementing them for performance reasons.
 
@@ -25,6 +23,17 @@ The following methods are optional but you might be interested on implementing t
 | `size(tn, i)`             | Get first matching tensor from `tensors(tn)` and query to it | Returns the size of the given index `i`                           |
 | `ntensors(tn; kwargs...)` | `length(tensors(tn; kwargs...))`                             | Returns the number of tensors contained in `tn`                   |
 | `ninds(tn; kwargs...)`    | `length(inds(tn; kwargs...))`                                | Returns the number of indices in `tn`                             |
+
+### Mutating interface
+
+Tensor Networks change...
+
+| Method                               | Brief description                                              |
+| :----------------------------------- | :------------------------------------------------------------- |
+| `push!(tn, tensor)`                  | Adds a new [`Tensor`](@ref) to `tn`                            |
+| `pop!(tn, tensor)`                   | Removes a specific [`Tensor`](@ref) from `tn`                  |
+| `replace!(tn, index => new_index)`   | Renames the `index` with `new_index`, if `index` is in `tn`    |
+| `replace!(tn, tensor => new_tensor)` | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn` |
 
 ### [WrapsTensorNetwork](@id man-interface-wrapstensornetwork) trait
 
@@ -54,17 +63,18 @@ By just forwarding to their [`TensorNetwork` (type)](@ref TensorNetwork) field, 
 
 A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Site`](@ref)s and open indices.
 
-| Required method  | Brief description                                   |
-| :--------------- | :-------------------------------------------------- |
-| `sites(tn)`      | Returns the list of [`Site`](@ref)s present in `tn` |
-| `indat(tn, at)`  | Return the index linked to the `at` `Symbol`        |
-| `siteat(tn, at)` | Return the [`Site`](@ref) linked to the index `at`  |
+| Required method                         | Brief description                                   |
+| :-------------------------------------- | :-------------------------------------------------- |
+| `sites(tn)`                             | Returns the list of [`Site`](@ref)s present in `tn` |
+| `inds(tn; at)`                          | Return the index linked to `at` index               |
+| `sites(tn; at)`                         | Return the [`Site`](@ref) linked to the index `at`  |
+| `handle_effect(tn, ::ReplaceIndEffect)` | Handle the replacement of an index for another      |
 
-| Method                  | Default definition                      | Brief description                                                                       |
-| :---------------------- | :-------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `inds_set_physical(tn)` | `map(at -> site_at(tn, at), sites(tn))` | Return the indices linked to [`Site`](@ref); i.e. the ones behaving as physical indices |
-| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))`          | Returns the number of [`Site`](@ref)s present in `tn`                                   |
-| `hassite(site, tn)`     | `in(site, sites(tn))`                   | Returns `true` if `site` exists in `tn`                                                 |
+| Method                  | Default definition             | Brief description                                                                            |
+| :---------------------- | :----------------------------- | :------------------------------------------------------------------------------------------- |
+| `inds(tn; plugs)`       | ...                            | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
+| `nsites(tn; kwargs...)` | `length(sites(tn; kwargs...))` | Returns the number of [`Site`](@ref)s present in `tn`                                        |
+| `hassite(site, tn)`     | `in(site, sites(tn))`          | Returns `true` if `site` exists in `tn`                                                      |
 
 !!! danger
     Do not just forward calls to `replace!(tn, index => new_index)` because it would break the mapping between [`Site`](@ref)s and indices when a mapped index is replaced.
@@ -73,11 +83,13 @@ A [`Pluggable`](@ref man-interface-pluggable) is a [`TensorNetwork`](@ref man-in
 
 A [`Ansatz`](@ref man-interface-ansatz) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Lane`](@ref)s and [`Tensor`](@ref)s.
 
-| Required method    | Brief description                                                                                          |
-| :----------------- | :--------------------------------------------------------------------------------------------------------- |
-| `lanes(tn)`        | Returns the list of [`Lane`](@ref)s present in `tn`                                                        |
-| `tensorat(tn, at)` | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref). Dispatched through `tensors(tn; at::Lane)` |
-| `lattice(tn)`      | Returns the [`Lattice`](@ref) associated to `tn`                                                           |
+| Required method                            | Brief description                                                                                          |
+| :----------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `lanes(tn)`                                | Returns the list of [`Lane`](@ref)s present in `tn`                                                        |
+| `tensors(tn; at)`                          | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref). Dispatched through `tensors(tn; at::Lane)` |
+| `lattice(tn)`                              | Returns the [`Lattice`](@ref) associated to `tn`                                                           |
+| `handle_effect(tn, ::ReplaceTensorEffect)` | Handle the replacement of [`Tensor`](@ref) for another                                                     |
+
 
 | Method       | Default definition  | Brief description                                     |
 | :----------- | :------------------ | :---------------------------------------------------- |
