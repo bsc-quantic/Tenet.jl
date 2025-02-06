@@ -363,3 +363,32 @@ function __expand_repeat(array, axis, size)
 end
 
 LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
+
+# TODO choose a new index name? currently choosing the first index of `parinds`
+function groupinds(tensor::Tensor, parinds)
+    i = first(parinds)
+    par_to_i = parinds[2:end]
+
+    locᵢ = findfirst(==(i), inds(tensor))
+    locs = findall(∈(par_to_i), inds(tensor))
+
+    perm = collect(1:ndims(tensor))
+    for (j, loc) in enumerate(locs)
+        perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
+    end
+
+    perm = collect(1:ndims(tensor))
+
+    perm = collect(1:ndims(tensor))
+    for (j, loc) in enumerate(locs)
+        perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
+    end
+
+    newshape = collect(size(tensor))
+    newshape[locᵢ] *= prod(x -> size(tensor, x), par_to_i)
+    deleteat!(newshape, locs)
+    newinds = deleteat!(collect(inds(tensor)), locs)
+
+    newarray = reshape(permutedims(parent(tensor), perm), newshape...)
+    return Tensor(newarray, newinds)
+end

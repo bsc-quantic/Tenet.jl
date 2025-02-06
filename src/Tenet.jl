@@ -13,7 +13,7 @@ include("Numerics.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, groupinds!
-@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!
+@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!, groupinds
 
 include("Transformations.jl")
 export transform, transform!
