@@ -199,8 +199,8 @@ Base.@nospecializeinfer @noinline function Tenet.contract(
 
     # TODO replace for `Ops.convert`/`adapt` when it's available (there can be problems with nested array structures)
     T = Base.promote_eltype(a, b)
-    da = eltype(a) != T ? TracedRArray{T,ndims(a)}(parent(a)) : parent(a)
-    db = eltype(b) != T ? TracedRArray{T,ndims(b)}(parent(b)) : parent(b)
+    da = eltype(a) != T ? TracedRArray{Reactant.unwrapped_eltype(T),ndims(a)}(parent(a)) : parent(a)
+    db = eltype(b) != T ? TracedRArray{Reactant.unwrapped_eltype(T),ndims(b)}(parent(b)) : parent(b)
 
     data = Reactant.Ops.dot_general(da, db; contracting_dimensions, batching_dimensions)
 
