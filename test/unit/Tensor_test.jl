@@ -332,3 +332,20 @@ end
         @test selectdim(new, :x, 2) == tensor
     end
 end
+
+@testset "groupinds" begin
+    tensor = Tensor(rand(2, 3), (:i, :j))
+    grouped = Tenet.groupinds(tensor, [:i, :j])
+    @test vec(tensor) ≈ parent(grouped)
+
+    grouped = Tenet.groupinds(tensor, [:j, :i])
+    @test vec(transpose(parent(tensor))) ≈ parent(grouped)
+
+    tensor = Tensor(rand(2, 3, 4), (:i, :k, :j))
+    grouped = Tenet.groupinds(tensor, [:i, :j])
+    @test reshape(permutedims(parent(tensor), [1, 3, 2]), 8, 3) ≈ parent(grouped)
+
+    tensor = Tensor(rand(2, 3, 4), (:i, :k, :j))
+    grouped = Tenet.groupinds(tensor, [:j, :i])
+    @test reshape(permutedims(parent(tensor), [2, 3, 1]), 3, 8) ≈ parent(grouped)
+end
