@@ -389,6 +389,7 @@ function groupinds(tensor::Tensor, parinds)
     deleteat!(newshape, locs)
     newinds = deleteat!(collect(inds(tensor)), locs)
 
+    # TODO[allocs] do we avoid an allocation if skip  call to `permutedims` on `perm == 1:n`?
     newarray = reshape(permutedims(parent(tensor), perm), newshape...)
     return Tensor(newarray, newinds)
 end
