@@ -343,9 +343,8 @@ end
 
     tensor = Tensor(rand(2, 3, 4), (:i, :k, :j))
     grouped = Tenet.groupinds(tensor, [:i, :j])
-    @test reshape(permutedims(parent(tensor), [1, 3, 2]), 8, 3) ≈ parent(grouped)
+    @test reshape(permutedims(parent(tensor), [2, 1, 3]), 3, 8) ≈ parent(grouped)
 
-    tensor = Tensor(rand(2, 3, 4), (:i, :k, :j))
     grouped = Tenet.groupinds(tensor, [:j, :i])
     @test reshape(permutedims(parent(tensor), [2, 3, 1]), 3, 8) ≈ parent(grouped)
 end

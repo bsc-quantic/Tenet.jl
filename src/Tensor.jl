@@ -365,31 +365,22 @@ end
 LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
 
 # TODO choose a new index name? currently choosing the first index of `parinds`
-function groupinds(tensor::Tensor, parinds)
-    i = first(parinds)
-    par_to_i = parinds[2:end]
+"""
+    groupinds(tensor, parinds; ind=first(parinds))
 
-    locᵢ = findfirst(==(i), inds(tensor))
-    locs = findall(∈(par_to_i), inds(tensor))
+Fuses `parinds`, leaves them on the right-side internally permuted with `permutator` and names it as `ind`.
+"""
+function groupinds(tensor::Tensor, parinds; ind=first(parinds))
+    @assert allunique(inds(tensor))
+    @assert parinds ⊆ inds(tensor)
 
-    perm = collect(1:ndims(tensor))
-    for (j, loc) in enumerate(locs)
-        perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
-    end
+    locs = findall(∈(parinds), inds(tensor))
+    perm = filter(∉(locs), 1:ndims(tensor))
+    append!(perm, map(i -> findfirst(==(i), inds(tensor)), parinds))
 
-    perm = collect(1:ndims(tensor))
+    data = perm == 1:n ? parent(tensor) : permutedims(parent(tensor), perm)
+    data = reshape(data, (size(data)[1:(ndims(data) - length(parinds))]..., :))
 
-    perm = collect(1:ndims(tensor))
-    for (j, loc) in enumerate(locs)
-        perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
-    end
-
-    newshape = collect(size(tensor))
-    newshape[locᵢ] *= prod(x -> size(tensor, x), par_to_i)
-    deleteat!(newshape, locs)
-    newinds = deleteat!(collect(inds(tensor)), locs)
-
-    # TODO[allocs] do we avoid an allocation if skip  call to `permutedims` on `perm == 1:n`?
-    newarray = reshape(permutedims(parent(tensor), perm), newshape...)
-    return Tensor(newarray, newinds)
+    newinds = (filter(∉(parinds), inds(tensor))..., ind)
+    return Tensor(data, newinds)
 end
