@@ -2,7 +2,7 @@ using Test
 using Tenet
 
 H = MPO([rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
-@test socket(H) == Operator()
+@test socket(H) == Tenet.Operator()
 @test nsites(H; set=:inputs) == 3
 @test nsites(H; set=:outputs) == 3
 @test issetequal(sites(H), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
@@ -68,7 +68,7 @@ end
     χ = 10
     H = rand(MPO; n, maxdim=χ)
 
-    @test socket(H) == Operator()
+    @test socket(H) == Tenet.Operator()
     @test nsites(H; set=:inputs) == n
     @test nsites(H; set=:outputs) == n
     @test issetequal(sites(H), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
