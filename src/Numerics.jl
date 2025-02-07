@@ -201,7 +201,7 @@ function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtuali
     s = Tensor(s, [virtualind])
     Vt = Tensor(reshape(conj(V), right_sizes..., size(V, 2)), [right_inds..., virtualind])
 
-    if isnothing(maxdim)
+    if !isnothing(maxdim)
         U = view(u, virtualind => 1:maxdim)
         s = view(s, virtualind => 1:maxdim)
         Vt = view(v, virtualind => 1:maxdim)
