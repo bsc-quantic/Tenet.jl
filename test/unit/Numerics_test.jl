@@ -149,34 +149,48 @@ end
 end
 
 @testset "svd" begin
-    data = rand(ComplexF64, 2, 4, 6, 8)
-    tensor = Tensor(data, (:i, :j, :k, :l))
+    @testset "full" begin
+        data = rand(ComplexF64, 2, 4, 6, 8)
+        tensor = Tensor(data, (:i, :j, :k, :l))
 
-    # throw if left_inds is not provided
-    @test_throws ArgumentError svd(tensor)
+        # throw if left_inds is not provided
+        @test_throws ArgumentError svd(tensor)
 
-    # throw if index is not present
-    @test_throws ArgumentError svd(tensor, left_inds=[:z])
-    @test_throws ArgumentError svd(tensor, right_inds=[:z])
+        # throw if index is not present
+        @test_throws ArgumentError svd(tensor, left_inds=[:z])
+        @test_throws ArgumentError svd(tensor, right_inds=[:z])
 
-    # throw if no inds left
-    @test_throws ArgumentError svd(tensor, left_inds=(:i, :j, :k, :l))
-    @test_throws ArgumentError svd(tensor, right_inds=(:i, :j, :k, :l))
+        # throw if no inds left
+        @test_throws ArgumentError svd(tensor, left_inds=(:i, :j, :k, :l))
+        @test_throws ArgumentError svd(tensor, right_inds=(:i, :j, :k, :l))
 
-    # throw if chosen virtual index already present
-    @test_throws ArgumentError svd(tensor, left_inds=(:i,), virtualind=:j)
+        # throw if chosen virtual index already present
+        @test_throws ArgumentError svd(tensor, left_inds=(:i,), virtualind=:j)
 
-    U, s, V = svd(tensor; left_inds=[:i, :j], virtualind=:x)
+        U, s, V = svd(tensor; left_inds=[:i, :j], virtualind=:x)
 
-    @test inds(U) == (:i, :j, :x)
-    @test inds(s) == (:x,)
-    @test inds(V) == (:k, :l, :x)
+        @test inds(U) == (:i, :j, :x)
+        @test inds(s) == (:x,)
+        @test inds(V) == (:k, :l, :x)
 
-    @test size(U) == (2, 4, 8)
-    @test size(s) == (8,)
-    @test size(V) == (6, 8, 8)
+        @test size(U) == (2, 4, 8)
+        @test size(s) == (8,)
+        @test size(V) == (6, 8, 8)
 
-    @test isapprox(contract(contract(U, s; dims=Symbol[]), V), tensor)
+        @test isapprox(contract(contract(U, s; dims=Symbol[]), V), tensor)
+    end
+
+    @testset "truncated" begin
+        data = rand(ComplexF64, 2, 4, 6, 8)
+        tensor = Tensor(data, (:i, :j, :k, :l))
+        maxdim = 3
+
+        U, s, V = svd(tensor; left_inds=[:i, :j], right_inds=[:k, :l], virtualind=:x, maxdim)
+
+        @test size(U) == (2, 4, maxdim)
+        @test size(s) == (maxdim,)
+        @test size(V) == (6, 8, maxdim)
+    end
 end
 
 @testset "qr" begin

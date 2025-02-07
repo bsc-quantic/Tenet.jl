@@ -181,7 +181,9 @@ Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2
   - `right_inds`: right indices to be used in the SVD factorization. Defaults to all indices of `t` except `left_inds`.
   - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), kwargs...)
+function LinearAlgebra.svd(
+    tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), maxdim=nothing, kwargs...
+)
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
     virtualind ∉ inds(tensor) ||
@@ -200,6 +202,12 @@ function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtuali
     U = Tensor(reshape(U, left_sizes..., size(U, 2)), [left_inds..., virtualind])
     s = Tensor(s, [virtualind])
     Vt = Tensor(reshape(conj(V), right_sizes..., size(V, 2)), [right_inds..., virtualind])
+
+    if !isnothing(maxdim)
+        U = view(U, virtualind => 1:maxdim)
+        s = view(s, virtualind => 1:maxdim)
+        Vt = view(Vt, virtualind => 1:maxdim)
+    end
 
     return U, s, Vt
 end
