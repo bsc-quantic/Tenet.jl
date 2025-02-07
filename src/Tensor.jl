@@ -366,11 +366,11 @@ LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
 
 # TODO choose a new index name? currently choosing the first index of `parinds`
 """
-    groupinds(tensor, parinds; ind=first(parinds))
+    fuse(tensor, parinds; ind=first(parinds))
 
 Fuses `parinds`, leaves them on the right-side internally permuted with `permutator` and names it as `ind`.
 """
-function groupinds(tensor::Tensor, parinds; ind=first(parinds))
+function fuse(tensor::Tensor, parinds; ind=first(parinds))
     @assert allunique(inds(tensor))
     @assert parinds ⊆ inds(tensor)
 

@@ -622,22 +622,22 @@ end
     end
 end
 
-@testset "groupinds!" begin
+@testset "fuse!" begin
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test inds(tn) == [:i]
     @test size(tn, :i) == 4
     @test Tenet.ntensors(tn) == 2
 
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test issetequal(inds(tn), [:i, :k])
     @test size(tn, :i) == 4
     @test size(tn, :k) == 2
     @test Tenet.ntensors(tn) == 2
 
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2), [:j])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test issetequal(inds(tn), [:i, :j])
     @test size(tn, :i) == 2
     @test size(tn, :j) == 2

@@ -617,16 +617,16 @@ function Base.view(tn::AbstractTensorNetwork, slices::Pair{Symbol}...)
 end
 
 """
-    groupinds!(tn::AbstractTensorNetwork, i::Symbol)
+    fuse!(tn::AbstractTensorNetwork, i::Symbol)
 
 Group indices parallel to `i` and reshape the tensors accordingly.
 """
-function groupinds!(tn::AbstractTensorNetwork, i)
+function fuse!(tn::AbstractTensorNetwork, i)
     parinds = filter!(!=(i), inds(tn; parallelto=i))
     length(parinds) == 0 && return tn
 
     parinds = (i,) ∪ parinds
-    newtensors = map(Base.Fix2(groupinds, parinds), pop!(tn, parinds))
+    newtensors = map(Base.Fix2(fuse, parinds), pop!(tn, parinds))
 
     append!(tn, newtensors)
 

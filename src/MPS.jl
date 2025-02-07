@@ -606,10 +606,10 @@ function evolve!(::NonCanonical, ψ::AbstractMPS, H::AbstractMPO; kwargs...)
 
     # group the parallel bond indices
     for ind in bond_inds
-        groupinds!(ψ, ind)
+        fuse!(ψ, ind)
     end
 
-    # NOTE `groupinds(::AbstractTensorNetwork)`` calls `pop!` inside so we must relink sites to inds
+    # NOTE `fuse!(::AbstractTensorNetwork)`` calls `pop!` inside so we must relink sites to inds
     # TODO fix this on interface refactor
     for site in sites(H; set=:outputs)
         addsite!(ψ, site, inds(H; at=site))
