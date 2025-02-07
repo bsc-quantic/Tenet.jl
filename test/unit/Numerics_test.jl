@@ -181,7 +181,7 @@ end
         @test isapprox(contract(contract(U, s; dims=Symbol[]), V), tensor)
     end
 
-    @testset "svd truncated" begin
+    @testset "truncated" begin
         data = rand(ComplexF64, 2, 4, 6, 8)
         tensor = Tensor(data, (:i, :j, :k, :l))
         maxdim = 3
