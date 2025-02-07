@@ -378,7 +378,7 @@ function groupinds(tensor::Tensor, parinds; ind=first(parinds))
     perm = filter(∉(locs), 1:ndims(tensor))
     append!(perm, map(i -> findfirst(==(i), inds(tensor)), parinds))
 
-    data = perm == 1:n ? parent(tensor) : permutedims(parent(tensor), perm)
+    data = perm == 1:ndims(tensor) ? parent(tensor) : permutedims(parent(tensor), perm)
     data = reshape(data, (size(data)[1:(ndims(data) - length(parinds))]..., :))
 
     newinds = (filter(∉(parinds), inds(tensor))..., ind)
