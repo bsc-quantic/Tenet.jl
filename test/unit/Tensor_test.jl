@@ -1,3 +1,5 @@
+using Test
+using Tenet
 
 @testset "Constructors" begin
     @testset "Number" begin
