@@ -625,8 +625,8 @@ function groupinds!(tn::AbstractTensorNetwork, i)
     parinds = filter!(!=(i), inds(tn; parallelto=i))
     length(parinds) == 0 && return tn
 
-    parinds = i ∪ parinds
-    newtensors = map(Fix2(groupinds, parinds), @invoke pop!(tn, parinds))
+    parinds = (i,) ∪ parinds
+    newtensors = map(Base.Fix2(groupinds, parinds), @invoke pop!(tn, parinds))
 
     append!(tn, newtensors)
 
