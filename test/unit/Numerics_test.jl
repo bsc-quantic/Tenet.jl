@@ -191,7 +191,6 @@ end
         @test size(U) == (2, 4, maxdim)
         @test size(s) == (maxdim,)
         @test size(V) == (6, 8, maxdim)
-    
     end
 end
 
