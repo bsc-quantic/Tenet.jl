@@ -1,3 +1,5 @@
+using Test
+using Tenet
 
 @testset "Constructors" begin
     @testset "Number" begin
@@ -331,4 +333,20 @@ end
         @test selectdim(new, :x, 1) == tensor
         @test selectdim(new, :x, 2) == tensor
     end
+end
+
+@testset "fuse" begin
+    tensor = Tensor(rand(2, 3), (:i, :j))
+    grouped = Tenet.fuse(tensor, [:i, :j])
+    @test vec(tensor) ≈ parent(grouped)
+
+    grouped = Tenet.fuse(tensor, [:j, :i])
+    @test vec(transpose(parent(tensor))) ≈ parent(grouped)
+
+    tensor = Tensor(rand(2, 3, 4), (:i, :k, :j))
+    grouped = Tenet.fuse(tensor, [:i, :j])
+    @test reshape(permutedims(parent(tensor), [2, 1, 3]), 3, 8) ≈ parent(grouped)
+
+    grouped = Tenet.fuse(tensor, [:j, :i])
+    @test reshape(permutedims(parent(tensor), [2, 3, 1]), 3, 8) ≈ parent(grouped)
 end

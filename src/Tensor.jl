@@ -363,3 +363,24 @@ function __expand_repeat(array, axis, size)
 end
 
 LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
+
+# TODO choose a new index name? currently choosing the first index of `parinds`
+"""
+    fuse(tensor, parinds; ind=first(parinds))
+
+Fuses `parinds`, leaves them on the right-side internally permuted with `permutator` and names it as `ind`.
+"""
+function fuse(tensor::Tensor, parinds; ind=first(parinds))
+    @assert allunique(inds(tensor))
+    @assert parinds ⊆ inds(tensor)
+
+    locs = findall(∈(parinds), inds(tensor))
+    perm = filter(∉(locs), 1:ndims(tensor))
+    append!(perm, map(i -> findfirst(==(i), inds(tensor)), parinds))
+
+    data = perm == 1:ndims(tensor) ? parent(tensor) : permutedims(parent(tensor), perm)
+    data = reshape(data, (size(data)[1:(ndims(data) - length(parinds))]..., :))
+
+    newinds = (filter(∉(parinds), inds(tensor))..., ind)
+    return Tensor(data, newinds)
+end

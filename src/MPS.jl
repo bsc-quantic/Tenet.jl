@@ -589,22 +589,30 @@ function evolve!(ψ::AbstractMPS, mpo::AbstractMPO; reset_index=true, kwargs...)
     return ψ
 end
 
-function evolve!(::NonCanonical, ψ::AbstractMPS, mpo::AbstractMPO; kwargs...)
-    L = nlanes(ψ)
-    Tenet.@reindex! outputs(ψ) => inputs(mpo)
+function evolve!(::NonCanonical, ψ::AbstractMPS, H::AbstractMPO; kwargs...)
+    @assert nlanes(ψ) == nlanes(H)
 
-    right_inds = [inds(ψ; at=Lane(i), dir=:right) for i in 1:(L - 1)]
+    # align but don't merge to extract information
+    Tenet.@reindex! outputs(ψ) => inputs(H)
+    bond_inds = [inds(ψ; bond=(Lane(i), Lane(i + 1))) for i in 1:(nlanes(ψ) - 1)]
+    phys_inds = [inds(ψ; at=site) for site in sites(ψ; set=:outputs)]
 
-    for i in 1:L
-        contract_ind = inds(ψ; at=Site(i))
-        push!(ψ, tensors(mpo; at=Lane(i)))
-        contract!(ψ, contract_ind)
-        merge!(Quantum(ψ).sites, Dict(Site(i) => inds(mpo; at=Site(i))))
+    # merge and contract inner physical indices
+    merge!(Quantum(ψ), Quantum(H); reset=false)
+
+    for ind in phys_inds
+        contract!(ψ, ind)
     end
 
-    # Group the parallel bond indices
-    for i in 1:(L - 1)
-        groupinds!(ψ, right_inds[i])
+    # group the parallel bond indices
+    for ind in bond_inds
+        fuse!(ψ, ind)
+    end
+
+    # NOTE `fuse!(::AbstractTensorNetwork)`` calls `pop!` inside so we must relink sites to inds
+    # TODO fix this on interface refactor
+    for site in sites(H; set=:outputs)
+        addsite!(ψ, site, inds(H; at=site))
     end
 
     truncate_sweep!(form(ψ), ψ; kwargs...)

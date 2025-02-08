@@ -12,8 +12,8 @@ export Tensor, contract, dim, expand
 include("Numerics.jl")
 
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, groupinds!
-@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!
+export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, fuse!
+@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!, fuse
 
 include("Transformations.jl")
 export transform, transform!
