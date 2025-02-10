@@ -126,11 +126,6 @@ function Base.replace!(tn::AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pai
     return tn
 end
 
-# @deprecate inputs(tn::AbstractQuantum) sites(tn; set=:inputs)
-# @deprecate outputs(tn::AbstractQuantum) sites(tn; set=:outputs)
-# @deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
-# @deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
-
 # TODO to new Quantum
 # function addsite!(tn::AbstractQuantum, site, index)
 #     tn = Quantum(tn)

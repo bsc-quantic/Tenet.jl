@@ -11,8 +11,13 @@ export Tensor, contract, dim, expand
 
 include("Numerics.jl")
 
+include("Site.jl")
+export Lane, @lane_str
+export Site, @site_str, isdual
+@compat public id, Moment
+
 include("Interfaces/TensorNetwork.jl")
-# include("Interfaces/Pluggable.jl")
+include("Interfaces/Pluggable.jl")
 # include("Interfaces/Ansatz.jl")
 
 include("TensorNetwork.jl")

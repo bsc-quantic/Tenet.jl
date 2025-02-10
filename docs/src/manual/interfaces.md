@@ -94,8 +94,10 @@ As with the interface above, there are optional methods with default implementat
 | Method             | Brief description                                                                            |
 | :----------------- | :------------------------------------------------------------------------------------------- |
 | `sites(tn;)`       | Returns all the [`Site`](@ref)s                                                              |
-| `sites(tn; plugs)` |                                                                                              |
+| `sites(tn; plugs)` | Return a subset of sites filtered by `plugs`                                                 |
 | `inds(tn; plugs)`  | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
+
+`plugs` can be `:all`, `:inputs` or `:outputs`.
 
 ### Mutating methods
 

@@ -7,15 +7,38 @@ Return the sites of the Tensor Network.
 """
 sites(tn::AbstractTensorNetwork; kwargs...) = sites(sort_nt(values(kwargs)), tn)
 
-# PLACEHOLDER sites(::@NamedTuple{}, tn::AbstractTensorNetwork)
+"""
+    sites(tn;)
+
+Returns the sites of the Tensor Network.
+
+!!! note
+
+    This is the method called by `sites(tn)` when no kwarg are passed.
+"""
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork)
 
 """
+    inds(tn; at::Site)
+
+Return the index linked to [`Site`](@ref) `at`.
+
+!!! note
+
+    This is the method called by `inds(tn; at=site)`.
 """
-:(inds_at)
+inds(::@NamedTuple{at::S}, ::AbstractTensorNetwork) where {S<:Site}
 
 """
+    sites(tn; at::Symbol)
+
+Return the site linked to index `at`.
+
+!!! note
+
+    This is the method called by `inds(tn; at=site)`.
 """
-:(sites_at)
+sites(::@NamedTuple{at::Symbol}, ::AbstractTensorNetwork)
 
 # mutating methods
 """
