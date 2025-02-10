@@ -52,22 +52,8 @@ TensorNetwork(tn::TensorNetwork) = tn
 # returns `No` because we `TensorNetwork` methods will already correctly dispatch correctly
 Wraps(::Type{TensorNetwork}, _) = No()
 
-function get_unsafe_scope(tn::TensorNetwork)
-    if Wraps(TensorNetwork, tn) isa Yes
-        return TensorNetwork(tn).unsafe[]
-    else
-        error("UnsafeScope is only available for TensorNetwork or wrappers")
-    end
-end
-
-function set_unsafe_scope!(tn::TensorNetwork, uc::Union{Nothing,UnsafeScope})
-    if Wraps(TensorNetwork, tn) isa Yes
-        TensorNetwork(tn).unsafe[] = uc
-    else
-        error("UnsafeScope is only available for TensorNetwork or wrappers")
-    end
-    return tn
-end
+get_unsafe_scope(tn::TensorNetwork) = TensorNetwork(tn).unsafe[]
+set_unsafe_scope!(tn::TensorNetwork, uc::Union{Nothing,UnsafeScope}) = TensorNetwork(tn).unsafe[] = uc
 
 """
     copy(tn::TensorNetwork)
@@ -97,10 +83,10 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
 end
 
-inds_set(tn, ::Val{:all}) = collect(keys(tn.indexmap))
-inds_set(tn, ::Val{:open}) = map(first, Iterators.filter((_, v) -> length(v) == 1, tn.indexmap))
-inds_set(tn, ::Val{:inner}) = map(first, Iterators.filter((_, v) -> length(v) >= 2, tn.indexmap))
-inds_set(tn, ::Val{:hyper}) = map(first, Iterators.filter((_, v) -> length(v) >= 3, tn.indexmap))
+inds_set(tn::TensorNetwork, ::Val{:all}) = collect(keys(tn.indexmap))
+inds_set(tn::TensorNetwork, ::Val{:open}) = map(first, Iterators.filter((_, v) -> length(v) == 1, tn.indexmap))
+inds_set(tn::TensorNetwork, ::Val{:inner}) = map(first, Iterators.filter((_, v) -> length(v) >= 2, tn.indexmap))
+inds_set(tn::TensorNetwork, ::Val{:hyper}) = map(first, Iterators.filter((_, v) -> length(v) >= 3, tn.indexmap))
 
 # here for performance reasons
 # on my macbook M1 pro with a TensorNetwork of 100 tensors, 250 indices

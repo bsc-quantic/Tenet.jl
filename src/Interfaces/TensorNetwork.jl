@@ -1,4 +1,6 @@
-using ValSplit
+using Base: AbstractVecOrTuple
+using Graphs: Graphs
+using EinExprs
 
 """
     AbstractTensorNetwork
@@ -78,6 +80,7 @@ function inds end
 inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
 inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
 
+# default implementations
 """
     inds(tn; set = :all)
 
@@ -92,33 +95,21 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-inds(kwargs::@NamedTuple{set::Symbol}, tn::AbstractTensorNetwork) = inds_set(tn, kwargs.set)
-@valsplit inds_set(tn, Val(set::Symbol)) = error("Invalid set = $set")
-
-# default implementations
-inds_set(tn, ::Val{:all}) = inds_set(tn, Val(:all), Wraps(TensorNetwork, tn))
-inds_set(tn, ::Val{:all}, ::Yes) = inds_set(TensorNetwork(tn), Val(:all))
-inds_set(tn, ::Val{:all}, ::No) = mapreduce(inds, ∪, tensors(tn))
-
-inds_set(tn, ::Val{:open}) = inds_set(tn, Val(:open), Wraps(TensorNetwork, tn))
-inds_set(tn, ::Val{:open}, ::Yes) = inds_set(TensorNetwork(tn), Val(:open))
-function inds_set(tn, ::Val{:open}, ::No)
-    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-    return last.(Iterators.filter(((k, c),) -> c == 1, histogram))
-end
-
-inds_set(tn, ::Val{:inner}) = inds_set(tn, Val(:inner), Wraps(TensorNetwork, tn))
-inds_set(tn, ::Val{:inner}, ::Yes) = inds_set(TensorNetwork(tn), Val(:inner))
-function inds_set(tn, ::Val{:inner}, ::No)
-    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-    return last.(Iterators.filter(((k, c),) -> c == 2, histogram))
-end
-
-inds_set(tn, ::Val{:hyper}) = inds_set(tn, Val(:hyper), Wraps(TensorNetwork, tn))
-inds_set(tn, ::Val{:hyper}, ::Yes) = inds_set(TensorNetwork(tn), Val(:hyper))
-function inds_set(tn, ::Val{:hyper}, ::No)
-    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-    return last.(Iterators.filter(((k, c),) -> c >= 3, histogram))
+function inds(kwargs::@NamedTuple{set::Symbol}, tn::AbstractTensorNetwork)
+    if kwargs.set === :all
+        return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
+    elseif kwargs.set === :open
+        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+        return first.(Iterators.filter(((k, c),) -> c == 1, histogram))
+    elseif kwargs.set === :inner
+        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+        return first.(Iterators.filter(((k, c),) -> c >= 2, histogram))
+    elseif kwargs.set === :hyper
+        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+        return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
+    else
+        error("Invalid set = $set")
+    end
 end
 
 """
@@ -247,7 +238,7 @@ Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Return a list of the arrays of in the `TensorNetwork`. It is equivalent to `parent.(tensors(tn; kwargs...))`.
 """
-arrays(tn::AbstractTensorNetwork) = parent.(tensors(tn))
+arrays(tn::AbstractTensorNetwork; kwargs...) = parent.(tensors(tn; kwargs...))
 
 """
     Base.collect(tn::AbstractTensorNetwork)

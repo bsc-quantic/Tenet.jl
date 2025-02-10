@@ -232,7 +232,7 @@ end
         issetequal(inds(tn; set=:hyper), [:i])
     end
 
-    @test_broken begin
+    @test begin
         tensor = Tensor(zeros(2, 2, 2), (:i, :i, :i))
         tn = TensorNetwork()
         push!(tn, tensor)
@@ -268,7 +268,7 @@ end
         Tensor(zeros(2, 2), (:i, :k)),
         Tensor(zeros(2, 2, 2), (:i, :l, :m)),
         Tensor(zeros(2, 2), (:l, :m)),
-    ],)
+    ])
 
     @test issetequal(inds(tn), [:i, :j, :k, :l, :m])
     @test issetequal(inds(tn; set=:open), [:j, :k])
