@@ -131,14 +131,6 @@ end
 # @deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
 # @deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
 
-# TODO to Ansatz
-# """
-#     lanes(q::AbstractQuantum)
-
-# Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
-# """
-# lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
-
 # TODO to new Quantum
 # function addsite!(tn::AbstractQuantum, site, index)
 #     tn = Quantum(tn)

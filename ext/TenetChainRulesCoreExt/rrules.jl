@@ -10,28 +10,28 @@ TensorNetwork_pullback(Δ::AbstractThunk) = TensorNetwork_pullback(unthunk(Δ))
 ChainRulesCore.rrule(::Type{TensorNetwork}, tensors) = TensorNetwork(tensors), TensorNetwork_pullback
 
 # `Quantum` constructor
-Quantum_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
-Quantum_pullback(ȳ::AbstractArray) = (NoTangent(), ȳ, NoTangent())
-Quantum_pullback(ȳ::AbstractThunk) = Quantum_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{Quantum}, x::TensorNetwork, sites) = Quantum(x, sites), Quantum_pullback
+# Quantum_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+# Quantum_pullback(ȳ::AbstractArray) = (NoTangent(), ȳ, NoTangent())
+# Quantum_pullback(ȳ::AbstractThunk) = Quantum_pullback(unthunk(ȳ))
+# ChainRulesCore.rrule(::Type{Quantum}, x::TensorNetwork, sites) = Quantum(x, sites), Quantum_pullback
 
 # `Ansatz` constructor
-Ansatz_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
-Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{Ansatz}, x::Quantum, lattice) = Ansatz(x, lattice), Ansatz_pullback
+# Ansatz_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+# Ansatz_pullback(ȳ::AbstractThunk) = Ansatz_pullback(unthunk(ȳ))
+# ChainRulesCore.rrule(::Type{Ansatz}, x::Quantum, lattice) = Ansatz(x, lattice), Ansatz_pullback
 
 # `AbstractAnsatz`-subtype constructors
-Product_pullback(ȳ) = (NoTangent(), ȳ.tn)
-Product_pullback(ȳ::AbstractThunk) = Product_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{Product}, x::Ansatz) = Product(x), Product_pullback
+# Product_pullback(ȳ) = (NoTangent(), ȳ.tn)
+# Product_pullback(ȳ::AbstractThunk) = Product_pullback(unthunk(ȳ))
+# ChainRulesCore.rrule(::Type{Product}, x::Ansatz) = Product(x), Product_pullback
 
-MPS_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
-MPS_pullback(ȳ::AbstractThunk) = MPS_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{MPS}, x::Ansatz, form) = MPS(x, form), MPS_pullback
+# MPS_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+# MPS_pullback(ȳ::AbstractThunk) = MPS_pullback(unthunk(ȳ))
+# ChainRulesCore.rrule(::Type{MPS}, x::Ansatz, form) = MPS(x, form), MPS_pullback
 
-MPO_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
-MPO_pullback(ȳ::AbstractThunk) = MPO_pullback(unthunk(ȳ))
-ChainRulesCore.rrule(::Type{MPO}, x::Ansatz, form) = MPO(x, form), MPO_pullback
+# MPO_pullback(ȳ) = (NoTangent(), ȳ.tn, NoTangent())
+# MPO_pullback(ȳ::AbstractThunk) = MPO_pullback(unthunk(ȳ))
+# ChainRulesCore.rrule(::Type{MPO}, x::Ansatz, form) = MPO(x, form), MPO_pullback
 
 # `Base.conj` methods
 conj_pullback(Δ::Tensor) = (NoTangent(), conj(Δ))
@@ -118,9 +118,9 @@ function ChainRulesCore.rrule(::typeof(contract), a::Tensor, b::Tensor; kwargs..
     return c, contract_pullback
 end
 
-copy_pullback(ȳ) = (NoTangent(), ȳ)
-copy_pullback(ȳ::AbstractThunk) = unthunk(ȳ)
-function ChainRulesCore.rrule(::typeof(copy), x::Quantum)
-    y = copy(x)
-    return y, copy_pullback
-end
+# copy_pullback(ȳ) = (NoTangent(), ȳ)
+# copy_pullback(ȳ::AbstractThunk) = unthunk(ȳ)
+# function ChainRulesCore.rrule(::typeof(copy), x::Quantum)
+#     y = copy(x)
+#     return y, copy_pullback
+# end

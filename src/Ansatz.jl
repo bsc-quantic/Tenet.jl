@@ -165,8 +165,9 @@ function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
+# TODO do the mapping
 # TODO fix this properly when we do the mapping 
-tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane} = tensors(tn; at=Site(kwargs.at))
+# tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane} = tensors(tn; at=Site(kwargs.at))
 
 """
     tensors(tn::AbstractAnsatz; bond)

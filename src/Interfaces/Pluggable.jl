@@ -18,9 +18,18 @@ sites(tn::AbstractTensorNetwork; kwargs...) = sites(sort_nt(values(kwargs)), tn)
 :(sites_at)
 
 # mutating methods
+"""
+    addsite!(tn, site => ind)
 
+Register mapping `site` to `ind`.
+"""
 function addsite! end
 
+"""
+    rmsite!(tn, site)
+
+Unregister `site`.
+"""
 function rmsite! end
 
 # optional methods
