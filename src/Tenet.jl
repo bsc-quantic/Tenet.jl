@@ -32,10 +32,10 @@ export transform, transform!
     SplitSimplification
 #! format: on
 
-# include("Site.jl")
-# export Lane, @lane_str
-# export Site, @site_str, isdual
-# @compat public id, Moment
+include("Site.jl")
+export Lane, @lane_str
+export Site, @site_str, isdual
+@compat public id, Moment
 
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket

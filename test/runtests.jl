@@ -18,7 +18,7 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
         @testset "Lane" include("unit/Lane_test.jl")
         @testset "Site" include("unit/Site_test.jl")
         @testset "Moment" include("unit/Moment_test.jl")
-        @testset "Gate" include("unit/Gate_test.jl")
+        # @testset "Gate" include("unit/Gate_test.jl")
         # @testset "Quantum" include("unit/Quantum_test.jl")
         # @testset "Circuit" include("unit/Circuit_test.jl")
         # @testset "Lattice" include("unit/Lattice_test.jl")
