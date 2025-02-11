@@ -7,19 +7,19 @@ ChainRulesCore.frule((_, Δ, _), T::Type{<:Tensor}, data, inds) = T(data, inds),
 ChainRulesCore.frule((_, Δ), ::Type{TensorNetwork}, tensors) = TensorNetwork(tensors), TensorNetworkTangent(Δ)
 
 # `Quantum` constructor
-function ChainRulesCore.frule((_, ẋ, _), ::Type{Quantum}, x::TensorNetwork, sites)
-    return Quantum(x, sites), Tangent{Quantum}(; tn=ẋ, sites=NoTangent())
-end
+# function ChainRulesCore.frule((_, ẋ, _), ::Type{Quantum}, x::TensorNetwork, sites)
+#     return Quantum(x, sites), Tangent{Quantum}(; tn=ẋ, sites=NoTangent())
+# end
 
 # `Ansatz` constructor
-function ChainRulesCore.frule((_, ẋ), ::Type{Ansatz}, x::Quantum, lattice)
-    return Ansatz(x, lattice), Tangent{Ansatz}(; tn=ẋ, lattice=NoTangent())
-end
+# function ChainRulesCore.frule((_, ẋ), ::Type{Ansatz}, x::Quantum, lattice)
+#     return Ansatz(x, lattice), Tangent{Ansatz}(; tn=ẋ, lattice=NoTangent())
+# end
 
 # `AbstractAnsatz`-subtype constructors
-ChainRulesCore.frule((_, ẋ), ::Type{Product}, x::Ansatz) = Product(x), Tangent{Product}(; tn=ẋ)
-ChainRulesCore.frule((_, ẋ), ::Type{MPS}, x::Ansatz, form) = MPS(x, form), Tangent{MPS}(; tn=ẋ, form=NoTangent())
-ChainRulesCore.frule((_, ẋ), ::Type{MPO}, x::Ansatz, form) = MPO(x, form), Tangent{MPO}(; tn=ẋ, form=NoTangent())
+# ChainRulesCore.frule((_, ẋ), ::Type{Product}, x::Ansatz) = Product(x), Tangent{Product}(; tn=ẋ)
+# ChainRulesCore.frule((_, ẋ), ::Type{MPS}, x::Ansatz, form) = MPS(x, form), Tangent{MPS}(; tn=ẋ, form=NoTangent())
+# ChainRulesCore.frule((_, ẋ), ::Type{MPO}, x::Ansatz, form) = MPO(x, form), Tangent{MPO}(; tn=ẋ, form=NoTangent())
 
 # `Base.conj` methods
 ChainRulesCore.frule((_, Δ), ::typeof(Base.conj), tn::Tensor) = conj(tn), conj(Δ)

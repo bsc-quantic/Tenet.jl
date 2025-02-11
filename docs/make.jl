@@ -27,6 +27,7 @@ makedocs(;
                 "The Product ansatz" => "manual/design/product.md",
                 "The MPS/MPO ansatz" => "manual/design/mps.md",
             ],
+            "Interfaces" => "manual/interfaces.md",
             "🤝 Interoperation" => "manual/interop.md",
             "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],

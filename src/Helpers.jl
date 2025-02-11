@@ -60,3 +60,33 @@ Base.values(uc::UnsafeScope) = map(x -> x.value, uc.refs)
 
 # from https://discourse.julialang.org/t/sort-keys-of-namedtuple/94630/3
 @generated sort_nt(nt::NamedTuple{KS}) where {KS} = :(NamedTuple{$(Tuple(sort(collect(KS))))}(nt))
+
+mutable struct CachedField{T}
+    isvalid::Bool
+    value::T
+end
+
+CachedField{T}() where {T} = CachedField{T}(false, T())
+
+invalidate!(cf::CachedField) = cf.isvalid = false
+function Base.get!(f, cf::CachedField)
+    !cf.isvalid && (cf.value = f())
+    cf.isvalid = true
+    return cf.value
+end
+
+struct Yes end
+struct No end
+
+function hist(x; init=Dict{eltype(x),Int}())
+    for xi in x
+        if haskey(init, xi)
+            init[xi] += 1
+        else
+            init[xi] = 1
+        end
+    end
+    return init
+end
+
+gensym_clean(i) = gensym(String(split(string(i), "#")[3]))

@@ -13,8 +13,3 @@
 
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)
-
-@non_differentiable Tenet.inputs(::Quantum)
-@non_differentiable Tenet.ninputs(::Quantum)
-@non_differentiable Tenet.outputs(::Quantum)
-@non_differentiable Tenet.noutputs(::Quantum)

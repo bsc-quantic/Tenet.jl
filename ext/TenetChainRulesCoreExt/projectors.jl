@@ -33,8 +33,8 @@ function (projector::ProjectTo{TensorNetwork})(dx)
 end
 (projector::ProjectTo{TensorNetwork})(dx::Vector{<:Tensor}) = projector(TensorNetwork(dx))
 
-ChainRulesCore.ProjectTo(x::Quantum) = ProjectTo{Quantum}(; tn=ProjectTo(TensorNetwork(x)), sites=x.sites)
-(projector::ProjectTo{Quantum})(Δ) = Quantum(projector.tn(Δ), projector.sites)
+# ChainRulesCore.ProjectTo(x::Quantum) = ProjectTo{Quantum}(; tn=ProjectTo(TensorNetwork(x)), sites=x.sites)
+# (projector::ProjectTo{Quantum})(Δ) = Quantum(projector.tn(Δ), projector.sites)
 
-ChainRulesCore.ProjectTo(x::Ansatz) = ProjectTo{Ansatz}(; tn=ProjectTo(Quantum(x)), lattice=x.lattice)
-(projector::ProjectTo{Ansatz})(Δ) = Ansatz(projector.tn(Δ), Δ.lattice)
+# ChainRulesCore.ProjectTo(x::Ansatz) = ProjectTo{Ansatz}(; tn=ProjectTo(Quantum(x)), lattice=x.lattice)
+# (projector::ProjectTo{Ansatz})(Δ) = Ansatz(projector.tn(Δ), Δ.lattice)
