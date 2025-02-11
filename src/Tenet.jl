@@ -16,13 +16,18 @@ export Lane, @lane_str
 export Site, @site_str, isdual
 @compat public id, Moment
 
+include("Lattice.jl")
+export Lattice
+
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
 
 include("Interfaces/Pluggable.jl")
 export sites, nsites, hassite, addsite!, rmsite!, align!
 
-# include("Interfaces/Ansatz.jl")
+include("Interfaces/Ansatz.jl")
+export lanes, nlanes, haslane, addlane!, rmlane!
+export bonds, nbonds, hasbond, addbond!, rmbond!
 
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, contract!, fuse!
@@ -47,9 +52,6 @@ export transform, transform!
 
 # include("Circuit.jl")
 # export Gate, Circuit, moments
-
-# include("Lattice.jl")
-# export Lattice
 
 # include("Ansatz.jl")
 # #! format: off

@@ -2,6 +2,7 @@ using Base: AbstractVecOrTuple
 using Graphs: Graphs
 using EinExprs
 
+# required methods
 """
     AbstractTensorNetwork
 

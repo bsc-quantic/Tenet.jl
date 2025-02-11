@@ -1,5 +1,6 @@
 # This file defines the "Pluggable" interface; i.e. Tensor Networks that can be connected between each other.
 
+# required methods
 """
     sites(tn)
 
@@ -66,14 +67,14 @@ end
 """
     addsite!(tn, site => ind)
 
-Register mapping `site` to `ind`.
+Link `site` to `ind`.
 """
 function addsite! end
 
 """
     rmsite!(tn, site)
 
-Unregister `site`.
+Unlink `site`.
 """
 function rmsite! end
 

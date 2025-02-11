@@ -113,25 +113,32 @@ As with the interface above, there are optional methods with default implementat
 
 A [`Ansatz`](@ref man-interface-ansatz) is a [`TensorNetwork`](@ref man-interface-tensornetwork) together with a mapping between [`Lane`](@ref)s and [`Tensor`](@ref)s.
 
-| Required method   | Brief description                                                                                          |
-| :---------------- | :--------------------------------------------------------------------------------------------------------- |
-| `lanes(tn)`       | Returns the list of [`Lane`](@ref)s present in `tn`                                                        |
-| `tensors(tn; at)` | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref). Dispatched through `tensors(tn; at::Lane)` |
-| `lattice(tn)`     | Returns the [`Lattice`](@ref) associated to `tn`                                                           |
+| Required method   | Brief description                                                                |
+| :---------------- | :------------------------------------------------------------------------------- |
+| `lanes(tn)`       | Returns the list of [`Lane`](@ref)s present in `tn`                              |
+| `bonds(tn)`       | Returns the existing [`Bond`](@ref)s between [`Lane`](@ref)s                     |
+| `tensors(tn; at)` | Returns the [`Tensor`](@ref) linked to the `at` [`Lane`](@ref) or [`Bond`](@ref) |
+| `inds(tn; bond)`  | Returns the index linked to [`Bond`](@ref)                                       |
 
 As in the interfaces defined above, there are optional methods with default definitions which you might be interested on overriding for performance reasons.
 
-| Method             | Default definition  | Brief description                                     |
-| :----------------- | :------------------ | :---------------------------------------------------- |
-| `nlanes(tn)`       | `length(lanes(tn))` | Returns the number of [`Lane`](@ref)s present in `tn` |
-| `haslane(tn,lane)` | `lane in lanes(tn)` | Returns `true` if `lane` exists in `tn`               |
+| Method               | Default definition  | Brief description                                     |
+| :------------------- | :------------------ | :---------------------------------------------------- |
+| `nlanes(tn)`         | `length(lanes(tn))` | Returns the number of [`Lane`](@ref)s present in `tn` |
+| `haslane(tn,lane)`   | `lane in lanes(tn)` | Returns `true` if `lane` exists in `tn`               |
+| `nbonds(tn)`         | `length(bonds(tn))` | Returns the number of [`Bond`](@ref)s present in `tn` |
+| `hasbond(tn,lane)`   | `lane in bonds(tn)` | Returns `true` if `bond` exists in `tn`               |
+| `neighbors(tn,lane)` |                     | Returns the [`Lane`](@ref)s neighboring `lane`        |
+| `neighbors(tn,bond)` |                     | Returns the [`Bond`](@ref)s neighboring `bond`        |
 
 ### Mutating methods
 
 !!! warning
     If you use directly these methods, you are responsible for leaving the Tensor Network in a coherent state.
 
-| Method                         | Brief description                           |
-| :----------------------------- | :------------------------------------------ |
-| `addlane!(tn, lane => tensor)` | Registers the mapping of `lane` to `tensor` |
-| `rmlane!(tn, lane)`            | Unregister `lane` from mapping              |
+| Method                         | Brief description                            |
+| :----------------------------- | :------------------------------------------- |
+| `addlane!(tn, lane => tensor)` | Links `lane` to `tensor`                     |
+| `rmlane!(tn, lane)`            | Unlinks `lane` from mapping                  |
+| `addbond!(tn, a, b)`           | Add link between [`Lane`](@ref)s `a` and `b` |
+| `rmbond!(tn, bond)`            | Remove `bond`                                |
