@@ -593,7 +593,7 @@ function evolve!(::NonCanonical, ψ::AbstractMPS, H::AbstractMPO; kwargs...)
     @assert nlanes(ψ) == nlanes(H)
 
     # align but don't merge to extract information
-    Tenet.@reindex! outputs(ψ) => inputs(H)
+    align!(ψ => mpo)
     bond_inds = [inds(ψ; bond=(Lane(i), Lane(i + 1))) for i in 1:(nlanes(ψ) - 1)]
     phys_inds = [inds(ψ; at=site) for site in sites(ψ; set=:outputs)]
 

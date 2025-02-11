@@ -176,7 +176,7 @@ end
 
 # Merge multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 
-# See also: [`merge!`](@ref), [`@reindex!`](@ref).
+# See also: [`merge!`](@ref), [`@align!`](@ref).
 # """
 # Base.merge(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), copy.(tns))
 # Base.merge!(tns::AbstractQuantum...; kwargs...) = foldl((a, b) -> merge!(a, b; kwargs...), tns)
@@ -187,13 +187,13 @@ end
 
 # Merge in-place multiple [`AbstractQuantum`](@ref) Tensor Networks. If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 
-# See also: [`merge`](@ref), [`@reindex!`](@ref).
+# See also: [`merge`](@ref), [`@align!`](@ref).
 # """
 # function Base.merge!(a::AbstractQuantum, b::AbstractQuantum; reset=true)
 #     @assert adjoint.(sites(b; set=:inputs)) ⊆ sites(a; set=:outputs) "Inputs of b must match outputs of a"
 #     @assert isdisjoint(setdiff(sites(b; set=:outputs), adjoint.(sites(b; set=:inputs))), sites(a; set=:outputs)) "b cannot create new sites where is not connected"
 
-#     @reindex! outputs(a) => inputs(b) reset = reset
+#     @align! outputs(a) => inputs(b) reset = reset
 #     merge!(TensorNetwork(a), TensorNetwork(b))
 
 #     for site in sites(b; set=:inputs)
@@ -238,7 +238,7 @@ end
 # function LinearAlgebra.norm2(::Operator, ψ::AbstractQuantum; kwargs...)
 #     ψ, ϕ = Quantum(ψ), Quantum(ψ')
 
-#     @reindex! outputs(ψ) => inputs(ϕ) reset = false
-#     @reindex! inputs(ψ) => outputs(ϕ) reset = false
+#     @align! outputs(ψ) => inputs(ϕ) reset = false
+#     @align! inputs(ψ) => outputs(ϕ) reset = false
 #     return abs(sqrt(only(contract(merge(TensorNetwork(ψ), TensorNetwork(ϕ)); kwargs...))))
 # end

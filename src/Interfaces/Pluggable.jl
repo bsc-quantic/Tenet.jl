@@ -40,6 +40,28 @@ Return the site linked to index `at`.
 """
 sites(::@NamedTuple{at::Symbol}, ::AbstractTensorNetwork)
 
+# optional methods
+"""
+    nsites(tn)
+
+Return the number of sites of the Tensor Network.
+"""
+nsites(tn; kwargs...) = length(sites(tn; kwargs...))
+
+hassite(tn::AbstractTensorNetwork, s::Site) = s ∈ sites(tn)
+Base.in(s::Site, tn::AbstractTensorNetwork) = s ∈ sites(tn)
+
+# keyword methods
+function sites(kwargs::@NamedTuple{plugset::Symbol}, tn::AbstractTensorNetwork)
+    if kwargs.plugset === :inputs
+        sort!(filter(isdual, sites(tn)))
+    elseif kwargs.plugset === :outputs
+        sort!(filter(!isdual, sites(tn)))
+    else
+        throw(ArgumentError("invalid `plugset` values: $(kwargs.plugset)"))
+    end
+end
+
 # mutating methods
 """
     addsite!(tn, site => ind)
@@ -55,28 +77,7 @@ Unregister `site`.
 """
 function rmsite! end
 
-# optional methods
-"""
-    nsites(tn)
-
-Return the number of sites of the Tensor Network.
-"""
-nsites(tn; kwargs...) = length(sites(tn; kwargs...))
-
-hassite(tn::AbstractTensorNetwork, s::Site) = s ∈ sites(tn)
-Base.in(s::Site, tn::AbstractTensorNetwork) = s ∈ sites(tn)
-
 # derived methods
-function sites(kwargs::@NamedTuple{plugs::Symbol}, tn::AbstractTensorNetwork)
-    if kwargs.plugs === :inputs
-        sort!(filter(isdual, sites(tn)))
-    elseif kwargs.plugs === :outputs
-        sort!(filter(!isdual, sites(tn)))
-    else
-        throw(ArgumentError("invalid `plugs` values: $(kwargs.plugs)"))
-    end
-end
-
 """
     Socket
 
@@ -140,58 +141,83 @@ function isconnectable(a, b)
     )
 end
 
-# TODO
 """
-    @reindex! a => b reset=true
+    Base.adjoint(::AbstractTensorNetwork)
 
-Rename in-place the indices of the input/output sites of two [`Quantum`](@ref) Tensor Networks to be able to connect between them.
-If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+Return the adjoint of a Pluggable Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
 """
-macro reindex!(expr, reset=:(reset = true))
-    # @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
-    # Base.remove_linenums!(expr)
-    # a, b = expr.args[2:end]
+Base.adjoint(tn::AbstractTensorNetwork) = adjoint_sites!(conj(tn))
 
-    # @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset
+"""
+    LinearAlgebra.adjoint!(::AbstractTensorNetwork)
 
-    # @assert Meta.isexpr(a, :call)
-    # @assert Meta.isexpr(b, :call)
-    # ioa, ida = a.args
-    # iob, idb = b.args
-    # return quote
-    #     reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)); $(esc(reset)))
-    #     $(esc(idb))
-    # end
+Like [`adjoint`](@ref), but in-place.
+"""
+LinearAlgebra.adjoint!(tn::AbstractTensorNetwork) = adjoint_sites!(conj!(tn))
+
+# update site information and rename inner indices
+function adjoint_sites!(tn::AbstractTensorNetwork)
+    # generate mapping
+    mapping = Dict(site => inds(tn; at=site) for site in sites(tn))
+
+    # remove sites preemptively to avoid issues on renaming
+    for site in sites(tn)
+        rmsite!(tn, site)
+    end
+
+    # set new site mapping
+    for (site, index) in mapping
+        addsite!(tn, site' => index)
+    end
+
+    # rename inner indices
+    # replace!(tn, map(i -> i => Symbol(i, "'"), inds(tn; set=:virtual)))
+
+    return tn
 end
 
-function reindex!(a, ioa, b, iob; reset=true)
-    if reset
-        resetinds!(a)
-        resetinds!(b; init=ninds(a) + 1)
-    end
+"""
+    resetinds!(tn::AbstractTensorNetwork, method=:gensymnew; kwargs...)
 
-    sitesa = if ioa === :inputs
-        collect(sites(a; plugs=:inputs))
-    elseif ioa === :outputs
-        collect(sites(a; plugs=:outputs))
+Rename indices in the `TensorNetwork` to a new set of indices. It is mainly used to avoid index name conflicts when connecting Tensor Networks.
+"""
+function resetinds!(tn::AbstractTensorNetwork, method=:gensym; kwargs...)
+    new_name_f = if method === :suffix
+        (ind) -> Symbol(ind, get(kwargs, :suffix, '\''))
+    elseif method === :gensymwrap
+        (ind) -> gensym(ind)
+    elseif methods === :gensymnew
+        (_) -> gensym(get(kwargs, :base, :i))
+    elseif method === :characters
+        gen = IndexCounter(get(kwargs, :init, 1))
+        (_) -> nextindex!(gen)
     else
-        error("Invalid argument: $(Meta.quot(ioa))")
+        error("Invalid method: $(Meta.quot(method))")
     end
 
-    sitesb = if iob === :inputs
-        collect(sites(b; plugs=:inputs))
-    elseif iob === :outputs
-        collect(sites(b; plugs=:outputs))
+    _inds = if haskey(kwargs, :plugset)
+        inds(tn; plugset=kwargs.plugset)
     else
-        error("Invalid argument: :$(Meta.quot(iob))")
+        inds(tn)
     end
 
-    # TODO select sites to reindex
-    targetsites = (ioa === :inputs ? adjoint.(sitesa) : sitesa) ∩ (iob === :inputs ? adjoint.(sitesb) : sitesb)
+    for ind in _inds
+        replace!(tn, ind => new_name_f(ind))
+    end
+end
 
-    replacements = map(targetsites) do site
-        siteb = iob === :inputs ? site' : site
-        sitea = ioa === :inputs ? site' : site
+"""
+    align!(a, ioa, b, iob)
+
+Align the physical indices of `b` to match the physical indices of `a`. `ioa` and `iob` are either `:inputs` or `:outputs`.
+"""
+function align!(a, ioa, b, iob)
+    targets = Lane.(sites(a; set=ioa)) ∩ Lane.(sites(b; set=iob))
+
+    target_sites_a = Site.(targets; dual=ioa === :inputs)
+    target_sites_b = Site.(targets; dual=iob === :inputs)
+
+    replacements = map(zip(target_sites_a, target_sites_b)) do sitea, siteb
         inds(b; at=siteb) => inds(a; at=sitea)
     end
 
@@ -201,48 +227,7 @@ function reindex!(a, ioa, b, iob; reset=true)
 
     replace!(b, replacements)
 
-    return b
+    return a, b
 end
 
-# TODO
-# function resetinds!(tn; init=1)
-#     qtn = Quantum(tn)
-
-#     mapping = resetinds!(Val(:return_mapping), tn; init)
-#     replace!(TensorNetwork(qtn), mapping)
-
-#     for (site, index) in qtn.sites
-#         qtn.sites[site] = mapping[index]
-#     end
-
-#     return tn
-# end
-# resetinds(tn; init=1) = resetinds!(copy(tn); init)
-
-"""
-    Base.adjoint(::AbstractQuantum)
-
-Return the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
-"""
-# Base.adjoint(tn::AbstractQuantum) = adjoint_sites!(conj(tn))
-
-"""
-    LinearAlgebra.adjoint!(::AbstractQuantum)
-
-Like [`adjoint`](@ref), but in-place.
-"""
-# LinearAlgebra.adjoint!(tn::AbstractQuantum) = adjoint_sites!(conj!(tn))
-
-# update site information and rename inner indices
-# function adjoint_sites!(tn::AbstractQuantum)
-#     oldsites = copy(Quantum(tn).sites)
-#     empty!(Quantum(tn).sites)
-#     for (site, index) in oldsites
-#         addsite!(tn, site', index)
-#     end
-
-#     # rename inner indices
-#     replace!(tn, map(i -> i => Symbol(i, "'"), inds(tn; set=:virtual)))
-
-#     return tn
-# end
+align!((a, b)::Pair) = align!(a, :outputs, b, :inputs)

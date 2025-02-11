@@ -103,7 +103,7 @@ tn = TensorNetwork(_tensors)
     @test isapprox(tensors(adjoint_qtn), replace.(conj.(_tensors), :link => Symbol(:link, "'")))
 end
 
-@testset "reindex!" begin
+@testset "align!" begin
     @testset "manual indices" begin
         # mps-like tensor network
         mps = Quantum(
@@ -125,7 +125,7 @@ end
             Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
         )
 
-        Tenet.@reindex! outputs(mps) => inputs(mpo)
+        align!(mps => mpo)
 
         @test issetequal(
             [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
@@ -162,7 +162,7 @@ end
             Dict(site"1" => :A, site"1'" => :B, site"2" => :D, site"2'" => :E, site"3" => :G, site"3'" => :H),
         )
 
-        Tenet.@reindex! outputs(mps) => inputs(mpo)
+        @align(mps => mpo)
 
         @test issetequal(
             [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
@@ -204,7 +204,7 @@ end
             Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
         )
 
-        Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
+        align!(mps4sites => mpo3sites)
 
         for lane in lanes(mpo3sites)
             @test inds(mps4sites; at=Site(lane)) == inds(mpo3sites; at=Site(lane; dual=true))
@@ -242,7 +242,7 @@ end
             ),
         )
 
-        Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
+        align!(mps3sites => mpo4sites)
 
         for lane in lanes(mps3sites)
             @test inds(mps3sites; at=Site(lane)) == inds(mpo4sites; at=Site(lane; dual=true))

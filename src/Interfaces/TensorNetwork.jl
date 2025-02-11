@@ -248,21 +248,6 @@ Return a list of the `Tensor`s in the `TensorNetwork`. It is equivalent to `tens
 Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
 """
-    resetinds!(tn::AbstractTensorNetwork; init::Int=1)
-
-Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
-"""
-function resetinds!(tn::AbstractTensorNetwork; init::Int=1)
-    mapping = resetinds!(Val(:return_mapping), tn; init=init)
-    return replace!(tn, mapping)
-end
-
-function resetinds!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
-    gen = IndexCounter(init)
-    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
-end
-
-"""
     conj(tn::AbstractTensorNetwork)
 
 Return a copy of the [`AbstractTensorNetwork`](@ref) with all tensors conjugated.
