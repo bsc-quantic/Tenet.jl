@@ -17,34 +17,12 @@ The following methods are optional but you might be interested on implementing t
 | Method                    | Default definition                                           | Brief description                                                 |
 | :------------------------ | :----------------------------------------------------------- | :---------------------------------------------------------------- |
 | `inds(tn; kwargs...)`     | `mapreduce(inds, ∪, tensors(tn))`                            | Returns a list of indices present in `tn`                         |
-| `hasind(tn, ind)`         | `index in inds(tn)`                                          | Returns `true` if `index` is a existing index in `tn`             |
 | `hastensor(tn, tensor)`   | `tensor in tensors(tn)`                                      | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn` |
+| `ntensors(tn; kwargs...)` | `length(tensors(tn; kwargs...))`                             | Returns the number of tensors contained in `tn`                   |
+| `hasind(tn, ind)`         | `index in inds(tn)`                                          | Returns `true` if `index` is a existing index in `tn`             |
+| `ninds(tn; kwargs...)`    | `length(inds(tn; kwargs...))`                                | Returns the number of indices in `tn`                             |
 | `size(tn)`                | Get index sizes from `tensors(tn)`                           | Returns a `Dict` that maps indices to their sizes                 |
 | `size(tn, i)`             | Get first matching tensor from `tensors(tn)` and query to it | Returns the size of the given index `i`                           |
-| `ntensors(tn; kwargs...)` | `length(tensors(tn; kwargs...))`                             | Returns the number of tensors contained in `tn`                   |
-| `ninds(tn; kwargs...)`    | `length(inds(tn; kwargs...))`                                | Returns the number of indices in `tn`                             |
-
-### Mutating methods
-
-Tensor Networks are not static entitities. They change.
-In order to support mutation, the Tensor Network type needs to implement the following methods.
-
-| Method                               | Brief description                                              |
-| :----------------------------------- | :------------------------------------------------------------- |
-| `push!(tn, tensor)`                  | Adds a new [`Tensor`](@ref) to `tn`                            |
-| `pop!(tn, tensor)`                   | Removes a specific [`Tensor`](@ref) from `tn`                  |
-| `replace!(tn, index => new_index)`   | Renames the `index` with `new_index`, if `index` is in `tn`    |
-| `replace!(tn, tensor => new_tensor)` | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn` |
-
-!!! warning
-    These methods are not forwarded because mutating the `TensorNetwork` can break mappings of composed objects in [Pluggable](@ref man-interface-pluggable) and [Ansatz](@ref man-interface-ansatz).
-
-!!! todo
-    We are considering moving to a _effect handling_ system, which would ease tracking mutation on subtypes. In particular the effects we are currently considering are:
-
-    - `ContractIndexEffect` called on `contract!(tn, i)`
-    - `ReplaceIndexEffect` called on `replace!(tn, old_index => new_index)`
-    - `ReplaceTensorEffect` called on `replace!(tn, old_tensor => new_tensor)`
 
 ### Keyword methods
 
@@ -61,6 +39,19 @@ In order to support mutation, the Tensor Network type needs to implement the fol
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------- |
 | `inds(tn; set)`        | Return a subset of the indices present in `tn`, where `set` can be one of `:all`, `:open`, `:inner` or `:hyper` |
 | `inds(tn; parallelto)` | Return the indices parallel to the index `parallelto`                                                           |
+
+### Mutating methods
+
+Tensor Networks are not static entitities: They change. But mutating them can break the mappings of wrapping types.
+In order to support mutation, the mutating methods use an "effect handling" system that notify wrapping types of any posible breaking change. Additionally, users must implement an inner mutating method for some of these methods.
+
+| User method                          | Inner method      | Effect           | Brief description                                                |
+| :----------------------------------- | :---------------- | :--------------- | :--------------------------------------------------------------- |
+| `push!(tn, tensor)`                  | `push_inner!`     | `PushEffect`     | Adds a new [`Tensor`](@ref) to `tn`                              |
+| `delete!(tn, tensor)`                | `delete_inner!`   | `DeleteEffect`   | Removes a specific [`Tensor`](@ref) from `tn`                    |
+| `replace!(tn, index => new_index)`   | _none_            | `ReplaceEffect`  | Renames the `index` with `new_index`, if `index` is in `tn`      |
+| `replace!(tn, tensor => new_tensor)` | _none_            | `ReplaceEffect`  | Replace the `tensor` with `new_tensor`, if `tensor` is in `tn`   |
+| `contract!(tn, ind)`                 | `contract_inner!` | `ContractEffect` | Contract in-place the [`Tensor`](@ref)s connected by index `ind` |
 
 ### [WrapsTensorNetwork](@id man-interface-wrapstensornetwork) trait
 
@@ -91,13 +82,13 @@ As with the interface above, there are optional methods with default implementat
 
 ### Keyword methods
 
-| Method             | Brief description                                                                            |
-| :----------------- | :------------------------------------------------------------------------------------------- |
-| `sites(tn;)`       | Returns all the [`Site`](@ref)s                                                              |
-| `sites(tn; plugs)` | Return a subset of sites filtered by `plugs`                                                 |
-| `inds(tn; plugs)`  | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
+| Method               | Brief description                                                                            |
+| :------------------- | :------------------------------------------------------------------------------------------- |
+| `sites(tn;)`         | Returns all the [`Site`](@ref)s                                                              |
+| `sites(tn; plugset)` | Return a subset of sites filtered by `plugset`                                               |
+| `inds(tn; plugset)`  | Return the indices linked to some [`Site`](@ref); i.e. the ones behaving as physical indices |
 
-`plugs` can be `:all`, `:inputs` or `:outputs`.
+`plugset` can be `:all`, `:inputs` or `:outputs`.
 
 ### Mutating methods
 
@@ -122,14 +113,14 @@ A [`Ansatz`](@ref man-interface-ansatz) is a [`TensorNetwork`](@ref man-interfac
 
 As in the interfaces defined above, there are optional methods with default definitions which you might be interested on overriding for performance reasons.
 
-| Method               | Default definition  | Brief description                                     |
-| :------------------- | :------------------ | :---------------------------------------------------- |
-| `nlanes(tn)`         | `length(lanes(tn))` | Returns the number of [`Lane`](@ref)s present in `tn` |
-| `haslane(tn,lane)`   | `lane in lanes(tn)` | Returns `true` if `lane` exists in `tn`               |
-| `nbonds(tn)`         | `length(bonds(tn))` | Returns the number of [`Bond`](@ref)s present in `tn` |
-| `hasbond(tn,lane)`   | `lane in bonds(tn)` | Returns `true` if `bond` exists in `tn`               |
-| `neighbors(tn,lane)` |                     | Returns the [`Lane`](@ref)s neighboring `lane`        |
-| `neighbors(tn,bond)` |                     | Returns the [`Bond`](@ref)s neighboring `bond`        |
+| Method                | Default definition  | Brief description                                     |
+| :-------------------- | :------------------ | :---------------------------------------------------- |
+| `nlanes(tn)`          | `length(lanes(tn))` | Returns the number of [`Lane`](@ref)s present in `tn` |
+| `haslane(tn, lane)`   | `lane in lanes(tn)` | Returns `true` if `lane` exists in `tn`               |
+| `nbonds(tn)`          | `length(bonds(tn))` | Returns the number of [`Bond`](@ref)s present in `tn` |
+| `hasbond(tn, lane)`   | `lane in bonds(tn)` | Returns `true` if `bond` exists in `tn`               |
+| `neighbors(tn, lane)` |                     | Returns the [`Lane`](@ref)s neighboring `lane`        |
+| `neighbors(tn, bond)` |                     | Returns the [`Bond`](@ref)s neighboring `bond`        |
 
 ### Mutating methods
 
