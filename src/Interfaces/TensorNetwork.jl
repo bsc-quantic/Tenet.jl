@@ -141,11 +141,16 @@ end
 
 Return the tensors containing **all** the given indices.
 """
-function tensors(kwargs::@NamedTuple{contains::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
-    return filter(t -> issubset(kwargs.contains, inds(t)), tensors(tn))
+tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork) = tensors(kwargs, tn, Wraps(TensorNetwork, tn))
+tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork, ::Yes) = tensors(kwargs, TensorNetwork(tn))
+function tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork, ::No)
+    tensors((; contains=kwargs.contains), tn, No())
 end
-tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork) = tensors(tn; contains=[kwargs.contains]) # copy(TensorNetwork(tn).indexmap[contains])
+function tensors(kwargs::@NamedTuple{contains::AbstractVecOrTuple{Symbol}}, tn::AbstractTensorNetwork, ::No)
+    return filter(⊇(kwargs.contains) ∘ inds, tensors(tn))
+end
 
+# TODO dispatch to `TensorNetwork` and write optimized version for it in `src/TensorNetwork.jl`
 """
     tensors(tn; intersects)
 
@@ -338,7 +343,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
         # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
         new_tensor = replace(old_tensor, old_new)
         push_inner!(tn, new_tensor)
-        delete_inner!(tn, tensor)
+        delete_inner!(tn, old_tensor)
         handle(tn, ReplaceEffect(old_tensor => new_tensor))
     end
     tryprune!(tn, old)
@@ -444,8 +449,8 @@ Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
 contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
 
-@inline Base.in(i::Symbol, tn::AbstractTensorNetwork) = hasind(i, tn)
-@inline Base.in(i::Tensor, tn::AbstractTensorNetwork) = hastensor(i, tn)
+@inline Base.in(i::Symbol, tn::AbstractTensorNetwork) = hasind(tn, i)
+@inline Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = hastensor(tn, tensor)
 
 Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
@@ -462,6 +467,11 @@ arrays(tn::AbstractTensorNetwork; kwargs...) = parent.(tensors(tn; kwargs...))
 Return a list of the [`Tensor`](@ref)s in the Tensor Network. It is equivalent to `tensors(tn)`.
 """
 Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
+
+# TODO should we deprecate this method?
+function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul=1)
+    first(Iterators.drop(tensors(tn; contains=is), mul - 1))
+end
 
 """
     Base.similar(tn::AbstractTensorNetwork)
@@ -593,4 +603,25 @@ end
 
 function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}
     return rand(Random.default_rng(), T, args...; kwargs...)
+end
+
+function LinearAlgebra.svd!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = only(tensors(tn; contains=left_inds ∪ right_inds))
+    U, s, Vt = svd(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => [U, s, Vt])
+    return tn
+end
+
+function LinearAlgebra.qr!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = only(tensors(tn; contains=left_inds ∪ right_inds))
+    Q, R = qr(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => [Q, R])
+    return tn
+end
+
+function LinearAlgebra.lu!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_inds=Symbol[], kwargs...)
+    tensor = only(tensors(tn; contains=left_inds ∪ right_inds))
+    L, U, P = lu(tensor; left_inds, right_inds, kwargs...)
+    replace!(tn, tensor => [P, L, U])
+    return tn
 end

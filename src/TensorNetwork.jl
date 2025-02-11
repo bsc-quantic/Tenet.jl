@@ -133,28 +133,6 @@ function Base.copy(tn::TensorNetwork)
 end
 
 ## optional methods
-function inds(kwargs::NamedTuple{(:set,)}, tn::TensorNetwork)
-    tn = TensorNetwork(tn)
-    if kwargs.set === :all
-        collect(keys(tn.indexmap))
-    elseif kwargs.set === :open
-        map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
-    elseif kwargs.set === :inner
-        map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
-    elseif kwargs.set === :hyper
-        map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
-    else
-        throw(ArgumentError("""
-          Unknown query: set=$(kwargs.set)
-          Possible options are:
-            - :all (default)
-            - :open
-            - :inner
-            - :hyper
-          """))
-    end
-end
-
 hastensor(tn::TensorNetwork, tensor::Tensor) = tensor ∈ keys(tn.tensormap)
 hasind(tn::TensorNetwork, index::Symbol) = index ∈ keys(tn.indexmap)
 
@@ -176,6 +154,38 @@ function Base.size(tn::TensorNetwork)
     return Dict{Symbol,Int}(index => size(tn, index) for index in keys(tn.indexmap))
 end
 Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
+
+## keyword methods
+function inds(kwargs::@NamedTuple{set::Symbol}, tn::TensorNetwork)
+    tn = TensorNetwork(tn)
+    if kwargs.set === :all
+        collect(keys(tn.indexmap))
+    elseif kwargs.set === :open
+        map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
+    elseif kwargs.set === :inner
+        map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
+    elseif kwargs.set === :hyper
+        map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
+    else
+        throw(ArgumentError("""
+          Unknown query: set=$(kwargs.set)
+          Possible options are:
+            - :all (default)
+            - :open
+            - :inner
+            - :hyper
+          """))
+    end
+end
+
+tensors(kwargs::@NamedTuple{contains::Symbol}, tn::TensorNetwork) = copy(TensorNetwork(tn).indexmap[kwargs.contains])
+function tensors(kwargs::NamedTuple{(:contains,)}, tn::TensorNetwork)
+    target_tensors = tensors(tn; contains=first(kwargs.contains))
+    filter!(target_tensors) do tensor
+        kwargs.contains ⊆ inds(tensor)
+    end
+    return target_tensors
+end
 
 ## mutating methods
 function push_inner!(tn::TensorNetwork, tensor::Tensor)
@@ -235,6 +245,7 @@ function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
 end
 
+# TODO move it to interface?
 """
     slice!(tn::AbstractTensorNetwork, index::Symbol, i)
 
@@ -250,6 +261,7 @@ function slice!(tn::TensorNetwork, label::Symbol, i)
     return tn
 end
 
+# TODO move it to interface?
 """
     selectdim(tn::AbstractTensorNetwork, index::Symbol, i)
 
@@ -259,6 +271,7 @@ See also: [`view`](@ref), [`slice!`](@ref).
 """
 Base.selectdim(tn::TensorNetwork, index::Symbol, i) = @view tn[index => i]
 
+# TODO move it to interface?
 """
     view(tn::AbstractTensorNetwork, index => i...)
 
@@ -277,6 +290,7 @@ function Base.view(tn::TensorNetwork, slices::Pair{Symbol}...)
     return tn
 end
 
+# TODO move it to interface?
 """
     fuse!(tn::TensorNetwork, i::Symbol)
 
