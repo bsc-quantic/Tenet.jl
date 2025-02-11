@@ -19,6 +19,8 @@ export Site, @site_str, isdual
 include("Lattice.jl")
 export Lattice
 
+include("interfaces/Effects.jl")
+
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
 

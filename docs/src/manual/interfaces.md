@@ -7,16 +7,16 @@ Any declaration of a formal interface is then the documentation written for it.
 
 A [TensorNetwork (interface)](@ref man-interface-tensornetwork) is a collection of [`Tensor`](@ref)s forming a graph structure.
 
-| Required method          | Brief description                                   |
-| :----------------------- | :-------------------------------------------------- |
-| `tensors(tn; kwargs...)` | Returns a list of [`Tensor`](@ref)s present in `tn` |
-| `copy(tn)`               | Returns a shallow copy of `tn`                      |
+| Required method          | Brief description                                                  |
+| :----------------------- | :----------------------------------------------------------------- |
+| `tensors(tn; kwargs...)` | Returns a list of [`Tensor`](@ref)s present in `tn`                |
+| `inds(tn; kwargs...)`    | Returns a list of indices present in `tn` (Generic implementation) |
+| `copy(tn)`               | Returns a shallow copy of `tn`                                     |
 
-The following methods are optional but you might be interested on implementing them for performance reasons.
+The following methods work out-of-the-box but you might be interested on implementing them for performance reasons.
 
 | Method                    | Default definition                                           | Brief description                                                 |
 | :------------------------ | :----------------------------------------------------------- | :---------------------------------------------------------------- |
-| `inds(tn; kwargs...)`     | `mapreduce(inds, ∪, tensors(tn))`                            | Returns a list of indices present in `tn`                         |
 | `hastensor(tn, tensor)`   | `tensor in tensors(tn)`                                      | Returns `true` if `tensor` is a existing [`Tensor`](@ref) in `tn` |
 | `ntensors(tn; kwargs...)` | `length(tensors(tn; kwargs...))`                             | Returns the number of tensors contained in `tn`                   |
 | `hasind(tn, ind)`         | `index in inds(tn)`                                          | Returns `true` if `index` is a existing index in `tn`             |

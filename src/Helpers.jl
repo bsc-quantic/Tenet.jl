@@ -88,3 +88,5 @@ function hist(x; init=Dict{eltype(x),Int}())
     end
     return init
 end
+
+gensym_clean(i) = gensym(String(split(string(i), "#")[3]))
