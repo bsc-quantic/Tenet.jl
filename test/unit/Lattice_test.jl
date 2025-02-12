@@ -2,6 +2,16 @@ using Tenet
 using Tenet: Lattice, Bond
 using Graphs: Graphs, vertices, edges, has_vertex, has_edge, nv, ne, add_vertex!, add_edge!, neighbors
 
+@testset "Bond" begin
+    bond = Bond(lane"1", lane"2")
+    a, b = Graphs.src(bond), Graphs.dst(bond)
+
+    @test issetequal((a, b), (lane"1", lane"2"))
+    @test issetequal(Tuple(bond), (lane"1", lane"2"))
+    @test issetequal(collect(bond), (lane"1", lane"2"))
+    @test issetequal(bond, (lane"1", lane"2"))
+end
+
 @testset let graph = Graphs.SimpleGraph(), lattice = Lattice()
     @test lattice == zero(Lattice)
     @test lattice == copy(lattice) && lattice !== copy(lattice)

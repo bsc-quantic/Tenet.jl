@@ -16,8 +16,24 @@ Graphs.dst(edge::Bond) = edge.dst
 Graphs.reverse(edge::Bond) = Bond(Graphs.dst(edge), Graphs.src(edge))
 Base.show(io::IO, edge::Bond) = write(io, "Bond: $(Graphs.src(edge)) - $(Graphs.dst(edge))")
 
-Pair(e::Bond) = src(e) => dst(e)
-Tuple(e::Bond) = (src(e), dst(e))
+Pair(e::Bond) = Graphs.src(e) => Graphs.dst(e)
+Tuple(e::Bond) = (Graphs.src(e), Graphs.dst(e))
+
+function Base.iterate(bond::Bond, state=0)
+    if state == 0
+        (Graphs.src(bond), 1)
+    elseif state == 1
+        (Graphs.dst(bond), 2)
+    else
+        nothing
+    end
+end
+
+Base.IteratorSize(::Type{Bond}) = Base.HasLength()
+Base.length(::Bond) = 2
+Base.IteratorEltype(::Type{Bond{L}}) where {L} = Base.HasEltype()
+Base.eltype(::Bond{L}) where {L} = L
+Base.isdone(::Bond, state) = state == 2
 
 haslane(bond::Bond, lane) = lane == Graphs.src(bond) || lane == Graphs.dst(bond)
 lanes(bond::Bond) = [Graphs.src(bond), Graphs.dst(bond)]
