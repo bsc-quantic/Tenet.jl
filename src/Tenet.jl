@@ -10,6 +10,8 @@ include("Tensor.jl")
 export Tensor, contract, dim, expand
 
 include("Numerics.jl")
+include("Numerics/Backends.jl")
+include("Numerics/Contract.jl")
 
 include("TensorNetwork.jl")
 export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, fuse!
