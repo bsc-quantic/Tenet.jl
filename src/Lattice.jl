@@ -27,7 +27,6 @@ function Base.iterate(bond::Bond, state=0)
     end
 end
 
-Base.iterate(bond::Bond, _) = (Graphs.dst(bond), 2)
 Base.IteratorSize(::Type{Bond}) = Base.HasLength()
 Base.length(::Bond) = 2
 Base.IteratorEltype(::Type{Bond{L}}) where {L} = Base.HasEltype()

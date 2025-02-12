@@ -4,8 +4,8 @@ using Graphs
 
 @testset "Bond" begin
     bond = Bond(lane"1", lane"2")
-
     a, b = src(bond), dst(bond)
+
     @test issetequal((a, b), (lane"1", lane"2"))
     @test issetequal(Tuple(bond), (lane"1", lane"2"))
     @test issetequal(collect(bond), (lane"1", lane"2"))
