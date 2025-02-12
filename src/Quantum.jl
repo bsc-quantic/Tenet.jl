@@ -96,10 +96,6 @@ function Base.show(io::IO, tn::T) where {T<:AbstractQuantum}
 end
 
 tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
-
-# function tensors(kwargs::NamedTuple{(:at,), Tuple{<:Lane}}, tn::AbstractQuantum)
-#     if hassite(tn, Site(kwargs.at))
-
 inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
 
 function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
