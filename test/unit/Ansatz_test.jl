@@ -22,8 +22,12 @@ using LinearAlgebra
     # some AbstractQuantum methods
     @test inds(ansatz; at=site"1") == :i
     @test inds(ansatz; at=site"2") == :j
-    @test tensors(ansatz; at=site"1") == Tensor(ones(2), [:i])
-    @test tensors(ansatz; at=site"2") == Tensor(ones(2), [:j])
+    @test tensors(ansatz; at=lane"1") == Tensor(ones(2), [:i])
+    @test tensors(ansatz; at=lane"2") == Tensor(ones(2), [:j])
+
+    # `tensors(; at::Lane)` is not affected by only having output `Site` on that tensor
+    @test tensors(ansatz'; at=lane"1") == Tensor(ones(2), [:i])
+    @test tensors(ansatz'; at=lane"2") == Tensor(ones(2), [:j])
 
     # the following methods will throw a AssertionError in here, but it's not a hard API requirement
     @test_throws Exception inds(ansatz; bond=(site"1", site"2"))
@@ -34,8 +38,8 @@ using LinearAlgebra
     @test norm(ansatz) ≈ 2.0
 
     @testset let gate = Gate([1 0; 0 0], [site"1'", site"1"])
-        @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1, 0], [:i])
-        @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1, 0], [:i])
+        @test tensors(simple_update!(copy(ansatz), gate); at=lane"1") ≈ Tensor([1, 0], [:i])
+        @test tensors(evolve!(copy(ansatz), gate); at=lane"1") ≈ Tensor([1, 0], [:i])
         @test expect(ansatz, Quantum(gate)) ≈ 2.0
     end
 
@@ -77,8 +81,8 @@ end
     @test norm(ansatz) ≈ 4.0
 
     @testset let gate = Gate([1 0; 0 0], [site"1'", site"1"])
-        @test tensors(simple_update!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
-        @test tensors(evolve!(copy(ansatz), gate); at=site"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
+        @test tensors(simple_update!(copy(ansatz), gate); at=lane"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
+        @test tensors(evolve!(copy(ansatz), gate); at=lane"1") ≈ Tensor([1 1; 0 0], [:s1, :i])
         @test expect(ansatz, Quantum(gate)) ≈ 8.0
     end
 

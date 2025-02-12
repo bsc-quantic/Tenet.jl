@@ -166,7 +166,11 @@ function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
 end
 
 # TODO fix this properly when we do the mapping 
-tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane} = tensors(tn; at=Site(kwargs.at))
+function tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane}
+    hassite(tn, Site(kwargs.at)) && return tensors(tn; at=Site(kwargs.at))
+    hassite(tn, Site(kwargs.at; dual=true)) && return tensors(tn; at=Site(kwargs.at; dual=true))
+    throw(ArgumentError("Lane $kwargs.at not found"))
+end
 
 """
     tensors(tn::AbstractAnsatz; bond)
