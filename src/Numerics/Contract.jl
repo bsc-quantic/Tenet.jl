@@ -16,11 +16,13 @@ contract(a::Tensor{T}, b::Union{T,AbstractArray{T,0}}) where {T} = contract(a, T
 contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = only(contract(Tensor(a), Tensor(b)))
 contract(a::Number, b::Number) = contract(fill(a), fill(b))
 
-function contract(tensors::Tensor...; kwargs...)
-    if length(tensors) > 4
-        @warn "Contracting $(length(tensors)) tensors without searching for the contraction path. This may be slow. Consider using `contract(TensorNetwork(tensors))` instead."
+contract(tensors::Tensor...; kwargs...) = contract(default_backend[], tensors...; kwargs...)
+
+function contract(b::AbstractBackend, tensors::Tensor...; kwargs...)
+    if length(tensors) > 8
+        @info "Contracting $(length(tensors)) tensors without searching for the contraction path may be slow. Using `contract(TensorNetwork(tensors))` instead."
     end
-    reduce((x, y) -> contract(x, y; kwargs...), tensors)
+    reduce((x, y) -> contract(b, x, y; kwargs...), tensors)
 end
 
 # TODO check out that this is not incurring in a big performance penalty due to dynamic dispatch
