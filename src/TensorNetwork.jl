@@ -507,6 +507,8 @@ function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     tn = TensorNetwork(tn)
     old_tensor, new_tensor = pair
 
+    old_tensor ∈ tn || throw(ArgumentError("Old tensor not found in TensorNetwork"))
+
     old_tensor === new_tensor && return tn
 
     issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
