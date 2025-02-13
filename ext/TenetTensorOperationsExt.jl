@@ -16,7 +16,9 @@ function Tenet.contract(::TensorOperationsBackend, a::Tensor, b::Tensor; dims=(â
         out
     end
 
-    data = tensorcontract(Tuple(ic), parent(a), Tuple(inds(a)), false, parent(b), Tuple(inds(b)), false)
+    data = TensorOperations.tensorcontract(
+        Tuple(ic), parent(a), Tuple(inds(a)), false, parent(b), Tuple(inds(b)), false
+    )
     return Tensor(data, ic)
 end
 
@@ -31,19 +33,19 @@ function Tenet.contract(::TensorOperationsBackend, a::Tensor; dims=nonunique(ind
     end
 
     # TODO might fail on partial trace
-    data = tensortrace(Tuple(ic), parent(a), Tuple(inds(a)), false)
+    data = TensorOperations.tensortrace(Tuple(ic), parent(a), Tuple(inds(a)), false)
     return Tensor(data, ic)
 end
 
 function Tenet.contract!(::TensorOperationsBackend, c::Tensor, a::Tensor, b::Tensor)
-    pA, pB, pAB = contract_indices(Tuple(inds(a)), Tuple(inds(b)), Tuple(inds(c)))
+    pA, pB, pAB = TensorOperations.contract_indices(Tuple(inds(a)), Tuple(inds(b)), Tuple(inds(c)))
     tensorcontract!(parent(c), parent(a), pA, false, parent(b), pB, false, pAB)
     return c
 end
 
 function Tenet.contract!(::TensorOperationsBackend, y::Tensor, x::Tensor)
     p, q = TensorOperations.trace_indices(Tuple(inds(x)), Tuple(inds(y)))
-    tensortrace!(parent(y), parent(x), p, q, false)
+    TensorOperations.tensortrace!(parent(y), parent(x), p, q, false)
     return y
 end
 
