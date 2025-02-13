@@ -1,9 +1,10 @@
 module TenetReactantExt
 
 using Tenet
+using Tenet: AbstractBackend
 using EinExprs
 using Reactant
-using Reactant: TracedRArray, TracedRNumber, @reactant_overlay, AbstractBackend
+using Reactant: TracedRArray, TracedRNumber, @reactant_overlay
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
