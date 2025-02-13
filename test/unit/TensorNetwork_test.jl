@@ -484,6 +484,9 @@ end
 
             old_tensor = t_lm
 
+            # Test that it throws an error if the old tensor is not in the tensor network
+            @test_throws ArgumentError replace!(tn, Tensor(ones(2, 2), (:i, :j)) => t_ij)
+
             @test_throws ArgumentError begin
                 new_tensor = Tensor(rand(2, 2), (:a, :b))
                 replace!(tn, old_tensor => new_tensor)
