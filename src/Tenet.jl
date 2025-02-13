@@ -54,6 +54,9 @@ export transform, transform!
 include("Mixins/Pluggable.jl")
 @compat public PluggableMixin
 
+include("Mixins/Ansatz.jl")
+@compat public AnsatzMixin
+
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 # @compat public AbstractQuantum, Socket, Scalar, State, Operator, align!, nsites, nlanes, hassite
