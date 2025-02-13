@@ -213,6 +213,12 @@ Base.@nospecializeinfer @noinline function Tenet.contract(
     return Tensor(data, ic)
 end
 
+@reactant_overlay function Tenet.contract(
+    @nospecialize(::Tenet.AbstractBackend), @nospecialize(xs::Tensor...); kwargs...
+)
+    return reduce((x, y) -> contract(x, y; kwargs...), xs)
+end
+
 function Tenet.contract(
     @nospecialize(a::Tensor{TracedRNumber{T},N,TracedRArray{T,N}}); dims=nonunique(inds(a)), out=nothing
 ) where {T,N}
