@@ -35,6 +35,7 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 YaoBlocks = "418bc28f-b43b-5e0b-a6e7-61bbc1a2c1df"
 
 [extensions]
@@ -52,6 +53,7 @@ TenetKrylovKitExt = ["KrylovKit"]
 TenetPythonCallExt = "PythonCall"
 TenetQuacExt = "Quac"
 TenetReactantExt = "Reactant"
+TenetTensorOperationsExt = "TensorOperations"
 TenetYaoBlocksExt = "YaoBlocks"
 
 [compat]
@@ -83,6 +85,7 @@ Reactant = "0.2.22"
 ScopedValues = "1"
 Serialization = "1.10"
 SparseArrays = "1.10"
+TensorOperations = "5"
 UUIDs = "1.10"
 YaoBlocks = "0.13"
 julia = "1.10"
