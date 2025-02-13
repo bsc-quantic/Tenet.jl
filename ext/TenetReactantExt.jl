@@ -3,7 +3,7 @@ module TenetReactantExt
 using Tenet
 using EinExprs
 using Reactant
-using Reactant: TracedRArray, TracedRNumber, @reactant_overlay
+using Reactant: TracedRArray, TracedRNumber, @reactant_overlay, AbstractBackend
 const MLIR = Reactant.MLIR
 const stablehlo = MLIR.Dialects.stablehlo
 
@@ -213,9 +213,7 @@ Base.@nospecializeinfer @noinline function Tenet.contract(
     return Tensor(data, ic)
 end
 
-@reactant_overlay function Tenet.contract(
-    @nospecialize(::Tenet.AbstractBackend), @nospecialize(xs::Tensor...); kwargs...
-)
+@reactant_overlay function Tenet.contract(@nospecialize(::AbstractBackend), @nospecialize(xs::Tensor...); kwargs...)
     return reduce((x, y) -> contract(x, y; kwargs...), xs)
 end
 
