@@ -8,12 +8,12 @@ Abstract type for effects.
 abstract type Effect end
 
 """
-    handle(x, effect::Effect)
+    handle!(x, effect::Effect)
 
 Handle the `effect` on `x`. By default, does nothing.
 """
-function handle end
-handle(_, ::Effect) = nothing
+function handle! end
+handle!(_, ::Effect) = nothing
 
 """
     PushEffect{F} <: Effect

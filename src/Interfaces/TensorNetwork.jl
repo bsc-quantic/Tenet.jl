@@ -259,7 +259,7 @@ Add a [`Tensor`](@ref) to the Tensor Network.
 function Base.push!(tn::AbstractTensorNetwork, t::Tensor)
     hastensor(tn, t) && return tn
     push_inner!(tn, t)
-    handle(tn, PushEffect(t))
+    handle!(tn, PushEffect(t))
     return tn
 end
 
@@ -287,7 +287,7 @@ Remove a [`Tensor`](@ref) from the Tensor Network.
 """
 function Base.delete!(tn::AbstractTensorNetwork, t::Tensor)
     delete_inner!(tn, t)
-    handle(tn, DeleteEffect(t))
+    handle!(tn, DeleteEffect(t))
     return tn
 end
 
@@ -345,10 +345,10 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
         new_tensor = replace(old_tensor, old_new)
         push_inner!(tn, new_tensor)
         delete_inner!(tn, old_tensor)
-        handle(tn, ReplaceEffect(old_tensor => new_tensor))
+        handle!(tn, ReplaceEffect(old_tensor => new_tensor))
     end
     tryprune!(tn, old)
-    handle(tn, ReplaceEffect(old_new))
+    handle!(tn, ReplaceEffect(old_new))
     return tn
 end
 
@@ -361,7 +361,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
 
     push_inner!(tn, new_tensor)
     delete_inner!(tn, old_tensor)
-    handle(tn, ReplaceEffect(old_new))
+    handle!(tn, ReplaceEffect(old_new))
 
     return tn
 end
@@ -392,7 +392,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTup
         tmp = Dict([i => gensym(i) for i in from])
 
         # replace old indices with temporary names
-        # TODO maybe do replacement manually and call `handle` once in the end?
+        # TODO maybe do replacement manually and call `handle!` once in the end?
         replace!(tn, tmp)
 
         # replace temporary names with new indices
@@ -409,12 +409,12 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,Abstrac
     issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match"))
     !isdisjoint(inds(new; set=:inner), inds(tn)) || throw(ArgumentError("overlapping inner indices"))
 
-    # manually perform `append!(tn, new)` to avoid calling `handle` several times
+    # manually perform `append!(tn, new)` to avoid calling `handle!` several times
     for tensor in tensors(new)
         push_inner!(tn, tensor)
     end
     delete_inner!(tn, old)
-    handle(tn, ReplaceEffect(old_new))
+    handle!(tn, ReplaceEffect(old_new))
 
     return tn
 end
