@@ -26,7 +26,10 @@ struct TensorNetwork <: AbstractTensorNetwork
         indexmap = reduce(tensors; init=Dict{Symbol,Vector{Tensor}}()) do dict, tensor
             for index in inds(tensor)
                 # TODO use lambda? `Tensor[]` might be reused
-                push!(get!(dict, index, Tensor[]), tensor)
+                # avoid multiple references to the same tensor
+                if isnothing(findfirst(x -> x === tensor, get!(dict, index, Tensor[])))
+                    push!(dict[index], tensor)
+                end
             end
             dict
         end

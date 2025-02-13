@@ -257,6 +257,7 @@ tryprune!(::AbstractTensorNetwork, _, ::No) = nothing
 Add a [`Tensor`](@ref) to the Tensor Network.
 """
 function Base.push!(tn::AbstractTensorNetwork, t::Tensor)
+    hastensor(tn, t) && return tn
     push_inner!(tn, t)
     handle(tn, PushEffect(t))
     return tn
@@ -435,6 +436,9 @@ end
 
 Contract in-place the index `ind` in the Tensor Network.
 """
+contract!(::AbstractTensorNetwork, _)
+
+contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, (i,))
 function contract!(tn::AbstractTensorNetwork, inds)
     target_tensors = tensors(tn; intersects=inds)
     # TODO calling `contract` like this can give problems on large amount of tensors, because it doesn't call `einexpr`
@@ -470,7 +474,7 @@ Base.collect(tn::AbstractTensorNetwork) = tensors(tn)
 
 # TODO should we deprecate this method?
 function Base.getindex(tn::AbstractTensorNetwork, is::Symbol...; mul=1)
-    first(Iterators.drop(tensors(tn; contains=is), mul - 1))
+    first(Iterators.drop(Iterators.filter(Base.Fix1(issetequal, is) ∘ inds, tensors(tn; contains=is)), mul - 1))
 end
 
 """
@@ -548,7 +552,7 @@ If `open=true`, the `ind` itself is not included in the result.
 function Graphs.neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
     @assert i ∈ tn "Index $i not found in TensorNetwork"
     neigh_inds = mapreduce(inds, ∪, tensors(tn; intersects=i))
-    open && filter!(x -> x !== i, neigh_inds)
+    open && filter(x -> x !== i, neigh_inds)
     return neigh_inds
 end
 
@@ -587,7 +591,7 @@ Contract a [`AbstractTensorNetwork`](@ref). If `path` is not specified, the cont
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
 contract(tn::AbstractTensorNetwork; kwargs...) = contract(sort_nt(values(kwargs)), tn)
-contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; path=einexpr(Greedy(), tn)), tn)
+contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; optimizer=Greedy()), tn)
 
 function contract(kwargs::NamedTuple{(:optimizer,)}, tn::AbstractTensorNetwork)
     path = einexpr(tn; optimizer=kwargs.optimizer)

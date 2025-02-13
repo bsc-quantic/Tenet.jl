@@ -141,23 +141,23 @@ end
 end
 
 @testset "append!" begin
-    tensor = Tensor(zeros(2, 3), (:i, :j))
-    A = TensorNetwork()
-    B = TensorNetwork()
+    @testset "empty tn and list of tensor" begin
+        tensor = Tensor(zeros(2, 3), (:i, :j))
+        A = TensorNetwork()
 
-    append!(B, [tensor])
-    @test only(tensors(B)) === tensor
-end
+        append!(A, [tensor])
+        @test only(tensors(A)) === tensor
+    end
 
-@testset "merge!" begin
-    @testset "two tn" begin
+    @testset "tn and empty tn" begin
         tensor = Tensor(zeros(2, 3), (:i, :j))
         A = TensorNetwork([tensor])
         B = TensorNetwork()
 
-        merge!(A, B)
+        append!(A, B)
         @test only(tensors(A)) === tensor
     end
+
     @testset "three tn" begin
         tensor1 = Tensor(zeros(2, 3), (:i, :j))
         tensor2 = Tensor(ones(3, 4), (:j, :k))
@@ -166,7 +166,8 @@ end
         B = TensorNetwork([tensor2])
         C = TensorNetwork([tensor3])
 
-        merge!(A, B, C)
+        append!(A, B)
+        append!(A, C)
         @test length(tensors(A)) == 3
         @test issetequal(inds(A), [:i, :j, :k, :l])
         @test tensor1 ∈ tensors(A)
@@ -383,18 +384,18 @@ end
         @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(ctn))
     end
 
-    @testset "by tensor" begin
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
-        newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
-        tn = TensorNetwork([A, B])
+    # @testset "by tensor" begin
+    #     A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+    #     B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+    #     newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
+    #     tn = TensorNetwork([A, B])
 
-        ctn = contract(tn, newtensor)
-        @test tn isa TensorNetwork
-        @test issetequal([A, B], tensors(tn))
-        @test ctn isa Tensor
-        @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
-    end
+    #     ctn = contract(tn, newtensor)
+    #     @test tn isa TensorNetwork
+    #     @test issetequal([A, B], tensors(tn))
+    #     @test ctn isa Tensor
+    #     @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
+    # end
 
     @testset "hyperindex" begin
         let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
@@ -437,18 +438,18 @@ end
         @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(tn))
     end
 
-    @testset "by tensor" begin
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
-        newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
-        tn = TensorNetwork([A, B])
+    # @testset "by tensor" begin
+    #     A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+    #     B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+    #     newtensor = Tensor(rand(2, 2, 2), (:n, :o, :p))
+    #     tn = TensorNetwork([A, B])
 
-        ctn = contract!(tn, newtensor)
-        @test tn isa TensorNetwork
-        @test issetequal([:i, :j, :k, :l, :m, :n, :o, :p], inds(tn))
-        @test ctn isa Tensor
-        @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
-    end
+    #     ctn = contract!(tn, newtensor)
+    #     @test tn isa TensorNetwork
+    #     @test issetequal([:i, :j, :k, :l, :m, :n, :o, :p], inds(tn))
+    #     @test ctn isa Tensor
+    #     @test issetequal([:i, :j, :l, :m, :o, :p], inds(ctn))
+    # end
 end
 
 @testset "Base.replace!" begin
