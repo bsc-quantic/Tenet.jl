@@ -51,6 +51,9 @@ export transform, transform!
     SplitSimplification
 #! format: on
 
+include("Mixins/Pluggable.jl")
+@compat public PluggableMixin
+
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 # @compat public AbstractQuantum, Socket, Scalar, State, Operator, align!, nsites, nlanes, hassite
