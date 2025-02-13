@@ -3,6 +3,7 @@ using Tenet
 using Tenet: TensorOperationsBackend
 using LinearAlgebra
 using TensorOperations: TensorOperations
+using OMEinsum: @ein_str
 
 @testset "contract" begin
     # NOTE pattern not supported by TensorOperations
