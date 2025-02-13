@@ -101,19 +101,20 @@ using TensorOperations: TensorOperations
         end
     end
 
-    @testset "multiple tensors" begin
-        A = Tensor(rand(2, 3, 4), (:i, :j, :k))
-        B = Tensor(rand(4, 5, 3), (:k, :l, :j))
-        C = Tensor(rand(5, 6, 2), (:l, :m, :i))
-        D = Tensor(rand(6, 7, 2), (:m, :n, :i))
+    # NOTE pattern not supported by TensorOperations
+    # @testset "multiple tensors" begin
+    #     A = Tensor(rand(2, 3, 4), (:i, :j, :k))
+    #     B = Tensor(rand(4, 5, 3), (:k, :l, :j))
+    #     C = Tensor(rand(5, 6, 2), (:l, :m, :i))
+    #     D = Tensor(rand(6, 7, 2), (:m, :n, :i))
 
-        contracted = contract(TensorOperationsBackend(), A, B, C, D)
-        @test issetequal(inds(contracted), (:n, :i))
-        @test issetequal(size(contracted), (7, 2))
-        @test contracted ≈ contract(
-            TensorOperationsBackend(),
-            contract(TensorOperationsBackend(), contract(TensorOperationsBackend(), A, B), C),
-            D,
-        )
-    end
+    #     contracted = contract(TensorOperationsBackend(), A, B, C, D)
+    #     @test issetequal(inds(contracted), (:n, :i))
+    #     @test issetequal(size(contracted), (7, 2))
+    #     @test contracted ≈ contract(
+    #         TensorOperationsBackend(),
+    #         contract(TensorOperationsBackend(), contract(TensorOperationsBackend(), A, B), C),
+    #         D,
+    #     )
+    # end
 end
