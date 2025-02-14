@@ -19,6 +19,10 @@ Returns the sites of the Tensor Network.
 """
 sites(::@NamedTuple{}, tn::AbstractTensorNetwork)
 
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork) = sites((;), tn, Wraps(PluggableMixin, tn))
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::Yes) = sites(PluggableMixin(tn))
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::No) = throw(MethodError(sites, (tn,)))
+
 """
     inds(tn; at::Site)
 
@@ -29,6 +33,16 @@ Return the index linked to [`Site`](@ref) `at`.
     This is the method called by `inds(tn; at=site)`.
 """
 inds(::@NamedTuple{at::S}, ::AbstractTensorNetwork) where {S<:Site}
+
+function inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork) where {S<:Site}
+    inds(kwargs, tn, Wraps(PluggableMixin, tn))
+end
+
+inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork, ::Yes) where {S<:Site} = inds(kwargs, PluggableMixin(tn))
+
+function inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork, ::No) where {S<:Site}
+    throw(MethodError(inds, (kwargs, tn)))
+end
 
 """
     sites(tn; at::Symbol)
@@ -41,16 +55,28 @@ Return the site linked to index `at`.
 """
 sites(::@NamedTuple{at::Symbol}, ::AbstractTensorNetwork)
 
+sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork) = sites(kwargs, tn, Wraps(PluggableMixin, tn))
+sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork, ::Yes) = sites(kwargs, PluggableMixin(tn))
+sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork, ::No) = throw(MethodError(sites, (kwargs, tn)))
+
 # optional methods
 """
     nsites(tn)
 
 Return the number of sites of the Tensor Network.
 """
-nsites(tn; kwargs...) = length(sites(tn; kwargs...))
+nsites(tn; kwargs...) = sort_nt(values(kwargs), tn)
 
-hassite(tn::AbstractTensorNetwork, s::Site) = s ∈ sites(tn)
-Base.in(s::Site, tn::AbstractTensorNetwork) = s ∈ sites(tn)
+nsites(::@NamedTuple{}, tn::AbstractTensorNetwork) = nsites((;), tn, Wraps(PluggableMixin, tn))
+nsites(::@NamedTuple{}, tn, ::Yes) = nsites((;), PluggableMixin(tn))
+nsites(::@NamedTuple{}, tn, ::No) = length(sites(tn; kwargs...))
+
+# other kwarg-methods of `nsites` must call `sites` anyway so don't overoptimize
+nsites(kwargs::NamedTuple, tn; kwargs...) = length(sites(kwargs, tn))
+
+hassite(tn::AbstractTensorNetwork, s::Site) = hassite(tn, s, Wraps(PluggableMixin, tn))
+hassite(tn::AbstractTensorNetwork, s::Site, ::Yes) = hassite(PluggableMixin(tn), s)
+hassite(tn::AbstractTensorNetwork, s::Site, ::No) = s ∈ sites(tn)
 
 # keyword methods
 function sites(kwargs::@NamedTuple{plugset::Symbol}, tn::AbstractTensorNetwork)
@@ -71,6 +97,11 @@ Link `site` to `ind`.
 """
 function addsite! end
 
+addsite!(tn::AbstractTensorNetwork, @nospecialize(p::Pair{<:Site,<:Tensor})) = addsite!(tn, p.first, p.second)
+addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor) = addsite!(tn, site, tensor, Wraps(PluggableMixin, tn))
+addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor, ::Yes) = addsite!(PluggableMixin(tn), site, tensor)
+addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor, ::No) = throw(MethodError(addsite!, (tn, site, tensor)))
+
 """
     rmsite!(tn, site)
 
@@ -78,7 +109,13 @@ Unlink `site`.
 """
 function rmsite! end
 
+rmsite!(tn::AbstractTensorNetwork, site::Site) = rmsite!(tn, site, Wraps(PluggableMixin, tn))
+rmsite!(tn::AbstractTensorNetwork, site::Site, ::Yes) = rmsite!(PluggableMixin(tn), site)
+rmsite!(tn::AbstractTensorNetwork, site::Site, ::No) = throw(MethodError(rmsite!, (tn, site)))
+
 # derived methods
+Base.in(s::Site, tn::AbstractTensorNetwork) = hassite(tn, s)
+
 """
     Socket
 
