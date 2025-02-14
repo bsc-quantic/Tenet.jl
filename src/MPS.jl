@@ -61,7 +61,6 @@ function MPS(arrays::Vector{<:AbstractArray}, λ; form::Form=Canonical(), kwargs
 end
 
 # Tensor Network interface
-## WrapsTensorNetwork trait
 Wraps(::Type{TensorNetwork}, ::Union{MPS,MPO}) = Yes()
 TensorNetwork(::Union{MPS,MPO}) = tn
 
