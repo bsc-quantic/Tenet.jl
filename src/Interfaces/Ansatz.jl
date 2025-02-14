@@ -118,7 +118,7 @@ Link `lane` to `tensor`.
 """
 function addlane! end
 
-addlane!(tn::AbstractTensorNetwork, @nospecialize(p::Pair{<:Lane,<:Tensor})) = addlane!(tn, lane, tensor)
+addlane!(tn::AbstractTensorNetwork, @nospecialize(p::Pair{<:Lane,<:Tensor})) = addlane!(tn, p.first, p.second)
 addlane!(tn::AbstractTensorNetwork, lane::Lane, tensor::Tensor) = addlane!(tn, lane, tensor, Wraps(AnsatzMixin, tn))
 addlane!(tn::AbstractTensorNetwork, lane::Lane, tensor::Tensor, ::Yes) = addlane!(AnsatzMixin(tn), lane, tensor)
 addlane!(tn::AbstractTensorNetwork, lane::Lane, tensor::Tensor, ::No) = throw(MethodError(addlane!, (tn, lane, tensor)))

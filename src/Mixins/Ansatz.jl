@@ -7,8 +7,6 @@ struct AnsatzMixin
     bondmap::Dict{Bond,Symbol}
 end
 
-Lattice(x::AnsatzMixin) = x.lattice
-
 function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
     graph = Lattice()
     for lane in keys(mixin.lanemap)
@@ -21,8 +19,7 @@ function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
 end
 
 Wraps(::Type{AnsatzMixin}, _) = No()
-
-hastensor(mixin::AnsatzMixin, tensor) = tensor ∈ values(mixin.lanemap)
+AnsatzMixin(mixin::AnsatzMixin) = mixin
 
 # required methods
 lanes(mixin::AnsatzMixin) = sort!(collect(keys(mixin.lanemap)))
@@ -75,3 +72,7 @@ function handle!(mixin::AnsatzMixin, effect::ReplaceEffect{Pair{Tensor,Tensor}})
     !isnothing(lane) || return nothing
     mixin.lanemap[lane] = effect.f.second
 end
+
+# other useful methods
+Lattice(x::AnsatzMixin) = x.lattice
+hastensor(mixin::AnsatzMixin, tensor) = tensor ∈ values(mixin.lanemap)
