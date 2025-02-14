@@ -269,11 +269,15 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
 
     n = length(arrays)
     gen = IndexCounter()
-    symbols = [nextindex!(gen) for _ in 1:(3n - 1)]
+    lattice = Lattice(Val(:chain), n)
 
-    tn = TensorNetwork(
+    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
+    sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
+    append!(sitemap, Dict{Site,Symbol}(Site(i; dual=true) => nextindex!(gen) for i in 1:n))
+
+    lanemap = Dict{Lane,Tensor}(
         map(enumerate(arrays)) do (i, array)
-            _order = if i == 1
+            local_order = if i == 1
                 filter(x -> x != :l, order)
             elseif i == n
                 filter(x -> x != :r, order)
@@ -281,29 +285,27 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
                 order
             end
 
-            inds = map(_order) do dir
+            inds = map(local_order) do dir
                 if dir == :o
-                    symbols[i]
+                    sitemap[Site(i)]
                 elseif dir == :i
-                    symbols[i + n]
-                elseif dir == :l
-                    symbols[2n + mod1(i - 1, n)]
+                    sitemap[Site(i; dual=true)]
                 elseif dir == :r
-                    symbols[2n + mod1(i, n)]
+                    bondmap[Bond(Lane(i), Lane(i + 1))]
+                elseif dir == :l
+                    bondmap[Bond(Lane(i - 1), Lane(i))]
                 else
                     throw(ArgumentError("Invalid direction: $dir"))
                 end
             end
-            Tensor(array, inds)
+
+            Lane(i) => Tensor(array, inds)
         end,
     )
 
-    sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
-    merge!(sitemap, Dict(Site(i; dual=true) => symbols[i + n] for i in 1:n))
-    qtn = Quantum(tn, sitemap)
-    lattice = Lattice(Val(:chain), n)
-    ansatz = Ansatz(qtn, lattice)
-    return MPO(ansatz, NonCanonical())
+    tn = TensorNetwork(values(lanemap))
+
+    return MPS(tn, lattice, lanemap, bondmap, sitemap, NonCanonical())
 end
 
 ################################################################################
