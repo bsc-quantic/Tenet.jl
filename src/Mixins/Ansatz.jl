@@ -20,6 +20,8 @@ function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
     return AnsatzMixin(graph, lanemap, bondmap)
 end
 
+Wraps(::Type{AnsatzMixin}, _) = No()
+
 hastensor(mixin::AnsatzMixin, tensor) = tensor ∈ values(mixin.lanemap)
 
 # required methods
@@ -43,9 +45,9 @@ Base.neighbors(mixin::AnsatzMixin, lane::Lane) = neighbors(mixin.lattice, lane)
 # TODO better way for `neighbors` method on `Bond`?
 
 # mutating methods
-function addlane!(mixin::AnsatzMixin, p::Pair{<:Lane,Tensor})
-    add_vertex!(mixin.lattice, p.first)
-    mixin.lanemap[p.first] = p.second
+function addlane!(mixin::AnsatzMixin, lane::Lane, tensor::Tensor)
+    add_vertex!(mixin.lattice, lane)
+    mixin.lanemap[lane] = tensor
 end
 
 function rmlane!(mixin::AnsatzMixin, lane::Lane)
@@ -53,9 +55,9 @@ function rmlane!(mixin::AnsatzMixin, lane::Lane)
     delete!(mixin.lanemap, lane)
 end
 
-function addbond!(mixin::AnsatzMixin, p::Pair{<:Bond,Symbol})
-    add_edge!(mixin.lattice, p.first)
-    mixin.bondmap[p.first] = p.second
+function addbond!(mixin::AnsatzMixin, bond::Bond, ind::Symbol)
+    add_edge!(mixin.lattice, bond)
+    mixin.bondmap[bond] = ind
 end
 
 function rmbond!(mixin::AnsatzMixin, bond::Bond)
