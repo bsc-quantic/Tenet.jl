@@ -291,13 +291,6 @@ function Base.delete!(tn::AbstractTensorNetwork, t::Tensor)
     return tn
 end
 
-# TODO what do we do with this?
-# """
-#     delete!(tn::AbstractTensorNetwork, x)
-
-# Like [`pop!`](@ref) but return the Tensor Network instead.
-# """
-# Base.delete!(tn::AbstractTensorNetwork, x) = (_ = pop!(tn, x); tn)
 
 """
     pop!(tn::AbstractTensorNetwork, tensor::Tensor)
