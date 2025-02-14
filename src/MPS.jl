@@ -394,3 +394,68 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     # TODO order might not be the best for performance
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
+
+# TODO canonization methods: canonize!, canonize_site!, absorb!, ...
+# TODO improve over `evolve!` methods?
+# TODO improve over `truncate!` methods?
+
+# derived methods
+LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), tensors(ψ))
+
+function LinearAlgebra.norm(::NonCanonical, tn)
+    # TODO stack with its dual and contract
+    error("Not implemented yet")
+end
+
+function LinearAlgebra.norm(config::MixedCanonical, tn)
+    orthog_center = tensors(tn; at=config.orthog_center)
+    return norm(orthog_center)
+end
+
+function LinearAlgebra.norm(::Canonical, tn)
+    # TODO should we just return the norm of one of the Λ tensors? take an average for numerical stability?
+    error("Not implemented yet")
+end
+
+LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
+LinearAlgebra.normalize!(ψ::AbstractMPO, at::Lane) = normalize!(form(ψ), ψ; at)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Lane}) = normalize!(form(ψ), ψ; bond)
+
+# NOTE in-place normalization of the arrays should be faster, but currently leads to problems for `copy` TensorNetworks
+function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=nothing)
+    if isnothing(at)
+        spread_norm = norm(ψ)^(1 / ntensors(ψ))
+        for tensor in tensors(ψ)
+            tensor ./= spread_norm
+        end
+    else
+        tensor = tensors(ψ; at)
+        replace!(ψ, tensor => tensor ./ norm(ψ))
+    end
+    return ψ
+end
+
+function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
+    # moves orthogonality center to the specified lane (does nothing if already there)
+    canonize!(ψ, MixedCanonical(at))
+
+    # orthogonality center contains all the norm, so just normalize that tensor
+    normalize!(tensors(ψ; at), 2)
+
+    return ψ
+end
+
+function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
+    old_norm = norm(ψ)
+    if isnothing(bond) # Normalize all λ tensors
+        for i in 1:(nlanes(ψ) - 1)
+            λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
+            replace!(ψ, λ => λ ./ old_norm^(1 / (nlanes(ψ) - 1)))
+        end
+    else
+        λ = tensors(ψ; bond)
+        replace!(ψ, λ => λ ./ old_norm)
+    end
+
+    return ψ
+end
