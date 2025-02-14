@@ -53,10 +53,17 @@ See also: [`NonCanonical`](@ref), [`MixedCanonical`](@ref), [`Canonical`](@ref).
 function canonize! end
 
 """
-    canonize(tn::AbstractAnsatz)
+    canonize(tn)
 
 Like [`canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
 """
 canonize(tn::AbstractTensorNetwork, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
 
 # canonize_site(tn::AbstractTensorNetwork, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
+
+"""
+    checkform(tn)
+
+Check whether a Tensor Network fulfills the properties of the canonical form is in.
+"""
+function checkform end
