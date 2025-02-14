@@ -57,6 +57,12 @@ include("Mixins/Pluggable.jl")
 include("Mixins/Ansatz.jl")
 @compat public AnsatzMixin
 
+include("Ansatzes/Product.jl")
+export ProductState, ProductOperator
+
+include("Ansatzes/MPS.jl")
+export MPS, MPO
+
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 # @compat public AbstractQuantum, Socket, Scalar, State, Operator, align!, nsites, nlanes, hassite
@@ -86,9 +92,6 @@ include("Mixins/Ansatz.jl")
 #     overlap
 # #! format: on
 # @compat public AbstractAnsatz, Boundary, Form
-
-# include("Product.jl")
-# export Product
 
 # include("MPS.jl")
 # export MPS, MPO, absorb, absorb!
