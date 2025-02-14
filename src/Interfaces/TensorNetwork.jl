@@ -622,3 +622,21 @@ function LinearAlgebra.lu!(tn::AbstractTensorNetwork; left_inds=Symbol[], right_
     replace!(tn, tensor => [P, L, U])
     return tn
 end
+
+"""
+    gauge!(tn::AbstractTensorNetwork, ind, U[, Uinv])
+
+Perform a gauge transformation on index `ind`.
+"""
+function gauge!(tn::AbstractTensorNetwork, ind::Symbol, U::AbstractMatrix, Uinv::AbstractMatrix=inv(U))
+    a, b = tensors(tn; contains=ind)
+    tmpind = gensym(ind)
+
+    tU = Tensor(U, [ind, tmpind])
+    tUinv = Tensor(Uinv, [tmpind, ind])
+
+    gauged_a = replace(contract(a, tU), tmpind => ind)
+    gauged_b = replace(contract(tUinv, b), tmpind => ind)
+
+    replace!(tn, [a => gauged_a, b => gauged_b])
+end
