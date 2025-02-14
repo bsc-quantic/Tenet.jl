@@ -131,8 +131,8 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check=true)
     gen = IndexCounter()
     lattice = Lattice(Val(:chain), n)
 
-    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
+    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
     lanemap = Dict{Lane,Tensor}(
         map(enumerate(arrays)) do (i, array)
             local_order = if i == 1
@@ -160,8 +160,10 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check=true)
     )
 
     tn = TensorNetwork(values(lanemap))
+    pluggable = PluggableMixin(sitemap)
+    ansatz = AnsatzMixin(lanemap, bondmap)
 
-    return MPS(tn, lattice, lanemap, bondmap, sitemap, NonCanonical())
+    return MPS(tn, pluggable, ansatz, NonCanonical())
 end
 
 checkform(::NonCanonical, mps::AbstractMPO) = true
@@ -270,9 +272,9 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     gen = IndexCounter()
     lattice = Lattice(Val(:chain), n)
 
-    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
-    append!(sitemap, Dict{Site,Symbol}(Site(i; dual=true) => nextindex!(gen) for i in 1:n))
+    append!(sitemap, [Site(i; dual=true) => nextindex!(gen) for i in 1:n])
+    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
 
     lanemap = Dict{Lane,Tensor}(
         map(enumerate(arrays)) do (i, array)
@@ -303,8 +305,10 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     )
 
     tn = TensorNetwork(values(lanemap))
+    pluggable = PluggableMixin(sitemap)
+    ansatz = AnsatzMixin(lanemap, bondmap)
 
-    return MPS(tn, lattice, lanemap, bondmap, sitemap, NonCanonical())
+    return MPO(tn, pluggable, ansatz, NonCanonical())
 end
 
 ################################################################################
