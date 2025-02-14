@@ -291,7 +291,6 @@ function Base.delete!(tn::AbstractTensorNetwork, t::Tensor)
     return tn
 end
 
-
 """
     pop!(tn::AbstractTensorNetwork, tensor::Tensor)
     pop!(tn::AbstractTensorNetwork, i::Union{Symbol,AbstractVecOrTuple{Symbol}})
