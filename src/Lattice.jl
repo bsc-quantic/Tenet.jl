@@ -93,6 +93,12 @@ function Graphs.rem_vertex!(lattice::Lattice, lane::Lane)
 end
 
 Graphs.rem_edge!(lattice::Lattice, edge::Bond) = Graphs.rem_edge!(lattice, Graphs.src(edge), Graphs.dst(edge))
+function Graphs.rem_edge!(lattice::Lattice, a::Lane, b::Lane)
+    code_a = parent_vertex(lattice, a)
+    code_b = parent_vertex(lattice, b)
+
+    Graphs.rem_edge!(lattice.graph, Graphs.SimpleEdge(code_a, code_b))
+end
 
 """
     Graphs.vertices(::Lattice)
