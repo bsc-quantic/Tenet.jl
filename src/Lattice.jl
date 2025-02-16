@@ -3,6 +3,8 @@ using Graphs: Graphs
 struct Bond{L<:AbstractLane}
     src::L
     dst::L
+
+    Bond(src::L, dst::L) where {L<:AbstractLane} = new{L}(minmax(src, dst)...)
 end
 
 Base.convert(::Type{Bond}, edge::Pair{<:AbstractLane,<:AbstractLane}) = Bond(edge.first, edge.second)
