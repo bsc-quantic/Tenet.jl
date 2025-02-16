@@ -171,7 +171,7 @@ end
 Graphs.ne(iterator::BondIterator) = Graphs.ne(iterator.lattice)
 Base.eltype(::Type{BondIterator}) = Bond
 Base.length(iterator::BondIterator) = length(iterator.simpleit)
-Base.in(e::Bond, it::BondIterator) = Graphs.has_edge(it.lattice, Graphs.src(e), Graphs.src(dst))
+Base.in(e::Bond, it::BondIterator) = Graphs.has_edge(it.lattice, e)
 Base.show(io::IO, iterator::BondIterator) = write(io, "BondIterator $(Graphs.ne(iterator))")
 
 function Base.iterate(iterator::BondIterator, state=nothing)
