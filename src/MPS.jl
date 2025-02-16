@@ -728,3 +728,107 @@ function LinearAlgebra.normalize!(config::Canonical, ψ::AbstractMPO; bond=nothi
 
     return ψ
 end
+
+"""
+    compression
+
+Compression of a MPS of larger bound dimension into a one with smaller bond dimension by truncating up to the M leading eigenvalues
+"""
+
+function compress(ψ::MPS, M)
+    L = length(sites(ψ))
+    ϕ = copy(ψ)
+    v = AbstractArray[]
+    right_env = AbstractArray[]
+    ζ = TensorNetwork([])
+
+    for num_site in L:-1:2
+        left_env = get_left_env(ψ, num_site)
+        right_env= get_right_env(ψ, num_site, v, right_env)
+        site_tensors = get_tensors_site(ψ, num_site, true)
+
+        push!(site_tensors, left_env) #1 line?
+        append!(site_tensors, right_env) 
+        ρ = contract(site_tensors, path=einexpr(site_tensors; optimizer=Exhaustive()))
+        right_inds = [inds(ψ, at=Site(num_site))]
+        if num_site < L push!(right_inds, bond_site(num_site +1)) end
+        left_inds = [Symbol(string(ind) * "'") for ind in right_inds]
+        u,s,v,err = my_truncate_eig(ρ, left_inds, right_inds, bond_site(num_site), M) # thass u,s?
+        push!(ϕ,v)
+        push!(ζ,adjoint(v))
+    end
+
+    A1 = contract(ϕ, path=einexpr(ϕ; optimizer=Exhaustive()))
+    push!(ζ,A1)
+    for ii in 1:L-1 replace!(ζ, bond_site(ii+1) => Tenet.letter(ii+L)) end
+    sitemap = Dict(Site(i) => Tenet.letter(i) for i in 1:L)
+    qtn = Quantum(ζ, sitemap)
+    lattice = Lattice(Val(:chain), L)
+    ansatz = Ansatz(qtn, lattice)
+    result = MPS(ansatz, NonCanonical())
+    return result
+
+end
+
+function get_left_env(ψ::MPS, num_site)
+    tn_tensors = Tensor[]
+    for ii in 1:num_site-1
+        push!(tn_tensors, tensors(ψ; at=Site(ii)))
+        push!(tn_tensors, tensors(ψ'; at=Site(ii)'))
+    end
+    my_tn = TensorNetwork(tn_tensors)
+    left_env = contract(my_tn, path=einexpr(my_tn; optimizer=Exhaustive()))
+    return left_env  
+end
+
+function get_right_env(ψ::MPS, num_site, unitaries, right_env_old=())
+
+    L = length(sites(ψ))
+
+    if num_site>= L return [] end
+
+    re_up = contract(tensors(ψ; at=Site(num_site + 1)), unitaries) #v mat 
+    right_env_new = [re_up, make_dual(re_up)]#optimise? --> MAKE ADJOINT FUCTION
+    
+    if !isempty(right_env_old)
+        re_up_new = contract(right_env_old[1], right_env_new[1])
+        right_env_new = [re_up_new, make_dual(re_up_new)]
+    end
+
+    return right_env_new
+end
+
+function get_tensors_site(ψ :: MPS, num_site, is_tn::Bool = false)
+    tensor = tensors(ψ; at=Site(num_site))
+    site_tensors = [tensor, make_dual(tensor)]
+    return is_tn ? TensorNetwork(site_tensors) : site_tensors
+end
+
+function my_truncate_eig(ρ ::Tensor, left_inds, right_inds, bond, maxdim=nothing)
+
+    u,s,v = svd(ρ; left_inds=left_inds, right_inds=right_inds, virtualind=bond)
+    error = 0
+    if !isnothing(maxdim)
+        error = sum(s[(maxdim+1):end])
+        u=view(u, bond => 1:min(maxdim, size(u, bond)))
+        s=view(s, bond => 1:min(maxdim, size(u, bond)))
+        v=view(v, bond => 1:min(maxdim, size(u, bond)))
+    end
+
+    return copy(u),copy(s), copy(v), error #right copy?
+end
+
+function bond_site(num_site, is_dual::Bool = false)
+        bond = "bond"*string(num_site)
+        return is_dual ?  Symbol(bond*"'") : Symbol(bond)
+end
+
+function make_dual(A ::Tensor)
+   inds_A = collect(inds(A))
+   for ii in 1:length(inds_A) A = replace(A, inds_A[ii] => Symbol(string(inds_A[ii])*"'")) end  
+   return adjoint(A)
+end
+
+
+
+
