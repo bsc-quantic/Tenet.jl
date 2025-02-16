@@ -767,7 +767,6 @@ function compress(ψ::MPS, M)
     ansatz = Ansatz(qtn, lattice)
     result = MPS(ansatz, NonCanonical())
     return result
-
 end
 
 function get_left_env(ψ::MPS, num_site)
