@@ -14,7 +14,7 @@ using LinearAlgebra
         @test nsites(ψ; set=:outputs) == 3
         @test issetequal(sites(ψ), [site"1", site"2", site"3"])
         @test boundary(ψ) == Open()
-        @test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) == nothing
+        @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) == nothing
     end
 
     @testset "case 2" begin
