@@ -82,6 +82,10 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             include("integration/ITensorNetworks_test.jl")
         end
 
+        @safetestset "TensorOperations" begin
+            include("integration/TensorOperations_test.jl")
+        end
+
         @safetestset "YaoBlocks" begin
             include("integration/YaoBlocks_test.jl")
         end

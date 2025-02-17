@@ -1,6 +1,7 @@
 module TenetReactantExt
 
 using Tenet
+using Tenet: AbstractBackend
 using EinExprs
 using Reactant
 using Reactant: TracedRArray, TracedRNumber, @reactant_overlay
@@ -211,6 +212,10 @@ Base.@nospecializeinfer @noinline function Tenet.contract(
     end
 
     return Tensor(data, ic)
+end
+
+@reactant_overlay function Tenet.contract(@nospecialize(::AbstractBackend), @nospecialize(xs::Tensor...); kwargs...)
+    return reduce((x, y) -> contract(x, y; kwargs...), xs)
 end
 
 function Tenet.contract(
