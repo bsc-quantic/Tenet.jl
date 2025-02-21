@@ -1,5 +1,15 @@
 # This file defines the "Ansatz" interface; i.e. Tensor Networks with a fixed structure.
 
+struct AnsatzInterface end
+
+function hasinterface(::AnsatzInterface, T::Type)
+    hasmethod(lanes, Tuple{T}) || return false
+    hasmethod(bonds, Tuple{T}) || return false
+    hasmethod(tensors, Tuple{NamedTuple{(:at,)},T}) || return false
+    hasmethod(inds, Tuple{NamedTuple{(:bond,)},T}) || return false
+    return true
+end
+
 # required methods
 """
     lanes(tn)

@@ -1,5 +1,16 @@
 # This file defines the "Pluggable" interface; i.e. Tensor Networks that can be connected between each other.
 
+struct PluggableInterface end
+
+# this function should be used just for testing
+function hasinterface(::PluggableInterface, T::Type)
+    # required methods
+    hasmethod(sites, Tuple{T}) || return false
+    hasmethod(inds, Tuple{NamedTuple{(:at,),T}}) || return false
+    hasmethod(sites, Tuple{NamedTuple{(:at,),T}}) || return false
+    return true
+end
+
 # required methods
 """
     sites(tn)

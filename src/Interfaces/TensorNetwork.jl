@@ -11,6 +11,17 @@ Abstract type for `TensorNetwork`-derived types.
 """
 abstract type AbstractTensorNetwork end
 
+struct TensorNetworkInterface end
+
+# this function should be used just for testing
+function hasinterface(::TensorNetworkInterface, T::Type)
+    # required methods
+    hasmethod(tensors, Tuple{T}) || return false
+    hasmethod(inds, Tuple{T}) || return false
+    hasmethod(copy, Tuple{T}) || return false
+    return true
+end
+
 """
     Wraps(::Type{T}, x)
 
