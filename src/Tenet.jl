@@ -34,9 +34,6 @@ include("Interfaces/Ansatz.jl")
 export lanes, nlanes, haslane, addlane!, rmlane!
 export bonds, nbonds, hasbond, addbond!, rmbond!
 
-include("Interfaces/Form.jl")
-export form, canonize, canonize!, NonCanonical, MixedCanonical, Canonical
-
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, contract!, fuse!
 @compat public @unsafe_region, tryprune!, resetinds!
@@ -99,6 +96,9 @@ export MPS, MPO
 # include("MPS.jl")
 # export MPS, MPO, absorb, absorb!
 # @compat public AbstractMPS, AbstractMPO, defaultorder, check_form
+
+# include("Algorithms/SimpleUpdate.jl")
+# export simple_update!
 
 # reexports from EinExprs
 export einexpr, inds

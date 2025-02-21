@@ -80,10 +80,10 @@ nsites(tn; kwargs...) = sort_nt(values(kwargs), tn)
 
 nsites(::@NamedTuple{}, tn::AbstractTensorNetwork) = nsites((;), tn, Wraps(PluggableMixin, tn))
 nsites(::@NamedTuple{}, tn, ::Yes) = nsites((;), PluggableMixin(tn))
-nsites(::@NamedTuple{}, tn, ::No) = length(sites(tn; kwargs...))
+nsites(::@NamedTuple{}, tn, ::No) = length(sites(tn))
 
 # other kwarg-methods of `nsites` must call `sites` anyway so don't overoptimize
-nsites(kwargs::NamedTuple, tn; kwargs...) = length(sites(kwargs, tn))
+nsites(kwargs::NamedTuple, tn) = length(sites(kwargs, tn))
 
 hassite(tn::AbstractTensorNetwork, s::Site) = hassite(tn, s, Wraps(PluggableMixin, tn))
 hassite(tn::AbstractTensorNetwork, s::Site, ::Yes) = hassite(PluggableMixin(tn), s)

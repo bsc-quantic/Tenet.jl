@@ -2,7 +2,7 @@ using Graphs: add_edge!, add_vertex!
 
 # TODO should we use `PartitionedGraph` here?
 struct AnsatzMixin
-    lattice::Latice
+    lattice::Lattice
     lanemap::Dict{Lane,Tensor}
     bondmap::Dict{Bond,Symbol}
 end
@@ -38,7 +38,7 @@ haslane(mixin::AnsatzMixin, lane) = haskey(mixin.lanemap, lane)
 nbonds(mixin::AnsatzMixin) = length(mixin.bondmap)
 hasbond(mixin::AnsatzMixin, bond) = haskey(mixin.bondmap, bond)
 
-Base.neighbors(mixin::AnsatzMixin, lane::Lane) = neighbors(mixin.lattice, lane)
+Graphs.neighbors(mixin::AnsatzMixin, lane::Lane) = neighbors(mixin.lattice, lane)
 # TODO better way for `neighbors` method on `Bond`?
 
 # mutating methods

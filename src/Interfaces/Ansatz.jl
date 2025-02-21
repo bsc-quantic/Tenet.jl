@@ -86,9 +86,9 @@ haslane(tn, lane, ::No) = lane ∈ lanes(tn)
 
 Return the number of bonds of a Tensor Network.
 """
-hasbond(tn, lane) = hasbond(tn, lane, Wraps(AnsatzMixin, tn))
-hasbond(tn, lane, ::Yes) = hasbond(AnsatzMixin(tn), lane)
-hasbond(tn, lane, ::No) = lane ∈ lanes(tn)
+nbonds(tn, lane) = nbonds(tn, lane, Wraps(AnsatzMixin, tn))
+nbonds(tn, lane, ::Yes) = nbonds(AnsatzMixin(tn), lane)
+nbonds(tn, lane, ::No) = length(bonds(tn))
 
 """
     hasbond(tn, bond)
