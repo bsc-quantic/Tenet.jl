@@ -19,21 +19,42 @@ using Tenet
     end
 end
 
-@testset "copy" begin
-    tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
-    @test parent(tensor) == parent(copy(tensor))
-    @test inds(tensor) == inds(copy(tensor))
+@testset "==" begin
+    a = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+    b = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+    @test a !== b
+    @test a == b
 
-    @test copy(view(tensor, :i => 1)) isa Tensor
-    @test parent(copy(view(tensor, :i => 1))) isa Array
+    c = Tensor(zeros(2, 2, 2), (:i, :j, :not_k))
+    @test a != c
+
+    d = Tensor(zeros(2, 2, 4), (:i, :j, :k))
+    @test a != d
+
+    e = Tensor(ones(2, 2, 2), (:i, :j, :k))
+    @test a != e
+
+    f = Tensor(zeros(2, 2, 2, 2), (:i, :j, :k, :l))
+    @test a != f
 end
 
-@testset "eltype" for T in [Bool, Int, Float64, Complex{Float64}]
+@testset "copy" begin
+    tensor = Tensor(zeros(2, 2, 2), (:i, :j, :k))
+    copied = copy(tensor)
+    @test tensor !== copied
+    @test tensor == copied
+
+    subtensor = view(tensor, :i => 1)
+    copied_subtensor = copy(subtensor)
+    @test copied_subtensor isa Tensor{T,N,Array{T,N}} where {T,N}
+end
+
+@testset "eltype - $T" for T in [Bool, Int, Float64, Complex{Float64}]
     tensor = Tensor(rand(T, 2), [:i])
     @test eltype(tensor) == T
 end
 
-@testset "elsize" for T in [Bool, Int, Float64, Complex{Float64}]
+@testset "elsize - $T" for T in [Bool, Int, Float64, Complex{Float64}]
     tensor = Tensor(rand(T, 2), [:i])
     @test Base.elsize(tensor) == sizeof(T)
 end

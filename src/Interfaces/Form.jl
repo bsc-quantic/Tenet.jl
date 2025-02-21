@@ -43,6 +43,8 @@ Return the canonical form of the Tensor Network.
 """
 function form end
 
+form(::AbstractTensorNetwork) = NonCanonical()
+
 """
     canonize!(tn, form)
 

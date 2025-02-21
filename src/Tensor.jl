@@ -42,11 +42,10 @@ Return the indices of the tensor in the order of the dimensions.
 """
 inds(t::Tensor) = Tuple(t.inds)
 
-function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
-    data = copy(t.data)
-    inds = t.inds
-    return Tensor(data, inds)
-end
+# used internally to avoid over-specialization on `Tuple` due to `inds`
+vinds(t::Tensor) = t.inds
+
+Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N} = Tensor(copy(parent(t)), copy(vinds(t)))
 
 """
     Base.similar(::Tensor{T,N}[, S::Type, dims::Base.Dims{N}; inds])
@@ -96,10 +95,7 @@ Base.isequal(a::Tensor, b::AbstractArray) = false
 function Base.isequal(a::Tensor, b::Tensor)
     issetequal(inds(a), inds(b)) || return false
     perm = __find_index_permutation(inds(a), inds(b))
-    return all(eachindex(IndexCartesian(), a)) do i
-        j = CartesianIndex(Tuple(permute!(collect(Tuple(i)), invperm(perm))))
-        isequal(a[i], b[j])
-    end
+    return isequal(parent(a), PermutedDimsArray(parent(b), perm))
 end
 
 Base.isequal(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = isequal(only(a), only(b))
