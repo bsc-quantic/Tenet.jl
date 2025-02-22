@@ -562,7 +562,7 @@ Return the neighboring [`Tensor`](@ref)s of `tensor` in the Tensor Network.
 If `open=true`, the `tensor` itself is not included in the result.
 """
 function Graphs.neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
-    @argcheck tensor ∈ tn "Tensor not found in TensorNetwork"
+    @argcheck hastensor(tn, tensor) "Tensor not found in TensorNetwork"
     neigh_tensors = mapreduce(∪, inds(tensor)) do index
         tensors(tn; intersects=index)
     end

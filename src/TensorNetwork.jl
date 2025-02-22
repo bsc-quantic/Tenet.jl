@@ -204,7 +204,7 @@ end
 
 ## mutating methods
 function push_inner!(tn::TensorNetwork, tensor::Tensor)
-    tensor ∈ keys(tn.tensormap) && return tn
+    hastensor(tn, tensor) && return tn
 
     # check index sizes if there isn't an active `UnsafeScope` in the Tensor Network
     if isnothing(get_unsafe_scope(tn))
