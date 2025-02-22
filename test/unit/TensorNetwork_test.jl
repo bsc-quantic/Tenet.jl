@@ -225,7 +225,7 @@ end
     copied_tn = copy(tn)
     @test hastensor(copied_tn, tensor)
 
-    @testset "Base.in method" begin
+    @testset "Base.in alias" begin
         tensor1 = Tensor(rand(3, 4), (:i, :j))
         tensor2 = Tensor(rand(4, 5), (:j, :k))
         tn = TensorNetwork([tensor1, tensor2])
@@ -242,12 +242,8 @@ end
     @test hasind(tn, :j)
     @test !hasind(tn, :k)
 
-    @testset "by symbol" begin
-        indices = (:i, :j)
-        tn = TensorNetwork([Tensor(rand(3, 4), indices)])
-
-        # Broadcast not working
-        @test all(∈(tn), indices)
+    @testset "Base.in alias" begin
+        @test :i ∈ tn
     end
 end
 
@@ -259,7 +255,7 @@ end
         Tensor(zeros(5, 6), (:l, :m)),
     ])
 
-    @test size(tn) == Dict((:i => 2, :j => 3, :k => 4, :l => 5, :m => 6))
+    @test size(tn) == Dict([:i => 2, :j => 3, :k => 4, :l => 5, :m => 6])
     @test all([size(tn, :i) == 2, size(tn, :j) == 3, size(tn, :k) == 4, size(tn, :l) == 5, size(tn, :m) == 6])
 end
 
@@ -367,115 +363,6 @@ end
     @test isempty(size(tn))
 
     # TODO test `DeleteEffect` is handled
-end
-
-@testset "getindex" begin
-    t_ij = Tensor(zeros(2, 2), (:i, :j))
-    t_ik = Tensor(zeros(2, 2), (:i, :k))
-    t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
-    t_lm = Tensor(zeros(2, 2), (:l, :m))
-    tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
-
-    @test t_ij === tn[:i, :j]
-    @test t_ik === tn[:i, :k]
-    @test t_ilm === tn[:i, :l, :m]
-    @test t_lm === tn[:l, :m]
-
-    # NOTE although it should throw `KeyError`, it throws `ArgumentError` due to implementation
-    @test_throws ArgumentError tn[:i, :x]
-    @test_throws ArgumentError tn[:i, :j, :k]
-end
-
-@testset "selectdim" begin
-    tn = TensorNetwork([Tensor(zeros(2, 2), (:i, :j))])
-
-    tn_selected = selectdim(tn, :i, 1)
-    @test !hasind(tn_selected, :i)
-
-    tn_selected = selectdim(tn, :i, 1:1)
-    @test hasind(tn_selected, :i)
-    @test size(tn_selected, :i) == 1
-end
-
-@testset "view" begin
-    tn = rand(TensorNetwork, 10, 3; seed=1)
-    targets = inds(tn)[1:3]
-
-    slice = @view tn[[label => 1 for label in targets]...]
-    @test isdisjoint(targets, inds(slice))
-
-    slice = @view tn[[label => 1:1 for label in targets]...]
-    @test targets ⊆ inds(slice)
-end
-
-@testset "contract" begin
-    @testset "by einexpr" begin
-        tn = rand(TensorNetwork, 5, 3)
-        @test contract(tn) isa Tensor
-
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2), (:k, :l, :m))
-        tn = TensorNetwork([A, B])
-
-        ctn = contract(tn)
-        @test ctn isa Tensor
-        @test issetequal([:i, :j, :l, :m], inds(ctn))
-    end
-
-    @testset "by index" begin
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
-        C = Tensor(rand(2, 2, 2), (:n, :o, :p))
-        tn = TensorNetwork([A, B, C])
-
-        ctn = contract(tn, :k)
-        @test ctn isa TensorNetwork
-        @test length(tensors(ctn)) == 2
-        @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(ctn))
-    end
-
-    @testset "hyperindex" begin
-        let
-            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
-            tn_transformed = transform(tn, Tenet.HyperFlatten())
-
-            result = contract(tn, :i)
-            @test issetequal(inds(result), [:a, :b])
-
-            @test contract(tn_transformed) ≈ only(tensors(result))
-        end
-
-        let
-            tn = TensorNetwork([
-                Tensor(ones(2, 2), [:a, :X]),
-                Tensor(ones(2), [:X]),
-                Tensor(ones(2, 2, 2), [:X, :c, :Y]),
-                Tensor(ones(2), [:Y]),
-                Tensor(ones(2, 2, 2), [:Y, :d, :Z]),
-                Tensor(ones(2), [:Z]),
-                Tensor(ones(2, 2, 2), [:Z, :e, :T]),
-                Tensor(ones(2), [:T]),
-                Tensor(ones(2, 2), [:b, :T]),
-            ])
-            tn_transformed = transform(tn, Tenet.HyperFlatten())
-
-            @test contract(tn) ≈ contract(tn_transformed)
-        end
-    end
-end
-
-@testset "contract!" begin
-    @testset "by index" begin
-        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
-        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
-        C = Tensor(rand(2, 2, 2), (:n, :o, :p))
-        tn = TensorNetwork([A, B, C])
-
-        contract!(tn, :k)
-        @test ntensors(tn) == 2
-        @test !hasind(tn, :k)
-        @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(tn))
-    end
 end
 
 @testset "Base.replace!" begin
@@ -630,6 +517,116 @@ end
         @test issetequal(
             inds.(tensors(tn)), [(:A, :P, :L), (:L, :B, :K, :U), (:U, :C, :V, :O), (:O, :D, :J, :N), (:N, :E, :M)]
         )
+    end
+end
+
+# derived methods
+@testset "getindex" begin
+    t_ij = Tensor(zeros(2, 2), (:i, :j))
+    t_ik = Tensor(zeros(2, 2), (:i, :k))
+    t_ilm = Tensor(zeros(2, 2, 2), (:i, :l, :m))
+    t_lm = Tensor(zeros(2, 2), (:l, :m))
+    tn = TensorNetwork([t_ij, t_ik, t_ilm, t_lm])
+
+    @test t_ij === tn[:i, :j]
+    @test t_ik === tn[:i, :k]
+    @test t_ilm === tn[:i, :l, :m]
+    @test t_lm === tn[:l, :m]
+
+    # NOTE although it should throw `KeyError`, it throws `ArgumentError` due to implementation
+    @test_throws ArgumentError tn[:i, :x]
+    @test_throws ArgumentError tn[:i, :j, :k]
+end
+
+@testset "selectdim" begin
+    tn = TensorNetwork([Tensor(zeros(2, 2), (:i, :j))])
+
+    tn_selected = selectdim(tn, :i, 1)
+    @test !hasind(tn_selected, :i)
+
+    tn_selected = selectdim(tn, :i, 1:1)
+    @test hasind(tn_selected, :i)
+    @test size(tn_selected, :i) == 1
+end
+
+@testset "view" begin
+    tn = rand(TensorNetwork, 10, 3; seed=1)
+    targets = inds(tn)[1:3]
+
+    slice = @view tn[[label => 1 for label in targets]...]
+    @test isdisjoint(targets, inds(slice))
+
+    slice = @view tn[[label => 1:1 for label in targets]...]
+    @test targets ⊆ inds(slice)
+end
+
+@testset "contract" begin
+    @testset "by einexpr" begin
+        tn = rand(TensorNetwork, 5, 3)
+        @test contract(tn) isa Tensor
+
+        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+        B = Tensor(rand(2, 2, 2), (:k, :l, :m))
+        tn = TensorNetwork([A, B])
+
+        ctn = contract(tn)
+        @test ctn isa Tensor
+        @test issetequal([:i, :j, :l, :m], inds(ctn))
+    end
+
+    @testset "by index" begin
+        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+        C = Tensor(rand(2, 2, 2), (:n, :o, :p))
+        tn = TensorNetwork([A, B, C])
+
+        ctn = contract(tn, :k)
+        @test ctn isa TensorNetwork
+        @test length(tensors(ctn)) == 2
+        @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(ctn))
+    end
+
+    @testset "hyperindex" begin
+        let
+            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
+            tn_transformed = transform(tn, Tenet.HyperFlatten())
+
+            result = contract(tn, :i)
+            @test issetequal(inds(result), [:a, :b])
+
+            @test contract(tn_transformed) ≈ only(tensors(result))
+        end
+
+        let
+            tn = TensorNetwork([
+                Tensor(ones(2, 2), [:a, :X]),
+                Tensor(ones(2), [:X]),
+                Tensor(ones(2, 2, 2), [:X, :c, :Y]),
+                Tensor(ones(2), [:Y]),
+                Tensor(ones(2, 2, 2), [:Y, :d, :Z]),
+                Tensor(ones(2), [:Z]),
+                Tensor(ones(2, 2, 2), [:Z, :e, :T]),
+                Tensor(ones(2), [:T]),
+                Tensor(ones(2, 2), [:b, :T]),
+            ])
+            tn_transformed = transform(tn, Tenet.HyperFlatten())
+
+            @test contract(tn) ≈ contract(tn_transformed)
+        end
+    end
+end
+
+@testset "contract!" begin
+    @testset "by index" begin
+        A = Tensor(rand(2, 2, 2), (:i, :j, :k))
+        B = Tensor(rand(2, 2, 2, 2), (:k, :l, :m, :n))
+        C = Tensor(rand(2, 2, 2), (:n, :o, :p))
+        tn = TensorNetwork([A, B, C])
+
+        contract!(tn, :k)
+        @test ntensors(tn) == 2
+        @test !hasind(tn, :k)
+        @test issetequal([:i, :j, :l, :m, :n, :o, :p], inds(tn))
     end
 end
 
