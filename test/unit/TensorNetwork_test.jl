@@ -398,7 +398,8 @@ end
     # end
 
     @testset "hyperindex" begin
-        let tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
+        let
+            tn = TensorNetwork([Tensor(ones(2, 2), [:a, :i]), Tensor(ones(2), [:i]), Tensor(ones(2, 2), [:b, :i])])
             tn_transformed = transform(tn, Tenet.HyperFlatten())
 
             result = contract(tn, :i)
@@ -407,7 +408,8 @@ end
             @test contract(tn_transformed) ≈ only(tensors(result))
         end
 
-        let tn = TensorNetwork([
+        let
+            tn = TensorNetwork([
                 Tensor(ones(2, 2), [:a, :X]),
                 Tensor(ones(2), [:X]),
                 Tensor(ones(2, 2, 2), [:X, :c, :Y]),

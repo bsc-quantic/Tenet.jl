@@ -459,11 +459,11 @@ Contract in-place the index `ind` in the Tensor Network.
 """
 contract!(::AbstractTensorNetwork, _)
 
-contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, (i,))
+contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
 function contract!(tn::AbstractTensorNetwork, inds)
     target_tensors = tensors(tn; intersects=inds)
     # TODO calling `contract` like this can give problems on large amount of tensors, because it doesn't call `einexpr`
-    result_tensor = contract(target_tensors...; dims=inds)
+    result_tensor = contract(target_tensors; dims=inds)
     replace!(tn, target_tensors => result_tensor)
     return tn
 end
@@ -590,18 +590,26 @@ Search a contraction path for the given [`AbstractTensorNetwork`](@ref) and retu
 
 See also: [`contract`](@ref).
 """
-function EinExprs.einexpr(tn::AbstractTensorNetwork; optimizer=Greedy, outputs=inds(tn; set=:open), kwargs...)
-    return einexpr(
-        optimizer,
-        sum(
-            [
-                EinExpr(inds(tensor), Dict(index => size(tensor, index) for index in inds(tensor))) for
-                tensor in tensors(tn)
-            ];
-            skip=outputs,
-        );
-        kwargs...,
+function EinExprs.einexpr(
+    tn::AbstractTensorNetwork; optimizer=Greedy(), output=inds(tn; set=:open), outputs=nothing, kwargs...
+)
+    if !isnothing(outputs)
+        Base.depwarn("`outputs` keyword argument is deprecated, use output instead", :einexpr; force=true)
+        output = outputs
+    end
+
+    #! format: off
+    path = SizedEinExpr(
+        EinExpr(
+            output,
+            EinExpr.(Iterators.map(vinds, tensors(tn)))
+        ),
+        Dict(ind => size(tn, ind) for ind in inds(tn))
     )
+    #! format: on
+
+    # don't use `sum(::Vector{EinExpr})`: it's broken and takes x10 more time
+    return einexpr(optimizer, path; kwargs...)
 end
 
 """
@@ -611,19 +619,23 @@ Contract a [`AbstractTensorNetwork`](@ref). If `path` is not specified, the cont
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-contract(tn::AbstractTensorNetwork; kwargs...) = contract(sort_nt(values(kwargs)), tn)
-contract(::@NamedTuple{}, tn::AbstractTensorNetwork) = contract((; optimizer=Greedy()), tn)
-
-function contract(kwargs::NamedTuple{(:optimizer,)}, tn::AbstractTensorNetwork)
-    path = einexpr(tn; optimizer=kwargs.optimizer)
-    return contract(tn; path)
-end
-
-function contract(kwargs::NamedTuple{(:path,)}, tn::AbstractTensorNetwork)
-    length(kwargs.path.args) == 0 && return tn[inds(kwargs.path)...]
-
-    intermediates = map(subpath -> contract(tn; path=subpath), kwargs.path.args)
-    return contract(intermediates...; dims=suminds(kwargs.path))
+function contract(tn::AbstractTensorNetwork; optimizer=Greedy(), path=einexpr(tn; optimizer))
+    cache = Dict{Vector{Symbol},Tensor}(vinds(tensor) => tensor for tensor in tensors(tn))
+    for intermediate in Branches(path)
+        if EinExprs.nargs(intermediate) == 1
+            a = head(only(args(intermediate)))
+            cache[head(intermediate)] = contract(cache[a]; dims=suminds(intermediate))
+            head(intermediate) != a && delete!(cache, a)
+        elseif EinExprs.nargs(intermediate) == 2
+            a, b = head.(args(intermediate))
+            cache[head(intermediate)] = contract(cache[a], cache[b]; dims=suminds(intermediate))
+            head(intermediate) != a && delete!(cache, a)
+            head(intermediate) != b && delete!(cache, b)
+        else
+            throw(ArgumentError("einexpr path must have 1 or 2 arguments"))
+        end
+    end
+    return cache[head(path)]
 end
 
 function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}

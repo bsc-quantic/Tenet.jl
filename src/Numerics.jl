@@ -106,7 +106,25 @@ contract(a::Union{T,AbstractArray{T,0}}, b::Tensor{T}) where {T} = contract(Tens
 contract(a::Tensor{T}, b::Union{T,AbstractArray{T,0}}) where {T} = contract(a, Tensor(b))
 contract(a::AbstractArray{<:Any,0}, b::AbstractArray{<:Any,0}) = only(contract(Tensor(a), Tensor(b)))
 contract(a::Number, b::Number) = contract(fill(a), fill(b))
-contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs...), tensors)
+
+contract(tensors::Tensor...; kwargs...) = contract(collect(tensors); kwargs...)
+
+function contract(tensors::Vector{Tensor}; dims=nothing, out=nothing, kwargs...)
+    # shortcuts
+    if length(tensors) == 1
+        a = only(tensors)
+        return contract(a; dims=isnothing(dims) ? nonunique(inds(a)) : dims, out)
+    elseif length(tensors) == 2
+        a, b = tensors
+        return contract(a, b; dims=isnothing(dims) ? inds(a) ∩ inds(b) : dims, out)
+    end
+
+    tn = TensorNetwork(tensors)
+    out = isnothing(out) ? inds(tn; set=:open) : out
+    out = isnothing(dims) ? out : setdiff(out, dims)
+    path = einexpr(tn; output=out, kwargs...)
+    return contract(tn; path)
+end
 
 """
     contract!(c::Tensor, a::Tensor, b::Tensor)
