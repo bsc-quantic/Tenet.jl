@@ -642,7 +642,16 @@ function contract(tn::AbstractTensorNetwork; optimizer=Greedy(), path=einexpr(tn
             head(intermediate) != a && delete!(cache, a)
             head(intermediate) != b && delete!(cache, b)
         else
-            throw(ArgumentError("einexpr path must have 1 or 2 arguments"))
+            # TODO we should fix this in EinExprs, this is a temporal fix meanwhile
+            @warn "Found a contraction with $(EinExprs.nargs(intermediate)) arguments... Using reduction which might be sub-optimal"
+            target_tensors = map(EinExprs.args(intermediate)) do branch
+                tensor = cache[head(branch)]
+                head(intermediate) != head(branch) && delete!(cache, head(branch))
+                return tensor
+            end
+            cache[head(intermediate)] = foldl(target_tensors) do a, b
+                contract(a, b; dims=suminds(intermediate))
+            end
         end
     end
     return cache[head(path)]
