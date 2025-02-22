@@ -422,7 +422,25 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,Abstrac
     return tn
 end
 
+# replace collection of tensors with a tensor (called on `contract!`)
+function Base.replace!(tn::AbstractTensorNetwork, @nospecialize(old_new::Pair{<:Vector{<:Tensor},<:Tensor}))
+    old, new = old_new
+    @argcheck all(∈(tn), old)
+    @argcheck new ∉ tn
+    @argcheck inds(new) ⊆ collect(Iterators.flatmap(inds, old))
+    # TODO check open and inner inds
+
+    for tensor in old
+        delete_inner!(tn, tensor)
+    end
+    push_inner!(tn, new)
+    handle!(tn, ReplaceEffect(old_new))
+
+    return tn
+end
+
 Base.replace!(tn::AbstractTensorNetwork) = tn
+Base.replace!(tn::AbstractTensorNetwork, old_new::Pair) = throw(MethodError(replace!, (tn, old_new)))
 @inline Base.replace!(tn::T, old_new::P...) where {T<:AbstractTensorNetwork,P<:Pair} = replace!(tn, old_new)
 @inline Base.replace!(tn::AbstractTensorNetwork, old_new::Dict) = replace!(tn, collect(old_new))
 
