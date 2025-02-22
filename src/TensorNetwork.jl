@@ -164,20 +164,32 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn::TensorNetwork)
     if kwargs.set === :all
         collect(keys(tn.indexmap))
     elseif kwargs.set === :open
-        map(first, Iterators.filter(((_, v),) -> length(v) == 1, tn.indexmap))
+        # optimized by just considering the inds whose `tn.indexmap[ind]` has length == 1
+        return filter(tn.indexmap) do (ind, vs)
+            length(vs) > 1 && return false
+            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) == 1
+        end |> keys |> collect
     elseif kwargs.set === :inner
-        map(first, Iterators.filter(((_, v),) -> length(v) >= 2, tn.indexmap))
+        # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 2
+        return filter(tn.indexmap) do (ind, vs)
+            length(vs) >= 2 && return true
+            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 2
+        end |> keys |> collect
     elseif kwargs.set === :hyper
-        map(first, Iterators.filter(((_, v),) -> length(v) >= 3, tn.indexmap))
+        # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 3
+        return filter(tn.indexmap) do (ind, vs)
+            length(vs) >= 3 && return true
+            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 3
+        end |> keys |> collect
     else
         throw(ArgumentError("""
-          Unknown query: set=$(kwargs.set)
-          Possible options are:
-            - :all (default)
-            - :open
-            - :inner
-            - :hyper
-          """))
+        Unknown query: set=$(kwargs.set)
+        Possible options are:
+          - :all (default)
+          - :open
+          - :inner
+          - :hyper
+        """))
     end
 end
 
