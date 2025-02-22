@@ -3,6 +3,7 @@
 using Base: AbstractVecOrTuple
 using Graphs: Graphs
 using EinExprs
+using ArgCheck
 
 """
     AbstractTensorNetwork
@@ -142,7 +143,7 @@ Base.size(tn::AbstractTensorNetwork, i) = size(tn, i, Wraps(TensorNetwork, tn))
 Base.size(tn::AbstractTensorNetwork, i, ::Yes) = size(TensorNetwork(tn), i)
 function Base.size(tn::AbstractTensorNetwork, i, ::No)
     tensor = findfirst(t -> i ∈ inds(tensor), tensors(tn))
-    isnothing(tensor) && throw(ArgumentError("Index $i not found in the Tensor Network"))
+    @argcheck !isnothing(tensor) "Index $i not found in the Tensor Network"
     return size(tensor, i)
 end
 
@@ -203,7 +204,14 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn::AbstractTensorNetwork, ::No)
         histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
         return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
     else
-        error("Invalid set = $set")
+        throw(ArgumentError("""
+          Unknown query: set=$(kwargs.set)
+          Possible options are:
+            - :all (default)
+            - :open
+            - :inner
+            - :hyper
+          """))
     end
 end
 
@@ -339,9 +347,9 @@ Base.replace!(::AbstractTensorNetwork, ::Any...)
 # rename index
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
     old, new = old_new
-    old ∈ tn || throw(ArgumentError("index $old does not exist"))
+    @argcheck old ∈ tn "index $old does not exist"
     old == new && return tn
-    new ∉ tn || throw(ArgumentError("index $new is already present"))
+    @argcheck new ∉ tn "index $new is already present"
     # NOTE `copy` because collection underneath is mutated
     for old_tensor in copy(tensors(tn; contains=old))
         # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
@@ -360,7 +368,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
     old_tensor, new_tensor = old_new
     old_tensor === new_tensor && return tn
 
-    issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
+    @argcheck issetequal(inds(new_tensor), inds(old_tensor)) "replacing tensor indices don't match"
 
     push_inner!(tn, new_tensor)
     delete_inner!(tn, old_tensor)
@@ -375,14 +383,12 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTup
     allinds = inds(tn)
 
     # condition: from ⊆ allinds
-    from ⊆ allinds || throw(ArgumentError("set of old indices must be a subset of current indices"))
+    @argcheck from ⊆ allinds "set of old indices must be a subset of current indices"
 
     # condition: from \ to ∩ allinds = ∅
-    isdisjoint(setdiff(to, from), allinds) || throw(
-        ArgumentError(
-            "new indices must be either a element of the old indices or not an element of the TensorNetwork's indices",
-        ),
-    )
+    @argcheck isdisjoint(setdiff(to, from), allinds) """
+        new indices must be either a element of the old indices or not an element of the TensorNetwork's indices
+        """
 
     overlap = from ∩ to
     if isempty(overlap)
@@ -407,10 +413,10 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Base.AbstractVecOrTup
 end
 
 # replace tensor with a TensorNetwork
-function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,AbstractTensorNetwork})
+function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:AbstractTensorNetwork})
     old, new = old_new
-    issetequal(inds(new; set=:open), inds(old)) || throw(ArgumentError("indices don't match"))
-    !isdisjoint(inds(new; set=:inner), inds(tn)) || throw(ArgumentError("overlapping inner indices"))
+    @argcheck issetequal(inds(new; set=:open), inds(old)) "indices don't match"
+    @argcheck isdisjoint(inds(new; set=:inner), inds(tn)) "overlapping inner indices"
 
     # manually perform `append!(tn, new)` to avoid calling `handle!` several times
     for tensor in tensors(new)
@@ -556,7 +562,7 @@ Return the neighboring [`Tensor`](@ref)s of `tensor` in the Tensor Network.
 If `open=true`, the `tensor` itself is not included in the result.
 """
 function Graphs.neighbors(tn::AbstractTensorNetwork, tensor::Tensor; open::Bool=true)
-    @assert tensor ∈ tn "Tensor not found in TensorNetwork"
+    @argcheck tensor ∈ tn "Tensor not found in TensorNetwork"
     neigh_tensors = mapreduce(∪, inds(tensor)) do index
         tensors(tn; intersects=index)
     end
@@ -571,7 +577,7 @@ Return the neighboring indices of `ind` in the Tensor Network.
 If `open=true`, the `ind` itself is not included in the result.
 """
 function Graphs.neighbors(tn::AbstractTensorNetwork, i::Symbol; open::Bool=true)
-    @assert i ∈ tn "Index $i not found in TensorNetwork"
+    @argcheck i ∈ tn "Index $i not found in TensorNetwork"
     neigh_inds = mapreduce(inds, ∪, tensors(tn; intersects=i))
     open && filter(x -> x !== i, neigh_inds)
     return neigh_inds
