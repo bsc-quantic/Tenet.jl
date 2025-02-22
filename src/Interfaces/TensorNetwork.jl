@@ -428,6 +428,10 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Abstr
     return tn
 end
 
+function Base.replace!(tn::AbstractTensorNetwork, @nospecialize(old_new::Pair{<:Tensor,<:Vector{<:Tensor}}))
+    replace!(tn, old_new.first => TensorNetwork(old_new.second))
+end
+
 # replace collection of tensors with a tensor (called on `contract!`)
 function Base.replace!(tn::AbstractTensorNetwork, @nospecialize(old_new::Pair{<:Vector{<:Tensor},<:Tensor}))
     old, new = old_new
