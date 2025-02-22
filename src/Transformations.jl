@@ -117,11 +117,11 @@ end
 Preemptively contract tensors whose result doesn't increase in size.
 """
 @kwdef struct ContractSimplification <: Transformation
-    minimize::Symbol = :length
+    minimize::Symbol = :order
     recursive::Bool = true
 
     function ContractSimplification(minimize::Symbol, recursive::Bool=true)
-        @assert minimize in (:length, :rank)
+        @assert minimize in (:length, :rank, :order)
         return new(minimize, recursive)
     end
 end
@@ -140,7 +140,7 @@ function transform!(tn::TensorNetwork, config::ContractSimplification)
             tensor in candidate_tensors
         ])
 
-        winner = if config.minimize == :rank
+        winner = if config.minimize == :rank || config.minimize == :order
             ndims(result) <= maximum(ndims, candidate_tensors)
         else # :length
             removedsize(result) >= 0
