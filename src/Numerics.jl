@@ -109,7 +109,7 @@ contract(a::Number, b::Number) = contract(fill(a), fill(b))
 
 contract(tensors::Tensor...; kwargs...) = contract(collect(tensors); kwargs...)
 
-function contract(tensors::Vector{Tensor}; dims=nothing, out=nothing, kwargs...)
+function contract(tensors::Vector{<:Tensor}; dims=nothing, out=nothing, kwargs...)
     # shortcuts
     if length(tensors) == 1
         a = only(tensors)
