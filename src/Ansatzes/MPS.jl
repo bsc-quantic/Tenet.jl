@@ -60,8 +60,8 @@ defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
 defaultorder(::Type{<:AbstractMPO}) = (:o, :i, :l, :r)
 
 MPS(arrays; form::Form=NonCanonical(), kwargs...) = MPS(form, arrays; kwargs...)
-function MPS(arrays::Vector{<:AbstractArray}, λ; form::Form=Canonical(), kwargs...)
-    return MPS(form, arrays, λ; kwargs...)
+function MPS(arrays::Vector{<:AbstractArray}, λ; kwargs...)
+    return MPS(Canonical(), arrays, λ; kwargs...)
 end
 
 # Tensor Network interface
