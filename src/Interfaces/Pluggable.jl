@@ -11,6 +11,21 @@ function hasinterface(::PluggableInterface, T::Type)
     return true
 end
 
+abstract type PluggableTrait end
+struct IsPluggable end
+struct WrapsPluggable end
+struct NotPluggable end
+
+function trait(::PluggableInterface, ::T) where {T}
+    if hasinterface(PluggableInterface(), T)
+        return IsPluggable()
+    elseif hasmethods(unwrap, Tuple{PluggableInterface,T})
+        return WrapsPluggable()
+    else
+        return NotPluggable()
+    end
+end
+
 # required methods
 """
     sites(tn)
@@ -30,9 +45,9 @@ Returns the sites of the Tensor Network.
 """
 sites(::@NamedTuple{}, tn::AbstractTensorNetwork)
 
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork) = sites((;), tn, Wraps(PluggableMixin, tn))
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::Yes) = sites(PluggableMixin(tn))
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::No) = throw(MethodError(sites, (tn,)))
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork) = sites((;), tn, trait(PluggableInterface(), tn))
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::WrapsPluggable) = sites(unwrap(PluggableInterface(), tn))
+sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::NotPluggable) = throw(MethodError(sites, (tn,)))
 
 """
     inds(tn; at::Site)

@@ -23,12 +23,20 @@ function hasinterface(::TensorNetworkInterface, T::Type)
     return true
 end
 
-"""
-    Wraps(::Type{T}, x)
+abstract type TensorNetworkTrait end
+struct IsTensorNetwork <: TensorNetworkTrait end
+struct WrapsTensorNetwork <: TensorNetworkTrait end
+struct NotTensorNetwork <: TensorNetworkTrait end
 
-Return `Yes()` if the `x` wraps a `T` and `No()` otherwise.
-"""
-Base.@nospecializeinfer Wraps(@nospecialize(_::Type), @nospecialize(x)) = No()
+function trait(::TensorNetworkInterface, ::T) where {T}
+    if hasinterface(TensorNetworkInterface(), T)
+        return IsTensorNetwork()
+    elseif hasmethod(unwrap, Tuple{TensorNetworkInterface,T})
+        return WrapsTensorNetwork()
+    else
+        NotTensorNetwork()
+    end
+end
 
 # required methods
 """
@@ -36,11 +44,11 @@ Base.@nospecializeinfer Wraps(@nospecialize(_::Type), @nospecialize(x)) = No()
 
 Return a list of the [`Tensor`](@ref)s in the Tensor Network.
 """
-tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
+tensors(tn; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
-tensors(::@NamedTuple{}, tn::AbstractTensorNetwork) = tensors((;), tn, Wraps(TensorNetwork, tn))
-tensors(::@NamedTuple{}, tn::AbstractTensorNetwork, ::Yes) = tensors((;), TensorNetwork(tn))
-tensors(::@NamedTuple{}, tn::AbstractTensorNetwork, ::No) = throw(MethodError(tensors, ((;), tn)))
+tensors(::@NamedTuple{}, tn) = tensors((;), tn, trait(TensorNetworkInterface(), tn))
+tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface, tn))
+tensors(::@NamedTuple{}, tn, _) = throw(MethodError(tensors, ((;), tn)))
 
 """
     inds(tn; kwargs...)
@@ -49,8 +57,8 @@ Return the indices in the Tensor Network.
 
 See also: [`tensors`](@ref)
 """
-inds(tn::AbstractTensorNetwork; kwargs...) = inds(sort_nt(values(kwargs)), tn)
-inds(::@NamedTuple{}, tn::AbstractTensorNetwork) = inds((; set=:all), tn)
+inds(tn; kwargs...) = inds(sort_nt(values(kwargs)), tn)
+inds(::@NamedTuple{}, tn) = inds((; set=:all), tn)
 
 """
     copy(tn::AbstractTensorNetwork)
@@ -60,7 +68,7 @@ Return a _shallow_ copy of the Tensor Network; i.e. a new Tensor Network object 
 This method is used whenever a copy of the Tensor Network is needed, but want to save memory.
 Keep in mind that [`Tensor`](@ref) is a immutable type, but it's data can be mutable.
 
-If you want to mutate the data of a [`Tensor`](@ref) without affecting the original, use `replace!` as is much more memory efficient.
+If you want to mutate the data of a [`Tensor`](@ref) without affecting the original, use `replace!` as it is more memory efficient.
 """
 Base.copy(tn::AbstractTensorNetwork)
 
@@ -72,9 +80,12 @@ Return `true` if [`Tensor`](@ref) `tensor` is in the Tensor Network.
 
 See also: [`hasind`](@ref)
 """
-hastensor(tn::AbstractTensorNetwork, i::Tensor) = hastensor(tn, i, Wraps(TensorNetwork, tn))
-hastensor(tn::AbstractTensorNetwork, i::Tensor, ::Yes) = hastensor(TensorNetwork(tn), i)
-hastensor(tn::AbstractTensorNetwork, i::Tensor, ::No) = i ∈ tensors(tn)
+hastensor(tn, tensor) = hastensor(tn, tensor, trait(TensorNetworkInterface(), tn))
+hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetwork(), tn), tensor)
+function hastensor(tn, tensor, _)
+    @debug "Falling back to default `hastensor` method"
+    tensor ∈ tensors(tn)
+end
 
 """
     hasind(tn, i)
@@ -83,9 +94,12 @@ Return `true` if index `i` is in the Tensor Network.
 
 See also: [`hastensor`](@ref)
 """
-hasind(tn::AbstractTensorNetwork, i::Symbol) = hasind(tn, i, Wraps(TensorNetwork, tn))
-hasind(tn::AbstractTensorNetwork, i::Symbol, ::Yes) = hasind(TensorNetwork(tn), i)
-hasind(tn::AbstractTensorNetwork, i::Symbol, ::No) = i ∈ inds(tn)
+hasind(tn, i) = hasind(tn, i, trait(TensorNetworkInterface(), tn))
+hasind(tn, i, ::WrapsTensorNetwork) = hasind(unwrap(TensorNetworkInterface(), tn), i)
+function hasind(tn, i, _)
+    @debug "Falling back to default `hasind` method"
+    i ∈ inds(tn)
+end
 
 """
     ntensors(tn::AbstractTensorNetwork)
@@ -94,13 +108,16 @@ Return the number of tensors in the `TensorNetwork`. It accepts the same keyword
 
 See also: [`ninds`](@ref)
 """
-ntensors(tn::AbstractTensorNetwork; kwargs...) = ntensors(values(kwargs), tn)
-ntensors(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(tensors(kwargs, tn))
+ntensors(tn; kwargs...) = ntensors(values(kwargs), tn)
+ntensors(kwargs::NamedTuple, tn) = length(tensors(kwargs, tn))
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
-ntensors(::@NamedTuple{}, tn::AbstractTensorNetwork) = ntensors((;), tn, Wraps(TensorNetwork, tn))
-ntensors(::@NamedTuple{}, tn::AbstractTensorNetwork, ::Yes) = ntensors(TensorNetwork(tn))
-ntensors(::@NamedTuple{}, tn::AbstractTensorNetwork, ::No) = length(tensors(tn))
+ntensors(::@NamedTuple{}, tn) = ntensors((;), tn, trait(TensorNetworkInterface(), tn))
+ntensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ntensors(unwrap(TensorNetworkInterface(), tn))
+function ntensors(::@NamedTuple{}, tn, _)
+    @debug "Falling back to default `ntensors` method"
+    length(tensors(tn))
+end
 
 """
     ninds(tn::TensorNetwork; kwargs...)
@@ -109,22 +126,25 @@ Return the number of indices in the `TensorNetwork`. It accepts the same keyword
 
 See also: [`ntensors`](@ref)
 """
-ninds(tn::AbstractTensorNetwork; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
+ninds(tn; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
-ninds(::@NamedTuple{}, tn::AbstractTensorNetwork) = ninds(@NamedTuple{}(), tn, Wraps(TensorNetwork, tn))
-ninds(::@NamedTuple{}, tn::AbstractTensorNetwork, ::Yes) = ninds(@NamedTuple{}(), TensorNetwork(tn))
-ninds(::@NamedTuple{}, tn::AbstractTensorNetwork, ::No) = ninds(@NamedTuple{}(), TensorNetwork(tn))
-ninds(kwargs::NamedTuple, tn::AbstractTensorNetwork) = length(inds(kwargs, tn))
+ninds(::@NamedTuple{}, tn) = ninds(@NamedTuple{}(), tn, trait(TensorNetworkInterface(), tn))
+ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds(@NamedTuple{}(), unwrap(TensorNetworkInterface(), tn))
+function ninds(kwargs::NamedTuple, tn)
+    @debug "Falling back to default `ninds` method"
+    length(inds(kwargs, tn))
+end
 
 """
     size(tn::AbstractTensorNetwork)
 
 Return a dictionary with the indices as keys and their size as values.
 """
-Base.size(tn::AbstractTensorNetwork) = size(tn, Wraps(TensorNetwork, tn))
-Base.size(tn::AbstractTensorNetwork, ::Yes) = size(TensorNetwork(tn))
-function Base.size(tn::AbstractTensorNetwork, ::No)
+Base.size(tn::AbstractTensorNetwork) = size(tn, trait(TensorNetworkInterface(), tn))
+Base.size(tn::AbstractTensorNetwork, ::WrapsTensorNetwork) = size(unwrap(TensorNetworkInterface(), tn))
+function Base.size(tn::AbstractTensorNetwork, ::TensorNetworkTrait)
+    @debug "Falling back to default `size` method"
     sizes = Dict{Symbol,Int}()
     for tensor in tensors(tn)
         for ind in inds(tensor)
@@ -139,9 +159,10 @@ end
 
 Return the size of index `i` in the Tensor Network.
 """
-Base.size(tn::AbstractTensorNetwork, i) = size(tn, i, Wraps(TensorNetwork, tn))
-Base.size(tn::AbstractTensorNetwork, i, ::Yes) = size(TensorNetwork(tn), i)
-function Base.size(tn::AbstractTensorNetwork, i, ::No)
+Base.size(tn::AbstractTensorNetwork, i) = size(tn, i, trait(TensorNetworkInterface(), tn))
+Base.size(tn::AbstractTensorNetwork, i, ::Yes) = size(unwrap(TensorNetworkInterface(), tn), i)
+function Base.size(tn::AbstractTensorNetwork, i, ::TensorNetworkTrait)
+    @debug "Falling back to default `size(tn, i)` method"
     tensor = findfirst(t -> i ∈ inds(tensor), tensors(tn))
     @argcheck !isnothing(tensor) "Index $i not found in the Tensor Network"
     return size(tensor, i)
@@ -153,12 +174,17 @@ end
 
 Return the tensors containing **all** the given indices.
 """
-tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork) = tensors(kwargs, tn, Wraps(TensorNetwork, tn))
-tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork, ::Yes) = tensors(kwargs, TensorNetwork(tn))
-function tensors(kwargs::NamedTuple{(:contains,)}, tn::AbstractTensorNetwork, ::No)
+tensors(kwargs::NamedTuple{(:contains,)}, tn) = tensors(kwargs, tn, trait(TensorNetworkInterface(), tn))
+
+function tensors(kwargs::NamedTuple{(:contains,)}, tn, ::WrapsTensorNetwork)
+    tensors(kwargs, unwrap(TensorNetworkInterface(), tn))
+end
+
+function tensors(kwargs::NamedTuple{(:contains,)}, tn, _)
     tensors((; contains=kwargs.contains), tn, No())
 end
-function tensors(kwargs::@NamedTuple{contains::AbstractVecOrTuple{Symbol}}, tn::AbstractTensorNetwork, ::No)
+
+function tensors(kwargs::@NamedTuple{contains::AbstractVecOrTuple{Symbol}}, tn, _)
     return filter(⊇(kwargs.contains) ∘ inds, tensors(tn))
 end
 
@@ -168,10 +194,11 @@ end
 
 Return the tensors intersecting with **at least one** of the given indices.
 """
-function tensors(kwargs::@NamedTuple{intersects::T}, tn::AbstractTensorNetwork) where {T<:AbstractVecOrTuple{Symbol}}
+function tensors(kwargs::@NamedTuple{intersects::T}, tn) where {T<:AbstractVecOrTuple{Symbol}}
     return filter(t -> !isdisjoint(inds(t), kwargs.intersects), tensors(tn))
 end
-function tensors(kwargs::@NamedTuple{intersects::Symbol}, tn::AbstractTensorNetwork)
+
+function tensors(kwargs::@NamedTuple{intersects::Symbol}, tn)
     tensors(tn; intersects=[kwargs.intersects])
 end
 
@@ -189,9 +216,13 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-inds(kwargs::@NamedTuple{set::Symbol}, tn::AbstractTensorNetwork) = inds(kwargs, tn, Wraps(TensorNetwork, tn))
-inds(kwargs::NamedTuple{(:set,)}, tn::AbstractTensorNetwork, ::Yes) = inds(kwargs, TensorNetwork(tn))
-function inds(kwargs::@NamedTuple{set::Symbol}, tn::AbstractTensorNetwork, ::No)
+function inds(kwargs::@NamedTuple{set::Symbol}, tn)
+    inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+end
+
+inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+
+function inds(kwargs::@NamedTuple{set::Symbol}, tn, _)
     if kwargs.set === :all
         return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
     elseif kwargs.set === :open
@@ -218,9 +249,9 @@ end
 """
     inds(tn; parallelto)
 
-Return the indices parallel to an index in the [`AbstractTensorNetwork`](@ref).
+Return the indices parallel to an index in the Tensor Network.
 """
-function inds(kwargs::NamedTuple{(:parallelto,)}, tn::AbstractTensorNetwork)
+function inds(kwargs::NamedTuple{(:parallelto,)}, tn)
     candidates = filter!(!=(kwargs.parallelto), collect(mapreduce(inds, ∩, tensors(tn; contains=kwargs.parallelto))))
     return filter(candidates) do i
         length(tensors(tn; contains=i)) == length(tensors(tn; contains=kwargs.parallelto))
@@ -229,45 +260,49 @@ end
 
 # required mutating methods
 """
-    push_inner!(tn::AbstractTensorNetwork, tensor)
+    push_inner!(tn, tensor)
 
 Add a [`Tensor`](@ref) to the Tensor Network. This method is used by the [`push!`] method.
 A user should not call this method directly.
 """
 function push_inner! end
 
-push_inner!(tn::AbstractTensorNetwork, tensor) = push_inner!(tn, tensor, Wraps(TensorNetwork, tn))
-push_inner!(tn::AbstractTensorNetwork, tensor, ::Yes) = push_inner!(TensorNetwork(tn), tensor)
-push_inner!(tn::AbstractTensorNetwork, tensor, ::No) = throw(MethodError(push_inner!, (tn, tensor)))
+push_inner!(tn, tensor) = push_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
+push_inner!(tn, tensor, ::WrapsTensorNetwork) = push_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
+push_inner!(tn, tensor, _) = throw(MethodError(push_inner!, (tn, tensor)))
 
 """
-    delete_inner!(tn::AbstractTensorNetwork, tensor)
+    delete_inner!(tn, tensor)
 
 Remove a [`Tensor`](@ref) from the Tensor Network. This method is used by the [`delete!`] method.
 A user should not call this method directly.
 """
 function delete_inner! end
 
-delete_inner!(tn::AbstractTensorNetwork, tensor) = delete_inner!(tn, tensor, Wraps(TensorNetwork, tn))
-delete_inner!(tn::AbstractTensorNetwork, tensor, ::Yes) = delete_inner!(TensorNetwork(tn), tensor)
-delete_inner!(tn::AbstractTensorNetwork, tensor, ::No) = throw(MethodError(delete_inner!, (tn, tensor)))
+delete_inner!(tn, tensor) = delete_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
+delete_inner!(tn, tensor, ::WrapsTensorNetwork) = delete_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
+delete_inner!(tn, tensor, _) = throw(MethodError(delete_inner!, (tn, tensor)))
 
 """
-    contract_inner!(tn::AbstractTensorNetwork, ind)
+    contract_inner!(tn, ind)
 
 Contract in-place the index `ind` in the Tensor Network. This method is used by the [`contract!`] method.
 A user should not call this method directly.
 """
 function contract_inner! end
 
-contract_inner!(tn::AbstractTensorNetwork, tensor) = contract_inner!(tn, tensor, Wraps(TensorNetwork, tn))
-contract_inner!(tn::AbstractTensorNetwork, tensor, ::Yes) = contract_inner!(TensorNetwork(tn), tensor)
-contract_inner!(tn::AbstractTensorNetwork, tensor, ::No) = throw(MethodError(contract_inner!, (tn, tensor)))
+contract_inner!(tn, tensor) = contract_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
+
+function contract_inner!(tn, tensor, ::WrapsTensorNetwork)
+    contract_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
+end
+
+contract_inner!(tn, tensor, _) = throw(MethodError(contract_inner!, (tn, tensor)))
 
 # NOTE not really required to be in the interface, but needed to dispatch if `tn` wraps a `TensorNetwork`
-tryprune!(tn::AbstractTensorNetwork, ind) = tryprune!(tn, ind, Wraps(TensorNetwork, tn))
-tryprune!(tn::AbstractTensorNetwork, ind, ::Yes) = tryprune!(TensorNetwork(tn), ind)
-tryprune!(::AbstractTensorNetwork, _, ::No) = nothing
+tryprune!(tn, ind) = tryprune!(tn, ind, trait(TensorNetworkInterface(), tn))
+tryprune!(tn, ind, ::WrapsTensorNetwork) = tryprune!(unwrap(TensorNetworkInterface(), tn), ind)
+tryprune!(_, _, _) = nothing
 
 # derived mutating methods
 """
@@ -467,10 +502,10 @@ end
 
 Contract in-place the index `ind` in the Tensor Network.
 """
-contract!(::AbstractTensorNetwork, _)
+function contract! end
 
-contract!(tn::AbstractTensorNetwork, i::Symbol) = contract!(tn, [i])
-function contract!(tn::AbstractTensorNetwork, inds)
+contract!(tn, i::Symbol) = contract!(tn, [i])
+function contract!(tn, inds)
     target_tensors = tensors(tn; intersects=inds)
     # TODO calling `contract` like this can give problems on large amount of tensors, because it doesn't call `einexpr`
     result_tensor = contract(target_tensors; dims=inds)
@@ -482,7 +517,7 @@ end
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
-contract(tn::AbstractTensorNetwork, i; kwargs...) = contract!(copy(tn), i; kwargs...)
+contract(tn, i; kwargs...) = contract!(copy(tn), i; kwargs...)
 
 @inline Base.in(i::Symbol, tn::AbstractTensorNetwork) = hasind(tn, i)
 @inline Base.in(tensor::Tensor, tn::AbstractTensorNetwork) = hastensor(tn, tensor)
@@ -494,7 +529,7 @@ Base.eltype(tn::AbstractTensorNetwork) = promote_type(eltype.(tensors(tn))...)
 
 Return a list of the arrays of in the Tensor Network. It is equivalent to `parent.(tensors(tn; kwargs...))`.
 """
-arrays(tn::AbstractTensorNetwork; kwargs...) = parent.(tensors(tn; kwargs...))
+arrays(tn; kwargs...) = parent.(tensors(tn; kwargs...))
 
 """
     Base.collect(tn::AbstractTensorNetwork)
@@ -623,13 +658,13 @@ function EinExprs.einexpr(
 end
 
 """
-    contract(tn::AbstractTensorNetwork; optimizer=Greedy(), path=einexpr(tn))
+    contract(tn; optimizer=Greedy(), path=einexpr(tn))
 
-Contract a [`AbstractTensorNetwork`](@ref). If `path` is not specified, the contraction order will be computed by [`einexpr`](@ref).
+Contract a Tensor Network. If `path` is not specified, the contraction order will be computed by [`einexpr`](@ref).
 
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
-function contract(tn::AbstractTensorNetwork; optimizer=Greedy(), path=einexpr(tn; optimizer))
+function contract(tn; optimizer=Greedy(), path=einexpr(tn; optimizer))
     cache = Dict{Vector{Symbol},Tensor}(vinds(tensor) => tensor for tensor in tensors(tn))
     for intermediate in Branches(path)
         if EinExprs.nargs(intermediate) == 1
