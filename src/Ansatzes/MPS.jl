@@ -10,24 +10,28 @@ abstract type AbstractMPS <: AbstractMPO end
 
 A Matrix Product State [`Ansatz`](@ref) Tensor Network.
 """
-mutable struct MPS <: AbstractMPS
+mutable struct MatrixProductState <: AbstractMPS
     const tn::TensorNetwork
-    const pluggable::Pluggable
+    const pluggable::PluggableMixin
     const ansatz::AnsatzMixin
     form::Form
 end
+
+const MPS = MatrixProductState
 
 """
     MPO <: AbstractMPO
 
 A Matrix Product Operator (MPO) [`Ansatz`](@ref) Tensor Network.
 """
-mutable struct MPO <: AbstractMPO
+mutable struct MatrixProductOperator <: AbstractMPO
     const tn::TensorNetwork
-    const pluggable::Pluggable
+    const pluggable::PluggableMixin
     const ansatz::AnsatzMixin
     form::Form
 end
+
+const MPO = MatrixProductOperator
 
 # mutable struct MPDO <: AbstractMPO
 #     const tn::TensorNetwork
@@ -61,20 +65,20 @@ function MPS(arrays::Vector{<:AbstractArray}, λ; form::Form=Canonical(), kwargs
 end
 
 # Tensor Network interface
-Wraps(::Type{TensorNetwork}, ::Union{MPS,MPO}) = Yes()
-TensorNetwork(::Union{MPS,MPO}) = tn
+trait(::TensorNetworkInterface, ::Union{MPS,MPO}) = WrapsTensorNetwork()
+unwrap(::TensorNetworkInterface, tn::Union{MPS,MPO}) = tn.tn
 
 function Base.copy(tn::T) where {T<:Union{MPS,MPO}}
     T(copy(TensorNetwork(tn)), copy(PluggableMixin(tn)), copy(AnsatzMixin(tn)), form(tn))
 end
 
 # Pluggable interface
-Wraps(::Type{PluggableMixin}, ::Union{MPS,MPO}) = Yes()
-PluggableMixin(tn::Union{MPS,MPO}) = tn.pluggable
+trait(::PluggableInterface, ::Union{MPS,MPO}) = WrapsPluggable()
+unwrap(::PluggableInterface, tn::Union{MPS,MPO}) = tn.pluggable
 
 # Ansatz interface
-Wraps(::Type{AnsatzMixin}, ::Union{MPS,MPO}) = Yes()
-AnsatzMixin(tn::Union{MPS,MPO}) = tn.ansatz
+trait(::AnsatzInterface, ::Union{MPS,MPO}) = WrapsAnsatz()
+unwrap(::AnsatzInterface, tn::Union{MPS,MPO}) = tn.ansatz
 
 # effect handlers
 # TODO fix correct dispatch to mixins on handlers!!!!

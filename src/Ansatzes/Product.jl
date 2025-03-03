@@ -25,18 +25,21 @@ struct ProductOperator <: AbstractProduct
 end
 
 # Tensor Network interface
-Wraps(::Type{TensorNetwork}, ::AbstractProduct) = Yes()
-TensorNetwork(tn::AbstractProduct) = tn.tn
+trait(::TensorNetworkInterface, ::AbstractProduct) = WrapsTensorNetwork()
+unwrap(::TensorNetworkInterface, tn::AbstractProduct) = tn.tn
 
 # TODO copy, similar, zero
+function Base.copy(tn::AbstractProduct)
+    return ProductState(copy(tn.tn), copy(tn.pluggable), copy(tn.ansatz))
+end
 
 # PluggableMixin
-Wraps(::Type{PluggableMixin}, ::AbstractProduct) = Yes()
-PluggableMixin(tn::AbstractProduct) = tn.pluggable
+trait(::PluggableInterface, ::AbstractProduct) = WrapsPluggable()
+unwrap(::PluggableInterface, tn::AbstractProduct) = tn.pluggable
 
 # Ansatz interface
-Wraps(::Type{AnsatzMixin}, ::AbstractProduct) = Yes()
-AnsatzMixin(tn::AbstractProduct) = tn.ansatz
+trait(::AnsatzInterface, ::AbstractProduct) = WrapsAnsatz()
+unwrap(::AnsatzInterface, tn::AbstractProduct) = tn.ansatz
 
 # effect handlers
 handle!(tn::AbstractProduct, effect::ReplaceEffect{Pair{Symbol,Symbol}}) = handle!(tn.pluggable, effect)

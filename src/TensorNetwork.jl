@@ -113,11 +113,9 @@ macro unsafe_region(tn_sym, block)
     )
 end
 
-# `WrapsTensorNetwork` interface
-# returns `No` because `TensorNetwork` methods will already correctly dispatch correctly
-Wraps(::Type{TensorNetwork}, _) = No()
-
 # "Tensor Network" interface
+trait(::TensorNetworkInterface, ::TensorNetwork) = IsTensorNetwork()
+
 ## required methods
 function tensors(::@NamedTuple{}, tn::TensorNetwork)
     get!(tn.sorted_tensors) do
