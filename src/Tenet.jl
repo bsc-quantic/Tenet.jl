@@ -57,6 +57,9 @@ include("Mixins/Pluggable.jl")
 include("Mixins/Ansatz.jl")
 @compat public AnsatzMixin
 
+include("Gate.jl")
+export Gate
+
 include("Ansatzes/Product.jl")
 export ProductState, ProductOperator
 
