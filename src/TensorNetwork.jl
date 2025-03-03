@@ -5,6 +5,7 @@ using LinearAlgebra
 using ScopedValues
 using Serialization
 using Graphs: Graphs
+using ValSplit
 
 """
     TensorNetwork
@@ -157,30 +158,8 @@ end
 Base.size(tn::TensorNetwork, index::Symbol) = size(first(tn.indexmap[index]), index)
 
 ## keyword methods
-function inds(kwargs::@NamedTuple{set::Symbol}, tn::TensorNetwork)
-    tn = TensorNetwork(tn)
-    if kwargs.set === :all
-        collect(keys(tn.indexmap))
-    elseif kwargs.set === :open
-        # optimized by just considering the inds whose `tn.indexmap[ind]` has length == 1
-        return filter(tn.indexmap) do (ind, vs)
-            length(vs) > 1 && return false
-            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) == 1
-        end |> keys |> collect
-    elseif kwargs.set === :inner
-        # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 2
-        return filter(tn.indexmap) do (ind, vs)
-            length(vs) >= 2 && return true
-            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 2
-        end |> keys |> collect
-    elseif kwargs.set === :hyper
-        # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 3
-        return filter(tn.indexmap) do (ind, vs)
-            length(vs) >= 3 && return true
-            count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 3
-        end |> keys |> collect
-    else
-        throw(ArgumentError("""
+@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn::TensorNetwork)
+    throw(ArgumentError("""
         Unknown query: set=$(kwargs.set)
         Possible options are:
           - :all (default)
@@ -188,7 +167,32 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn::TensorNetwork)
           - :inner
           - :hyper
         """))
-    end
+end
+
+inds(::Val{(; set = :all)}, tn::TensorNetwork) = collect(keys(tn.indexmap))
+
+function inds(::Val{(; set = :open)}, tn::TensorNetwork)
+    # optimized by just considering the inds whose `tn.indexmap[ind]` has length == 1
+    filter(tn.indexmap) do (ind, vs)
+        length(vs) > 1 && return false
+        count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) == 1
+    end |> keys |> collect
+end
+
+function inds(::Val{(; set = :inner)}, tn::TensorNetwork)
+    # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 2
+    filter(tn.indexmap) do (ind, vs)
+        length(vs) >= 2 && return true
+        count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 2
+    end |> keys |> collect
+end
+
+function inds(::Val{(; set = :hyper)}, tn::TensorNetwork)
+    # optimized by preadding the inds whose `tn.indexmap[ind]` has length >= 3
+    filter(tn.indexmap) do (ind, vs)
+        length(vs) >= 3 && return true
+        count(==(ind), Iterators.flatmap(Tenet.vinds, vs)) >= 3
+    end |> keys |> collect
 end
 
 tensors(kwargs::@NamedTuple{contains::Symbol}, tn::TensorNetwork) = copy(TensorNetwork(tn).indexmap[kwargs.contains])

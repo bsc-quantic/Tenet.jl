@@ -4,6 +4,7 @@ using Base: AbstractVecOrTuple
 using Graphs: Graphs
 using EinExprs
 using ArgCheck
+using ValSplit
 
 """
     AbstractTensorNetwork
@@ -222,20 +223,8 @@ end
 
 inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
 
-function inds(kwargs::@NamedTuple{set::Symbol}, tn, _)
-    if kwargs.set === :all
-        return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
-    elseif kwargs.set === :open
-        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-        return first.(Iterators.filter(((k, c),) -> c == 1, histogram))
-    elseif kwargs.set === :inner
-        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-        return first.(Iterators.filter(((k, c),) -> c >= 2, histogram))
-    elseif kwargs.set === :hyper
-        histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
-        return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
-    else
-        throw(ArgumentError("""
+@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait)
+    throw(ArgumentError("""
           Unknown query: set=$(kwargs.set)
           Possible options are:
             - :all (default)
@@ -243,7 +232,23 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn, _)
             - :inner
             - :hyper
           """))
-    end
+end
+
+inds(::Val{(; set = :all)}, tn, _) = mapreduce(inds, ∪, tensors(tn); init=Symbol[])
+
+function inds(::Val{(; set = :open)}, tn, _)
+    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+    return first.(Iterators.filter(((k, c),) -> c == 1, histogram))
+end
+
+function inds(::Val{(; set = :inner)}, tn, _)
+    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+    return first.(Iterators.filter(((k, c),) -> c >= 2, histogram))
+end
+
+function inds(::Val{(; set = :hyper)}, tn, _)
+    histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
+    return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
 end
 
 """
