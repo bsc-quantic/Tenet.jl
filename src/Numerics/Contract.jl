@@ -42,7 +42,7 @@ Perform a binary tensor contraction operation.
     We are in the process of making [`contract`](@ref) multi-backend; i.e. let the user choose between different einsum libraries as the engine powering [`contract`](@ref).
     Currently, we use [OMEinsum.jl](@ref), but it has proven to be slow when used dynamically like we do.
 """
-contract(a::Tensor, b::Tensor; kwargs...) = contract(default_backend[], a, b; kwargs...)
+contract(a::Tensor, b::Tensor; kwargs...)
 
 """
     contract(a::Tensor; dims=∩(inds(a), inds(b)), out=nothing)
@@ -54,7 +54,7 @@ Perform a unary tensor contraction operation.
     - `dims`: indices to contract over. Defaults to the repeated indices.
     - `out`: indices of the output tensor. Defaults to the unique indices.
 """
-contract(a::Tensor; kwargs...) = contract(default_backend[], a; kwargs...)
+contract(a::Tensor; kwargs...)
 
 """
     contract!(c::Tensor, a::Tensor, b::Tensor)
