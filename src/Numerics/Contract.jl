@@ -77,19 +77,19 @@ function contract(::OMEinsumBackend, a::Tensor, b::Tensor; kwargs...)
 end
 
 function allocate_result(
-    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(inds(a), inds(b))), out=nothing
+    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(vinds(a), vinds(b))), out=Symbol[]
 )
-    ia = collect(inds(a))
-    ib = collect(inds(b))
+    ia = vinds(a)
+    ib = vinds(b)
     i = ∩(dims, ia, ib)
 
-    ic = if isnothing(out)
-        Tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,)))
+    ic = if isempty(out)
+        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : [i])
     else
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero)
+    data = OMEinsum.get_output_array((parent(a), parent(b)), Int[size(i in ia ? a : b, i) for i in ic]; fillzero)
     return Tensor(data, ic)
 end
 
@@ -99,7 +99,7 @@ function contract(::OMEinsumBackend, a::Tensor; kwargs...)
 end
 
 function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(inds(a)), out=nothing)
-    ia = inds(a)
+    ia = vinds(a)
     i = ∩(dims, ia)
 
     ic::Vector{Symbol} = if isnothing(out)
@@ -117,7 +117,7 @@ function contract!(::OMEinsumBackend, c::Tensor, a::Tensor, b::Tensor)
     iy = inds(c)
     xs = (parent(a), parent(b))
     y = parent(c)
-    size_dict = merge!(Dict{Symbol,Int}.([inds(a) .=> size(a), inds(b) .=> size(b)])...)
+    size_dict = Dict{Symbol,Int}([vinds(a) .=> size(a); vinds(b) .=> size(b)])
 
     OMEinsum.einsum!(ixs, iy, xs, y, true, false, size_dict)
     return c
