@@ -727,16 +727,16 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
+# this method just normalizes the Λ tensors
 function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
-    old_norm = norm(ψ)
-    if isnothing(bond) # Normalize all λ tensors
+    if isnothing(bond)
         for i in 1:(nlanes(ψ) - 1)
-            λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
-            replace!(ψ, λ => λ ./ old_norm^(1 / (nlanes(ψ) - 1)))
+            Λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
+            normalize!(Λ)
         end
     else
-        λ = tensors(ψ; bond)
-        replace!(ψ, λ => λ ./ old_norm)
+        Λ = tensors(ψ; bond)
+        normalize!(Λ)
     end
 
     return ψ
