@@ -165,7 +165,7 @@ function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-# TODO fix this properly when we do the mapping 
+# TODO fix this properly when we do the mapping
 function tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane}
     hassite(tn, Site(kwargs.at)) && return tensors(tn; at=Site(kwargs.at))
     hassite(tn, Site(kwargs.at; dual=true)) && return tensors(tn; at=Site(kwargs.at; dual=true))
@@ -379,13 +379,54 @@ Compute the expectation value of an observable on a [`AbstractAnsatz`](@ref) Ten
 function expect(ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
     @assert socket(ψ) == State() "ψ must be a state"
     @assert socket(bra) == State(; dual=true) "bra must be a dual state"
-    contract(merge(ψ, observable, bra))
+
+    return expect(form(ψ), ψ, observable; bra)
 end
 
 function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=adjoint(ψ))
     sum(observables) do observable
         expect(ψ, observable; bra)
     end
+end
+
+function expect(::NonCanonical, ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
+    return contract(merge(ψ, observable, bra))
+end
+
+# TODO: Try to find a better way to do this
+function expect(::MixedCanonical, ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
+    return contract(merge(ψ, observable, bra))
+end
+
+function expect(::Canonical, ψ::Tenet.AbstractAnsatz, observable; bra=adjoint(ψ))
+    obs_sites = unique(id.(sites(observable)))
+
+    ket_Λ = []
+    bra_Λ = []
+    ket_tensors = []
+    bra_tensors = []
+    for i in obs_sites
+        replace!(observable, inds(observable; at=Site(i)) => Symbol(:input, i))
+        replace!(observable, inds(observable; at=Site(i, dual=true)) => Symbol(:output, i))
+        replace!(ψ, inds(ψ, at=Site(i)) => Symbol(:input, i))
+        replace!(bra, inds(bra, at=Site(i, dual=true)) => Symbol(:output, i))
+
+        replace!(bra, inds(bra, bond=(Lane(i), Lane(i+1))) => inds(ψ, bond=(Lane(i), Lane(i+1))))
+        replace!(bra, inds(bra, bond=(Lane(i-1), Lane(i))) => inds(ψ, bond=(Lane(i-1), Lane(i))))
+
+        push!(ket_Λ, tensors(ψ, bond=(Lane(i-1), Lane(i))))
+        push!(bra_Λ, tensors(bra, bond=(Lane(i-1), Lane(i))))
+
+        push!(ket_tensors, tensors(ψ, at=Site(i)))
+        push!(bra_tensors, tensors(bra, at=Site(i, dual=true)))
+    end
+
+    push!(ket_Λ, tensors(ψ, bond=(Lane(obs_sites[end]), Lane(obs_sites[end]+1))))
+    push!(bra_Λ, tensors(bra, bond=(Lane(obs_sites[end]), Lane(obs_sites[end]+1))))
+
+    t = contract(contract(ket_Λ..., ket_tensors...; dims=[]), contract(bra_Λ..., bra_tensors...; dims=[]), tensors(Quantum(observable))[1])
+
+    return t
 end
 
 """
