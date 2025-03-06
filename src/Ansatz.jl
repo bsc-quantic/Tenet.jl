@@ -407,24 +407,28 @@ function expect(::Canonical, ψ::Tenet.AbstractAnsatz, observable; bra=adjoint(�
     bra_tensors = []
     for i in obs_sites
         replace!(observable, inds(observable; at=Site(i)) => Symbol(:input, i))
-        replace!(observable, inds(observable; at=Site(i, dual=true)) => Symbol(:output, i))
-        replace!(ψ, inds(ψ, at=Site(i)) => Symbol(:input, i))
-        replace!(bra, inds(bra, at=Site(i, dual=true)) => Symbol(:output, i))
+        replace!(observable, inds(observable; at=Site(i; dual=true)) => Symbol(:output, i))
+        replace!(ψ, inds(ψ; at=Site(i)) => Symbol(:input, i))
+        replace!(bra, inds(bra; at=Site(i; dual=true)) => Symbol(:output, i))
 
-        replace!(bra, inds(bra, bond=(Lane(i), Lane(i+1))) => inds(ψ, bond=(Lane(i), Lane(i+1))))
-        replace!(bra, inds(bra, bond=(Lane(i-1), Lane(i))) => inds(ψ, bond=(Lane(i-1), Lane(i))))
+        replace!(bra, inds(bra; bond=(Lane(i), Lane(i + 1))) => inds(ψ; bond=(Lane(i), Lane(i + 1))))
+        replace!(bra, inds(bra; bond=(Lane(i - 1), Lane(i))) => inds(ψ; bond=(Lane(i - 1), Lane(i))))
 
-        push!(ket_Λ, tensors(ψ, bond=(Lane(i-1), Lane(i))))
-        push!(bra_Λ, tensors(bra, bond=(Lane(i-1), Lane(i))))
+        push!(ket_Λ, tensors(ψ; bond=(Lane(i - 1), Lane(i))))
+        push!(bra_Λ, tensors(bra; bond=(Lane(i - 1), Lane(i))))
 
-        push!(ket_tensors, tensors(ψ, at=Site(i)))
-        push!(bra_tensors, tensors(bra, at=Site(i, dual=true)))
+        push!(ket_tensors, tensors(ψ; at=Site(i)))
+        push!(bra_tensors, tensors(bra; at=Site(i; dual=true)))
     end
 
-    push!(ket_Λ, tensors(ψ, bond=(Lane(obs_sites[end]), Lane(obs_sites[end]+1))))
-    push!(bra_Λ, tensors(bra, bond=(Lane(obs_sites[end]), Lane(obs_sites[end]+1))))
+    push!(ket_Λ, tensors(ψ; bond=(Lane(obs_sites[end]), Lane(obs_sites[end] + 1))))
+    push!(bra_Λ, tensors(bra; bond=(Lane(obs_sites[end]), Lane(obs_sites[end] + 1))))
 
-    t = contract(contract(ket_Λ..., ket_tensors...; dims=[]), contract(bra_Λ..., bra_tensors...; dims=[]), tensors(Quantum(observable))[1])
+    t = contract(
+        contract(ket_Λ..., ket_tensors...; dims=[]),
+        contract(bra_Λ..., bra_tensors...; dims=[]),
+        tensors(Quantum(observable))[1],
+    )
 
     return t
 end
