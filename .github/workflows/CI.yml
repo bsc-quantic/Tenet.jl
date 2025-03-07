@@ -48,7 +48,7 @@ jobs:
           include-all-prereleases: true
       - uses: julia-actions/cache@v1
         with:
-          cache-name: Unit Tests CI - Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+          cache-name: CI / ${{ matrix.test_group }} / Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
       - name: Add Julia registries
         run: |
           using Pkg
@@ -59,6 +59,52 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         env:
           TENET_TEST_GROUP: ${{matrix.test_group}}
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+  python:
+    name: ${{ matrix.test_group }} / Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1'
+        test_group:
+          - python
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          include-all-prereleases: true
+      - uses: julia-actions/cache@v1
+        with:
+          cache-name: CI / ${{ matrix.test_group }} / Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+      - name: Set and export registry flavor preference
+        run: echo "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}
+        shell: bash
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
+        shell: julia --color=yes {0}
+      - name: Run tests
+        run: |
+          julia --color=yes --code-coverage=user --depwarn=yes --project=test/python/ -e '
+            using Pkg
+            Pkg.instantiate()
+            Pkg.resolve()
+            include("test/python/runtests.jl")'
+        shell: bash
+      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v3
         with:

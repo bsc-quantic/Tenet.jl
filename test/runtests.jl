@@ -31,21 +31,6 @@ end
 
 if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     @testset "Integration tests" verbose = true begin
-        @safetestset "Python" begin
-            run(`cp CondaPkg.toml ../CondaPkg.toml`)
-            using Test
-            using Tenet
-            using CondaPkg
-            CondaPkg.update()
-            using PythonCall
-
-            include("integration/python/test_cirq.jl")
-            include("integration/python/test_quimb.jl")
-            include("integration/python/test_qiskit.jl")
-            include("integration/python/test_qibo.jl")
-            run(`rm ../CondaPkg.toml`)
-        end
-
         @safetestset "Reactant" begin
             include("integration/Reactant_test.jl")
         end
@@ -86,6 +71,13 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
             include("integration/YaoBlocks_test.jl")
         end
     end
+end
+
+if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "python"
+    @warn """
+        Python tests have been moved to their own folder.
+        You must call `julia --project=test/python test/python/runtests.jl` to run them.
+        """
 end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")

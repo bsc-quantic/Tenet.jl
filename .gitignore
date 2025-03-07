@@ -420,6 +420,6 @@ dist
 .julia
 *.excalidraw
 archive/
-test/.CondaPkg/
+**/*/.CondaPkg/
 .CondaPkg/
 CondaPkg.toml
