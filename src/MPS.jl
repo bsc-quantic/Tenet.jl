@@ -730,9 +730,32 @@ end
 # this method just normalizes the Λ tensors
 function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
     if !isnothing(bond)
-        # Λ = tensors(ψ; bond)
-        # normalize!(Λ)
-        error("Forced normalization of just one bond is not implemented yet")
+        # when setting `bond`, we are just normalizing one Λ tensor and its neighbor Γ tensors
+        Λab = tensors(ψ; bond)
+        normalize!(Λ)
+
+        a, b = bond
+        Γa, Γb = tensors(ψ; at=a), tensors(ψ; at=b)
+
+        # γ are Γ tensors with neighbor Λ tensors contracted => γ = Λ Γ Λ
+        # i.e. it's half reduced density matrix for the site, so it's norm is the total norm too
+        γa, γb = contract(Γa, Λab; dims=Symbol[]), contract(Γb, Λab; dims=Symbol[])
+
+        # open boundary conditions
+        if a != lane"1"
+            Λa = tensors(ψ; bond=(Lane(id(a - 1)), a))
+            γa = contract(γa, Λa; dims=Symbol[])
+        end
+
+        if b != Lane(nlanes(ψ))
+            Λb = tensors(ψ; bond=(b, Lane(id(b + 1))))
+            γb = contract(γb, Λb; dims=Symbol[])
+        end
+
+        Za, Zb = norm(γa), norm(γb)
+
+        Γa ./= Za
+        Γb ./= Zb
     end
 
     # normalize the Λ tensors
