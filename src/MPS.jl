@@ -736,23 +736,23 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
         a, b = bond
         Γa, Γb = tensors(ψ; at=a), tensors(ψ; at=b)
 
-        # γ are Γ tensors with neighbor Λ tensors contracted => γ = Λ Γ Λ
+        # ρ are Γ tensors with neighbor Λ tensors contracted => ρ = Λ Γ Λ
         # i.e. it's half reduced density matrix for the site, so it's norm is the total norm too
         # NOTE this works only if the state is correctly canonized!
-        γa, γb = contract(Γa, Λab; dims=Symbol[]), contract(Γb, Λab; dims=Symbol[])
+        ρa, ρb = contract(Γa, Λab; dims=Symbol[]), contract(Γb, Λab; dims=Symbol[])
 
         # open boundary conditions
         if a != lane"1"
-            Λa = tensors(ψ; bond=(Lane(id(a - 1)), a))
-            γa = contract(γa, Λa; dims=Symbol[])
+            Λa = tensors(ψ; bond=(Lane(id(a) - 1), a))
+            ρa = contract(ρa, Λa; dims=Symbol[])
         end
 
         if b != Lane(nlanes(ψ))
-            Λb = tensors(ψ; bond=(b, Lane(id(b + 1))))
-            γb = contract(γb, Λb; dims=Symbol[])
+            Λb = tensors(ψ; bond=(b, Lane(id(b) + 1)))
+            ρb = contract(ρb, Λb; dims=Symbol[])
         end
 
-        Za, Zb = norm(γa), norm(γb)
+        Za, Zb = norm(ρa), norm(ρb)
 
         Γa ./= Za
         Γb ./= Zb
@@ -771,7 +771,8 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
         Λᵢ₊₁ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
 
         # NOTE manual binary contraction due to bugs in `contract(args...)`
-        Z = norm(contract(contract(Γ, Λᵢ₋₁; dims=Symbol[]), Λᵢ₊₁; dims=Symbol[]))
+        ρ = contract(contract(Γ, Λᵢ₋₁; dims=Symbol[]), Λᵢ₊₁; dims=Symbol[])
+        Z = norm(ρ)
         Γ ./= Z
     end
 
