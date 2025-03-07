@@ -776,5 +776,18 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
         Γ ./= Z
     end
 
+    # normalize the first and last Γ tensors
+    Γ = tensors(ψ; at=lane"1")
+    Λ = tensors(ψ; bond=(lane"1", lane"2"))
+    ρ = contract(Γ, Λ; dims=Symbol[])
+    Z = norm(ρ)
+    Γ ./= Z
+
+    Γ = tensors(ψ; at=Lane(nlanes(ψ)))
+    Λ = tensors(ψ; bond=(Lane(nlanes(ψ) - 1), Lane(nlanes(ψ))))
+    ρ = contract(Γ, Λ; dims=Symbol[])
+    Z = norm(ρ)
+    Γ ./= Z
+
     return ψ
 end
