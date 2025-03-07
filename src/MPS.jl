@@ -731,7 +731,7 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
     if !isnothing(bond)
         # when setting `bond`, we are just normalizing one Λ tensor and its neighbor Γ tensors
         Λab = tensors(ψ; bond)
-        normalize!(Λ)
+        normalize!(Λab)
 
         a, b = bond
         Γa, Γb = tensors(ψ; at=a), tensors(ψ; at=b)
