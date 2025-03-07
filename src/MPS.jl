@@ -738,6 +738,7 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
 
         # γ are Γ tensors with neighbor Λ tensors contracted => γ = Λ Γ Λ
         # i.e. it's half reduced density matrix for the site, so it's norm is the total norm too
+        # NOTE this works only if the state is correctly canonized!
         γa, γb = contract(Γa, Λab; dims=Symbol[]), contract(Γb, Λab; dims=Symbol[])
 
         # open boundary conditions
