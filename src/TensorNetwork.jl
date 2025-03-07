@@ -1,7 +1,6 @@
 using Base: AbstractVecOrTuple
 using Random
 using EinExprs
-using OMEinsum
 using LinearAlgebra
 using ScopedValues
 using Serialization
