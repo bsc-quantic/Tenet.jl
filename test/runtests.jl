@@ -73,6 +73,13 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "integration"
     end
 end
 
+if TENET_TEST_GROUP == "all"
+    @warn """
+        Python tests have been moved to their own folder.
+        You must call `julia --project=test/python test/python/runtests.jl` to run them.
+        """
+end
+
 if haskey(ENV, "ENABLE_AQUA_TESTS")
     @testset "Aqua" verbose = true begin
         using Aqua
