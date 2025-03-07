@@ -729,14 +729,27 @@ end
 
 # this method just normalizes the Λ tensors
 function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
-    if isnothing(bond)
-        for i in 1:(nlanes(ψ) - 1)
-            Λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
-            normalize!(Λ)
-        end
-    else
-        Λ = tensors(ψ; bond)
+    if !isnothing(bond)
+        # Λ = tensors(ψ; bond)
+        # normalize!(Λ)
+        error("Forced normalization of just one bond is not implemented yet")
+    end
+
+    # normalize the Λ tensors
+    for i in 1:(nlanes(ψ) - 1)
+        Λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
         normalize!(Λ)
+    end
+
+    # normalize the Γ tensors
+    for i in 2:(nlanes(ψ) - 1)
+        Γ = tensors(ψ; at=Lane(i))
+        Λᵢ₋₁ = tensors(ψ; bond=(Lane(i - 1), Lane(i)))
+        Λᵢ₊₁ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
+
+        # NOTE manual binary contraction due to bugs in `contract(args...)`
+        Z = norm(contract(contract(Γ, Λᵢ₋₁; dims=Symbol[]), Λᵢ₊₁; dims=Symbol[]))
+        Γ ./= Z
     end
 
     return ψ
