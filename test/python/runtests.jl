@@ -27,4 +27,4 @@ using PythonCall
 end
 
 # cleaning
-run(`rm ../CondaPkg.toml`)
+run(`rm $(joinpath(@__DIR__, "..", "..", "CondaPkg.toml"))`)
