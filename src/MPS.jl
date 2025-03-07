@@ -727,7 +727,6 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=co
     return ψ
 end
 
-# this method just normalizes the Λ tensors
 function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
     if !isnothing(bond)
         # when setting `bond`, we are just normalizing one Λ tensor and its neighbor Γ tensors
