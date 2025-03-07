@@ -1,17 +1,30 @@
 using Test
+using Tenet
 using SafeTestsets
 
-@safetestset "Python" verbose = true begin
-    run(`cp $(joinpath(@__DIR__, CondaPkg.toml)) $(joinpath(@__DIR__, "..", "..", CondaPkg.toml))`)
-    using Test
-    using Tenet
-    using CondaPkg
-    CondaPkg.update()
-    using PythonCall
+# add python test dependencies
+run(`cp $(joinpath(@__DIR__, "CondaPkg.toml")) $(joinpath(@__DIR__, "..", "..", "CondaPkg.toml"))`)
+using CondaPkg
+CondaPkg.update()
+using PythonCall
 
-    include("test_cirq.jl")
-    include("test_quimb.jl")
-    include("test_qiskit.jl")
-    include("test_qibo.jl")
-    run(`rm ../CondaPkg.toml`)
+@testset "Python" verbose = true begin
+    @safetestset "Cirq" begin
+        include("test_cirq.jl")
+    end
+
+    @safetestset "Quimb" begin
+        include("test_quimb.jl")
+    end
+
+    @safetestset "Qiskit" begin
+        include("test_qiskit.jl")
+    end
+
+    @safetestset "Qibo" begin
+        include("test_qibo.jl")
+    end
 end
+
+# cleaning
+run(`rm ../CondaPkg.toml`)
