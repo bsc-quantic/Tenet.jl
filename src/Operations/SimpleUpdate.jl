@@ -40,6 +40,7 @@ function simple_update(
     rtol::Float64=0.0,
 )
     Θ = contract(contract(A, B; dims=[ind_bond_ab]), G; dims=[ind_physical_a, ind_physical_b])
+    Θ = replace(Θ, ind_physical_g_a => ind_physical_a, ind_physical_g_b => ind_physical_b)
 
     # TODO use low-rank approximations
     u_inds = setdiff(inds(A), [ind_bond_ab])
