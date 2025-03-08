@@ -152,7 +152,7 @@ parenttype(::T) where {T<:Tensor} = parenttype(T)
 Return the location of the dimension of `tensor` corresponding to the given index `i`.
 """
 dim(::Tensor, i::Number) = i
-dim(t::Tensor, i::Symbol) = first(findall(==(i), inds(t)))
+dim(t::Tensor, i::Symbol) = findfirst(==(i), vinds(t))
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))
