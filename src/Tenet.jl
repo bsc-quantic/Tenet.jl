@@ -9,6 +9,8 @@ include("Helpers.jl")
 include("Tensor.jl")
 export Tensor, contract, dim, expand
 
+include("Operations/Operations.jl")
+
 include("Numerics.jl")
 
 include("TensorNetwork.jl")
