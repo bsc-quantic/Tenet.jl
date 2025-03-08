@@ -2,6 +2,14 @@
 # using cuTENSOR: cuTENSOR
 using cuTensorNet: cuTensorNet
 
+# absorb behavior trait
+# used to keep type-inference happy (`DontAbsorb` returns 3 tensors, while the rest return 2)
+abstract type AbsorbBehavior end
+struct DontAbsorb <: AbsorbBehavior end
+struct AbsorbU <: AbsorbBehavior end
+struct AbsorbV <: AbsorbBehavior end
+struct AbsorbEqually <: AbsorbBehavior end
+
 # TODO automatically move to GPU if G are on CPU?
 function simple_update(
     A, ind_physical_a, B, ind_physical_b, ind_bond_ab, G, ind_physical_g_a, ind_physical_g_b; kwargs...
@@ -27,7 +35,7 @@ function simple_update(
     ind_physical_g_a::Symbol,
     ind_physical_g_b::Symbol;
     normalize::Bool=false,
-    absorb=nothing,
+    absorb::AbsorbBehavior=DontAbsorb(),
     atol::Float64=0.0,
     rtol::Float64=0.0,
 )
@@ -40,9 +48,18 @@ function simple_update(
 
     normalize && LinearAlgebra.normalize!(S)
 
-    # TODO
-
-    return U, S, V
+    if absorb isa DontAbsorb
+        return U, S, V
+    elseif absorb isa AbsorbU
+        U = contract(U, S; dims=[])
+    elseif absorb isa AbsorbV
+        V = contract(V, S; dims=[])
+    elseif absorb isa AbsorbEqually
+        S_sqrt = sqrt.(S)
+        U = contract(U, S_sqrt; dims=[])
+        V = contract(V, S_sqrt; dims=[])
+    end
+    return U, V
 end
 
 # TODO customize SVD algorithm
@@ -60,7 +77,7 @@ function simple_update(
     ind_physical_g_a::Symbol,
     ind_physical_g_b::Symbol;
     normalize::Bool=false,
-    absorb=nothing,
+    absorb::AbsorbBehavior=DontAbsorb(),
     atol::Float64=0.0,
     rtol::Float64=0.0,
 )
@@ -82,16 +99,16 @@ function simple_update(
     svd_config = cuTensorNet.SVDConfig(;
         abs_cutoff=atol,
         rel_cutoff=rtol,
-        s_partition=if isnothing(absorb)
+        s_partition=if absorb isa DontAbsorb
             cuTensorNet.CUTENSORNET_TENSOR_SVD_PARTITION_NONE
-        elseif absorb === :a || absorb === :u || absorb === :left
+        elseif absorb isa AbsorbU
             cuTensorNet.CUTENSORNET_TENSOR_SVD_PARTITION_US
-        elseif absorb === :b || absorb === :v || absorb === :right
+        elseif absorb isa AbsorbV
             cuTensorNet.CUTENSORNET_TENSOR_SVD_PARTITION_SV
-        elseif absorb === :ab || absorb === :equal
+        elseif absorb isa AbsorbEqually
             cuTensorNet.CUTENSORNET_TENSOR_SVD_PARTITION_UV_EQUAL
         else
-            throw(ArgumentError("Invalid value for absorb: $absorb"))
+            throw(ArgumentError("Unknown value for absorb: $absorb"))
         end,
         s_normalization=if normalize
             cuTensorNet.CUTENSORNET_TENSOR_SVD_NORMALIZATION_L2
@@ -124,5 +141,9 @@ function simple_update(
     U = replace(U, ind_physical_g_a => ind_physical_a)
     V = replace(V, ind_physical_g_b => ind_physical_b)
 
-    return U, S, V, svd_info
+    if absorb isa DontAbsorb
+        return U, S, V
+    else
+        return U, V
+    end
 end
