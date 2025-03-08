@@ -42,9 +42,9 @@ function simple_update(
     Θ = contract(contract(A, B; dims=[ind_bond_ab]), G; dims=[ind_physical_a, ind_physical_b])
 
     # TODO use low-rank approximations
-    left_inds = setdiff(inds(A), [ind_physical_a, ind_bond_ab]) ∪ [ind_physical_g_a]
-    right_inds = setdiff(inds(B), [ind_physical_b, ind_bond_ab]) ∪ [ind_physical_g_b]
-    U, S, V = svd(Θ; left_inds, right_inds, bond_ind=ind_bond_ab)
+    u_inds = setdiff(inds(A), [ind_bond_ab])
+    v_inds = setdiff(inds(B), [ind_bond_ab])
+    U, S, V = svd(Θ; u_inds, v_inds, s_ind=ind_bond_ab)
 
     normalize && LinearAlgebra.normalize!(S)
 
