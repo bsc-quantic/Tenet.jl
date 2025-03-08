@@ -1,6 +1,6 @@
 module Operations
 
-using ..Tenet: Tenet, Tensor
+using ..Tenet: Tenet, Tensor, inds
 using CUDA: CUDA
 
 # inspired by Oceananigans.jl

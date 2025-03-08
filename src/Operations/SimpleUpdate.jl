@@ -47,6 +47,7 @@ end
 
 # TODO customize SVD algorithm
 # TODO configure GPU stream
+# TODO cache workspace memory
 # TODO do QR before SU to reduce computational cost on A,B with ninds > 3 but not when size(extent) ~ size(rest)
 function simple_update(
     ::GPU{NVIDIA},
@@ -70,8 +71,13 @@ function simple_update(
 
     U = similar(A)
     V = similar(B)
-    modes_u = copy(modes_a)
-    modes_v = copy(modes_b)
+
+    # cuTensorNet doesn't like to reuse the physical indices of a and b, so we rename them here
+    U = replace(U, ind_physical_a => ind_physical_g_a)
+    V = replace(V, ind_physical_b => ind_physical_g_b)
+
+    modes_u = [findfirst(==(i), all_inds) for i in inds(U)]
+    modes_v = [findfirst(==(i), all_inds) for i in inds(V)]
 
     svd_config = cuTensorNet.SVDConfig(;
         abs_cutoff=atol,
@@ -96,12 +102,27 @@ function simple_update(
 
     S_data = similar(parent(A), real(eltype(A)), (size(A, ind_bond_ab),))
 
-    # TODO
-    _, _, _, svd_info = cuTENSOR.gateSplit!(
-        parent(A), modes_a, parent(B), modes_b, parent(G), modes_g, parent(U), modes_u, S_data, parent(V), modes_v;
+    # TODO use svd_info
+    _, _, _, svd_info = cuTensorNet.gateSplit!(
+        parent(A),
+        modes_a,
+        parent(B),
+        modes_b,
+        parent(G),
+        modes_g,
+        parent(U),
+        modes_u,
+        S_data,
+        parent(V),
+        modes_v;
+        svd_config,
     )
 
     S = Tensor(S_data, [ind_bond_ab])
+
+    # undo the index rename to keep cuTensorNet happy
+    U = replace(U, ind_physical_g_a => ind_physical_a)
+    V = replace(V, ind_physical_g_b => ind_physical_b)
 
     return U, S, V, svd_info
 end
