@@ -43,8 +43,8 @@ function simple_update(
     Θ = replace(Θ, ind_physical_g_a => ind_physical_a, ind_physical_g_b => ind_physical_b)
 
     # TODO use low-rank approximations
-    u_inds = setdiff(inds(A), [ind_bond_ab])
-    v_inds = setdiff(inds(B), [ind_bond_ab])
+    u_inds = setdiff(vinds(A), [ind_bond_ab])
+    v_inds = setdiff(vinds(B), [ind_bond_ab])
     U, S, V = svd(Θ; u_inds, v_inds, s_ind=ind_bond_ab)
 
     normalize && LinearAlgebra.normalize!(S)
@@ -82,10 +82,10 @@ function simple_update(
     atol::Float64=0.0,
     rtol::Float64=0.0,
 )
-    all_inds = unique(∪(inds(A), inds(B), inds(G)))
-    modes_a = [findfirst(==(i), all_inds) for i in inds(A)]
-    modes_b = [findfirst(==(i), all_inds) for i in inds(B)]
-    modes_g = [findfirst(==(i), all_inds) for i in inds(G)]
+    all_inds = unique(∪(vinds(A), vinds(B), vinds(G)))
+    modes_a = Int[findfirst(==(i), all_inds) for i in vinds(A)]
+    modes_b = Int[findfirst(==(i), all_inds) for i in vinds(B)]
+    modes_g = Int[findfirst(==(i), all_inds) for i in vinds(G)]
 
     U = similar(A)
     V = similar(B)
@@ -94,8 +94,8 @@ function simple_update(
     U = replace(U, ind_physical_a => ind_physical_g_a)
     V = replace(V, ind_physical_b => ind_physical_g_b)
 
-    modes_u = [findfirst(==(i), all_inds) for i in inds(U)]
-    modes_v = [findfirst(==(i), all_inds) for i in inds(V)]
+    modes_u = Int[findfirst(==(i), all_inds) for i in vinds(U)]
+    modes_v = Int[findfirst(==(i), all_inds) for i in vinds(V)]
 
     svd_config = cuTensorNet.SVDConfig(;
         abs_cutoff=atol,
