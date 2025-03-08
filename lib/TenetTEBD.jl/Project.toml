@@ -1,0 +1,14 @@
+name = "TenetTEBD"
+uuid = "262dbf49-b33e-4b74-9a81-3ba33ae12597"
+authors = ["Sergio Sánchez Ramírez <sergio.sanchez.ramirez+git@bsc.es>"]
+version = "0.1.0"
+
+[deps]
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+Tenet = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
+
+[sources]
+Tenet = {path = "../.."}
+
+[compat]
+MPI = "0.20.22"
