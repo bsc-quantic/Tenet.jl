@@ -11,9 +11,12 @@ export Tensor, contract, dim, expand
 
 include("Numerics.jl")
 
+include("Interfaces/TensorNetwork.jl")
+export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
+
 include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, fuse!
-@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!, fuse
+export TensorNetwork, neighbors, slice!, contract!, fuse!
+@compat public @unsafe_region, tryprune!, resetinds!, fuse
 
 include("Transformations.jl")
 export transform, transform!
@@ -75,5 +78,8 @@ export MPS, MPO, absorb, absorb!
 
 # reexports from EinExprs
 export einexpr, inds
+
+# reexports from Graphs
+export neighbors
 
 end

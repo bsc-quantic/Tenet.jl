@@ -78,6 +78,9 @@ Return the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
 """
 TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 
+# TODO refactor this as the one-to-use method on future PR
+unwrap(::TensorNetworkInterface, tn::AbstractQuantum) = TensorNetwork(tn)
+
 Base.copy(tn::Quantum) = Quantum(copy(TensorNetwork(tn)), copy(tn.sites))
 
 Base.similar(tn::Quantum) = Quantum(similar(TensorNetwork(tn)), copy(tn.sites))
