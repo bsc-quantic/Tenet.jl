@@ -1,24 +1,25 @@
 module Tenet
 
 import EinExprs: inds
+import Graphs: neighbors
 using Compat
 
 include("Helpers.jl")
 @compat public letter, nonunique, IndexCounter, currindex, nextindex!
 
 include("Tensor.jl")
-export Tensor, contract, dim, expand
+export Tensor, contract, dim, expand, fuse
 
 include("Numerics.jl")
 
 include("Interfaces/Effects.jl")
 
 include("Interfaces/TensorNetwork.jl")
-export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
+export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays, contract!
 
 include("TensorNetwork.jl")
-export TensorNetwork, neighbors, slice!, contract!, fuse!
-@compat public @unsafe_region, tryprune!, resetinds!, fuse
+export TensorNetwork, slice!, fuse!
+@compat public @unsafe_region, tryprune!, resetinds!
 
 include("Transformations.jl")
 export transform, transform!
