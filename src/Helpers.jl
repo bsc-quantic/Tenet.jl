@@ -74,3 +74,16 @@ function Base.get!(f, cf::CachedField)
     cf.isvalid = true
     return cf.value
 end
+
+function hist(x; init=Dict{eltype(x),Int}())
+    for xi in x
+        if haskey(init, xi)
+            init[xi] += 1
+        else
+            init[xi] = 1
+        end
+    end
+    return init
+end
+
+gensym_clean(i) = gensym(String(split(string(i), "#")[3]))
