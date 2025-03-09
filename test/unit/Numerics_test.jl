@@ -142,9 +142,9 @@ end
         D = Tensor(rand(6, 7, 2), (:m, :n, :i))
 
         contracted = contract(A, B, C, D)
-        @test issetequal(inds(contracted), (:n, :i))
-        @test issetequal(size(contracted), (7, 2))
-        @test contracted ≈ contract(contract(contract(A, B), C), D)
+        @test issetequal(inds(contracted), (:n,))
+        @test issetequal(size(contracted), (7,))
+        @test contracted ≈ contract(contract(A, B; out=[:i, :l]), contract(C, D; out=[:l, :i, :n]))
     end
 end
 
