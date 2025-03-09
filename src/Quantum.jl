@@ -78,8 +78,11 @@ Return the underlying `TensorNetwork` of an [`AbstractQuantum`](@ref).
 """
 TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 
+################################################################################
 # TODO refactor this as the one-to-use method on future PR
+trait(::TensorNetworkInterface, ::AbstractQuantum) = WrapsTensorNetwork()
 unwrap(::TensorNetworkInterface, tn::AbstractQuantum) = TensorNetwork(tn)
+################################################################################
 
 Base.copy(tn::Quantum) = Quantum(copy(TensorNetwork(tn)), copy(tn.sites))
 
@@ -101,21 +104,30 @@ end
 tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
 inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
 
-function inds(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
-    if kwargs.set === :physical
-        return map(sites(tn)) do site
-            inds(tn; at=site)::Symbol
-        end
-    elseif kwargs.set === :virtual
-        return setdiff(inds(tn), inds(tn; set=:physical))
-    elseif kwargs.set ∈ (:inputs, :outputs)
-        return map(sites(tn; kwargs.set)) do site
-            inds(tn; at=site)::Symbol
-        end
-    else
-        return inds(TensorNetwork(tn); set=kwargs.set)
+################################################################################
+# TODO move to Pluggable interface
+function inds(::Val{(; set = :physical)}, tn, ::WrapsTensorNetwork)
+    return map(sites(tn)) do site
+        inds(tn; at=site)::Symbol
     end
 end
+
+function inds(::Val{(; set = :virtual)}, tn, ::WrapsTensorNetwork)
+    return setdiff(inds(tn), inds(tn; set=:physical))
+end
+
+function inds(::Val{(; set = :inputs)}, tn, ::WrapsTensorNetwork)
+    return map(sites(tn; set=:inputs)) do site
+        inds(tn; at=site)::Symbol
+    end
+end
+
+function inds(::Val{(; set = :outputs)}, tn, ::WrapsTensorNetwork)
+    return map(sites(tn; set=:outputs)) do site
+        inds(tn; at=site)::Symbol
+    end
+end
+################################################################################
 
 @deprecate Base.getindex(q::Quantum, site::Site) inds(q; at=site) false
 
@@ -207,6 +219,7 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob; reset=true)
     return b
 end
 
+# TODO remove on future PR when we complete transition to interfaces
 function resetinds!(tn::AbstractQuantum; init=1)
     qtn = Quantum(tn)
 
