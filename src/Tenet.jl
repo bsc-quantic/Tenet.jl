@@ -11,6 +11,8 @@ export Tensor, contract, dim, expand
 
 include("Numerics.jl")
 
+include("Interfaces/Effects.jl")
+
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
 
