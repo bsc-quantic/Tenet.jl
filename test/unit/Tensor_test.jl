@@ -167,7 +167,7 @@ end
         @test dim(tensor, label) == i
     end
 
-    @test_throws BoundsError dim(tensor, :_)
+    @test isnothing(dim(tensor, :_))
 end
 
 @testset "Broadcasting" begin
