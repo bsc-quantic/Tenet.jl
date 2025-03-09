@@ -17,6 +17,10 @@ include("Interfaces/Effects.jl")
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays, contract!
 
+include("Interfaces/Pluggable.jl")
+export sites, nsites, hassite, align!
+@compat public addsite!, rmsite!
+
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, fuse!
 @compat public @unsafe_region, tryprune!, resetinds!
