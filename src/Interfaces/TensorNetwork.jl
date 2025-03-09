@@ -48,7 +48,7 @@ Return a list of the [`Tensor`](@ref)s in the Tensor Network.
 tensors(tn; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
 tensors(::@NamedTuple{}, tn) = tensors((;), tn, trait(TensorNetworkInterface(), tn))
-tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface, tn))
+tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface(), tn))
 tensors(::@NamedTuple{}, tn, _) = throw(MethodError(tensors, ((;), tn)))
 
 """
@@ -82,7 +82,7 @@ Return `true` if [`Tensor`](@ref) `tensor` is in the Tensor Network.
 See also: [`hasind`](@ref)
 """
 hastensor(tn, tensor) = hastensor(tn, tensor, trait(TensorNetworkInterface(), tn))
-hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetwork(), tn), tensor)
+hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetworkInterface(), tn), tensor)
 function hastensor(tn, tensor, _)
     @debug "Falling back to default `hastensor` method"
     tensor ∈ tensors(tn)
@@ -130,8 +130,8 @@ See also: [`ntensors`](@ref)
 ninds(tn; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
-ninds(::@NamedTuple{}, tn) = ninds(@NamedTuple{}(), tn, trait(TensorNetworkInterface(), tn))
-ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds(@NamedTuple{}(), unwrap(TensorNetworkInterface(), tn))
+ninds(::@NamedTuple{}, tn) = ninds((;), tn, trait(TensorNetworkInterface(), tn))
+ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds((;), unwrap(TensorNetworkInterface(), tn))
 function ninds(kwargs::NamedTuple, tn)
     @debug "Falling back to default `ninds` method"
     length(inds(kwargs, tn))
@@ -221,9 +221,11 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn)
     inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
 end
 
-inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork)
+    return inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+end
 
-@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait)
+@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait::WrapsTensorNetwork)
     throw(ArgumentError("""
           Unknown query: set=$(kwargs.set)
           Possible options are:
@@ -234,7 +236,9 @@ inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwra
           """))
 end
 
-inds(::Val{(; set = :all)}, tn, _) = mapreduce(inds, ∪, tensors(tn); init=Symbol[])
+function inds(::Val{(; set = :all)}, tn, _)
+    return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
+end
 
 function inds(::Val{(; set = :open)}, tn, _)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
@@ -738,4 +742,21 @@ function gauge!(tn::AbstractTensorNetwork, ind::Symbol, U::AbstractMatrix, Uinv:
     gauged_b = replace(contract(tUinv, b), tmpind => ind)
 
     replace!(tn, [a => gauged_a, b => gauged_b])
+end
+
+# TODO remove on future PR when we complete transition to interfaces
+"""
+    resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+
+Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
+"""
+function resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+    mapping = resetinds!(Val(:return_mapping), tn; init=init)
+    return replace!(tn, mapping)
+end
+
+# TODO remove on future PR when we complete transition to interfaces
+function resetinds!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
+    gen = IndexCounter(init)
+    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
 end
