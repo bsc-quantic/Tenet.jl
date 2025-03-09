@@ -339,6 +339,22 @@ function Base.append!(tn::AbstractTensorNetwork, other::AbstractTensorNetwork)
     (foreach(Base.Fix1(push!, tn), tensors(other)); tn)
 end
 
+# TODO remove on future PR when we complete move to interfaces (it should generate a `Stack`)
+"""
+    merge!(self::TensorNetwork, others::TensorNetwork...)
+    merge(self::TensorNetwork, others::TensorNetwork...)
+
+Fuse various [`TensorNetwork`](@ref)s into one.
+
+See also: [`append!`](@ref).
+"""
+function Base.merge!(self::AbstractTensorNetwork, other::AbstractTensorNetwork)
+    Base.depwarn("`merge!` to join two `TensorNetwork`s is deprecated, use `append!` instead", :merge!; force=true)
+    append!(self, tensors(other))
+end
+Base.merge!(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = foldl(merge!, others; init=self)
+Base.merge(self::AbstractTensorNetwork, others::AbstractTensorNetwork...) = merge!(copy(self), others...)
+
 """
     delete!(tn::AbstractTensorNetwork, tensor)
 
