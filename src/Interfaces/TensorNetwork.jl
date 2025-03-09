@@ -49,7 +49,6 @@ tensors(tn; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
 tensors(::@NamedTuple{}, tn) = tensors((;), tn, trait(TensorNetworkInterface(), tn))
 tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface(), tn))
-tensors(::@NamedTuple{}, tn, _) = throw(MethodError(tensors, ((;), tn)))
 
 """
     inds(tn; kwargs...)
@@ -82,11 +81,13 @@ Return `true` if [`Tensor`](@ref) `tensor` is in the Tensor Network.
 See also: [`hasind`](@ref)
 """
 hastensor(tn, tensor) = hastensor(tn, tensor, trait(TensorNetworkInterface(), tn))
-hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetworkInterface(), tn), tensor)
-function hastensor(tn, tensor, _)
+
+function hastensor(tn, tensor, ::IsTensorNetwork)
     @debug "Falling back to default `hastensor` method"
     tensor ∈ tensors(tn)
 end
+
+hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetworkInterface(), tn), tensor)
 
 """
     hasind(tn, i)
@@ -96,11 +97,13 @@ Return `true` if index `i` is in the Tensor Network.
 See also: [`hastensor`](@ref)
 """
 hasind(tn, i) = hasind(tn, i, trait(TensorNetworkInterface(), tn))
-hasind(tn, i, ::WrapsTensorNetwork) = hasind(unwrap(TensorNetworkInterface(), tn), i)
-function hasind(tn, i, _)
+
+function hasind(tn, i, ::IsTensorNetwork)
     @debug "Falling back to default `hasind` method"
     i ∈ inds(tn)
 end
+
+hasind(tn, i, ::WrapsTensorNetwork) = hasind(unwrap(TensorNetworkInterface(), tn), i)
 
 """
     ntensors(tn::AbstractTensorNetwork)
@@ -114,11 +117,13 @@ ntensors(kwargs::NamedTuple, tn) = length(tensors(kwargs, tn))
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
 ntensors(::@NamedTuple{}, tn) = ntensors((;), tn, trait(TensorNetworkInterface(), tn))
-ntensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ntensors(unwrap(TensorNetworkInterface(), tn))
-function ntensors(::@NamedTuple{}, tn, _)
+
+function ntensors(::@NamedTuple{}, tn, ::IsTensorNetwork)
     @debug "Falling back to default `ntensors` method"
     length(tensors(tn))
 end
+
+ntensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ntensors(unwrap(TensorNetworkInterface(), tn))
 
 """
     ninds(tn::TensorNetwork; kwargs...)
@@ -129,13 +134,14 @@ See also: [`ntensors`](@ref)
 """
 ninds(tn; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
 
-# dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
-ninds(::@NamedTuple{}, tn) = ninds((;), tn, trait(TensorNetworkInterface(), tn))
-ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds((;), unwrap(TensorNetworkInterface(), tn))
-function ninds(kwargs::NamedTuple, tn)
+ninds(kwargs::NamedTuple, tn) = ninds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+
+function ninds(kwargs::NamedTuple, tn, ::IsPluggable)
     @debug "Falling back to default `ninds` method"
     length(inds(kwargs, tn))
 end
+
+ninds(kwargs::NamedTuple, tn, ::WrapsTensorNetwork) = ninds(kwargs, unwrap(TensorNetworkInterface(), tn))
 
 """
     size(tn::AbstractTensorNetwork)
@@ -278,7 +284,6 @@ function push_inner! end
 
 push_inner!(tn, tensor) = push_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
 push_inner!(tn, tensor, ::WrapsTensorNetwork) = push_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
-push_inner!(tn, tensor, _) = throw(MethodError(push_inner!, (tn, tensor)))
 
 """
     delete_inner!(tn, tensor)
@@ -290,7 +295,6 @@ function delete_inner! end
 
 delete_inner!(tn, tensor) = delete_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
 delete_inner!(tn, tensor, ::WrapsTensorNetwork) = delete_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
-delete_inner!(tn, tensor, _) = throw(MethodError(delete_inner!, (tn, tensor)))
 
 """
     contract_inner!(tn, ind)
@@ -301,10 +305,7 @@ A user should not call this method directly.
 function contract_inner! end
 
 contract_inner!(tn, tensor) = contract_inner!(tn, tensor, trait(TensorNetworkInterface(), tn))
-
-function contract_inner!(tn, tensor, ::WrapsTensorNetwork)
-    contract_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
-end
+contract_inner!(tn, tensor, ::WrapsTensorNetwork) = contract_inner!(unwrap(TensorNetworkInterface(), tn), tensor)
 
 contract_inner!(tn, tensor, _) = throw(MethodError(contract_inner!, (tn, tensor)))
 
