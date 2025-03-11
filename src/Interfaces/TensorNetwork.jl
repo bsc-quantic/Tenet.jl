@@ -136,7 +136,7 @@ ninds(tn; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
 
 ninds(kwargs::NamedTuple, tn) = ninds(kwargs, tn, trait(TensorNetworkInterface(), tn))
 
-function ninds(kwargs::NamedTuple, tn, ::IsPluggable)
+function ninds(kwargs::NamedTuple, tn, ::IsTensorNetwork)
     @debug "Falling back to default `ninds` method"
     length(inds(kwargs, tn))
 end
