@@ -84,7 +84,7 @@ end
 hassite(tn, s::Site, ::WrapsPluggable) = hassite(unwrap(PluggableInterface(), tn), s)
 
 # keyword methods
-@valsplit sites(kwargs::@NamedTuple{set::Symbol}, tn) = throw(ArgumentError("invalid `set` values: $(kwargs.set)"))
+@valsplit sites(Val(kwargs::@NamedTuple{set::Symbol}), tn) = throw(ArgumentError("invalid `set` values: $(kwargs.set)"))
 sites(::Val{(; set = :inputs)}, tn) = sort!(filter(isdual, sites(tn)))
 sites(::Val{(; set = :outputs)}, tn) = sort!(filter(!isdual, sites(tn)))
 
