@@ -1,38 +1,5 @@
 using Graphs: Graphs
 
-struct Bond{L<:AbstractLane}
-    src::L
-    dst::L
-end
-
-Base.convert(::Type{Bond}, edge::Pair{<:AbstractLane,<:AbstractLane}) = Bond(edge.first, edge.second)
-
-Base.:(==)(a::Bond, b::Bond) = a.src == b.src && a.dst == b.dst || a.src == b.dst && a.dst == b.src
-
-Graphs.src(edge::Bond) = edge.src
-Graphs.dst(edge::Bond) = edge.dst
-Graphs.reverse(edge::Bond) = Bond(Graphs.dst(edge), Graphs.src(edge))
-Base.show(io::IO, edge::Bond) = write(io, "Bond: $(Graphs.src(edge)) - $(Graphs.dst(edge))")
-
-Pair(e::Bond) = Graphs.src(e) => Graphs.dst(e)
-Tuple(e::Bond) = (Graphs.src(e), Graphs.dst(e))
-
-function Base.iterate(bond::Bond, state=0)
-    if state == 0
-        (Graphs.src(bond), 1)
-    elseif state == 1
-        (Graphs.dst(bond), 2)
-    else
-        nothing
-    end
-end
-
-Base.IteratorSize(::Type{Bond}) = Base.HasLength()
-Base.length(::Bond) = 2
-Base.IteratorEltype(::Type{Bond{L}}) where {L} = Base.HasEltype()
-Base.eltype(::Bond{L}) where {L} = L
-Base.isdone(::Bond, state) = state == 2
-
 """
     Lattice
 

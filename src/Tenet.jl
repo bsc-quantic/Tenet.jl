@@ -17,6 +17,12 @@ include("Interfaces/Effects.jl")
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays, contract!
 
+include("Site.jl")
+export Lane, @lane_str
+export Site, @site_str, isdual
+export Bond
+@compat public id, Moment
+
 include("Interfaces/Pluggable.jl")
 export sites, nsites, hassite, align!
 @compat public addsite!, rmsite!
@@ -41,11 +47,6 @@ export transform, transform!
     AntiDiagonalGauging,
     SplitSimplification
 #! format: on
-
-include("Site.jl")
-export Lane, @lane_str
-export Site, @site_str, isdual
-@compat public id, Moment
 
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
