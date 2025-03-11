@@ -209,7 +209,7 @@ tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)),
 function tensors(::@NamedTuple{}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
-        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ inds)
+        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ vinds)
     end
 end
 
