@@ -1,34 +1,4 @@
 """
-    Socket
-
-Abstract type representing the socket trait of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-abstract type Socket end
-
-"""
-    Scalar <: Socket
-
-Socket representing a scalar; i.e. a Tensor Network with no open sites.
-"""
-struct Scalar <: Socket end
-
-"""
-    State <: Socket
-
-Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
-"""
-@kwdef struct State <: Socket
-    dual::Bool = false
-end
-
-"""
-    Operator <: Socket
-
-Socket representing an operator; i.e. a Tensor Network with both input and output sites.
-"""
-struct Operator <: Socket end
-
-"""
     AbstractQuantum
 
 Abstract type for `Quantum`-derived types.
@@ -82,6 +52,9 @@ TensorNetwork(tn::AbstractQuantum) = Quantum(tn).tn
 # TODO refactor this as the one-to-use method on future PR
 trait(::TensorNetworkInterface, ::AbstractQuantum) = WrapsTensorNetwork()
 unwrap(::TensorNetworkInterface, tn::AbstractQuantum) = TensorNetwork(tn)
+
+trait(::PluggableInterface, ::AbstractQuantum) = WrapsPluggable()
+unwrap(::PluggableInterface, tn::AbstractQuantum) = Quantum(tn)
 ################################################################################
 
 Base.copy(tn::Quantum) = Quantum(copy(TensorNetwork(tn)), copy(tn.sites))
@@ -101,8 +74,8 @@ function Base.show(io::IO, tn::T) where {T<:AbstractQuantum}
     return print(io, "$T (inputs=$(nsites(tn; set=:inputs)), outputs=$(nsites(tn; set=:outputs)))")
 end
 
-tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
-inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
+# tensors(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = only(tensors(tn; intersects=inds(tn; at=kwargs.at)))
+# inds(kwargs::NamedTuple{(:at,)}, tn::AbstractQuantum) = Quantum(tn).sites[kwargs.at]
 
 ################################################################################
 # TODO move to Pluggable interface
@@ -257,41 +230,41 @@ macro reindex!(expr, reset=:(reset = true))
     end
 end
 
-"""
-    sites(q::AbstractQuantum)
+# """
+#     sites(q::AbstractQuantum)
 
-Return the sites of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-function sites end
+# Return the sites of a [`AbstractQuantum`](@ref) Tensor Network.
+# """
+# function sites end
 
-sites(tn::AbstractQuantum; kwargs...) = sites(sort_nt(values(kwargs)), tn)
-sites(::@NamedTuple{}, tn::AbstractQuantum) = sites((; set=:all), tn)
+# sites(tn::AbstractQuantum; kwargs...) = sites(sort_nt(values(kwargs)), tn)
+# sites(::@NamedTuple{}, tn::AbstractQuantum) = sites((; set=:all), tn)
 
-"""
-    nsites(q::AbstractQuantum)
+# """
+#     nsites(q::AbstractQuantum)
 
-Return the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
+# Return the number of sites of a [`AbstractQuantum`](@ref) Tensor Network.
+# """
+# nsites(tn::AbstractQuantum; kwargs...) = length(sites(tn; kwargs...))
 
 @deprecate inputs(tn::AbstractQuantum) sites(tn; set=:inputs)
 @deprecate outputs(tn::AbstractQuantum) sites(tn; set=:outputs)
 @deprecate ninputs(tn::AbstractQuantum) nsites(tn; set=:inputs)
 @deprecate noutputs(tn::AbstractQuantum) nsites(tn; set=:outputs)
 
-"""
-    lanes(q::AbstractQuantum)
+# """
+#     lanes(q::AbstractQuantum)
 
-Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
+# Return the lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+# """
+# lanes(tn::AbstractQuantum) = unique!(Lane[Lane.(sites(tn; set=:inputs))..., Lane.(sites(tn; set=:outputs))...])
 
-"""
-    nlanes(q::AbstractQuantum)
+# """
+#     nlanes(q::AbstractQuantum)
 
-Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
-"""
-nlanes(tn::AbstractQuantum) = length(lanes(tn))
+# Return the number of lanes of a [`AbstractQuantum`](@ref) Tensor Network.
+# """
+# nlanes(tn::AbstractQuantum) = length(lanes(tn))
 
 function addsite!(tn::AbstractQuantum, site, index)
     tn = Quantum(tn)
@@ -315,8 +288,8 @@ function rmsite!(tn::AbstractQuantum, site)
     return delete!(tn.sites, site)
 end
 
+# TODO move it to `WrapsPluggable` trait
 hassite(tn::AbstractQuantum, site) = haskey(Quantum(tn).sites, site)
-Base.in(site::Site, tn::AbstractQuantum) = hassite(tn, site)
 
 function sites(kwargs::NamedTuple{(:set,)}, tn::AbstractQuantum)
     tn = Quantum(tn)
@@ -334,39 +307,6 @@ end
 function sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractQuantum)
     tn = Quantum(tn)
     return findfirst(==(kwargs.at), tn.sites)
-end
-
-"""
-    isconnectable(a::AbstractQuantum, b::AbstractQuantum)
-
-Return `true` if two [`AbstractQuantum`](@ref) Tensor Networks can be connected. This means:
-
- 1. The outputs of `a` are a superset of the inputs of `b`.
- 2. The outputs of `a` and `b` are disjoint except for the sites that are connected.
-"""
-function isconnectable(a, b)
-    Lane.(sites(a; set=:outputs)) ⊇ Lane.(sites(b; set=:inputs)) && isdisjoint(
-        setdiff(Lane.(sites(a; set=:outputs)), Lane.(sites(b; set=:inputs))),
-        setdiff(Lane.(sites(b; set=:inputs)), Lane.(sites(b; set=:outputs))),
-    )
-end
-
-"""
-    socket(q::AbstractQuantum)
-
-Return the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
-"""
-function socket(q::AbstractQuantum)
-    _sites = sites(q)
-    if isempty(_sites)
-        Scalar()
-    elseif all(!isdual, _sites)
-        State()
-    elseif all(isdual, _sites)
-        State(; dual=true)
-    else
-        Operator()
-    end
 end
 
 """

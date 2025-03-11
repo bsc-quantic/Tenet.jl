@@ -12,51 +12,44 @@ export Tensor, contract, dim, expand, fuse
 
 include("Numerics.jl")
 
-include("Interfaces/Effects.jl")
-
-include("Interfaces/TensorNetwork.jl")
-export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays, contract!
-
 include("Site.jl")
 export Lane, @lane_str
 export Site, @site_str, isdual
 export Bond
 @compat public id, Moment
 
-include("Interfaces/Pluggable.jl")
-export sites, nsites, hassite, align!
-@compat public addsite!, rmsite!
+include("Lattice.jl")
+export Lattice
 
-include("Interfaces/Ansatz.jl")
-export lanes, bonds, haslane, hasbond, nlanes, nbonds
-@compat public addbond!, rmbond!
+include("Interfaces/Effects.jl")
+
+include("Interfaces/TensorNetwork.jl")
+export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays, contract!
 
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, fuse!
 @compat public @unsafe_region, tryprune!, resetinds!
 
-include("Transformations.jl")
-export transform, transform!
-#! format: off
-@compat public Transformation,
-    HyperFlatten,
-    HyperGroup,
-    ContractSimplification,
-    Truncate,
-    DiagonalReduction,
-    AntiDiagonalGauging,
-    SplitSimplification
-#! format: on
+include("Interfaces/Pluggable.jl")
+export sites, nsites, hassite, align!
+@compat public addsite!, rmsite!
+
+include("Mixins/Pluggable.jl")
+@compat public PluggableMixin
 
 include("Quantum.jl")
 export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 @compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
 
-include("Circuit.jl")
-export Gate, Circuit, moments
+include("Gate.jl")
+export Gate
 
-include("Lattice.jl")
-export Lattice
+include("Interfaces/Ansatz.jl")
+export lanes, bonds, haslane, hasbond, nlanes, nbonds
+@compat public addbond!, rmbond!
+
+include("Mixins/Ansatz.jl")
+@compat public AnsatzMixin
 
 include("Ansatz.jl")
 #! format: off
@@ -80,6 +73,22 @@ export Ansatz,
     overlap
 #! format: on
 @compat public AbstractAnsatz, Boundary, Form
+
+include("Transformations.jl")
+export transform, transform!
+#! format: off
+@compat public Transformation,
+    HyperFlatten,
+    HyperGroup,
+    ContractSimplification,
+    Truncate,
+    DiagonalReduction,
+    AntiDiagonalGauging,
+    SplitSimplification
+#! format: on
+
+include("Circuit.jl")
+export Circuit, moments
 
 include("Product.jl")
 export Product
