@@ -21,6 +21,10 @@ include("Interfaces/Pluggable.jl")
 export sites, nsites, hassite, align!
 @compat public addsite!, rmsite!
 
+include("Interfaces/Ansatz.jl")
+export lanes, bonds, haslane, hasbond, nlanes, nbonds
+@compat public addbond!, rmbond!
+
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, fuse!
 @compat public @unsafe_region, tryprune!, resetinds!
