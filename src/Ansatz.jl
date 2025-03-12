@@ -70,6 +70,14 @@ Return the underlying [`Quantum`](@ref) Tensor Network of an [`AbstractAnsatz`](
 """
 Quantum(tn::AbstractAnsatz) = Ansatz(tn).tn
 
+trait(::TensorNetworkInterface, ::Ansatz) = WrapsTensorNetwork()
+unwrap(::TensorNetworkInterface, tn::Ansatz) = TensorNetwork(tn)
+
+trait(::PluggableInterface, ::Ansatz) = WrapsPluggable()
+unwrap(::PluggableInterface, tn::Ansatz) = Quantum(tn)
+
+trait(::AnsatzInterface, ::Ansatz) = IsAnsatz()
+
 # default form
 form(::AbstractAnsatz) = NonCanonical()
 
@@ -162,29 +170,31 @@ Contract the virtual bond between two [`AbstractLane`](@ref)s in a [`AbstractAns
 """
 contract!(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz) = contract!(tn, inds(tn; bond=kwargs.bond))
 
-"""
-    canonize!(tn::AbstractAnsatz)
+# """
+#     canonize!(tn::AbstractAnsatz)
 
-Transform an [`AbstractAnsatz`](@ref) Tensor Network into the canonical form (aka Vidal gauge); i.e. the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
-"""
-function canonize! end
+# Transform an [`AbstractAnsatz`](@ref) Tensor Network into the canonical form (aka Vidal gauge); i.e. the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
+# """
+# function canonize! end
 
-"""
-    canonize(tn::AbstractAnsatz)
+# """
+#     canonize(tn::AbstractAnsatz)
 
-Like [`canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
-"""
-canonize(tn::AbstractAnsatz, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
+# Like [`canonize!`](@ref), but returns a new Tensor Network instead of modifying the original one.
+# """
+# canonize(tn::AbstractAnsatz, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
 
-"""
-    mixed_canonize!(tn::AbstractAnsatz, orthog_center)
+# """
+#     mixed_canonize!(tn::AbstractAnsatz, orthog_center)
 
-Transform an [`AbstractAnsatz`](@ref) Tensor Network into the mixed-canonical form, that is,
-for `i < orthog_center` the tensors are left-canonical and for `i >= orthog_center` the tensors are right-canonical,
-and in the `orthog_center` there is a tensor with the Schmidt coefficients in it.
-"""
-function mixed_canonize! end
+# Transform an [`AbstractAnsatz`](@ref) Tensor Network into the mixed-canonical form, that is,
+# for `i < orthog_center` the tensors are left-canonical and for `i >= orthog_center` the tensors are right-canonical,
+# and in the `orthog_center` there is a tensor with the Schmidt coefficients in it.
+# """
+# function mixed_canonize! end
 
+################################################################################
+# TODO remove this or move it to another file
 """
     mixed_canonize(tn::AbstractAnsatz, orthog_center)
 
@@ -193,6 +203,8 @@ Like [`mixed_canonize!`](@ref), but returns a new Tensor Network instead of modi
 mixed_canonize(tn::AbstractAnsatz, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
 
 canonize_site(tn::AbstractAnsatz, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
+
+################################################################################
 
 """
     normalize!(ψ::AbstractAnsatz, at)
