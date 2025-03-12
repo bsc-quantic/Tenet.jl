@@ -85,6 +85,7 @@ hassite(tn, s::Site, ::WrapsPluggable) = hassite(unwrap(PluggableInterface(), tn
 
 # keyword methods
 @valsplit sites(Val(kwargs::@NamedTuple{set::Symbol}), tn) = throw(ArgumentError("invalid `set` values: $(kwargs.set)"))
+sites(::Val{(; set = :all)}, tn) = sites(tn)
 sites(::Val{(; set = :inputs)}, tn) = sort!(filter(isdual, sites(tn)))
 sites(::Val{(; set = :outputs)}, tn) = sort!(filter(!isdual, sites(tn)))
 
@@ -96,9 +97,9 @@ Link `site` to `ind`.
 """
 function addsite! end
 
-addsite!(tn, @nospecialize(p::Pair{<:Site,<:Tensor})) = addsite!(tn, p.first, p.second)
-addsite!(tn, site::Site, tensor::Tensor) = addsite!(tn, site, tensor, trait(PluggableInterface(), tn))
-addsite!(tn, site::Site, tensor::Tensor, ::WrapsPluggable) = addsite!(unwrap(PluggableInterface(), tn), site, tensor)
+addsite!(tn, p::Pair{<:Site,Symbol}) = addsite!(tn, p.first, p.second)
+addsite!(tn, site::Site, ind::Symbol) = addsite!(tn, site, ind, trait(PluggableInterface(), tn))
+addsite!(tn, site::Site, ind::Symbol, ::WrapsPluggable) = addsite!(unwrap(PluggableInterface(), tn), site, ind)
 
 """
     rmsite!(tn, site)
@@ -111,7 +112,13 @@ rmsite!(tn, site::Site) = rmsite!(tn, site, trait(PluggableInterface(), tn))
 rmsite!(tn, site::Site, ::WrapsPluggable) = rmsite!(unwrap(PluggableInterface(), tn), site)
 
 # derived methods
-Base.in(s::Site, tn) = hassite(tn, s)
+inds(::Val{(; set = :physical)}, tn) = [inds(tn; at=site) for site in sites(tn)]
+inds(::Val{(; set = :virtual)}, tn) = setdiff(inds(tn), inds(tn; set=:physical))
+inds(::Val{(; set = :inputs)}, tn) = [inds(tn; at=site) for site in sites(tn; set=:inputs)]
+inds(::Val{(; set = :outputs)}, tn) = [inds(tn; at=site) for site in sites(tn; set=:outputs)]
+
+# TODO commented out due to ambiguity error
+# Base.in(s::Site, tn) = hassite(tn, s)
 
 """
     Socket
@@ -212,47 +219,26 @@ function adjoint_sites!(tn)
 end
 
 """
-    resetinds!(tn::AbstractTensorNetwork, method=:gensymnew; kwargs...)
-
-Rename indices in the `TensorNetwork` to a new set of indices. It is mainly used to avoid index name conflicts when connecting Tensor Networks.
-"""
-function resetinds!(tn, method=:gensym; kwargs...)
-    new_name_f = if method === :suffix
-        (ind) -> Symbol(ind, get(kwargs, :suffix, '\''))
-    elseif method === :gensymwrap
-        (ind) -> gensym(ind)
-    elseif methods === :gensymnew
-        (_) -> gensym(get(kwargs, :base, :i))
-    elseif method === :characters
-        gen = IndexCounter(get(kwargs, :init, 1))
-        (_) -> nextindex!(gen)
-    else
-        error("Invalid method: $(Meta.quot(method))")
-    end
-
-    _inds = if haskey(kwargs, :plugset)
-        inds(tn; plugset=kwargs.plugset)
-    else
-        inds(tn)
-    end
-
-    for ind in _inds
-        replace!(tn, ind => new_name_f(ind))
-    end
-end
-
-"""
-    align!(a, ioa, b, iob)
+    align!(a, ioa, b, iob; reset=true)
 
 Align the physical indices of `b` to match the physical indices of `a`. `ioa` and `iob` are either `:inputs` or `:outputs`.
+If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 """
-function align!(a, ioa, b, iob)
+function align!(a, ioa, b, iob; reset=true)
+    @assert ioa === :inputs || ioa === :outputs
+    @assert iob === :inputs || iob === :outputs
+
+    if reset
+        @debug "[align!] Renaming indices of b"
+        resetinds!(b, :gensymclean)
+    end
+
     targets = Lane.(sites(a; set=ioa)) ∩ Lane.(sites(b; set=iob))
 
     target_sites_a = Site.(targets; dual=ioa === :inputs)
     target_sites_b = Site.(targets; dual=iob === :inputs)
 
-    replacements = map(zip(target_sites_a, target_sites_b)) do sitea, siteb
+    replacements = map(zip(target_sites_a, target_sites_b)) do (sitea, siteb)
         inds(b; at=siteb) => inds(a; at=sitea)
     end
 
@@ -265,4 +251,38 @@ function align!(a, ioa, b, iob)
     return a, b
 end
 
-align!((a, b)::Pair) = align!(a, :outputs, b, :inputs)
+align!((a, b)::P) where {P<:Pair} = align!(a, :outputs, b, :inputs)
+
+"""
+    @align! a => b reset=true
+
+Rename in-place the indices of the input/output sites of two Pluggable Tensor Networks to be able to connect between them.
+"""
+macro align!(expr, reset=:(reset = true))
+    @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
+    Base.remove_linenums!(expr)
+    a, b = expr.args[2:end]
+
+    @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset
+
+    @assert Meta.isexpr(a, :call)
+    @assert Meta.isexpr(b, :call)
+    ioa, ida = a.args
+    iob, idb = b.args
+    return quote
+        align!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)); $(esc(reset)))
+        $(esc(idb))
+    end
+end
+
+@deprecate inputs(tn) sites(tn; set=:inputs)
+@deprecate outputs(tn) sites(tn; set=:outputs)
+@deprecate ninputs(tn) nsites(tn; set=:inputs)
+@deprecate noutputs(tn) nsites(tn; set=:outputs)
+
+@deprecate reindex!(args...; kwargs...) align!(args...; kwargs...)
+
+macro reindex!(args...)
+    Base.depwarn("Macro @reindex! is deprecated, use @align! instead", :@align!)
+    :(@reindex!($(args...)))
+end

@@ -223,40 +223,52 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-function inds(kwargs::@NamedTuple{set::Symbol}, tn)
-    inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn)
+    throw(ArgumentError("Unknown query: set=$(kwargs.set)"))
 end
 
-function inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork)
-    return inds(kwargs, unwrap(TensorNetworkInterface(), tn))
-end
+# function inds(kwargs::@NamedTuple{set::Symbol}, tn)
+#     inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+# end
 
-@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait::WrapsTensorNetwork)
-    throw(ArgumentError("""
-          Unknown query: set=$(kwargs.set)
-          Possible options are:
-            - :all (default)
-            - :open
-            - :inner
-            - :hyper
-          """))
-end
+# function inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork)
+#     return inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+# end
 
-function inds(::Val{(; set = :all)}, tn, _)
+# @valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait::WrapsTensorNetwork)
+#     throw(ArgumentError("""
+#           Unknown query: set=$(kwargs.set)
+#           Possible options are:
+#             - :all (default)
+#             - :open
+#             - :inner
+#             - :hyper
+#           """))
+# end
+
+inds(kwargs::Val{(; set = :all)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :all)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :all)}, tn, ::IsTensorNetwork)
     return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
 end
 
-function inds(::Val{(; set = :open)}, tn, _)
+inds(kwargs::Val{(; set = :open)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :open)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :open)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c == 1, histogram))
 end
 
-function inds(::Val{(; set = :inner)}, tn, _)
+inds(kwargs::Val{(; set = :inner)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :inner)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :inner)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c >= 2, histogram))
 end
 
-function inds(::Val{(; set = :hyper)}, tn, _)
+inds(kwargs::Val{(; set = :hyper)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :hyper)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :hyper)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
 end
@@ -511,7 +523,7 @@ function Base.replace!(tn::AbstractTensorNetwork, @nospecialize(old_new::Pair{<:
 end
 
 Base.replace!(tn::AbstractTensorNetwork) = tn
-Base.replace!(tn::AbstractTensorNetwork, old_new::Pair) = throw(MethodError(replace!, (tn, old_new)))
+Base.replace!(tn::AbstractTensorNetwork, old_new::P) where {P<:Pair} = throw(MethodError(replace!, (tn, old_new)))
 @inline Base.replace!(tn::T, old_new::P...) where {T<:AbstractTensorNetwork,P<:Pair} = replace!(tn, old_new)
 @inline Base.replace!(tn::AbstractTensorNetwork, old_new::Dict) = replace!(tn, collect(old_new))
 
@@ -761,19 +773,34 @@ function gauge!(tn::AbstractTensorNetwork, ind::Symbol, U::AbstractMatrix, Uinv:
     replace!(tn, [a => gauged_a, b => gauged_b])
 end
 
-# TODO remove on future PR when we complete transition to interfaces
 """
-    resetinds!(tn::AbstractTensorNetwork; init::Int=1)
+    resetinds!(tn::AbstractTensorNetwork, method=:gensymnew; kwargs...)
 
-Rename all indices in the `TensorNetwork` to a new set of indices starting from `init`th Unicode character.
+Rename indices in the `TensorNetwork` to a new set of indices. It is mainly used to avoid index name conflicts when connecting Tensor Networks.
 """
-function resetinds!(tn::AbstractTensorNetwork; init::Int=1)
-    mapping = resetinds!(Val(:return_mapping), tn; init=init)
-    return replace!(tn, mapping)
-end
+function resetinds!(tn, method=:gensymclean; kwargs...)
+    new_name_f = if method === :suffix
+        (ind) -> Symbol(ind, get(kwargs, :suffix, '\''))
+    elseif method === :gensymwrap
+        (ind) -> gensym(ind)
+    elseif method === :gensymnew
+        (_) -> gensym(get(kwargs, :base, :i))
+    elseif method === :gensymclean
+        (ind) -> gensymclean(ind)
+    elseif method === :characters
+        gen = IndexCounter(get(kwargs, :init, 1))
+        (_) -> nextindex!(gen)
+    else
+        error("Invalid method: $(Meta.quot(method))")
+    end
 
-# TODO remove on future PR when we complete transition to interfaces
-function resetinds!(::Val{:return_mapping}, tn::AbstractTensorNetwork; init::Int=1)
-    gen = IndexCounter(init)
-    return Dict{Symbol,Symbol}([i => nextindex!(gen) for i in inds(tn)])
+    _inds = if haskey(kwargs, :set)
+        inds(tn; set=kwargs.set)
+    else
+        inds(tn)
+    end
+
+    for ind in _inds
+        replace!(tn, ind => new_name_f(ind))
+    end
 end

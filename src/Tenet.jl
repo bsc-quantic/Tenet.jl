@@ -31,15 +31,15 @@ export TensorNetwork, slice!, fuse!
 @compat public @unsafe_region, tryprune!, resetinds!
 
 include("Interfaces/Pluggable.jl")
-export sites, nsites, hassite, align!
-@compat public addsite!, rmsite!
+export sites, nsites, hassite, align!, @align!, socket
+@compat public addsite!, rmsite!, Socket, Scalar, State, Operator
 
 include("Mixins/Pluggable.jl")
 @compat public PluggableMixin
 
 include("Quantum.jl")
-export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
-@compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
+export Quantum
+@compat public AbstractQuantum
 
 include("Gate.jl")
 export Gate

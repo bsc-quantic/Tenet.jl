@@ -6,7 +6,7 @@ using Tenet: nsites, State, Operator, Scalar
     @testset "scalar, no sites" begin
         _tensors = Tensor[Tensor(fill(0))]
         tn = TensorNetwork(_tensors)
-        qtn = Quantum(tn, Dict())
+        qtn = Quantum(tn)
         @test nsites(qtn; set=:inputs) == 0
         @test nsites(qtn; set=:outputs) == 0
         @test isempty(sites(qtn))
@@ -100,10 +100,10 @@ tn = TensorNetwork(_tensors)
     @test inds(adjoint_qtn; at=site"1") == :j
     @test inds(adjoint_qtn; at=site"2'") == :k
     @test inds(adjoint_qtn; at=site"2") == :l
-    @test isapprox(tensors(adjoint_qtn), replace.(conj.(_tensors), :link => Symbol(:link, "'")))
+    @test isapprox(tensors(adjoint_qtn), conj.(_tensors))
 end
 
-@testset "reindex!" begin
+@testset "align!" begin
     @testset "manual indices" begin
         # mps-like tensor network
         mps = Quantum(
@@ -125,20 +125,11 @@ end
             Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
         )
 
-        Tenet.@reindex! outputs(mps) => inputs(mpo)
+        Tenet.@align! outputs(mps) => inputs(mpo)
 
         @test issetequal(
             [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
         )
-
-        # test that the both inputs/outputs appear on the corresponding tensor
-        @test all(Site.(1:3)) do i
-            inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
-        end
-
-        @test all(Site.(1:3)) do i
-            (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
-        end
     end
 
     @testset "regular indices" begin
@@ -162,20 +153,11 @@ end
             Dict(site"1" => :A, site"1'" => :B, site"2" => :D, site"2'" => :E, site"3" => :G, site"3'" => :H),
         )
 
-        Tenet.@reindex! outputs(mps) => inputs(mpo)
+        Tenet.@align! outputs(mps) => inputs(mpo)
 
         @test issetequal(
             [inds(mps; at=i) for i in sites(mps; set=:outputs)], [inds(mpo; at=i) for i in sites(mpo; set=:inputs)]
         )
-
-        # test that the both inputs/outputs appear on the corresponding tensor
-        @test all(Site.(1:3)) do i
-            inds(mps; at=i) ∈ inds(tensors(mpo; at=i))
-        end
-
-        @test all(Site.(1:3)) do i
-            (inds(mpo; at=i), inds(mpo; at=i')) ⊆ inds(tensors(mpo; at=i))
-        end
     end
 
     @testset "state with more lanes than operator" begin
@@ -204,10 +186,10 @@ end
             Dict(site"1" => :i, site"1'" => :j, site"2" => :l, site"2'" => :m, site"3" => :o, site"3'" => :p),
         )
 
-        Tenet.@reindex! outputs(mps4sites) => inputs(mpo3sites)
+        Tenet.@align! outputs(mps4sites) => inputs(mpo3sites)
 
-        for lane in lanes(mpo3sites)
-            @test inds(mps4sites; at=Site(lane)) == inds(mpo3sites; at=Site(lane; dual=true))
+        for site in unique(map(x -> isdual(x) ? x' : x, sites(mpo3sites)))
+            @test inds(mps4sites; at=site) == inds(mpo3sites; at=site')
         end
     end
 
@@ -242,10 +224,10 @@ end
             ),
         )
 
-        Tenet.@reindex! outputs(mps3sites) => inputs(mpo4sites)
+        Tenet.@align! outputs(mps3sites) => inputs(mpo4sites)
 
-        for lane in lanes(mps3sites)
-            @test inds(mps3sites; at=Site(lane)) == inds(mpo4sites; at=Site(lane; dual=true))
+        for site in unique(map(x -> isdual(x) ? x' : x, sites(mps3sites)))
+            @test inds(mps3sites; at=site) == inds(mpo4sites; at=site')
         end
     end
 end

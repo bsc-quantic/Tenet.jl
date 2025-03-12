@@ -86,4 +86,5 @@ function hist(x; init=Dict{eltype(x),Int}())
     return init
 end
 
-gensym_clean(i) = gensym(String(split(string(i), "#")[3]))
+# gensymclean(i) = gensym(String(split(string(i), "#")[3]))
+gensymclean(ind) = gensym(String(only(match(r"(?:##)*(\w+)(?:#\d+)*", string(ind)).captures)))
