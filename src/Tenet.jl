@@ -48,6 +48,9 @@ include("Interfaces/Ansatz.jl")
 export lanes, bonds, haslane, hasbond, nlanes, nbonds
 @compat public addbond!, rmbond!
 
+include("Interfaces/Form.jl")
+export NonCanonical, MixedCanonical, Canonical, form, canonize
+
 include("Mixins/Ansatz.jl")
 @compat public AnsatzMixin
 

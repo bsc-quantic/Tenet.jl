@@ -25,50 +25,6 @@ struct Periodic <: Boundary end
 
 function boundary end
 
-"""
-    Form
-
-Abstract type representing the canonical form trait of a [`AbstractAnsatz`](@ref) Tensor Network.
-"""
-abstract type Form end
-
-Base.copy(x::Form) = x
-
-"""
-    NonCanonical
-
-[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in non-canonical form.
-"""
-struct NonCanonical <: Form end
-
-"""
-    MixedCanonical
-
-[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in mixed-canonical form.
-
-  - The orthogonality center is a [`Lane`](@ref) or a vector of [`Lane`](@ref)s. The tensors to the
-    left of the orthogonality center are left-canonical and the tensors to the right are right-canonical.
-"""
-struct MixedCanonical <: Form
-    orthog_center::Union{Lane,Vector{<:Lane}}
-end
-
-Base.copy(x::MixedCanonical) = MixedCanonical(copy(x.orthog_center))
-
-"""
-    Canonical
-
-[`Form`](@ref) trait representing a [`AbstractAnsatz`](@ref) Tensor Network in canonical form or Vidal gauge.
-"""
-struct Canonical <: Form end
-
-"""
-    form(tn::AbstractAnsatz)
-
-Return the canonical form of the [`AbstractAnsatz`](@ref) Tensor Network.
-"""
-function form end
-
 struct MissingSchmidtCoefficientsException <: Base.Exception
     bond::NTuple{2,AbstractLane}
 end
