@@ -87,7 +87,7 @@ end
 function ProductOperator(arrays::AbstractArray{<:AbstractMatrix})
     gen = IndexCounter()
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in eachindex(IndexCartesian(), arrays))
-    append!(sitemap, [Site(i; dual=true) => nextindex!(gen) for i in eachindex(IndexCartesian(), arrays)])
+    merge!(sitemap, Dict([Site(i; dual=true) => nextindex!(gen) for i in eachindex(IndexCartesian(), arrays)]))
     bondmap = Dict{Bond,Symbol}()
     lanemap = Dict{Lane,Tensor}(
         map(eachindex(IndexCartesian(), arrays)) do i
