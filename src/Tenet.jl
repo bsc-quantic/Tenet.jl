@@ -17,7 +17,7 @@ export Site, @site_str, isdual
 @compat public id, Moment
 
 include("Lattice.jl")
-export Lattice
+export Lattice, Bond
 
 include("Interfaces/Effects.jl")
 
