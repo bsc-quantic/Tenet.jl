@@ -51,7 +51,7 @@ bonds(tn, ::WrapsAnsatz) = bonds(unwrap(AnsatzInterface(), tn))
 
 Return the [`Tensor`](@ref) linked to a [`Lane`](@ref).
 """
-tensors(kwargs::@NamedTuple{at::L}, tn) where {L<:Lane} = tensors(kwargs, trait(AnsatzInterface(), tn))
+tensors(kwargs::@NamedTuple{at::L}, tn) where {L<:Lane} = tensors(kwargs, tn, trait(AnsatzInterface(), tn))
 tensors(kwargs::@NamedTuple{at::L}, tn, ::WrapsAnsatz) where {L<:Lane} = tensors(kwargs, unwrap(AnsatzInterface(), tn))
 
 """
@@ -59,7 +59,7 @@ tensors(kwargs::@NamedTuple{at::L}, tn, ::WrapsAnsatz) where {L<:Lane} = tensors
 
 Return the index linked to a [`Bond`](@ref).
 """
-inds(kwargs::@NamedTuple{bond::B}, tn) where {B<:Bond} = inds(kwargs, trait(AnsatzInterface(), tn))
+inds(kwargs::@NamedTuple{bond::B}, tn) where {B<:Bond} = inds(kwargs, tn, trait(AnsatzInterface(), tn))
 inds(kwargs::@NamedTuple{bond::B}, tn, ::WrapsAnsatz) where {B<:Bond} = inds(kwargs, unwrap(AnsatzInterface(), tn))
 
 # TODO
