@@ -316,6 +316,7 @@ tryprune!(_, _, _) = nothing
 Add a [`Tensor`](@ref) to the Tensor Network.
 """
 function Base.push!(tn::AbstractTensorNetwork, t::Tensor)
+    checkhandle(tn, PushEffect(t))
     hastensor(tn, t) && return tn
     push_inner!(tn, t)
     handle!(tn, PushEffect(t))
@@ -345,6 +346,7 @@ Remove a [`Tensor`](@ref) from the Tensor Network.
     [`Tensor`](@ref)s are identified in a [`TensorNetwork`](@ref) by their `objectid`, so you must pass the same object and not a copy.
 """
 function Base.delete!(tn::AbstractTensorNetwork, t::Tensor)
+    checkhandle(tn, DeleteEffect(t))
     delete_inner!(tn, t)
     handle!(tn, DeleteEffect(t))
     return tn
@@ -386,12 +388,16 @@ Base.replace!(::AbstractTensorNetwork, ::Any...)
 
 # rename index
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{Symbol,Symbol})
+    checkhandle(tn, ReplaceEffect(old_new))
     old, new = old_new
     @argcheck old ∈ tn "index $old does not exist"
     old == new && return tn
     @argcheck new ∉ tn "index $new is already present"
+
     # NOTE `copy` because collection underneath is mutated
     for old_tensor in copy(tensors(tn; contains=old))
+        checkhandle(tn, ReplaceEffect(old_tensor => old_tensor))
+
         # NOTE do not `delete!` before `push!` as indices can be lost due to `tryprune!`
         new_tensor = replace(old_tensor, old_new)
         push_inner!(tn, new_tensor)
@@ -405,6 +411,8 @@ end
 
 # replace tensor
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tensor})
+    checkhandle(tn, ReplaceEffect(old_new))
+
     old_tensor, new_tensor = old_new
     old_tensor === new_tensor && return tn
 
@@ -454,6 +462,8 @@ end
 
 # replace tensor with a TensorNetwork
 function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:AbstractTensorNetwork})
+    checkhandle(tn, ReplaceEffect(old_new))
+
     old, new = old_new
     @argcheck issetequal(inds(new; set=:open), inds(old)) "indices don't match"
     @argcheck isdisjoint(inds(new; set=:inner), inds(tn)) "overlapping inner indices"
@@ -474,6 +484,8 @@ end
 
 # replace collection of tensors with a tensor (called on `contract!`)
 function Base.replace!(tn::AbstractTensorNetwork, @nospecialize(old_new::Pair{<:Vector{<:Tensor},<:Tensor}))
+    checkhandle(tn, ReplaceEffect(old_new))
+
     old, new = old_new
     @argcheck all(∈(tn), old)
     @argcheck new ∉ tn

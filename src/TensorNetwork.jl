@@ -1,4 +1,3 @@
-using Base: AbstractVecOrTuple
 using Random
 using EinExprs
 using LinearAlgebra
@@ -250,6 +249,15 @@ function tryprune!(tn::TensorNetwork, i::Symbol)
     end
     return nothing
 end
+
+# required for `canhandle` and thus, `push!`, `delete!` and `replace!`  to work
+# TODO might be a good idea to move `push_inner!` and `delete_inner!` to this
+handle!(::TensorNetwork, @nospecialize(e::PushEffect{T})) where {T<:Tensor} = nothing
+handle!(::TensorNetwork, @nospecialize(e::DeleteEffect{T})) where {T<:Tensor} = nothing
+handle!(::TensorNetwork, @nospecialize(e::ReplaceEffect{Pair{Symbol,Symbol}})) = nothing
+handle!(::TensorNetwork, @nospecialize(e::ReplaceEffect{Pair{A,B}})) where {A<:Tensor,B<:Tensor} = nothing
+handle!(::TensorNetwork, @nospecialize(e::ReplaceEffect{Pair{T,TensorNetwork}})) where {T} = nothing
+handle!(::TensorNetwork, @nospecialize(e::ReplaceEffect{Pair{Vector{A},B}})) where {A<:Tensor,B<:Tensor} = nothing
 
 ## derived methods
 Base.summary(io::IO, tn::TensorNetwork) = print(io, "$(ntensors(tn))-tensors TensorNetwork")

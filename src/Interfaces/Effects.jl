@@ -15,13 +15,18 @@ Returns `true` if `x` can handle the effect.
 canhandle(::T, ::E) where {T,E} = canhandle(T, E)
 canhandle(::Type{T}, ::Type{E}) where {T,E} = hasmethod(handle!, Tuple{T,E})
 
+function checkhandle(x::T, effect::E) where {T,E}
+    if !canhandle(x, effect)
+        throw(ArgumentError("$T cannot handle effect $E"))
+    end
+end
+
 """
     handle!(x, effect::Effect)
 
 Handle the `effect` on `x`. By default, does nothing.
 """
 function handle! end
-handle!(_, ::Effect) = nothing
 
 """
     PushEffect{F} <: Effect
