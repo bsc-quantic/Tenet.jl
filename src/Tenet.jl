@@ -60,6 +60,9 @@ include("Mixins/Ansatz.jl")
 include("Gate.jl")
 export Gate
 
+include("Stack.jl")
+export Stack, component
+
 include("Ansatzes/Product.jl")
 export Product, ProductState, ProductOperator
 
