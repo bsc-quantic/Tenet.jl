@@ -20,6 +20,7 @@ Pair(e::Bond) = src(e) => dst(e)
 Tuple(e::Bond) = (src(e), dst(e))
 
 haslane(bond::Bond, lane) = lane == Graphs.src(bond) || lane == Graphs.dst(bond)
+lanes(bond::Bond) = [Graphs.src(bond), Graphs.dst(bond)]
 
 """
     Lattice
