@@ -9,10 +9,10 @@ end
 
 function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
     graph = Lattice()
-    for lane in keys(mixin.lanemap)
+    for lane in keys(lanemap)
         add_vertex!(graph, lane)
     end
-    for bond in keys(mixin.bondmap)
+    for bond in keys(bondmap)
         add_edge!(graph, bond)
     end
     return AnsatzMixin(graph, lanemap, bondmap)
