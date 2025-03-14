@@ -24,6 +24,9 @@ struct ProductOperator <: AbstractProduct
     ansatz::AnsatzMixin
 end
 
+@deprecate Product(arrays::AbstractArray{<:AbstractVector}) ProductState(arrays)
+@deprecate Product(arrays::AbstractArray{<:AbstractMatrix}) ProductOperator(arrays)
+
 # Tensor Network interface
 trait(::TensorNetworkInterface, ::AbstractProduct) = WrapsTensorNetwork()
 unwrap(::TensorNetworkInterface, tn::AbstractProduct) = tn.tn
