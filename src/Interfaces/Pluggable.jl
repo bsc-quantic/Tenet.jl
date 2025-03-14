@@ -17,10 +17,10 @@ struct WrapsPluggable end
 struct NotPluggable end
 
 function trait(::PluggableInterface, ::T) where {T}
-    if hasinterface(PluggableInterface(), T)
-        return IsPluggable()
-    elseif hasmethods(unwrap, Tuple{PluggableInterface,T})
+    if hasmethod(unwrap, Tuple{PluggableInterface,T})
         return WrapsPluggable()
+    elseif hasinterface(PluggableInterface(), T)
+        return IsPluggable()
     else
         return NotPluggable()
     end
@@ -30,60 +30,28 @@ end
 """
     sites(tn)
 
-Return the sites of the Tensor Network.
-"""
-sites(tn::AbstractTensorNetwork; kwargs...) = sites(sort_nt(values(kwargs)), tn)
-
-"""
-    sites(tn;)
-
 Returns the sites of the Tensor Network.
-
-!!! note
-
-    This is the method called by `sites(tn)` when no kwarg are passed.
 """
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork)
+sites(tn; kwargs...) = sites(sort_nt(values(kwargs)), tn)
 
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork) = sites((;), tn, trait(PluggableInterface(), tn))
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::WrapsPluggable) = sites(unwrap(PluggableInterface(), tn))
-sites(::@NamedTuple{}, tn::AbstractTensorNetwork, ::NotPluggable) = throw(MethodError(sites, (tn,)))
+sites(::@NamedTuple{}, tn) = sites((;), tn, trait(PluggableInterface(), tn))
+sites(::@NamedTuple{}, tn, ::WrapsPluggable) = sites(unwrap(PluggableInterface(), tn))
 
 """
     inds(tn; at::Site)
 
 Return the index linked to [`Site`](@ref) `at`.
-
-!!! note
-
-    This is the method called by `inds(tn; at=site)`.
 """
-inds(::@NamedTuple{at::S}, ::AbstractTensorNetwork) where {S<:Site}
-
-function inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork) where {S<:Site}
-    inds(kwargs, tn, Wraps(PluggableMixin, tn))
-end
-
-inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork, ::Yes) where {S<:Site} = inds(kwargs, PluggableMixin(tn))
-
-function inds(kwargs::@NamedTuple{at::S}, tn::AbstractTensorNetwork, ::No) where {S<:Site}
-    throw(MethodError(inds, (kwargs, tn)))
-end
+inds(kwargs::@NamedTuple{at::S}, tn) where {S<:Site} = inds(kwargs, tn, trait(PluggableInterface(), tn))
+inds(kwargs::@NamedTuple{at::S}, tn, ::WrapsPluggable) where {S<:Site} = inds(kwargs, unwrap(PluggableInterface(), tn))
 
 """
     sites(tn; at::Symbol)
 
 Return the site linked to index `at`.
-
-!!! note
-
-    This is the method called by `inds(tn; at=site)`.
 """
-sites(::@NamedTuple{at::Symbol}, ::AbstractTensorNetwork)
-
-sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork) = sites(kwargs, tn, Wraps(PluggableMixin, tn))
-sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork, ::Yes) = sites(kwargs, PluggableMixin(tn))
-sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork, ::No) = throw(MethodError(sites, (kwargs, tn)))
+sites(kwargs::@NamedTuple{at::Symbol}, tn) = sites(kwargs, tn, trait(PluggableInterface(), tn))
+sites(kwargs::@NamedTuple{at::Symbol}, tn, ::WrapsPluggable) = sites(kwargs, unwrap(PluggableInterface(), tn))
 
 # optional methods
 """
@@ -91,29 +59,35 @@ sites(kwargs::@NamedTuple{at::Symbol}, tn::AbstractTensorNetwork, ::No) = throw(
 
 Return the number of sites of the Tensor Network.
 """
-nsites(tn; kwargs...) = sort_nt(values(kwargs), tn)
+nsites(tn; kwargs...) = nsites(sort_nt(values(kwargs)), tn)
+nsites(kwargs::NamedTuple, tn) = nsites(kwargs, tn, trait(PluggableInterface(), tn))
 
-nsites(::@NamedTuple{}, tn::AbstractTensorNetwork) = nsites((;), tn, Wraps(PluggableMixin, tn))
-nsites(::@NamedTuple{}, tn, ::Yes) = nsites((;), PluggableMixin(tn))
-nsites(::@NamedTuple{}, tn, ::No) = length(sites(tn))
+function nsites(kwargs::NamedTuple, tn, ::IsPluggable)
+    @debug "Falling back to default implementation of `nsites(::$(typeof(kwargs)))`"
+    return length(sites(kwargs, tn))
+end
 
-# other kwarg-methods of `nsites` must call `sites` anyway so don't overoptimize
-nsites(kwargs::NamedTuple, tn) = length(sites(kwargs, tn))
+nsites(kwargs::NamedTuple, tn, ::WrapsPluggable) = nsites(kwargs, unwrap(PluggableInterface(), tn))
 
-hassite(tn::AbstractTensorNetwork, s::Site) = hassite(tn, s, Wraps(PluggableMixin, tn))
-hassite(tn::AbstractTensorNetwork, s::Site, ::Yes) = hassite(PluggableMixin(tn), s)
-hassite(tn::AbstractTensorNetwork, s::Site, ::No) = s ∈ sites(tn)
+"""
+    hassite(tn, s)
+
+Return `true` if [`Site`](@ref) `s` is in the Tensor Network.
+"""
+hassite(tn, s::Site) = hassite(tn, s, trait(PluggableInterface(), tn))
+
+function hassite(tn, s::Site, ::IsPluggable)
+    @debug "Falling back to default implementation of `hassite`"
+    s ∈ sites(tn)
+end
+
+hassite(tn, s::Site, ::WrapsPluggable) = hassite(unwrap(PluggableInterface(), tn), s)
 
 # keyword methods
-function sites(kwargs::@NamedTuple{plugset::Symbol}, tn::AbstractTensorNetwork)
-    if kwargs.plugset === :inputs
-        sort!(filter(isdual, sites(tn)))
-    elseif kwargs.plugset === :outputs
-        sort!(filter(!isdual, sites(tn)))
-    else
-        throw(ArgumentError("invalid `plugset` values: $(kwargs.plugset)"))
-    end
-end
+@valsplit sites(Val(kwargs::@NamedTuple{set::Symbol}), tn) = throw(ArgumentError("invalid `set` values: $(kwargs.set)"))
+sites(::Val{(; set = :all)}, tn) = sites(tn)
+sites(::Val{(; set = :inputs)}, tn) = sort!(filter(isdual, sites(tn)))
+sites(::Val{(; set = :outputs)}, tn) = sort!(filter(!isdual, sites(tn)))
 
 # mutating methods
 """
@@ -123,10 +97,9 @@ Link `site` to `ind`.
 """
 function addsite! end
 
-addsite!(tn::AbstractTensorNetwork, @nospecialize(p::Pair{<:Site,<:Tensor})) = addsite!(tn, p.first, p.second)
-addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor) = addsite!(tn, site, tensor, Wraps(PluggableMixin, tn))
-addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor, ::Yes) = addsite!(PluggableMixin(tn), site, tensor)
-addsite!(tn::AbstractTensorNetwork, site::Site, tensor::Tensor, ::No) = throw(MethodError(addsite!, (tn, site, tensor)))
+addsite!(tn, p::Pair{<:Site,Symbol}) = addsite!(tn, p.first, p.second)
+addsite!(tn, site::Site, ind::Symbol) = addsite!(tn, site, ind, trait(PluggableInterface(), tn))
+addsite!(tn, site::Site, ind::Symbol, ::WrapsPluggable) = addsite!(unwrap(PluggableInterface(), tn), site, ind)
 
 """
     rmsite!(tn, site)
@@ -135,12 +108,17 @@ Unlink `site`.
 """
 function rmsite! end
 
-rmsite!(tn::AbstractTensorNetwork, site::Site) = rmsite!(tn, site, Wraps(PluggableMixin, tn))
-rmsite!(tn::AbstractTensorNetwork, site::Site, ::Yes) = rmsite!(PluggableMixin(tn), site)
-rmsite!(tn::AbstractTensorNetwork, site::Site, ::No) = throw(MethodError(rmsite!, (tn, site)))
+rmsite!(tn, site::Site) = rmsite!(tn, site, trait(PluggableInterface(), tn))
+rmsite!(tn, site::Site, ::WrapsPluggable) = rmsite!(unwrap(PluggableInterface(), tn), site)
 
 # derived methods
-Base.in(s::Site, tn::AbstractTensorNetwork) = hassite(tn, s)
+inds(::Val{(; set = :physical)}, tn) = [inds(tn; at=site) for site in sites(tn)]
+inds(::Val{(; set = :virtual)}, tn) = setdiff(inds(tn), inds(tn; set=:physical))
+inds(::Val{(; set = :inputs)}, tn) = [inds(tn; at=site) for site in sites(tn; set=:inputs)]
+inds(::Val{(; set = :outputs)}, tn) = [inds(tn; at=site) for site in sites(tn; set=:outputs)]
+
+# TODO commented out due to ambiguity error
+# Base.in(s::Site, tn) = hassite(tn, s)
 
 """
     Socket
@@ -177,7 +155,7 @@ struct Operator <: Socket end
 
 Return the socket of a Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
 """
-function socket(tn::AbstractTensorNetwork)
+function socket(tn)
     _sites = sites(tn)
     if isempty(_sites)
         Scalar()
@@ -220,7 +198,7 @@ Like [`adjoint`](@ref), but in-place.
 LinearAlgebra.adjoint!(tn::AbstractTensorNetwork) = adjoint_sites!(conj!(tn))
 
 # update site information and rename inner indices
-function adjoint_sites!(tn::AbstractTensorNetwork)
+function adjoint_sites!(tn)
     # generate mapping
     mapping = Dict(site => inds(tn; at=site) for site in sites(tn))
 
