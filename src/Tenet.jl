@@ -67,7 +67,7 @@ include("Ansatzes/Product.jl")
 export Product, ProductState, ProductOperator
 
 include("Ansatzes/MPS.jl")
-export MPS, MPO
+export MatrixProductState, MPS, MatrixProductOperator, MPO
 
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
