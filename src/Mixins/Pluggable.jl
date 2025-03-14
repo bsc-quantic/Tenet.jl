@@ -7,6 +7,8 @@ struct PluggableMixin
     sitemap::Dict{Site,Symbol}
 end
 
+PluggableMixin() = PluggableMixin(Dict{Site,Symbol}())
+
 Base.copy(mixin::PluggableMixin) = PluggableMixin(copy(mixin.sitemap))
 
 trait(::PluggableInterface, ::PluggableMixin) = IsPluggable()
