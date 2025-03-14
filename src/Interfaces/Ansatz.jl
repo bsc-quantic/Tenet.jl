@@ -5,8 +5,8 @@ struct AnsatzInterface end
 function hasinterface(::AnsatzInterface, T::Type)
     hasmethod(lanes, Tuple{T}) || return false
     hasmethod(bonds, Tuple{T}) || return false
-    hasmethod(tensors, Tuple{NamedTuple{(:at,)},T}) || return false
-    hasmethod(inds, Tuple{NamedTuple{(:bond,)},T}) || return false
+    hasmethod(tensors, Tuple{@NamedTuple{at::L} where {L<:AbstractLane},T}) || return false
+    hasmethod(inds, Tuple{NamedTuple{bond::B} where {B<:Bond},T}) || return false
     return true
 end
 
@@ -16,10 +16,10 @@ struct WrapsAnsatz <: AnsatzTrait end
 struct NotAnsatz <: AnsatzTrait end
 
 function trait(::AnsatzInterface, ::T) where {T}
-    if hasinterface(AnsatzInterface(), T)
-        return IsAnsatz()
-    elseif hasmethod(unwrap, Tuple{AnsatzInterface,T})
+    if hasmethod(unwrap, Tuple{AnsatzInterface,T})
         return WrapsAnsatz()
+    elseif hasinterface(AnsatzInterface(), T)
+        return IsAnsatz()
     else
         return NotAnsatz()
     end

@@ -6,8 +6,8 @@ struct PluggableInterface end
 function hasinterface(::PluggableInterface, T::Type)
     # required methods
     hasmethod(sites, Tuple{T}) || return false
-    hasmethod(inds, Tuple{NamedTuple{(:at,),T}}) || return false
-    hasmethod(sites, Tuple{NamedTuple{(:at,),T}}) || return false
+    hasmethod(inds, Tuple{@NamedTuple{at::S} where {S<:Site},T}) || return false
+    hasmethod(sites, Tuple{@NamedTuple{at::Symbol},T}) || return false
     return true
 end
 
