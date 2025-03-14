@@ -425,7 +425,7 @@ function isisometry(ψ::T, lane::Lane, dir::Symbol; kwargs...) where {T<:Abstrac
 end
 
 # derived methods
-LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), tensors(ψ))
+LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), ψ)
 
 function LinearAlgebra.norm(::NonCanonical, tn)
     # TODO stack with its dual and contract
