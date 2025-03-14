@@ -219,19 +219,24 @@ function adjoint_sites!(tn)
 end
 
 """
-    align!(a, ioa, b, iob; reset=true)
+    align!(a, ioa, b, iob)
 
 Align the physical indices of `b` to match the physical indices of `a`. `ioa` and `iob` are either `:inputs` or `:outputs`.
-If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
 """
-function align!(a, ioa, b, iob; reset=true)
+function align!(a, ioa, b, iob)
     @assert ioa === :inputs || ioa === :outputs
     @assert iob === :inputs || iob === :outputs
 
-    if reset
-        @debug "[align!] Renaming indices of b"
-        resetinds!(b, :gensymclean)
-    end
+    # If `reset=true`, then all indices are renamed. If `reset=false`, then only the indices of the input/output sites are renamed.
+
+    # if !isdisjoint(inds(a), inds(b))
+    #     @warn "Overlapping indices"
+    # end
+
+    # if reset
+    #     @debug "[align!] Renaming indices of b"
+    #     resetinds!(b, :gensymclean)
+    # end
 
     targets = Lane.(sites(a; set=ioa)) ∩ Lane.(sites(b; set=iob))
 
@@ -258,19 +263,19 @@ align!((a, b)::P) where {P<:Pair} = align!(a, :outputs, b, :inputs)
 
 Rename in-place the indices of the input/output sites of two Pluggable Tensor Networks to be able to connect between them.
 """
-macro align!(expr, reset=:(reset = true))
+macro align!(expr)
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
     Base.remove_linenums!(expr)
     a, b = expr.args[2:end]
 
-    @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset
+    # @assert Meta.isexpr(reset, :(=)) && reset.args[1] == :reset
 
     @assert Meta.isexpr(a, :call)
     @assert Meta.isexpr(b, :call)
     ioa, ida = a.args
     iob, idb = b.args
     return quote
-        align!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)); $(esc(reset)))
+        align!($(esc(ida)), $(Meta.quot(ioa)), $(esc(idb)), $(Meta.quot(iob)))
         $(esc(idb))
     end
 end
