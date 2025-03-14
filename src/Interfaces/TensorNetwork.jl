@@ -739,3 +739,35 @@ function gauge!(tn::AbstractTensorNetwork, ind::Symbol, U::AbstractMatrix, Uinv:
 
     replace!(tn, [a => gauged_a, b => gauged_b])
 end
+
+"""
+    resetinds!(tn::AbstractTensorNetwork, method=:gensymnew; kwargs...)
+
+Rename indices in the `TensorNetwork` to a new set of indices. It is mainly used to avoid index name conflicts when connecting Tensor Networks.
+"""
+function resetinds!(tn, method=:gensymclean; kwargs...)
+    new_name_f = if method === :suffix
+        (ind) -> Symbol(ind, get(kwargs, :suffix, '\''))
+    elseif method === :gensymwrap
+        (ind) -> gensym(ind)
+    elseif method === :gensymnew
+        (_) -> gensym(get(kwargs, :base, :i))
+    elseif method === :gensymclean
+        (ind) -> gensymclean(ind)
+    elseif method === :characters
+        gen = IndexCounter(get(kwargs, :init, 1))
+        (_) -> nextindex!(gen)
+    else
+        error("Invalid method: $(Meta.quot(method))")
+    end
+
+    _inds = if haskey(kwargs, :set)
+        inds(tn; set=kwargs.set)
+    else
+        inds(tn)
+    end
+
+    for ind in _inds
+        replace!(tn, ind => new_name_f(ind))
+    end
+end
