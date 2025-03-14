@@ -221,7 +221,7 @@ function inds(kwargs::@NamedTuple{set::Symbol}, tn)
     inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
 end
 
-inds(kwargs::NamedTuple{(:set,)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+inds(kwargs::@NamedTuple{set::Symbol}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
 
 @valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait)
     throw(ArgumentError("""
