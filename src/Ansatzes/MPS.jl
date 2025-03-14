@@ -81,30 +81,13 @@ trait(::AnsatzInterface, ::Union{MPS,MPO}) = WrapsAnsatz()
 unwrap(::AnsatzInterface, tn::Union{MPS,MPO}) = tn.ansatz
 
 # effect handlers
-# TODO fix correct dispatch to mixins on handlers!!!!
-handle!(::Union{MPS,MPO}, ::ReplaceEffect{F}) where {F} = error("Handler for `replace!` on $F not implemented")
-
-# TODO should we throw an error instead?
-function handle!(tn::Union{MPS,MPO}, effect::PushEffect{Tensor})
-    @error "Adding new tensors to a MPS/MPO is forbidden. Deleting the recently added tensor..."
-    delete_inner!(tn, effect.f)
-end
-
-# TODO should we throw an error instead?
-function handle!(tn::Union{MPS,MPO}, effect::DeleteEffect{Tensor})
-    @error "Deleting tensors from a MPS/MPO is forbidden. Readding the recently deleted tensor..."
-    push_inner!(tn, effect.f)
-end
-
 function handle!(tn::Union{MPS,MPO}, effect::ReplaceEffect{Pair{Symbol,Symbol}})
     handle!(unwrap(PluggableInterface(), tn), effect)
 end
 
 # TODO should we add a flag to check if the tensor fulfills the canonical form?
 function handle!(tn::Union{MPS,MPO}, effect::ReplaceEffect{Pair{Tensor,Tensor}})
-    lane = findfirst(t -> t === effect.f[1], tn.lanemap)
-    !isnothing(lane) || return nothing
-    tn.lanemap[lane] = effect.f[2]
+    handle!(unwrap(AnsatzInterface(), tn), effect)
 end
 
 # constructors
