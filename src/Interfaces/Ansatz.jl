@@ -62,6 +62,11 @@ Return the index linked to a [`Bond`](@ref).
 inds(kwargs::@NamedTuple{bond::B}, tn) where {B<:Bond} = inds(kwargs, tn, trait(AnsatzInterface(), tn))
 inds(kwargs::@NamedTuple{bond::B}, tn, ::WrapsAnsatz) where {B<:Bond} = inds(kwargs, unwrap(AnsatzInterface(), tn))
 
+# alias
+function inds(kwargs::@NamedTuple{bond::B}, tn) where {L<:AbstractLane,B<:Tuple{L,L}}
+    inds((; bond=Bond(kwargs.bond...)), tn)
+end
+
 # TODO
 # lanes(::@NamedTuple{at::Tensor}, tn::AbstractTensorNetwork)
 
@@ -222,6 +227,7 @@ function isisometry(tn, lane, bond; atol::Real=1e-12)
     return isapprox(contracted, I(n); atol)
 end
 
+# TODO make an effect for this?
 # NOTE in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
 function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
     @assert haslane(bond, lane)
@@ -268,7 +274,7 @@ function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
         isnothing(absorb) && push_inner!(tn, s)
     elseif method === :qr
         # QR always absorbs eigenvalues to the right
-        @assert absorb ∈ (nothing, :dst, :destination, :right)
+        @assert absorb ∈ (:dst, :destination, :right)
 
         # TODO use methods in Operations module when merged
         Q, R = qr(A; left_inds, right_inds, virtualind=tmpind)
