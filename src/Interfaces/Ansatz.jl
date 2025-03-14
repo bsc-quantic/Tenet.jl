@@ -221,3 +221,71 @@ function isisometry(tn, lane, bond; atol::Real=1e-12)
 
     return isapprox(contracted, I(n); atol)
 end
+
+# NOTE in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
+function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
+    @assert haslane(bond, lane)
+    @assert haslane(tn, lane)
+    @assert hasbond(tn, bond)
+    @assert absorb ∈ (nothing, :src, :source, :left, :dst, :destination, :right, :equal, :equally, :both)
+
+    # A it the tensor where we perform the factorization, but B is also affected by the gauge transformation
+    A = tensors(tn; at=lane)
+    B = tensors(tn; at=only(filter(!=(lane), lanes(bond))))
+
+    dirind = inds(tn; bond=bond)
+    right_inds = Symbol[dirind]
+    left_inds = filter(!=(dirind), vinds(A))
+
+    tmpind = gensym(:tmp)
+    if method === :svd
+        # TODO use methods in Operations module when merged
+        U, s, V = svd(A; left_inds, right_inds, virtualind=tmpind)
+
+        # absorb singular values if specified
+        if absorb ∈ (:src, :source, :left)
+            U = contract(U, s; dims=[])
+        elseif absorb ∈ (:dst, :destination, :right)
+            V = contract(s, V; dims=[])
+        elseif absorb ∈ (:equal, :equally, :both)
+            U = contract(U, sqrt.(s); dims=[])
+            V = contract(sqrt.(s), V; dims=[])
+        end
+
+        # contract V against next lane tensor
+        V = contract(B, V)
+
+        # rename back bond index
+        U = replace(U, tmpind => dirind)
+        V = replace(V, tmpind => dirind)
+        s = replace(s, tmpind => dirind)
+
+        # replace old tensors with new gauged ones
+        replace!(tn, A => U)
+        replace!(tn, B => V)
+
+        # if singular values are not absorbed, connect it to the bond index forming an hyperindex
+        isnothing(absorb) && push_inner!(tn, s)
+    elseif method === :qr
+        # QR always absorbs eigenvalues to the right
+        @assert absorb ∈ (nothing, :dst, :destination, :right)
+
+        # TODO use methods in Operations module when merged
+        Q, R = qr(A; left_inds, right_inds, virtualind=tmpind)
+
+        # contract R against next lane tensor
+        R = contract(R, B)
+
+        # rename back bond index
+        Q = replace(Q, tmpind => dirind)
+        R = replace(R, tmpind => dirind)
+
+        # replace old tensors with new gauged ones
+        replace!(tn, A => Q)
+        replace!(tn, B => R)
+    else
+        throw(ArgumentError("Unknown factorization method=:$method"))
+    end
+
+    return tn
+end
