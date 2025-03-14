@@ -62,6 +62,7 @@ function Graphs.add_vertex!(lattice::Lattice, lane::Lane)
     return lattice
 end
 
+Graphs.add_edge!(lattice::Lattice, edge::Bond) = Graphs.add_edge!(lattice, Graphs.src(edge), Graphs.dst(edge))
 function Graphs.add_edge!(lattice::Lattice, a::Lane, b::Lane)
     if !Graphs.add_edge!(lattice.graph, parent_vertex(lattice, a), parent_vertex(lattice, b))
         throw(ErrorException("Could not add edge to parent graph"))
@@ -77,6 +78,9 @@ function Graphs.rem_vertex!(lattice::Lattice, lane::Lane)
 end
 
 Graphs.rem_edge!(lattice::Lattice, edge::Bond) = Graphs.rem_edge!(lattice, Graphs.src(edge), Graphs.dst(edge))
+function Graphs.rem_edge!(lattice::Lattice, src::Lane, dst::Lane)
+    Graphs.rem_edge!(lattice.graph, parent_vertex(lattice, src), parent_vertex(lattice, dst))
+end
 
 """
     Graphs.vertices(::Lattice)
