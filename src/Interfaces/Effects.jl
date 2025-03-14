@@ -12,7 +12,8 @@ abstract type Effect end
 
 Returns `true` if `x` can handle the effect.
 """
-function canhandle end
+canhandle(::T, ::E) where {T,E} = canhandle(T, E)
+canhandle(::Type{T}, ::Type{E}) where {T,E} = hasmethod(handle!, Tuple{T,E})
 
 """
     handle!(x, effect::Effect)
