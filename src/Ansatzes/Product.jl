@@ -109,13 +109,13 @@ end
 function LinearAlgebra.norm(tn::AbstractProduct, p::Real=2)
     mapreduce(*, tensors(tn)) do tensor
         norm(parent(tensor), p) # TODO is this implemented?
-    end^(1//p)
+    end
 end
 
 function LinearAlgebra.opnorm(tn::ProductOperator; p::Real=2)
     return mapreduce(*, tensors(tn)) do tensor
         opnorm(parent(tensor), p)
-    end^(1//p)
+    end
 end
 
 function LinearAlgebra.normalize!(tn::AbstractProduct; p::Real=2)
