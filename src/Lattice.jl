@@ -17,6 +17,8 @@ Base.show(io::IO, edge::Bond) = write(io, "Bond: $(Graphs.src(edge)) - $(Graphs.
 Pair(e::Bond) = src(e) => dst(e)
 Tuple(e::Bond) = (src(e), dst(e))
 
+haslane(bond::Bond, lane) = lane == Graphs.src(bond) || lane == Graphs.dst(bond)
+
 """
     Lattice
 

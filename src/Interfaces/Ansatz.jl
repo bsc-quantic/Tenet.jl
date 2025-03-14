@@ -194,3 +194,30 @@ function Graphs.neighbors(tn::AbstractTensorNetwork, bond::Bond)
     a, b = Graphs.src(bond), Graphs.dst(bond)
     return filter!(x -> x != a && x != b, neighbors(tn, a) ∩ neighbors(tn, b))
 end
+
+"""
+    isisometry(ψ, lane, bond; atol=1e-12)
+
+Return `true` if the tensor at `lane` is an isometry pointing to `bond`.
+"""
+function isisometry(tn, lane, bond; atol::Real=1e-12)
+    @assert haslane(bond, lane)
+    @assert haslane(tn, lane)
+    @assert hasbond(tn, bond)
+
+    tensor = tensors(tn; at=lane)
+    bondind = inds(tn; bond=bond)
+
+    if isnothing(bondind)
+        return isapprox(parent(contract(tensor, conj(tensor))), fill(true); atol)
+    end
+
+    inda, indb = gensym(:a), gensym(:b)
+    a = replace(tensor, bondind => inda)
+    b = replace(conj(tensor), bondind => indb)
+
+    n = size(tensor, bondind)
+    contracted = contract(a, b; out=[inda, indb])
+
+    return isapprox(contracted, I(n); atol)
+end

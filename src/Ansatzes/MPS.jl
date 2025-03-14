@@ -184,10 +184,10 @@ function checkform(config::MixedCanonical, tn::AbstractMPO; atol=1e-11)
 
     for i in 1:nlanes(tn)
         if i < left # Check left-canonical tensors
-            isisometry(tn, Lane(i); dir=:right, atol) ||
+            isisometry(tn, Lane(i), :right; atol) ||
                 throw(ArgumentError("Tensors to the left of lane $i are not left-canonical"))
         elseif i > right # Check right-canonical tensors
-            isisometry(tn, Lane(i); dir=:left, atol) ||
+            isisometry(tn, Lane(i), :left; atol) ||
                 throw(ArgumentError("Tensors to the right of lane $i are not right-canonical"))
         end
     end
@@ -389,6 +389,40 @@ end
 # TODO canonization methods: canonize!, canonize_site!, absorb!, ...
 # TODO improve over `evolve!` methods?
 # TODO improve over `truncate!` methods?
+
+function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
+    if dir === :left
+        return lane <= lane"1" ? nothing : Lane(id(lane) - 1)
+    elseif dir === :right
+        return lane >= Lane(nlanes(ψ)) ? nothing : Lane(id(lane) + 1)
+    else
+        throw(ArgumentError("Unknown direction for $T = :$dir"))
+    end
+end
+
+# TODO refactor to use `bonds`
+function inds(kwargs::NamedTuple{(:at, :dir),Tuple{L,Symbol}}, ψ::T) where {L<:Lane,T<:AbstractMPO}
+    if kwargs.dir === :left && kwargs.at == lane"1"
+        return nothing
+    elseif kwargs.dir === :right && kwargs.at == Lane(nlanes(ψ))
+        return nothing
+    elseif kwargs.dir ∈ (:left, :right)
+        return inds(ψ; bond=Bond(kwargs.at, lanes(ψ, kwargs.at; dir=kwargs.dir)))
+    else
+        throw(ArgumentError("Unknown direction for $T = :$(kwargs.dir)"))
+    end
+end
+
+function isisometry(ψ::T, lane::Lane, dir::Symbol; kwargs...) where {T<:AbstractMPO}
+    if dir === :left
+        bond = Bond(Lane(id(lane) - 1), lane)
+    elseif dir === :right
+        bond = Bond(lane, Lane(id(lane) + 1))
+    else
+        throw(ArgumentError("Unknown direction for $T = :$dir"))
+    end
+    return isisometry(ψ, lane, bond; kwargs...)
+end
 
 # derived methods
 LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), tensors(ψ))
