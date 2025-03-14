@@ -28,10 +28,9 @@ end
 trait(::TensorNetworkInterface, ::AbstractProduct) = WrapsTensorNetwork()
 unwrap(::TensorNetworkInterface, tn::AbstractProduct) = tn.tn
 
-# TODO copy, similar, zero
-function Base.copy(tn::AbstractProduct)
-    return ProductState(copy(tn.tn), copy(tn.pluggable), copy(tn.ansatz))
-end
+Base.copy(tn::P) where {P<:AbstractProduct} = P(copy(tn.tn), copy(tn.pluggable), copy(tn.ansatz))
+Base.similar(tn::P) where {P<:AbstractProduct} = P(similar(tn.tn), copy(tn.pluggable), copy(tn.ansatz))
+Base.zero(tn::P) where {P<:AbstractProduct} = P(zero(tn.tn), copy(tn.pluggable), copy(tn.ansatz))
 
 # PluggableMixin
 trait(::PluggableInterface, ::AbstractProduct) = WrapsPluggable()
