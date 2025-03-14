@@ -1,6 +1,6 @@
 using Tenet
 using Tenet: Lattice, Bond
-using Graphs
+using Graphs: vertices, edges, has_vertex, has_edge, nv, ne, neighbors
 
 @testset let graph = SimpleGraph(), lattice = Lattice()
     @test lattice == zero(Lattice)

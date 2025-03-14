@@ -2,7 +2,7 @@ module TenetGraphMakieExt
 
 using Tenet
 using GraphMakie
-using Graphs: Graphs, vertices
+using Graphs: Graphs
 using Makie
 using Combinatorics: combinations
 const NetworkLayout = GraphMakie.NetworkLayout
@@ -140,7 +140,7 @@ end
 function GraphMakie.graphplot!(ax::Makie.AbstractAxis, lattice::Lattice; labels=false, kwargs...)
     kwargs = Dict{Symbol,Any}(kwargs)
     labels == true && get!(kwargs, :ilabels) do
-        return collect(string.(vertices(lattice)))
+        return collect(string.(Graphs.vertices(lattice)))
     end
     return graphplot!(ax, parent(lattice); kwargs...)
 end
