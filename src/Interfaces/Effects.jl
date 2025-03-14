@@ -8,6 +8,13 @@ Abstract type for effects.
 abstract type Effect end
 
 """
+    canhandle(x, effect::Effect)
+
+Returns `true` if `x` can handle the effect.
+"""
+function canhandle end
+
+"""
     handle!(x, effect::Effect)
 
 Handle the `effect` on `x`. By default, does nothing.
