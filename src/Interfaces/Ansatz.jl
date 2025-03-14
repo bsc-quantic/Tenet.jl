@@ -289,3 +289,70 @@ function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
 
     return tn
 end
+
+struct MissingSchmidtCoefficientsException <: Base.Exception
+    bond::Bond
+end
+
+MissingSchmidtCoefficientsException(bond::Vector{<:AbstractLane}) = MissingSchmidtCoefficientsException(Bond(bond...))
+
+function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
+    return print(io, "Can't access the spectrum on $(e.bond)")
+end
+
+"""
+    tensors(tn; bond)
+
+Return the [`Tensor`](@ref) in a virtual bond between two [`AbstractLane`](@ref)s in a Tensor Network.
+
+# Notes
+
+  - If the Tensor Network is in the canonical form, Tenet stores the Schmidt coefficients of the bond in a vector connected to the bond hyperedge between the two sites and the vector.
+  - If the bond contains no Schmidt coefficients, this method will throw a `MissingSchmidtCoefficientsException`.
+"""
+function tensors(kwargs::NamedTuple{(:bond,)}, tn)
+    vind = inds(tn; bond=kwargs.bond)
+    tensor = filter(tensors(tn)) do tensor
+        (vind,) == inds(tensor)
+    end
+    isempty(tensor) && throw(MissingSchmidtCoefficientsException(kwargs.bond))
+    return only(tensor)
+end
+
+# TODO make an effect fort this
+"""
+    absorb!(tn; bond=(lane1, lane2), dir::Symbol = :left)
+
+For a given Tensor Network, contract the singular values Λ located in the bond between lanes `lane1` and `lane2`.
+
+# Keyword arguments
+
+    - `bond` The bond between the singular values tensor and the tensors to be contracted.
+    - `dir` The direction of the contraction. Defaults to `:left`.
+"""
+function absorb!(tn; bond, dir=:left)
+    lane1, lane2 = bond
+    Λᵢ = tensors(tn; bond=bond)
+    isnothing(Λᵢ) && return tn
+
+    if dir === :right
+        Γᵢ₊₁ = tensors(tn; at=lane2)
+        replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
+    elseif dir === :left
+        Γᵢ = tensors(tn; at=lane1)
+        replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
+    else
+        throw(ArgumentError("Unknown direction=:$(dir)"))
+    end
+
+    delete_inner!(tn, Λᵢ)
+
+    return tn
+end
+
+"""
+    absorb(tn; kwargs...)
+
+Non-mutating version of [`absorb!`](@ref).
+"""
+absorb(tn; kwargs...) = absorb!(copy(tn); kwargs...)
