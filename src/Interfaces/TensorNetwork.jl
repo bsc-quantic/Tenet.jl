@@ -217,36 +217,33 @@ Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
       + `:inner` Indices mentioned at least twice.
       + `:hyper` Indices mentioned at least in three tensors.
 """
-function inds(kwargs::@NamedTuple{set::Symbol}, tn)
-    inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn)
+    throw(ArgumentError("Unknown query: set=$(kwargs.set)"))
 end
 
-inds(kwargs::@NamedTuple{set::Symbol}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
-
-@valsplit function inds(Val(kwargs::@NamedTuple{set::Symbol}), tn, trait)
-    throw(ArgumentError("""
-          Unknown query: set=$(kwargs.set)
-          Possible options are:
-            - :all (default)
-            - :open
-            - :inner
-            - :hyper
-          """))
+inds(kwargs::Val{(; set = :all)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :all)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :all)}, tn, ::IsTensorNetwork)
+    return mapreduce(inds, ∪, tensors(tn); init=Symbol[])
 end
 
-inds(::Val{(; set = :all)}, tn, _) = mapreduce(inds, ∪, tensors(tn); init=Symbol[])
-
-function inds(::Val{(; set = :open)}, tn, _)
+inds(kwargs::Val{(; set = :open)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :open)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :open)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c == 1, histogram))
 end
 
-function inds(::Val{(; set = :inner)}, tn, _)
+inds(kwargs::Val{(; set = :inner)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :inner)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :inner)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c >= 2, histogram))
 end
 
-function inds(::Val{(; set = :hyper)}, tn, _)
+inds(kwargs::Val{(; set = :hyper)}, tn) = inds(kwargs, tn, trait(TensorNetworkInterface(), tn))
+inds(kwargs::Val{(; set = :hyper)}, tn, ::WrapsTensorNetwork) = inds(kwargs, unwrap(TensorNetworkInterface(), tn))
+function inds(::Val{(; set = :hyper)}, tn, ::IsTensorNetwork)
     histogram = hist(Iterators.flatten(Iterators.map(inds, tensors(tn))); init=Dict{Symbol,Int}())
     return first.(Iterators.filter(((k, c),) -> c >= 3, histogram))
 end
