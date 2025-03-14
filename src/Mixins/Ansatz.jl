@@ -27,7 +27,7 @@ lanes(mixin::AnsatzMixin) = sort!(collect(keys(mixin.lanemap)))
 bonds(mixin::AnsatzMixin) = collect(keys(mixin.bondmap))
 
 tensors(kwargs::@NamedTuple{at::L}, mixin::AnsatzMixin) where {L<:Lane} = mixin.lanemap[kwargs.at]
-inds(kwargs::@NamedTuple{bond::B}, mixin::AnsatzMixin) where {B<:Bond} = mixin.bondmap[kwargs.ond]
+inds(kwargs::@NamedTuple{bond::B}, mixin::AnsatzMixin) where {B<:Bond} = mixin.bondmap[kwargs.bond]
 
 # TODO check if renaming `inds(; bond)` to this
 inds(kwargs::@NamedTuple{at::B}, tn::AbstractTensorNetwork) where {B<:Bond} = inds((; bond=kwargs.at), tn)
