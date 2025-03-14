@@ -1,4 +1,4 @@
-using Graphs: add_edge!, add_vertex!
+using Graphs: Graphs
 
 # TODO should we use `PartitionedGraph` here?
 struct AnsatzMixin
@@ -10,10 +10,10 @@ end
 function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
     graph = Lattice()
     for lane in keys(lanemap)
-        add_vertex!(graph, lane)
+        Graphs.add_vertex!(graph, lane)
     end
     for bond in keys(bondmap)
-        add_edge!(graph, bond)
+        Graphs.add_edge!(graph, bond)
     end
     return AnsatzMixin(graph, lanemap, bondmap)
 end
@@ -44,22 +44,22 @@ Graphs.neighbors(mixin::AnsatzMixin, lane::Lane) = neighbors(mixin.lattice, lane
 
 # mutating methods
 function addlane!(mixin::AnsatzMixin, lane::Lane, tensor::Tensor)
-    add_vertex!(mixin.lattice, lane)
+    Graphs.add_vertex!(mixin.lattice, lane)
     mixin.lanemap[lane] = tensor
 end
 
 function rmlane!(mixin::AnsatzMixin, lane::Lane)
-    delete_vertex!(mixin.lattice, lane)
+    Graphs.delete_vertex!(mixin.lattice, lane)
     delete!(mixin.lanemap, lane)
 end
 
 function addbond!(mixin::AnsatzMixin, bond::Bond, ind::Symbol)
-    add_edge!(mixin.lattice, bond)
+    Graphs.add_edge!(mixin.lattice, bond)
     mixin.bondmap[bond] = ind
 end
 
 function rmbond!(mixin::AnsatzMixin, bond::Bond)
-    delete_edge!(mixin.lattice, bond)
+    Graphs.delete_edge!(mixin.lattice, bond)
     delete!(mixin.bondmap, bond)
 end
 
