@@ -68,6 +68,7 @@ function handle!(mixin::AnsatzMixin, effect::DeleteEffect{Tensor})
     rmlane!(mixin, findfirst(==(effect.f), tn.lanemap))
 end
 
+# TODO `findfirst` has a big overhead, specially on `merge` => add a inverse mapping from Tensor to Lane?
 function handle!(mixin::AnsatzMixin, effect::ReplaceEffect{Pair{Tensor,Tensor}})
     lane = findfirst(==(effect.f.first), mixin.lanemap)
     !isnothing(lane) || return nothing
