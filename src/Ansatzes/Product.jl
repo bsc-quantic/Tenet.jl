@@ -118,6 +118,8 @@ function LinearAlgebra.opnorm(tn::ProductOperator; p::Real=2)
     end
 end
 
+LinearAlgebra.normalize(tn::AbstractProduct; kwargs...) = normalize!(copy(tn); kwargs...)
+
 function LinearAlgebra.normalize!(tn::AbstractProduct; p::Real=2)
     for tensor in tensors(tn)
         normalize!(tensor, p)
