@@ -48,7 +48,7 @@ Return a list of the [`Tensor`](@ref)s in the Tensor Network.
 tensors(tn; kwargs...) = tensors(sort_nt(values(kwargs)), tn)
 
 tensors(::@NamedTuple{}, tn) = tensors((;), tn, trait(TensorNetworkInterface(), tn))
-tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface, tn))
+tensors(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = tensors((;), unwrap(TensorNetworkInterface(), tn))
 tensors(::@NamedTuple{}, tn, _) = throw(MethodError(tensors, ((;), tn)))
 
 """
@@ -144,7 +144,7 @@ Return a dictionary with the indices as keys and their size as values.
 """
 Base.size(tn::AbstractTensorNetwork) = size(tn, trait(TensorNetworkInterface(), tn))
 Base.size(tn::AbstractTensorNetwork, ::WrapsTensorNetwork) = size(unwrap(TensorNetworkInterface(), tn))
-function Base.size(tn::AbstractTensorNetwork, ::TensorNetworkTrait)
+function Base.size(tn::AbstractTensorNetwork, ::IsTensorNetwork)
     @debug "Falling back to default `size` method"
     sizes = Dict{Symbol,Int}()
     for tensor in tensors(tn)
@@ -161,8 +161,8 @@ end
 Return the size of index `i` in the Tensor Network.
 """
 Base.size(tn::AbstractTensorNetwork, i) = size(tn, i, trait(TensorNetworkInterface(), tn))
-Base.size(tn::AbstractTensorNetwork, i, ::Yes) = size(unwrap(TensorNetworkInterface(), tn), i)
-function Base.size(tn::AbstractTensorNetwork, i, ::TensorNetworkTrait)
+Base.size(tn::AbstractTensorNetwork, i, ::WrapsTensorNetwork) = size(unwrap(TensorNetworkInterface(), tn), i)
+function Base.size(tn::AbstractTensorNetwork, i, ::IsTensorNetwork)
     @debug "Falling back to default `size(tn, i)` method"
     tensor = findfirst(t -> i ∈ inds(tensor), tensors(tn))
     @argcheck !isnothing(tensor) "Index $i not found in the Tensor Network"
@@ -186,7 +186,7 @@ function tensors(kwargs::NamedTuple{(:contains,)}, tn, _)
 end
 
 function tensors(kwargs::@NamedTuple{contains::AbstractVecOrTuple{Symbol}}, tn, _)
-    return filter(⊇(kwargs.contains) ∘ inds, tensors(tn))
+    return filter(⊇(kwargs.contains) ∘ vinds, tensors(tn))
 end
 
 # TODO dispatch to `TensorNetwork` and write optimized version for it in `src/TensorNetwork.jl`
