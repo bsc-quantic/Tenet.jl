@@ -386,10 +386,6 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
 
-# TODO canonization methods: canonize!, canonize_site!, absorb!, ...
-# TODO improve over `evolve!` methods?
-# TODO improve over `truncate!` methods?
-
 function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
     if dir === :left
         return lane <= lane"1" ? nothing : Lane(id(lane) - 1)
@@ -425,6 +421,83 @@ function isisometry(ψ::T, lane::Lane, dir::Symbol; kwargs...) where {T<:Abstrac
 end
 
 # derived methods
+# TODO mixed_canonize! at bond
+canonize!(tn, targetform) = canonize!(form(tn), tn, targetform)
+
+function canonize!(::Form, tn::AbstractMPO, targetform::MixedCanonical)
+    canonize!(MixedCanonical(Lane.(1:nlanes(tn))), tn, targetform)
+end
+
+function canonize!(srcform::MixedCanonical, tn, dstform::MixedCanonical)
+    src_orthog_center = srcform.orthog_center
+    src_left, src_right = if src_orthog_center isa Lane
+        id(src_orthog_center), id(src_orthog_center)
+    elseif src_orthog_center isa Vector{<:Lane}
+        extrema(id.(src_orthog_center))
+    else
+        throw(ArgumentError("`orthog_center` must be a `Lane` or a `Vector{Lane}`"))
+    end
+
+    dst_orthog_center = dstform.orthog_center
+    dst_left, dst_right = if dst_orthog_center isa Lane
+        id(dst_orthog_center) .+ (-1, 1)
+    elseif dst_orthog_center isa Vector{<:Lane}
+        extrema(id.(dst_orthog_center)) .+ (-1, 1)
+    else
+        throw(ArgumentError("`orthog_center` must be a `Lane` or a `Vector{Lane}`"))
+    end
+
+    # left-to-right QR sweep (left-canonical tensors)
+    for i in src_left:dst_left
+        canonize_site!(tn, Lane(i), Bond(Lane(i), Lane(i + 1)); method=:qr)
+    end
+
+    # right-to-left QR sweep (right-canonical tensors)
+    for i in src_right:-1:dst_right
+        canonize_site!(tn, Lane(i), Bond(Lane(i - 1), Lane(i)); method=:qr)
+    end
+
+    tn.form = copy(dstform)
+
+    return tn
+end
+
+# TODO optimize conversion from `MixedCanonical` to `Canonical`
+# TODO what to do on `Canonical` to `Canonical`? recanonize or do nothing?
+function canonize!(::Form, ψ::AbstractMPO, ::Canonical)
+    Λ = Tensor[]
+
+    # right-to-left QR sweep, get right-canonical tensors
+    canonize!(NonCanonical(), ψ, MixedCanonical(lane"1"))
+
+    # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
+    for i in 1:(nlanes(ψ) - 1)
+        bond = Bond(Lane(i), Lane(i + 1))
+        canonize_site!(ψ, Lane(i), bond; method=:svd, absorb=nothing)
+
+        # extract the singular values and contract them with the next tensor
+        # NOTE do not remove them, since they will be needed but TN can in be in a inconsistent state while processing
+        Λᵢ = tensors(ψ; bond)
+
+        Aᵢ₊₁ = tensors(ψ; at=Lane(i + 1))
+        replace!(ψ, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=Symbol[]))
+    end
+
+    # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
+    for i in 2:nlanes(ψ)
+        bond = Bond(Lane(i - 1), Lane(i))
+        Λᵢ = tensors(ψ; bond)
+        Aᵢ = tensors(ψ; at=Lane(i))
+        Λᵢ⁻¹ = Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ))
+        Γᵢ = contract(Aᵢ, Λᵢ⁻¹; dims=())
+        replace!(ψ, Aᵢ => Γᵢ)
+    end
+
+    ψ.form = Canonical()
+
+    return ψ
+end
+
 LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), ψ)
 
 function LinearAlgebra.norm(::NonCanonical, tn)
@@ -484,3 +557,6 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
 
     return ψ
 end
+
+# TODO improve over `evolve!` methods?
+# TODO improve over `truncate!` methods?
