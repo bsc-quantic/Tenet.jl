@@ -97,7 +97,7 @@ function handle!(tn::Union{MPS,MPO}, effect::DeleteEffect{Tensor})
 end
 
 function handle!(tn::Union{MPS,MPO}, effect::ReplaceEffect{Pair{Symbol,Symbol}})
-    tn.sitemap[effect.f[1]] = effect.f[2]
+    handle!(unwrap(PluggableInterface(), tn), effect)
 end
 
 # TODO should we add a flag to check if the tensor fulfills the canonical form?
