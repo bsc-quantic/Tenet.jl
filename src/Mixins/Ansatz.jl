@@ -18,8 +18,9 @@ function AnsatzMixin(lanemap::Dict{Lane,Tensor}, bondmap::Dict{Bond,Symbol})
     return AnsatzMixin(graph, lanemap, bondmap)
 end
 
-Wraps(::Type{AnsatzMixin}, _) = No()
-AnsatzMixin(mixin::AnsatzMixin) = mixin
+Base.copy(mixin::AnsatzMixin) = AnsatzMixin(copy(mixin.lattice), copy(mixin.lanemap), copy(mixin.bondmap))
+
+trait(::AnsatzInterface, ::AnsatzMixin) = IsAnsatz()
 
 # required methods
 lanes(mixin::AnsatzMixin) = sort!(collect(keys(mixin.lanemap)))
