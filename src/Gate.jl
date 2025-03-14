@@ -24,7 +24,7 @@ Base.copy(gate::Gate) = Gate(copy(Tensor(gate)), sites(gate))
 Tensor(gate::Gate) = gate.tensor
 Base.parent(gate::Gate) = Tensor(gate)
 
-@propagate_inbounds Base.getindex(gate::Gate, key::Vararg{<:Integer}) = getindex(parent(gate), key...)
+@propagate_inbounds Base.getindex(gate::Gate, key::Vararg{I}) where {I<:Integer} = getindex(parent(gate), key...)
 
 # TODO should we just compare the arrays with the appropiate permutation?
 Base.:(==)(a::Gate, b::Gate) = sites(a) == sites(b) && Tensor(a) == Tensor(b)
