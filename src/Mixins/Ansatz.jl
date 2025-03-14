@@ -77,4 +77,4 @@ end
 
 # other useful methods
 Lattice(x::AnsatzMixin) = x.lattice
-hastensor(mixin::AnsatzMixin, tensor) = tensor ∈ values(mixin.lanemap)
+hastensor(mixin::AnsatzMixin, tensor) = any(x -> x === tensor, values(mixin.lanemap))
