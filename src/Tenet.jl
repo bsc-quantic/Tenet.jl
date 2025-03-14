@@ -25,7 +25,7 @@ include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
 
 include("Interfaces/Pluggable.jl")
-export sites, nsites, hassite, addsite!, rmsite!, align!
+export sites, nsites, hassite, addsite!, rmsite!, align!, @align!
 
 include("Interfaces/Form.jl")
 export form, canonize, canonize!, NonCanonical, MixedCanonical, Canonical
