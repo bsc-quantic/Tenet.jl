@@ -19,7 +19,7 @@ export Site, @site_str, isdual
 include("Lattice.jl")
 export Lattice
 
-include("interfaces/Effects.jl")
+include("Interfaces/Effects.jl")
 
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
@@ -61,7 +61,7 @@ include("Gate.jl")
 export Gate
 
 include("Ansatzes/Product.jl")
-export ProductState, ProductOperator
+export Product, ProductState, ProductOperator
 
 include("Ansatzes/MPS.jl")
 export MPS, MPO
