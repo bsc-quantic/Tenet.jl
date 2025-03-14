@@ -1,6 +1,6 @@
 using Random
 using LinearAlgebra
-using Graphs: edges
+using Graphs: Graphs
 
 abstract type AbstractMPO <: AbstractTensorNetwork end
 abstract type AbstractMPS <: AbstractMPO end
@@ -69,7 +69,7 @@ trait(::TensorNetworkInterface, ::Union{MPS,MPO}) = WrapsTensorNetwork()
 unwrap(::TensorNetworkInterface, tn::Union{MPS,MPO}) = tn.tn
 
 function Base.copy(tn::T) where {T<:Union{MPS,MPO}}
-    T(copy(TensorNetwork(tn)), copy(PluggableMixin(tn)), copy(AnsatzMixin(tn)), form(tn))
+    T(copy(tn.tn), copy(tn.pluggable), copy(tn.ansatz), form(tn))
 end
 
 # Pluggable interface
@@ -119,7 +119,7 @@ function MPS(::NonCanonical, arrays; order=defaultorder(MPS), check=true)
     lattice = Lattice(Val(:chain), n)
 
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
-    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
+    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in Graphs.edges(lattice))
     lanemap = Dict{Lane,Tensor}(
         map(enumerate(arrays)) do (i, array)
             local_order = if i == 1
@@ -261,7 +261,7 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
 
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
     append!(sitemap, [Site(i; dual=true) => nextindex!(gen) for i in 1:n])
-    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in edges(lattice))
+    bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in Graphs.edges(lattice))
 
     lanemap = Dict{Lane,Tensor}(
         map(enumerate(arrays)) do (i, array)
