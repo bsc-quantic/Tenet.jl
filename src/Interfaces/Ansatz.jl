@@ -361,3 +361,5 @@ end
 Non-mutating version of [`absorb!`](@ref).
 """
 absorb(tn, args...; kwargs...) = absorb!(copy(tn), args...; kwargs...)
+
+LinearAlgebra.normalize(tn::AbstractTensorNetwork; kwargs...) = normalize!(copy(tn); kwargs...)

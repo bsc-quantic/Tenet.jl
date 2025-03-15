@@ -574,7 +574,7 @@ end
 
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
 LinearAlgebra.normalize!(ψ::AbstractMPO, at::Lane) = normalize!(form(ψ), ψ; at)
-LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Base.AbstractVecOrTuple{Lane}) = normalize!(form(ψ), ψ; bond)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Bond) = normalize!(form(ψ), ψ, bond)
 
 # NOTE in-place normalization of the arrays should be faster, but currently leads to problems for `copy` TensorNetworks
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=nothing)
@@ -590,13 +590,9 @@ function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=nothing)
     return ψ
 end
 
-function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO; at=config.orthog_center)
-    # moves orthogonality center to the specified lane (does nothing if already there)
-    canonize!(ψ, MixedCanonical(at))
-
-    # orthogonality center contains all the norm, so just normalize that tensor
-    normalize!(tensors(ψ; at), 2)
-
+# orthogonality center contains all the norm, so just normalize that tensor
+function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO)
+    normalize!(tensors(ψ; at=config.orthog_center), 2)
     return ψ
 end
 
