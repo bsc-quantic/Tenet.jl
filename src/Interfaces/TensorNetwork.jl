@@ -679,31 +679,45 @@ Contract a Tensor Network. If `path` is not specified, the contraction order wil
 See also: [`einexpr`](@ref), [`contract!`](@ref).
 """
 function contract(tn; optimizer=Greedy(), path=einexpr(tn; optimizer))
-    cache = Dict{Vector{Symbol},Tensor}(vinds(tensor) => tensor for tensor in tensors(tn))
+    path::EinExpr = if path isa SizedEinExpr
+        path.path
+    else
+        path
+    end
+
+    # copy `tn` and pop tensors to avoid conflicts between tensors with same indices
+    tn = TensorNetwork(tensors(tn))
+    cache = IdDict{EinExpr,Tensor}()
+    for leaf in leaves(path)
+        selection = tensors(tn; contains=head(leaf))
+        length(selection) > 1 && @warn "Found more than one tensor with index $(head(leaf))... Using first one"
+        selection = first(selection)
+        cache[leaf] = selection
+        delete!(tn, selection)
+    end
+
     for intermediate in Branches(path)
         if EinExprs.nargs(intermediate) == 1
-            a = head(only(args(intermediate)))
-            cache[head(intermediate)] = contract(cache[a]; dims=suminds(intermediate))
-            head(intermediate) != a && delete!(cache, a)
+            a = only(args(intermediate))
+            cache[intermediate] = contract(cache[a]; dims=suminds(intermediate))
+            delete!(cache, a)
         elseif EinExprs.nargs(intermediate) == 2
-            a, b = head.(args(intermediate))
-            cache[head(intermediate)] = contract(cache[a], cache[b]; dims=suminds(intermediate))
-            head(intermediate) != a && delete!(cache, a)
-            head(intermediate) != b && delete!(cache, b)
+            a, b = args(intermediate)
+            cache[intermediate] = contract(cache[a], cache[b]; dims=suminds(intermediate))
+            delete!(cache, a)
+            delete!(cache, b)
         else
             # TODO we should fix this in EinExprs, this is a temporal fix meanwhile
             @warn "Found a contraction with $(EinExprs.nargs(intermediate)) arguments... Using reduction which might be sub-optimal"
             target_tensors = map(EinExprs.args(intermediate)) do branch
-                tensor = cache[head(branch)]
-                head(intermediate) != head(branch) && delete!(cache, head(branch))
-                return tensor
+                pop!(cache, branch)
             end
-            cache[head(intermediate)] = foldl(target_tensors) do a, b
+            cache[intermediate] = foldl(target_tensors) do a, b
                 contract(a, b; dims=suminds(intermediate))
             end
         end
     end
-    return cache[head(path)]
+    return cache[path]
 end
 
 function Base.rand(::Type{T}, args...; kwargs...) where {T<:AbstractTensorNetwork}
