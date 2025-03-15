@@ -204,6 +204,15 @@ function tensors(kwargs::@NamedTuple{intersects::Symbol}, tn)
 end
 
 """
+    tensors(tn; withinds)
+
+Return the tensors with the exact given indices.
+"""
+function tensors(kwargs::@NamedTuple{withinds::T}, tn) where {T<:AbstractVecOrTuple{Symbol}}
+    filter(t -> issetequal(inds(t), kwargs.withinds), tensors(tn; contains=kwargs.withinds))
+end
+
+"""
     inds(tn; set = :all)
 
 Return the names of the indices in the [`AbstractTensorNetwork`](@ref).
@@ -689,8 +698,10 @@ function contract(tn; optimizer=Greedy(), path=einexpr(tn; optimizer))
     tn = TensorNetwork(tensors(tn))
     cache = IdDict{EinExpr,Tensor}()
     for leaf in leaves(path)
-        selection = tensors(tn; contains=head(leaf))
-        length(selection) > 1 && @warn "Found more than one tensor with index $(head(leaf))... Using first one"
+        selection = tensors(tn; withinds=head(leaf))
+        if length(selection) > 1
+            @warn "Found more than one tensor with index $(head(leaf))... Using first one"
+        end
         selection = first(selection)
         cache[leaf] = selection
         delete!(tn, selection)
