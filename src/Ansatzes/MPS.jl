@@ -551,19 +551,25 @@ end
 
 LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), ψ)
 
-function LinearAlgebra.norm(::NonCanonical, tn)
-    # TODO stack with its dual and contract
-    error("Not implemented yet")
+# this is faster than mixed-canonizing
+function LinearAlgebra.norm(::NonCanonical, ψ::AbstractMPO)
+    tn = stack(ψ, ψ')
+    sqrt(only(contract(tn)))
 end
 
-function LinearAlgebra.norm(config::MixedCanonical, tn)
+function LinearAlgebra.norm(config::MixedCanonical, tn::AbstractMPO)
     orthog_center = tensors(tn; at=config.orthog_center)
     return norm(orthog_center)
 end
 
-function LinearAlgebra.norm(::Canonical, tn)
-    # TODO should we just return the norm of one of the Λ tensors? take an average for numerical stability?
-    error("Not implemented yet")
+# apparently, the norm is the productory of the norms of the Λ tensors
+# but since the tensor network might be not normalized, it's then the ratio against the maximum Λ norm
+function LinearAlgebra.norm(::Canonical, tn::AbstractMPO)
+    norms = map(bonds(tn)) do bond
+        norm(tensors(tn; bond))
+    end
+    max_norm = maximum(norms)
+    return prod(norms ./ max_norm) * max_norm
 end
 
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
