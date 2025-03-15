@@ -500,8 +500,10 @@ function canonize!(srcform::MixedCanonical, tn, dstform::MixedCanonical)
 end
 
 # TODO optimize conversion from `MixedCanonical` to `Canonical`
+canonize!(::Form, tn::AbstractMPO, ::Canonical) = canonize!(NonCanonical(), tn, Canonical())
+
 # TODO what to do on `Canonical` to `Canonical`? recanonize or do nothing?
-function canonize!(::Form, ψ::AbstractMPO, ::Canonical)
+function canonize!(::NonCanonical, ψ::AbstractMPO, ::Canonical)
     Λ = Tensor[]
 
     # right-to-left QR sweep, get right-canonical tensors
