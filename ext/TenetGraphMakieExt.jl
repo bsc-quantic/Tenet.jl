@@ -46,7 +46,7 @@ function GraphMakie.graphplot!(f::Union{Figure,GridPosition}, tn::Union{Tenet.Ab
 end
 
 function GraphMakie.graphplot!(ax::Union{Axis,Axis3}, tn::Tenet.AbstractTensorNetwork; labels=false, kwargs...)
-    tn = TensorNetwork(tn)
+    tn = TensorNetwork(tensors(tn))
     hypermap = Tenet.hyperflatten(tn)
     tn = transform(tn, Tenet.HyperFlatten)
 
