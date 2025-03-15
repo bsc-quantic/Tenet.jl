@@ -325,9 +325,9 @@ function tensors(kwargs::NamedTuple{(:bond,)}, tn)
     return only(tensor)
 end
 
-# TODO make an effect fort this
+# TODO make an effect for this
 """
-    absorb!(tn; bond=(lane1, lane2), dir::Symbol = :left)
+    absorb!(tn; bond=Bond(lane1, lane2), targetlane)
 
 For a given Tensor Network, contract the singular values Λ located in the bond between lanes `lane1` and `lane2`.
 
@@ -336,29 +336,28 @@ For a given Tensor Network, contract the singular values Λ located in the bond 
     - `bond` The bond between the singular values tensor and the tensors to be contracted.
     - `dir` The direction of the contraction. Defaults to `:left`.
 """
-function absorb!(tn; bond, dir=:left)
-    lane1, lane2 = bond
-    Λᵢ = tensors(tn; bond=bond)
-    isnothing(Λᵢ) && return tn
+function absorb!(tn, bond, targetlane)
+    @assert haslane(bond, targetlane)
+    @assert haslane(tn, targetlane)
+    @assert hasbond(tn, bond)
 
-    if dir === :right
-        Γᵢ₊₁ = tensors(tn; at=lane2)
-        replace!(tn, Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ; dims=()))
-    elseif dir === :left
-        Γᵢ = tensors(tn; at=lane1)
-        replace!(tn, Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
-    else
-        throw(ArgumentError("Unknown direction=:$(dir)"))
-    end
+    # retrieve Λ tensor
+    Λ = tensors(tn; bond)
+    isnothing(Λ) && return tn
 
-    delete_inner!(tn, Λᵢ)
+    # absorb to the target tensor
+    Γ = tensors(tn; at=targetlane)
+    replace!(tn, Γ => contract(Γ, Λ; dims=()))
+
+    # remove Λ from the tensor network
+    delete_inner!(tn, Λ)
 
     return tn
 end
 
 """
-    absorb(tn; kwargs...)
+    absorb(tn, args...; kwargs...)
 
 Non-mutating version of [`absorb!`](@ref).
 """
-absorb(tn; kwargs...) = absorb!(copy(tn); kwargs...)
+absorb(tn, args...; kwargs...) = absorb!(copy(tn), args...; kwargs...)

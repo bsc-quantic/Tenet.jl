@@ -498,6 +498,18 @@ function canonize!(::Form, ψ::AbstractMPO, ::Canonical)
     return ψ
 end
 
+function absorb!(ψ::AbstractMPO, bond::Bond, dir::Symbol)
+    targetlane = if dir === :left
+        min(lanes(bond)...)
+    elseif dir === :right
+        max(lanes(bond)...)
+    else
+        throw(ArgumentError("Unknown direction for $T = :$dir"))
+    end
+
+    absorb!(ψ, bond, targetlane)
+end
+
 LinearAlgebra.norm(ψ::AbstractMPO) = norm(form(ψ), ψ)
 
 function LinearAlgebra.norm(::NonCanonical, tn)
