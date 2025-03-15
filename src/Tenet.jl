@@ -33,6 +33,7 @@ export form, canonize, canonize!, NonCanonical, MixedCanonical, Canonical
 include("Interfaces/Ansatz.jl")
 export lanes, nlanes, haslane, addlane!, rmlane!
 export bonds, nbonds, hasbond, addbond!, rmbond!
+export isisometry, absorb!, absorb
 
 include("TensorNetwork.jl")
 export TensorNetwork, slice!, contract!, fuse!
