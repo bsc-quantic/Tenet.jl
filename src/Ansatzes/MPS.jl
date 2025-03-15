@@ -396,6 +396,16 @@ function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
     end
 end
 
+function bonds(ψ::AbstractMPO, lane::Lane; dir)
+    if dir === :left
+        return lane <= lane"1" ? nothing : Bond(Lane(id(lane) - 1), lane)
+    elseif dir === :right
+        return lane >= Lane(nlanes(ψ)) ? nothing : Bond(lane, Lane(id(lane) + 1))
+    else
+        throw(ArgumentError("Unknown direction for $T = :$dir"))
+    end
+end
+
 # TODO refactor to use `bonds`
 function inds(kwargs::NamedTuple{(:at, :dir),Tuple{L,Symbol}}, ψ::T) where {L<:Lane,T<:AbstractMPO}
     if kwargs.dir === :left && kwargs.at == lane"1"
@@ -421,10 +431,37 @@ function isisometry(ψ::T, lane::Lane, dir::Symbol; kwargs...) where {T<:Abstrac
 end
 
 # derived methods
-# TODO mixed_canonize! at bond
-canonize!(tn, targetform) = canonize!(form(tn), tn, targetform)
+# aliases for named directions
+function canonize_site!(ψ::AbstractMPO, lane::Lane; dir::Symbol, kwargs...)
+    @assert haslane(ψ, lane) "Lane $lane not found"
+    bond = bonds(ψ, lane; dir)
+    isnothing(bond) && throw(ArgumentError("There is no bond on $lane in direction $dir"))
+    canonize_site!(ψ, lane, bond; kwargs...)
+end
 
-function canonize!(::Form, tn::AbstractMPO, targetform::MixedCanonical)
+function canonize_site(ψ::AbstractMPO, lane::Lane; dir::Symbol, kwargs...)
+    @assert haslane(ψ, lane) "Lane $lane not found"
+    bond = bonds(ψ, lane; dir)
+    isnothing(bond) && throw(ArgumentError("There is no bond on $lane in direction $dir"))
+    canonize_site(ψ, lane, bond; kwargs...)
+end
+
+# TODO mixed_canonize! at bond
+canonize!(tn::AbstractMPO, targetform::Form) = canonize!(form(tn), tn, targetform)
+canonize!(tn::AbstractMPO, lane::Union{L,Vector{L}}) where {L<:Lane} = canonize!(form(tn), tn, MixedCanonical(lane))
+canonize!(tn::AbstractMPO) = canonize!(form(tn), tn, Canonical())
+
+function canonize!(::Form, tn::AbstractMPO, ::NonCanonical)
+    tn.form = NonCanonical()
+    return tn
+end
+
+function canonize!(::NonCanonical, tn::AbstractMPO, targetform::MixedCanonical)
+    canonize!(MixedCanonical(Lane.(1:nlanes(tn))), tn, targetform)
+end
+
+# TODO this probably can be optimized...
+function canonize!(::Canonical, tn::AbstractMPO, targetform::MixedCanonical)
     canonize!(MixedCanonical(Lane.(1:nlanes(tn))), tn, targetform)
 end
 

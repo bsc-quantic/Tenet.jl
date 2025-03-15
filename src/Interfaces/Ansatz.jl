@@ -296,6 +296,8 @@ function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
     return tn
 end
 
+canonize_site(tn, lane, bond; kwargs...) = canonize_site!(copy(tn), lane, bond; kwargs...)
+
 struct MissingSchmidtCoefficientsException <: Base.Exception
     bond::Bond
 end
