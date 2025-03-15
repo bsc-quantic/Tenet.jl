@@ -421,6 +421,7 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
 
     old_tensor, new_tensor = old_new
     old_tensor === new_tensor && return tn
+    hastensor(tn, old_tensor) || throw(ArgumentError("old tensor not found in Tensor Network"))
 
     @argcheck issetequal(inds(new_tensor), inds(old_tensor)) "replacing tensor indices don't match"
 
