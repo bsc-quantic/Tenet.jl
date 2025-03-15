@@ -1,115 +1,50 @@
-using Tenet: nsites, State, canonize_site, canonize_site!
+using Test
+using Tenet
 using LinearAlgebra
 
-@testset "Interfaces" begin
-    @testset "case 1" begin
-        ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+@testset "hasinterface" begin
+    @test Tenet.hasinterface(Tenet.TensorNetworkInterface(), MPS)
+    @test Tenet.hasinterface(Tenet.PluggableInterface(), MPS)
+    @test Tenet.hasinterface(Tenet.AnsatzInterface(), MPS)
+end
 
-        test_tensornetwork(ψ; contract_mut=false)
-        test_pluggable(ψ)
-        test_ansatz(ψ)
+@testset "constructors" begin
+    @testset "from arrays" begin
+        @test MPS([zeros(2, 2), zeros(2, 2, 2), zeros(2, 2)]) isa MPS
 
-        @test socket(ψ) == State()
-        @test nsites(ψ; set=:inputs) == 0
-        @test nsites(ψ; set=:outputs) == 3
-        @test issetequal(sites(ψ), [site"1", site"2", site"3"])
-        @test boundary(ψ) == Open()
-        @test inds(ψ; at=site"1", dir=:left) == inds(ψ; at=site"3", dir=:right) == nothing
+        # default order (:o, :l, :r)
+        @test MPS([zeros(2, 1), zeros(2, 1, 3), zeros(2, 3)]) isa MPS
+
+        @test MPS([zeros(1, 2), zeros(3, 2, 1), zeros(2, 3)]; order=[:r, :o, :l]) isa MPS
     end
 
-    @testset "case 2" begin
-        ψ = MPS([rand(2, 1), rand(2, 1, 3), rand(2, 3)]) # Default order (:o, :l, :r)
-
-        test_tensornetwork(ψ; contract_mut=false)
-        test_pluggable(ψ)
-        test_ansatz(ψ)
-
-        @test size(tensors(ψ; at=site"1")) == (2, 1)
-        @test size(tensors(ψ; at=site"2")) == (2, 1, 3)
-        @test size(tensors(ψ; at=site"3")) == (2, 3)
-        @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
-        @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right)
-        @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right)
-    end
-
-    @testset "case 3: order = [:r, :o, :l]" begin
-        ψ = MPS([rand(1, 2), rand(3, 2, 1), rand(2, 3)]; order=[:r, :o, :l])
-
-        test_tensornetwork(ψ; contract_mut=false)
-        test_pluggable(ψ)
-        test_ansatz(ψ)
-
-        @test size(tensors(ψ; at=site"1")) == (1, 2)
-        @test size(tensors(ψ; at=site"2")) == (3, 2, 1)
-        @test size(tensors(ψ; at=site"3")) == (2, 3)
-        @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
-        @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right) !== nothing
-        @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right) !== nothing
-        @test all(i -> size(ψ, inds(ψ; at=Site(i))) == 2, 1:nsites(ψ))
+    @testset "rand" begin
+        @test rand(MPS; n=3, maxdim=2) isa MPS
     end
 end
 
-@testset "identity constructor" begin
-    nsites_cases = [6, 7, 6, 7]
-    physdim_cases = [3, 2, 3, 2]
-    maxdim_cases = [nothing, nothing, 9, 4] # nothing means default
-    expected_tensorsizes_cases = [
-        [(3, 3), (3, 3, 9), (3, 9, 27), (3, 27, 9), (3, 9, 3), (3, 3)],
-        [(2, 2), (2, 2, 4), (2, 4, 8), (2, 8, 8), (2, 8, 4), (2, 4, 2), (2, 2)],
-        [(3, 3), (3, 3, 9), (3, 9, 9), (3, 9, 9), (3, 9, 3), (3, 3)],
-        [(2, 2), (2, 2, 4), (2, 4, 4), (2, 4, 4), (2, 4, 4), (2, 4, 2), (2, 2)],
-    ]
+@testset "core" begin
+    ψ = MPS([rand(2, 1), rand(2, 1, 3), rand(2, 3)]) # Default order (:o, :l, :r)
 
-    for (nsites, physdim, expected_tensorsizes, maxdim) in
-        zip(nsites_cases, physdim_cases, expected_tensorsizes_cases, maxdim_cases)
-        ψ = if isnothing(maxdim)
-            MPS(identity, nsites; physdim=physdim)
-        else
-            MPS(identity, nsites; physdim=physdim, maxdim=maxdim)
-        end
+    @test ntensors(ψ) == 3
+    @test ninds(ψ) == 5
 
-        # Test the tensor dimensions
-        obtained_tensorsizes = size.(tensors(ψ))
-        @test obtained_tensorsizes == expected_tensorsizes
+    @test issetequal(lanes(ψ), [lane"1", lane"2", lane"3"])
+    @test issetequal(sites(ψ), [site"1", site"2", site"3"])
+    @test issetequal(bonds(ψ), [Bond(lane"1", lane"2"), Bond(lane"2", lane"3")])
 
-        # Test whether all tensors are the identity
-        alltns = tensors(ψ)
+    @test Tenet.socket(ψ) == Tenet.State()
+    @test nsites(ψ; set=:inputs) == 0
+    @test nsites(ψ; set=:outputs) == 3
+    @test nlanes(ψ) == 3
 
-        # - Test extreme tensors (2D) equal identity
-        diagonal_2D = [fill(i, 2) for i in 1:physdim]
-        @test all(delta -> alltns[1][delta...] == 1, diagonal_2D)
-        @test sum(alltns[1]) == physdim
-        @test all(delta -> alltns[end][delta...] == 1, diagonal_2D)
-        @test sum(alltns[end]) == physdim
+    @test size(tensors(ψ; at=lane"1")) == (2, 1)
+    @test size(tensors(ψ; at=lane"2")) == (2, 1, 3)
+    @test size(tensors(ψ; at=lane"3")) == (2, 3)
 
-        # - Test bulk tensors (3D) equal identity
-        diagonal_3D = [fill(i, 3) for i in 1:physdim]
-        @test all(tns -> all(delta -> tns[delta...] == 1, diagonal_3D), alltns[2:(end - 1)])
-        @test all(tns -> sum(tns) == physdim, alltns[2:(end - 1)])
-
-        # Test whether the contraction gives the identity
-        contracted_ψ = contract(ψ)
-        diagonal_nsitesD = [fill(i, nsites) for i in 1:physdim]
-        @test all(delta -> contracted_ψ[delta...] == 1, diagonal_nsitesD)
-        @test sum(contracted_ψ) == physdim
-    end
-end
-
-@testset "sites" begin
-    ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-
-    @test isnothing(sites(ψ, site"1"; dir=:left))
-    @test isnothing(sites(ψ, site"3"; dir=:right))
-
-    @test sites(ψ, site"2"; dir=:left) == site"1"
-    @test sites(ψ, site"3"; dir=:left) == site"2"
-
-    @test sites(ψ, site"2"; dir=:right) == site"3"
-    @test sites(ψ, site"1"; dir=:right) == site"2"
-end
-
-@testset "lanes" begin
-    ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+    @test inds(ψ; at=lane"1", dir=:left) == inds(ψ; at=lane"3", dir=:right) === nothing
+    @test inds(ψ; at=lane"2", dir=:left) == inds(ψ; at=lane"1", dir=:right)
+    @test inds(ψ; at=lane"3", dir=:left) == inds(ψ; at=lane"2", dir=:right)
 
     @test isnothing(lanes(ψ, lane"1"; dir=:left))
     @test isnothing(lanes(ψ, lane"3"; dir=:right))
@@ -123,8 +58,203 @@ end
 
 @testset "adjoint" begin
     ψ = rand(MPS; n=3, maxdim=2, eltype=ComplexF64)
-    @test socket(ψ') == State(; dual=true)
+    @test Tenet.socket(ψ') == Tenet.State(; dual=true)
     @test isapprox(contract(ψ), conj(contract(ψ')))
+end
+
+@testset "canonize" begin
+    @testset "canonize_site!" begin
+        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4)])
+        ψ_tensor = contract(ψ)
+
+        @testset let ψ = copy(ψ)
+            @test_throws ArgumentError Tenet.canonize_site!(ψ, lane"1"; dir=:left)
+            @test_throws ArgumentError Tenet.canonize_site!(ψ, lane"3"; dir=:right)
+        end
+
+        @testset "method = qr" begin
+            canonized = Tenet.canonize_site(ψ, lane"1"; dir=:right, method=:qr)
+            @test isisometry(canonized, lane"1", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"2"; dir=:right, method=:qr)
+            @test isisometry(canonized, lane"2", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"2"; dir=:left, method=:qr)
+            @test isisometry(canonized, lane"2", :left)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"3"; dir=:left, method=:qr)
+            @test isisometry(canonized, lane"3", :left)
+            @test isapprox(contract(canonized), ψ_tensor)
+        end
+
+        @testset "method = svd" begin
+            canonized = Tenet.canonize_site(ψ, lane"1"; dir=:right, method=:svd)
+            @test isisometry(canonized, lane"1", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"2"; dir=:right, method=:svd)
+            @test isisometry(canonized, lane"2", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"2"; dir=:left, method=:svd)
+            @test isisometry(canonized, lane"2", :left)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            canonized = Tenet.canonize_site(ψ, lane"3"; dir=:left, method=:svd)
+            @test isisometry(canonized, lane"3", :left)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            # do not absorb (1 tensor more)
+            canonized = Tenet.canonize_site(ψ, lane"1"; dir=:right, method=:svd, absorb=nothing)
+            @test isisometry(canonized, lane"1", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+            @test ntensors(canonized) == ntensors(ψ) + 1
+
+            # absorb left (not isometry)
+            canonized = Tenet.canonize_site(ψ, lane"1"; dir=:right, method=:svd, absorb=:left)
+            @test !isisometry(canonized, lane"1", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+
+            # absorb both (not isommetry)
+            canonized = Tenet.canonize_site(ψ, lane"1"; dir=:right, method=:svd, absorb=:both)
+            @test !isisometry(canonized, lane"1", :right)
+            @test isapprox(contract(canonized), ψ_tensor)
+        end
+    end
+
+    @testset "canonize! to Canonical form" begin
+        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+        canonized = canonize(ψ)
+
+        @test form(canonized) isa Canonical
+        @test ntensors(canonized) == ntensors(ψ) + nbonds(ψ)
+        @test isapprox(contract(canonized), contract(ψ))
+        @test isapprox(norm(canonized), norm(ψ))
+
+        # Extract the singular values between each adjacent pair of sites in the canonized chain
+        Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
+
+        norm_psi = norm(ψ)
+        @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
+
+        canonized = canonize(ψ)
+
+        # on boundaries, you have isommetries
+        @test isisometry(canonized, lane"1", :right)
+        @test isisometry(canonized, lane"5", :left)
+
+        canonized_right = absorb(canonized, Bond(lane"1", lane"2"), :right)
+        @test isisometry(canonized_right, lane"2", :right)
+
+        canonized_right = absorb(canonized, Bond(lane"2", lane"3"), :right)
+        @test isisometry(canonized_right, lane"3", :right)
+
+        canonized_right = absorb(canonized, Bond(lane"3", lane"4"), :right)
+        @test isisometry(canonized_right, lane"4", :right)
+
+        canonized_left = absorb(canonized, Bond(lane"2", lane"3"), :left)
+        @test isisometry(canonized_left, lane"2", :left)
+
+        canonized_left = absorb(canonized, Bond(lane"3", lane"4"), :left)
+        @test isisometry(canonized_left, lane"3", :left)
+
+        canonized_left = absorb(canonized, Bond(lane"4", lane"5"), :left)
+        @test isisometry(canonized_left, lane"4", :left)
+    end
+
+    @testset "canonize! to MixedCanonical form" begin
+        @testset "single Site" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonized = canonize(ψ, lane"3")
+            @test Tenet.checkform(canonized)
+
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == lane"3"
+
+            @test isisometry(canonized, lane"1", :right)
+            @test isisometry(canonized, lane"2", :right)
+            @test isisometry(canonized, lane"4", :left)
+            @test isisometry(canonized, lane"5", :left)
+
+            @test contract(canonized) ≈ contract(ψ)
+        end
+
+        @testset "multiple Sites" begin
+            ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonized = canonize(ψ, [lane"2", lane"3"])
+
+            @test Tenet.checkform(canonized)
+            @test form(canonized) isa MixedCanonical
+            @test form(canonized).orthog_center == [lane"2", lane"3"]
+
+            @test isisometry(canonized, lane"1", :right)
+            @test isisometry(canonized, lane"4", :left)
+            @test isisometry(canonized, lane"5", :left)
+
+            @test contract(canonized) ≈ contract(ψ)
+        end
+    end
+end
+
+@testset "norm" begin
+    using LinearAlgebra: norm
+
+    ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+    norm_value = contract(stack(ψ, ψ')) |> only |> sqrt
+
+    @testset "NonCanonical" begin
+        @test form(ψ) isa NonCanonical
+        @test norm(ψ) ≈ norm_value
+    end
+
+    @testset "MixedCanonical" begin
+        ϕ = canonize(ψ, MixedCanonical(lane"2"))
+        @test form(ϕ) isa MixedCanonical
+        @test norm(ϕ) ≈ norm_value
+
+        # Perturb the state to make it non-normalized
+        orthog_center = tensors(ϕ; at=lane"3")
+        orthog_center ./= 2
+        @test norm(ϕ) ≈ norm_value / 2
+    end
+
+    @testset "Canonical" begin
+        ϕ = canonize(ψ)
+        @test form(ϕ) isa Canonical
+        @test norm(ϕ) ≈ norm_value
+    end
+end
+
+@testset "normalize!" begin
+    using LinearAlgebra: normalize, normalize!
+    ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+
+    @testset "NonCanonical" begin
+        @test norm(normalize(ψ)) ≈ 1.0
+        @test norm(normalize(ψ, lane"3")) ≈ 1.0
+    end
+
+    @testset "MixedCanonical" begin
+        ϕ = canonize(ψ, MixedCanonical(lane"3"))
+        normalize!(ϕ)
+        @test norm(ϕ) ≈ 1.0
+    end
+
+    @testset "Canonical" begin
+        ϕ = canonize(ψ)
+        normalize!(ϕ)
+        @test norm(ϕ) ≈ 1.0
+
+        Λ34 = tensors(ϕ; bond=(lane"3", lane"4"))
+        Λ34 ./= 2
+        @test norm(ϕ) ≈ 0.5
+
+        normalize!(ψ, Bond(lane"3", lane"4"))
+        @test norm(ψ) ≈ 1.0
+    end
 end
 
 @testset "truncate!" begin
@@ -169,169 +299,6 @@ end
 
         truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=2, canonize=false, normalize=true)
         @test norm(truncated) ≈ 1.0
-    end
-end
-
-@testset "norm" begin
-    using LinearAlgebra: norm
-
-    n = 8
-    χ = 10
-    ψ = rand(MPS; n, maxdim=χ)
-
-    @test socket(ψ) == State()
-    @test nsites(ψ; set=:inputs) == 0
-    @test nsites(ψ; set=:outputs) == n
-    @test issetequal(sites(ψ), map(Site, 1:n))
-    @test boundary(ψ) == Open()
-    @test isapprox(norm(ψ), 1.0)
-    @test maximum(last, size(ψ)) <= χ
-end
-
-@testset "normalize!" begin
-    using LinearAlgebra: normalize, normalize!
-
-    @testset "NonCanonical" begin
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-
-        normalized = normalize(ψ)
-        @test norm(normalized) ≈ 1.0
-
-        normalize!(ψ, lane"3")
-        @test norm(ψ) ≈ 1.0
-    end
-
-    @testset "MixedCanonical" begin
-        ψ = rand(MPS; n=5, maxdim=16)
-
-        # Perturb the state to make it non-normalized
-        t = tensors(ψ; at=lane"3")
-        replace!(ψ, t => Tensor(rand(size(t)...), inds(t)))
-
-        normalized = normalize(ψ)
-        @test norm(normalized) ≈ 1.0
-
-        normalize!(ψ, lane"3")
-        @test norm(ψ) ≈ 1.0
-    end
-
-    @testset "Canonical" begin
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        canonize!(ψ)
-
-        normalized = normalize(ψ)
-        @test norm(normalized) ≈ 1.0
-
-        normalize!(ψ, (lane"3", lane"4"))
-        @test norm(ψ) ≈ 1.0
-    end
-end
-
-@testset "canonize_site!" begin
-    ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4)])
-
-    @test_throws ArgumentError canonize_site!(ψ, lane"1"; dir=:left)
-    @test_throws ArgumentError canonize_site!(ψ, lane"3"; dir=:right)
-
-    for method in [:qr, :svd]
-        canonized = canonize_site(ψ, lane"1"; dir=:right, method=method)
-        @test isisometry(canonized, lane"1"; dir=:right)
-        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
-
-        canonized = canonize_site(ψ, lane"2"; dir=:right, method=method)
-        @test isisometry(canonized, lane"2"; dir=:right)
-        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
-
-        canonized = canonize_site(ψ, lane"2"; dir=:left, method=method)
-        @test isisometry(canonized, lane"2"; dir=:left)
-        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
-
-        canonized = canonize_site(ψ, lane"3"; dir=:left, method=method)
-        @test isisometry(canonized, lane"3"; dir=:left)
-        @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
-    end
-
-    # Ensure that svd creates a new tensor
-    @test length(tensors(canonize_site(ψ, lane"2"; dir=:left, method=:svd))) == 4
-end
-
-@testset "canonize!" begin
-    ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-    canonized = canonize(ψ)
-
-    @test form(canonized) isa Canonical
-
-    @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
-    @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())), contract(ψ))
-    @test isapprox(norm(ψ), norm(canonized))
-
-    # Extract the singular values between each adjacent pair of sites in the canonized chain
-    Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
-
-    norm_psi = norm(ψ)
-    @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
-
-    for i in 1:5
-        canonized = canonize(ψ)
-
-        if i == 1
-            @test isisometry(canonized, Lane(i); dir=:right)
-        elseif i == 5 # in the limits of the chain, we get the norm of the state
-            normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
-            @test isisometry(canonized, Lane(i); dir=:right)
-        else
-            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
-            @test isisometry(canonized, Lane(i); dir=:right)
-        end
-    end
-
-    for i in 1:5
-        canonized = canonize(ψ)
-
-        if i == 1 # in the limits of the chain, we get the norm of the state
-            normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
-            @test isisometry(canonized, Lane(i); dir=:left)
-        elseif i == 5
-            @test isisometry(canonized, Lane(i); dir=:left)
-        else
-            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
-            @test isisometry(canonized, Lane(i); dir=:left)
-        end
-    end
-end
-
-@testset "mixed_canonize!" begin
-    @testset "single Site" begin
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        canonized = mixed_canonize(ψ, lane"3")
-        @test Tenet.check_form(canonized)
-
-        @test form(canonized) isa MixedCanonical
-        @test form(canonized).orthog_center == lane"3"
-
-        @test isisometry(canonized, lane"1"; dir=:right)
-        @test isisometry(canonized, lane"2"; dir=:right)
-        @test isisometry(canonized, lane"4"; dir=:left)
-        @test isisometry(canonized, lane"5"; dir=:left)
-
-        @test contract(canonized) ≈ contract(ψ)
-    end
-
-    @testset "multiple Sites" begin
-        ψ = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        canonized = mixed_canonize(ψ, [lane"2", lane"3"])
-
-        @test Tenet.check_form(canonized)
-        @test form(canonized) isa MixedCanonical
-        @test form(canonized).orthog_center == [lane"2", lane"3"]
-
-        @test isisometry(canonized, lane"1"; dir=:right)
-        @test isisometry(canonized, lane"4"; dir=:left)
-        @test isisometry(canonized, lane"5"; dir=:left)
-
-        @test contract(canonized) ≈ contract(ψ)
     end
 end
 
