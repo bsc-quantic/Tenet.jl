@@ -597,16 +597,66 @@ function LinearAlgebra.normalize!(config::MixedCanonical, ψ::AbstractMPO)
 end
 
 function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
-    old_norm = norm(ψ)
-    if isnothing(bond) # Normalize all λ tensors
-        for i in 1:(nlanes(ψ) - 1)
-            λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
-            replace!(ψ, λ => λ ./ old_norm^(1 / (nlanes(ψ) - 1)))
+    if !isnothing(bond)
+        # when setting `bond`, we are just normalizing one Λ tensor and its neighbor Γ tensors
+        Λab = tensors(ψ; bond)
+        normalize!(Λab)
+
+        a, b = bond
+        Γa, Γb = tensors(ψ; at=a), tensors(ψ; at=b)
+
+        # ρ are Γ tensors with neighbor Λ tensors contracted => ρ = Λ Γ Λ
+        # i.e. it's half reduced density matrix for the site, so it's norm is the total norm too
+        # NOTE this works only if the state is correctly canonized!
+        ρa, ρb = contract(Γa, Λab; dims=Symbol[]), contract(Γb, Λab; dims=Symbol[])
+
+        # open boundary conditions
+        if a != lane"1"
+            Λa = tensors(ψ; bond=(Lane(id(a) - 1), a))
+            ρa = contract(ρa, Λa; dims=Symbol[])
         end
-    else
-        λ = tensors(ψ; bond)
-        replace!(ψ, λ => λ ./ old_norm)
+
+        if b != Lane(nlanes(ψ))
+            Λb = tensors(ψ; bond=(b, Lane(id(b) + 1)))
+            ρb = contract(ρb, Λb; dims=Symbol[])
+        end
+
+        Za, Zb = norm(ρa), norm(ρb)
+
+        Γa ./= Za
+        Γb ./= Zb
     end
+
+    # normalize the Λ tensors
+    for i in 1:(nlanes(ψ) - 1)
+        Λ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
+        normalize!(Λ)
+    end
+
+    # normalize the Γ tensors
+    for i in 2:(nlanes(ψ) - 1)
+        Γ = tensors(ψ; at=Lane(i))
+        Λᵢ₋₁ = tensors(ψ; bond=(Lane(i - 1), Lane(i)))
+        Λᵢ₊₁ = tensors(ψ; bond=(Lane(i), Lane(i + 1)))
+
+        # NOTE manual binary contraction due to bugs in `contract(args...)`
+        ρ = contract(contract(Γ, Λᵢ₋₁; dims=Symbol[]), Λᵢ₊₁; dims=Symbol[])
+        Z = norm(ρ)
+        Γ ./= Z
+    end
+
+    # normalize the first and last Γ tensors
+    Γ = tensors(ψ; at=lane"1")
+    Λ = tensors(ψ; bond=(lane"1", lane"2"))
+    ρ = contract(Γ, Λ; dims=Symbol[])
+    Z = norm(ρ)
+    Γ ./= Z
+
+    Γ = tensors(ψ; at=Lane(nlanes(ψ)))
+    Λ = tensors(ψ; bond=(Lane(nlanes(ψ) - 1), Lane(nlanes(ψ))))
+    ρ = contract(Γ, Λ; dims=Symbol[])
+    Z = norm(ρ)
+    Γ ./= Z
 
     return ψ
 end
