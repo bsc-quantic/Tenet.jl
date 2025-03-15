@@ -484,6 +484,9 @@ end
 
             old_tensor = t_lm
 
+            # Test that it throws an error if the old tensor is not in the tensor network
+            @test_throws ArgumentError replace!(tn, Tensor(ones(2, 2), (:i, :j)) => t_ij)
+
             @test_throws ArgumentError begin
                 new_tensor = Tensor(rand(2, 2), (:a, :b))
                 replace!(tn, old_tensor => new_tensor)
@@ -622,22 +625,22 @@ end
     end
 end
 
-@testset "groupinds!" begin
+@testset "fuse!" begin
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test inds(tn) == [:i]
     @test size(tn, :i) == 4
     @test Tenet.ntensors(tn) == 2
 
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2, 2), [:i, :j, :k])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test issetequal(inds(tn), [:i, :k])
     @test size(tn, :i) == 4
     @test size(tn, :k) == 2
     @test Tenet.ntensors(tn) == 2
 
     tn = TensorNetwork([Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2, 2), [:i, :j]), Tensor(zeros(2), [:j])])
-    groupinds!(tn, :i)
+    fuse!(tn, :i)
     @test issetequal(inds(tn), [:i, :j])
     @test size(tn, :i) == 2
     @test size(tn, :j) == 2

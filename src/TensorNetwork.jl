@@ -209,7 +209,7 @@ tensors(tn::AbstractTensorNetwork; kwargs...) = tensors(sort_nt(values(kwargs)),
 function tensors(::@NamedTuple{}, tn::AbstractTensorNetwork)
     tn = TensorNetwork(tn)
     get!(tn.sorted_tensors) do
-        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ inds)
+        sort!(collect(keys(tn.tensormap)); by=sort ∘ collect ∘ vinds)
     end
 end
 
@@ -507,6 +507,8 @@ function Base.replace!(tn::AbstractTensorNetwork, pair::Pair{<:Tensor,<:Tensor})
     tn = TensorNetwork(tn)
     old_tensor, new_tensor = pair
 
+    old_tensor ∈ tn || throw(ArgumentError("Old tensor not found in TensorNetwork"))
+
     old_tensor === new_tensor && return tn
 
     issetequal(inds(new_tensor), inds(old_tensor)) || throw(ArgumentError("replacing tensor indices don't match"))
@@ -617,31 +619,16 @@ function Base.view(tn::AbstractTensorNetwork, slices::Pair{Symbol}...)
 end
 
 """
-    groupinds!(tn::AbstractTensorNetwork, i::Symbol)
+    fuse!(tn::AbstractTensorNetwork, i::Symbol)
 
 Group indices parallel to `i` and reshape the tensors accordingly.
 """
-function groupinds!(tn::AbstractTensorNetwork, i)
+function fuse!(tn::AbstractTensorNetwork, i)
     parinds = filter!(!=(i), inds(tn; parallelto=i))
     length(parinds) == 0 && return tn
 
-    newtensors = map(@invoke pop!(TensorNetwork(tn), parinds ∪ (i,))) do tensor
-        locᵢ = findfirst(==(i), inds(tensor))
-        locs = findall(∈(parinds), inds(tensor))
-
-        perm = collect(1:ndims(tensor))
-        for (j, loc) in enumerate(locs)
-            perm[loc], perm[locᵢ + j] = perm[locᵢ + j], perm[loc]
-        end
-
-        newshape = collect(size(tensor))
-        newshape[locᵢ] *= prod(x -> size(tensor, x), parinds)
-        deleteat!(newshape, locs)
-        newinds = deleteat!(collect(inds(tensor)), locs)
-
-        newarray = reshape(permutedims(parent(tensor), perm), newshape...)
-        return Tensor(newarray, newinds)
-    end
+    parinds = (i,) ∪ parinds
+    newtensors = map(Base.Fix2(fuse, parinds), pop!(tn, parinds))
 
     append!(tn, newtensors)
 

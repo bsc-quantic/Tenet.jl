@@ -42,10 +42,12 @@ Return the indices of the tensor in the order of the dimensions.
 """
 inds(t::Tensor) = Tuple(t.inds)
 
+# WARN internal use only because it can mutate `Tensor`
+vinds(t::Tensor) = t.inds
+
 function Base.copy(t::Tensor{T,N,<:SubArray{T,N}}) where {T,N}
     data = copy(t.data)
-    inds = t.inds
-    return Tensor(data, inds)
+    return Tensor(data, vinds(t))
 end
 
 """
@@ -55,7 +57,7 @@ Return a uninitialize tensor of the same size, eltype and [`inds`](@ref) as `ten
 """
 Base.similar(t::Tensor; inds=inds(t)) = Tensor(similar(parent(t)), inds)
 Base.similar(t::Tensor, S::Type; inds=inds(t)) = Tensor(similar(parent(t), S), inds)
-function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds=inds(t)) where {T,N}
+function Base.similar(t::Tensor{T,N}, S::Type, dims::Base.Dims{N}; inds=vinds(t)) where {T,N}
     return Tensor(similar(parent(t), S, dims), inds)
 end
 function Base.similar(t::Tensor, ::Type, dims::Base.Dims{N}; kwargs...) where {N}
@@ -71,7 +73,7 @@ end
 
 Return a tensor of the same size, eltype and [`inds`](@ref) as `tensor` but filled with zeros.
 """
-Base.zero(t::Tensor) = Tensor(zero(parent(t)), inds(t))
+Base.zero(t::Tensor) = Tensor(zero(parent(t)), vinds(t))
 
 function __find_index_permutation(a, b)
     inds_b = collect(Union{Missing,Symbol}, b)
@@ -107,8 +109,8 @@ Base.isequal(a::Tensor{A,0}, b::Tensor{B,0}) where {A,B} = isequal(only(a), only
 Base.isapprox(a::AbstractArray, b::Tensor) = false
 Base.isapprox(a::Tensor, b::AbstractArray) = false
 function Base.isapprox(a::Tensor, b::Tensor; kwargs...)
-    issetequal(inds(a), inds(b)) || return false
-    perm = __find_index_permutation(inds(a), inds(b))
+    issetequal(vinds(a), vinds(b)) || return false
+    perm = __find_index_permutation(vinds(a), vinds(b))
     return all(eachindex(IndexCartesian(), a)) do i
         j = CartesianIndex(Tuple(permute!(collect(Tuple(i)), invperm(perm))))
         isapprox(a[i], b[j]; kwargs...)
@@ -139,6 +141,9 @@ Return the underlying array of the tensor.
 """
 Base.parent(t::Tensor) = t.data
 parenttype(::Type{Tensor{T,N,A}}) where {T,N,A} = A
+parenttype(::Type{Tensor{T,N}}) where {T,N} = AbstractArray{T,N}
+parenttype(::Type{Tensor{T}}) where {T} = AbstractArray{T}
+parenttype(::Type{Tensor}) = AbstractArray
 parenttype(::T) where {T<:Tensor} = parenttype(T)
 
 """
@@ -147,7 +152,7 @@ parenttype(::T) where {T<:Tensor} = parenttype(T)
 Return the location of the dimension of `tensor` corresponding to the given index `i`.
 """
 dim(::Tensor, i::Number) = i
-dim(t::Tensor, i::Symbol) = first(findall(==(i), inds(t)))
+dim(t::Tensor, i::Symbol) = findfirst(==(i), vinds(t))
 
 # Iteration interface
 Base.IteratorSize(T::Type{Tensor}) = Iterators.IteratorSize(parenttype(T))
@@ -237,10 +242,10 @@ Return a view of the tensor where the index for dimension `dim` equals `i`.
 
 See also: [`selectdim`](@ref)
 """
-Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), inds(t))
+Base.selectdim(t::Tensor, d::Integer, i) = Tensor(selectdim(parent(t), d, i), vinds(t))
 function Base.selectdim(t::Tensor, d::Integer, i::Integer)
     data = selectdim(parent(t), d, i)
-    indices = [label for (i, label) in enumerate(inds(t)) if i != d]
+    indices = [label for (i, label) in enumerate(vinds(t)) if i != d]
     return Tensor(data, indices)
 end
 
@@ -360,3 +365,24 @@ function __expand_repeat(array, axis, size)
 end
 
 LinearAlgebra.opnorm(x::Tensor, p::Real) = opnorm(parent(x), p)
+
+# TODO choose a new index name? currently choosing the first index of `parinds`
+"""
+    fuse(tensor, parinds; ind=first(parinds))
+
+Fuses `parinds`, leaves them on the right-side internally permuted with `permutator` and names it as `ind`.
+"""
+function fuse(tensor::Tensor, parinds; ind=first(parinds))
+    @assert allunique(inds(tensor))
+    @assert parinds ⊆ inds(tensor)
+
+    locs = findall(∈(parinds), inds(tensor))
+    perm = filter(∉(locs), 1:ndims(tensor))
+    append!(perm, map(i -> findfirst(==(i), inds(tensor)), parinds))
+
+    data = perm == 1:ndims(tensor) ? parent(tensor) : permutedims(parent(tensor), perm)
+    data = reshape(data, (size(data)[1:(ndims(data) - length(parinds))]..., :))
+
+    newinds = (filter(∉(parinds), inds(tensor))..., ind)
+    return Tensor(data, newinds)
+end

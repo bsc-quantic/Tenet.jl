@@ -9,26 +9,41 @@ const stablehlo = MLIR.Dialects.stablehlo
 
 const Enzyme = Reactant.Enzyme
 
-@static if isdefined(Reactant, :traced_type_inner)
-    # we specify `mode` and `track_numbers` types due to ambiguity
-    Base.@nospecializeinfer function Reactant.traced_type_inner(
-        @nospecialize(TT::Type{<:Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
-    )
-        A_traced = Reactant.traced_type_inner(Tenet.parenttype(TT), seen, mode, track_numbers)
-        T = eltype(A_traced)
-        N = ndims(TT)
-        return Tensor{T,N,A_traced}
-    end
+# we specify `mode` and `track_numbers` types due to ambiguity
+Base.@nospecializeinfer function Reactant.traced_type_inner(
+    @nospecialize(_::Type{Tensor}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+)
+    return Tensor
+end
 
-    # we specify `mode` and `track_numbers` types due to ambiguity
-    Base.@nospecializeinfer function Reactant.traced_type_inner(
-        @nospecialize(T::Type{<:Tenet.AbstractTensorNetwork}),
-        seen,
-        mode::Reactant.TraceMode,
-        @nospecialize(track_numbers::Type)
-    )
-        return T
-    end
+Base.@nospecializeinfer function Reactant.traced_type_inner(
+    @nospecialize(_::Type{Tensor{T}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+) where {T}
+    return Tensor{TracedRNumber{T}}
+end
+
+Base.@nospecializeinfer function Reactant.traced_type_inner(
+    @nospecialize(_::Type{Tensor{T,N}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+) where {T,N}
+    return Tensor{TracedRNumber{T,N}}
+end
+
+Base.@nospecializeinfer function Reactant.traced_type_inner(
+    @nospecialize(_::Type{Tensor{T,N,A}}), seen, mode::Reactant.TraceMode, @nospecialize(track_numbers::Type)
+) where {T,N,A}
+    A_traced = Reactant.traced_type_inner(A, seen, mode, track_numbers)
+    T_traced = eltype(A_traced)
+    return Tensor{T_traced,N,A_traced}
+end
+
+# we specify `mode` and `track_numbers` types due to ambiguity
+Base.@nospecializeinfer function Reactant.traced_type_inner(
+    @nospecialize(T::Type{<:Tenet.AbstractTensorNetwork}),
+    seen,
+    mode::Reactant.TraceMode,
+    @nospecialize(track_numbers::Type)
+)
+    return T
 end
 
 function Reactant.make_tracer(seen, @nospecialize(prev::RT), @nospecialize(path), mode; kwargs...) where {RT<:Tensor}
@@ -184,8 +199,8 @@ Base.@nospecializeinfer @noinline function Tenet.contract(
 
     # TODO replace for `Ops.convert`/`adapt` when it's available (there can be problems with nested array structures)
     T = Base.promote_eltype(a, b)
-    da = eltype(a) != T ? TracedRArray{T,ndims(a)}(parent(a)) : parent(a)
-    db = eltype(b) != T ? TracedRArray{T,ndims(b)}(parent(b)) : parent(b)
+    da = eltype(a) != T ? TracedRArray{Reactant.unwrapped_eltype(T),ndims(a)}(parent(a)) : parent(a)
+    db = eltype(b) != T ? TracedRArray{Reactant.unwrapped_eltype(T),ndims(b)}(parent(b)) : parent(b)
 
     data = Reactant.Ops.dot_general(da, db; contracting_dimensions, batching_dimensions)
 
@@ -219,13 +234,6 @@ end
 Base.conj(@nospecialize(x::Tensor{<:TracedRNumber,N,<:TracedRArray})) where {N} = x
 function Base.conj(@nospecialize(x::Tensor{TracedRNumber{T},N,<:TracedRArray})) where {T<:Complex,N}
     Tensor(conj(parent(x)), inds(x))
-end
-
-# fix infinite recursion on Reactant rewrite of invoke/call step
-@reactant_overlay @noinline function Base.replace!(
-    tn::Tenet.AbstractQuantum, old_new::Base.AbstractVecOrTuple{Pair{Symbol,Symbol}}
-)
-    Base.inferencebarrier(Base.replace!)(tn, old_new)
 end
 
 end

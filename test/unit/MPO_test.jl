@@ -1,6 +1,8 @@
+using Test
+using Tenet
 
 H = MPO([rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
-@test socket(H) == Operator()
+@test socket(H) == Tenet.Operator()
 @test nsites(H; set=:inputs) == 3
 @test nsites(H; set=:outputs) == 3
 @test issetequal(sites(H), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
@@ -66,7 +68,7 @@ end
     χ = 10
     H = rand(MPO; n, maxdim=χ)
 
-    @test socket(H) == Operator()
+    @test socket(H) == Tenet.Operator()
     @test nsites(H; set=:inputs) == n
     @test nsites(H; set=:outputs) == n
     @test issetequal(sites(H), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
@@ -76,8 +78,6 @@ end
 end
 
 @testset "canonize!" begin
-    using Tenet: isleftcanonical, isrightcanonical
-
     ψ = MPO([rand(4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4, 4), rand(4, 4, 4)])
     canonized = canonize(ψ)
 
@@ -88,7 +88,7 @@ end
     @test isapprox(norm(ψ), norm(canonized))
 
     # Extract the singular values between each adjacent pair of sites in the canonized chain
-    Λ = [tensors(canonized; between=(Lane(i), Lane(i + 1))) for i in 1:4]
+    Λ = [tensors(canonized; bond=(Lane(i), Lane(i + 1))) for i in 1:4]
 
     norm_psi = norm(ψ)
     @test all(λ -> sqrt(sum(abs2, λ)) ≈ norm_psi, Λ)
@@ -97,14 +97,14 @@ end
         canonized = canonize(ψ)
 
         if i == 1
-            @test isleftcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:right)
         elseif i == 5 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i - 1), Lane(i))))
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            @test isisometry(canonized, Lane(i); dir=:right)
         else
-            contract!(canonized; between=(Lane(i - 1), Lane(i)), direction=:right)
-            @test isleftcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i - 1), Lane(i)), dir=:right)
+            @test isisometry(canonized, Lane(i); dir=:right)
         end
     end
 
@@ -113,13 +113,13 @@ end
 
         if i == 1 # in the limits of the chain, we get the norm of the state
             normalize!(tensors(canonized; bond=(Lane(i), Lane(i + 1))))
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            @test isisometry(canonized, Lane(i); dir=:left)
         elseif i == 5
-            @test isrightcanonical(canonized, Lane(i))
+            @test isisometry(canonized, Lane(i); dir=:left)
         else
-            contract!(canonized; between=(Lane(i), Lane(i + 1)), direction=:left)
-            @test isrightcanonical(canonized, Lane(i))
+            absorb!(canonized; bond=(Lane(i), Lane(i + 1)), dir=:left)
+            @test isisometry(canonized, Lane(i); dir=:left)
         end
     end
 end

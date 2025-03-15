@@ -57,19 +57,19 @@ function contract(a::Tensor, b::Tensor; kwargs...)
 end
 
 function allocate_result(
-    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(inds(a), inds(b))), out=nothing
+    ::typeof(contract), a::Tensor, b::Tensor; fillzero=false, dims=(∩(vinds(a), vinds(b))), out=nothing
 )
-    ia = collect(inds(a))
-    ib = collect(inds(b))
+    ia = collect(vinds(a))
+    ib = collect(vinds(b))
     i = ∩(dims, ia, ib)
 
     ic = if isnothing(out)
-        Tuple(setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : (i,)))
+        setdiff(ia ∪ ib, i isa Base.AbstractVecOrTuple ? i : [i])
     else
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), [size(i in ia ? a : b, i) for i in ic]; fillzero)
+    data = OMEinsum.get_output_array((parent(a), parent(b)), Int[size(i in ia ? a : b, i) for i in ic]; fillzero)
     return Tensor(data, ic)
 end
 
@@ -88,12 +88,12 @@ function contract(a::Tensor; kwargs...)
     return contract!(c, a)
 end
 
-function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(inds(a)), out=nothing)
-    ia = inds(a)
+function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=nonunique(vinds(a)), out=nothing)
+    ia = vinds(a)
     i = ∩(dims, ia)
 
     ic::Vector{Symbol} = if isnothing(out)
-        setdiff(ia, i isa Base.AbstractVecOrTuple ? i : (i,))
+        setdiff(ia, i isa Base.AbstractVecOrTuple ? i : [i])
     else
         out
     end
@@ -114,11 +114,11 @@ contract(tensors::Tensor...; kwargs...) = reduce((x, y) -> contract(x, y; kwargs
 Perform a binary tensor contraction operation between `a` and `b` and store the result in `c`.
 """
 function contract!(c::Tensor, a::Tensor, b::Tensor)
-    ixs = (inds(a), inds(b))
-    iy = inds(c)
+    ixs = (vinds(a), vinds(b))
+    iy = vinds(c)
     xs = (parent(a), parent(b))
     y = parent(c)
-    size_dict = merge!(Dict{Symbol,Int}.([inds(a) .=> size(a), inds(b) .=> size(b)])...)
+    size_dict = merge!(Dict{Symbol,Int}.([vinds(a) .=> size(a), vinds(b) .=> size(b)])...)
 
     einsum!(ixs, iy, xs, y, true, false, size_dict)
     return c
@@ -130,9 +130,9 @@ end
 Perform a unary tensor contraction operation on `a` and store the result in `c`.
 """
 function contract!(y::Tensor, x::Tensor)
-    ixs = (inds(x),)
-    iy = inds(y)
-    size_dict = Dict{Symbol,Int}(inds(x) .=> size(x))
+    ixs = (vinds(x),)
+    iy = vinds(y)
+    size_dict = Dict{Symbol,Int}(vinds(x) .=> size(x))
 
     einsum!(ixs, iy, (parent(x),), parent(y), true, false, size_dict)
     return y
@@ -181,7 +181,10 @@ Either `left_inds` or `right_inds` must be specified, unless `ndims(tensor) == 2
   - `right_inds`: right indices to be used in the SVD factorization. Defaults to all indices of `t` except `left_inds`.
   - `virtualind`: name of the virtual bond. Defaults to a random `Symbol`.
 """
-function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), maxdim=nothing, kwargs...)
+
+function LinearAlgebra.svd(
+    tensor::Tensor; left_inds=(), right_inds=(), virtualind=Symbol(uuid4()), maxdim=nothing, kwargs...
+)
     left_inds, right_inds = factorinds(tensor, left_inds, right_inds)
 
     virtualind ∉ inds(tensor) ||
@@ -206,7 +209,7 @@ function LinearAlgebra.svd(tensor::Tensor; left_inds=(), right_inds=(), virtuali
         s = copy(view(s, virtualind => 1:min(maxdim, size(u, bond))))
         Vt = copy(view(Vt, virtualind => 1:min(maxdim, size(u, bond))))
     end
-    
+
     return U, s, Vt
 end
 

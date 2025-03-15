@@ -149,7 +149,6 @@ end
 end
 
 @testset "svd" begin
-
     @testset "full" begin
         data = rand(ComplexF64, 2, 4, 6, 8)
         tensor = Tensor(data, (:i, :j, :k, :l))
@@ -187,7 +186,7 @@ end
         maxdim = 3
 
         U, s, V = svd(tensor; left_inds=[:i, :j], right_inds=[:k, :l], virtualind=:x, maxdim)
-         
+
         @test size(U) == (2, 4, maxdim)
         @test size(s) == (maxdim,)
         @test size(V) == (6, 8, maxdim)

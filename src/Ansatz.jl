@@ -165,8 +165,12 @@ function inds(kwargs::NamedTuple{(:bond,)}, tn::AbstractAnsatz)
     return only(inds(tensor1) ∩ inds(tensor2))
 end
 
-# TODO fix this properly when we do the mapping 
-tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane} = tensors(tn; at=Site(kwargs.at))
+# TODO fix this properly when we do the mapping
+function tensors(kwargs::NamedTuple{(:at,),Tuple{L}}, tn::AbstractAnsatz) where {L<:Lane}
+    hassite(tn, Site(kwargs.at)) && return tensors(tn; at=Site(kwargs.at))
+    hassite(tn, Site(kwargs.at; dual=true)) && return tensors(tn; at=Site(kwargs.at; dual=true))
+    throw(ArgumentError("Lane $kwargs.at not found"))
+end
 
 """
     tensors(tn::AbstractAnsatz; bond)
@@ -375,13 +379,58 @@ Compute the expectation value of an observable on a [`AbstractAnsatz`](@ref) Ten
 function expect(ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
     @assert socket(ψ) == State() "ψ must be a state"
     @assert socket(bra) == State(; dual=true) "bra must be a dual state"
-    contract(merge(ψ, observable, bra))
+
+    return expect(form(ψ), ψ, observable; bra)
 end
 
 function expect(ψ::AbstractAnsatz, observables::AbstractVecOrTuple; bra=adjoint(ψ))
     sum(observables) do observable
         expect(ψ, observable; bra)
     end
+end
+
+function expect(::NonCanonical, ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
+    return contract(merge(ψ, observable, bra))
+end
+
+# TODO: Try to find a better way to do this
+function expect(::MixedCanonical, ψ::AbstractAnsatz, observable; bra=adjoint(ψ))
+    return contract(merge(ψ, observable, bra))
+end
+
+function expect(::Canonical, ψ::Tenet.AbstractAnsatz, observable; bra=adjoint(ψ))
+    obs_sites = unique(id.(sites(observable)))
+
+    ket_Λ = []
+    bra_Λ = []
+    ket_tensors = []
+    bra_tensors = []
+    for i in obs_sites
+        replace!(observable, inds(observable; at=Site(i)) => Symbol(:input, i))
+        replace!(observable, inds(observable; at=Site(i; dual=true)) => Symbol(:output, i))
+        replace!(ψ, inds(ψ; at=Site(i)) => Symbol(:input, i))
+        replace!(bra, inds(bra; at=Site(i; dual=true)) => Symbol(:output, i))
+
+        replace!(bra, inds(bra; bond=(Lane(i), Lane(i + 1))) => inds(ψ; bond=(Lane(i), Lane(i + 1))))
+        replace!(bra, inds(bra; bond=(Lane(i - 1), Lane(i))) => inds(ψ; bond=(Lane(i - 1), Lane(i))))
+
+        push!(ket_Λ, tensors(ψ; bond=(Lane(i - 1), Lane(i))))
+        push!(bra_Λ, tensors(bra; bond=(Lane(i - 1), Lane(i))))
+
+        push!(ket_tensors, tensors(ψ; at=Site(i)))
+        push!(bra_tensors, tensors(bra; at=Site(i; dual=true)))
+    end
+
+    push!(ket_Λ, tensors(ψ; bond=(Lane(obs_sites[end]), Lane(obs_sites[end] + 1))))
+    push!(bra_Λ, tensors(bra; bond=(Lane(obs_sites[end]), Lane(obs_sites[end] + 1))))
+
+    t = contract(
+        contract(ket_Λ..., ket_tensors...; dims=[]),
+        contract(bra_Λ..., bra_tensors...; dims=[]),
+        tensors(Quantum(observable))[1],
+    )
+
+    return t
 end
 
 """
@@ -485,10 +534,10 @@ function simple_update_2site!(::NonCanonical, ψ::AbstractAnsatz, gate; kwargs..
     gate = copy(gate)
 
     # contract involved sites
-    bond = (sitel, siter) = extrema(lanes(gate))
+    bond = (lanel, laner) = extrema(lanes(gate))
     vind = inds(ψ; bond)
-    linds = filter(!=(vind), inds(tensors(ψ; at=sitel)))
-    rinds = filter(!=(vind), inds(tensors(ψ; at=siter)))
+    linds = filter(!=(vind), inds(tensors(ψ; at=lanel)))
+    rinds = filter(!=(vind), inds(tensors(ψ; at=laner)))
     contract!(ψ; bond)
 
     # TODO replace for `merge!` when #243 is fixed
@@ -519,20 +568,20 @@ end
 # TODO remove `normalize` argument?
 function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, maxdim, normalize=false, canonize=true)
     # Contract the exterior Λ tensors
-    sitel, siter = extrema(lanes(gate))
-    (0 < id(sitel) < nlanes(ψ) || 0 < id(siter) < nlanes(ψ)) ||
+    lanel, laner = extrema(lanes(gate))
+    (0 < id(lanel) < nlanes(ψ) || 0 < id(laner) < nlanes(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nlanes(ψ))"))
 
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between=(Lane(id(sitel) - 1), sitel))
-    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between=(siter, Lane(id(siter) + 1)))
+    Λᵢ₋₁ = id(lanel) == 1 ? nothing : tensors(ψ; bond=(Lane(id(lanel) - 1), lanel))
+    Λᵢ₊₁ = id(lanel) == nsites(ψ) - 1 ? nothing : tensors(ψ; bond=(laner, Lane(id(laner) + 1)))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ; between=(Lane(id(sitel) - 1), sitel), direction=:right, delete_Λ=false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ; between=(siter, Lane(id(siter) + 1)), direction=:left, delete_Λ=false)
+    !isnothing(Λᵢ₋₁) && absorb!(ψ; bond=(Lane(id(lanel) - 1), lanel), dir=:right, delete_Λ=false)
+    !isnothing(Λᵢ₊₁) && absorb!(ψ; bond=(laner, Lane(id(laner) + 1)), dir=:left, delete_Λ=false)
 
     simple_update_2site!(NonCanonical(), ψ, gate; threshold, maxdim, normalize=false, canonize=false)
 
     # contract the updated tensors with the inverse of Λᵢ and Λᵢ₊₂, to get the new Γ tensors
-    U, Vt = tensors(ψ; at=sitel), tensors(ψ; at=siter)
+    U, Vt = tensors(ψ; at=lanel), tensors(ψ; at=laner)
     Γᵢ₋₁ = if isnothing(Λᵢ₋₁)
         U
     else
@@ -545,13 +594,13 @@ function simple_update_2site!(::Canonical, ψ::AbstractAnsatz, gate; threshold, 
     end
 
     # Update the tensors in the tensor network
-    replace!(ψ, tensors(ψ; at=sitel) => Γᵢ₋₁)
-    replace!(ψ, tensors(ψ; at=siter) => Γᵢ)
+    replace!(ψ, tensors(ψ; at=lanel) => Γᵢ₋₁)
+    replace!(ψ, tensors(ψ; at=laner) => Γᵢ)
 
     if canonize
         canonize!(ψ; normalize)
     else
-        normalize && normalize!(ψ, collect((sitel, siter)))
+        normalize && normalize!(ψ, collect((lanel, laner)))
     end
 
     return ψ
