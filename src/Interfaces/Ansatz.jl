@@ -320,9 +320,7 @@ Return the [`Tensor`](@ref) in a virtual bond between two [`AbstractLane`](@ref)
 """
 function tensors(kwargs::NamedTuple{(:bond,)}, tn)
     vind = inds(tn; bond=kwargs.bond)
-    tensor = filter(tensors(tn)) do tensor
-        (vind,) == inds(tensor)
-    end
+    tensor = tensors(tn; withinds=[vind])
     isempty(tensor) && throw(MissingSchmidtCoefficientsException(kwargs.bond))
     return only(tensor)
 end
