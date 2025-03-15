@@ -1,8 +1,8 @@
 using Tenet
 using Tenet: Lattice, Bond
-using Graphs: vertices, edges, has_vertex, has_edge, nv, ne, neighbors
+using Graphs: Graphs, vertices, edges, has_vertex, has_edge, nv, ne, add_vertex!, add_edge!, neighbors
 
-@testset let graph = SimpleGraph(), lattice = Lattice()
+@testset let graph = Graphs.SimpleGraph(), lattice = Lattice()
     @test lattice == zero(Lattice)
     @test lattice == copy(lattice) && lattice !== copy(lattice)
     @test nv(lattice) == 0
