@@ -538,6 +538,11 @@ function contract!(tn, inds)
 end
 
 # derived methods
+Base.summary(io::IO, tn::AbstractTensorNetwork) = print(io, "$(ntensors(tn))-tensors TensorNetwork")
+function Base.show(io::IO, tn::T) where {T<:AbstractTensorNetwork}
+    return print(io, "$T (#tensors=$(ntensors(tn)), #inds=$(ninds(tn)))")
+end
+
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
