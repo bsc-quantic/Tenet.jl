@@ -130,8 +130,8 @@ See also: [`ntensors`](@ref)
 ninds(tn; kwargs...) = ninds(sort_nt(values(kwargs)), tn)
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
-ninds(::@NamedTuple{}, tn) = ninds(@NamedTuple{}(), tn, trait(TensorNetworkInterface(), tn))
-ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds(@NamedTuple{}(), unwrap(TensorNetworkInterface(), tn))
+ninds(::@NamedTuple{}, tn) = ninds((;), tn, trait(TensorNetworkInterface(), tn))
+ninds(::@NamedTuple{}, tn, ::WrapsTensorNetwork) = ninds((;), unwrap(TensorNetworkInterface(), tn))
 function ninds(kwargs::NamedTuple, tn)
     @debug "Falling back to default `ninds` method"
     length(inds(kwargs, tn))
