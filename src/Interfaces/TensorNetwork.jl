@@ -82,7 +82,7 @@ Return `true` if [`Tensor`](@ref) `tensor` is in the Tensor Network.
 See also: [`hasind`](@ref)
 """
 hastensor(tn, tensor) = hastensor(tn, tensor, trait(TensorNetworkInterface(), tn))
-hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetwork(), tn), tensor)
+hastensor(tn, tensor, ::WrapsTensorNetwork) = hastensor(unwrap(TensorNetworkInterface(), tn), tensor)
 function hastensor(tn, tensor, _)
     @debug "Falling back to default `hastensor` method"
     tensor ∈ tensors(tn)
@@ -167,6 +167,16 @@ function Base.size(tn::AbstractTensorNetwork, i, ::IsTensorNetwork)
     tensor = findfirst(t -> i ∈ inds(tensor), tensors(tn))
     @argcheck !isnothing(tensor) "Index $i not found in the Tensor Network"
     return size(tensor, i)
+end
+
+get_unsafe_scope(tn) = get_unsafe_scope(tn, trait(TensorNetworkInterface(), tn))
+function get_unsafe_scope(tn, ::WrapsTensorNetwork)
+    get_unsafe_scope(unwrap(TensorNetworkInterface(), tn))
+end
+
+set_unsafe_scope!(tn, uc::Union{Nothing,UnsafeScope}) = set_unsafe_scope!(tn, uc, trait(TensorNetworkInterface(), tn))
+function set_unsafe_scope!(tn, uc, ::WrapsTensorNetwork)
+    set_unsafe_scope!(unwrap(TensorNetworkInterface(), tn), uc)
 end
 
 # keyword methods
@@ -543,6 +553,8 @@ function Base.show(io::IO, tn::T) where {T<:AbstractTensorNetwork}
     return print(io, "$T (#tensors=$(ntensors(tn)), #inds=$(ninds(tn)))")
 end
 
+Base.in(tn::AbstractTensorNetwork, uc::UnsafeScope) = tn ∈ values(uc)
+
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)
 
@@ -810,4 +822,48 @@ function resetinds!(tn, method=:gensymclean; kwargs...)
     for ind in _inds
         replace!(tn, ind => new_name_f(ind))
     end
+end
+
+"""
+    slice!(tn, index::Symbol, i)
+
+In-place projection of `index` on dimension `i`.
+
+See also: [`selectdim`](@ref), [`view`](@ref).
+"""
+function slice!(tn, ind, i)
+    replacements = map(tensors(tn; contains=ind)) do tensor
+        tensor => selectdim(tensor, ind, i)
+    end
+
+    @unsafe_region tn replace!(tn, replacements)
+
+    return tn
+end
+
+"""
+    selectdim(tn, index::Symbol, i)
+
+Return a copy of the Tensor Network where `index` has been projected to dimension `i`.
+
+See also: [`view`](@ref), [`slice!`](@ref).
+"""
+Base.selectdim(tn, index::Symbol, i) = @view tn[index => i]
+
+"""
+    view(tn, index => i...)
+
+Return a copy of the Tensor Network where each `index` has been projected to dimension `i`.
+It is equivalent to a recursive call of [`selectdim`](@ref).
+
+See also: [`selectdim`](@ref), [`slice!`](@ref).
+"""
+function Base.view(tn, slices::Pair{Symbol}...)
+    tn = copy(tn)
+
+    for (label, i) in slices
+        slice!(tn, label, i)
+    end
+
+    return tn
 end

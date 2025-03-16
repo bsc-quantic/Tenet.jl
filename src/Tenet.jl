@@ -21,6 +21,8 @@ export Lattice, Bond
 
 include("Interfaces/Effects.jl")
 
+include("Interfaces/UnsafeScope.jl")
+
 include("Interfaces/TensorNetwork.jl")
 export AbstractTensorNetwork, tensors, ntensors, ninds, hastensor, hasind, arrays
 

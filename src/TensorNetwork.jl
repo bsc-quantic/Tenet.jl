@@ -50,19 +50,13 @@ end
 TensorNetwork() = TensorNetwork(Tensor[])
 TensorNetwork(tn::TensorNetwork) = tn
 
-# UnsafeScope
-get_unsafe_scope(tn::TensorNetwork) = TensorNetwork(tn).unsafe[]
-set_unsafe_scope!(tn::TensorNetwork, uc::Union{Nothing,UnsafeScope}) = TensorNetwork(tn).unsafe[] = uc
+get_unsafe_scope(tn::TensorNetwork) = tn.unsafe[]
+set_unsafe_scope!(tn::TensorNetwork, uc::Union{Nothing,UnsafeScope}) = tn.unsafe[] = uc
 
-Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
-Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
+function checksizes(tn)
+    # TODO better interface this: dispatch on Interface?
+    tn = unwrap(TensorNetworkInterface(), tn)
 
-Base.:(==)(a::TensorNetwork, b::TensorNetwork) = all(splat(==), zip(tensors(a), tensors(b)))
-function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
-    return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
-end
-
-function __check_index_sizes(tn)
     # Iterate through each index in the indexmap
     for (index, tensors) in tn.indexmap
         # Get the size of the first tensor for this index
@@ -79,46 +73,12 @@ function __check_index_sizes(tn)
     return true
 end
 
-Base.in(tn::TensorNetwork, uc::UnsafeScope) = tn ∈ values(uc)
+Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
+Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
 
-macro unsafe_region(tn_sym, block)
-    return esc(
-        quote
-            local old = copy($tn_sym)
-
-            # Create a new UnsafeScope and set it to the current tn
-            local _uc = Tenet.UnsafeScope()
-            Tenet.set_unsafe_scope!($tn_sym, _uc)
-
-            # Register the tensor network in the UnsafeScope
-            push!(Tenet.get_unsafe_scope($tn_sym).refs, WeakRef($tn_sym))
-
-            e = nothing
-            try
-                $(block) # Execute the user-provided block
-            catch e
-                $(tn_sym) = old # Restore the original tensor network in case of an exception
-                rethrow(e)
-            finally
-                if isnothing(e)
-                    # Perform checks of registered tensor networks
-                    for ref in Tenet.get_unsafe_scope($tn_sym).refs
-                        tn = ref.value
-                        if !isnothing(tn) && tn ∈ values(Tenet.get_unsafe_scope($tn_sym))
-                            if !Tenet.checksizes(tn)
-                                $(tn_sym) = old
-
-                                # Set `unsafe` field to `nothing`
-                                Tenet.set_unsafe_scope!($tn_sym, nothing)
-
-                                throw(DimensionMismatch("Inconsistent size of indices"))
-                            end
-                        end
-                    end
-                end
-            end
-        end,
-    )
+Base.:(==)(a::TensorNetwork, b::TensorNetwork) = all(splat(==), zip(tensors(a), tensors(b)))
+function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
+    return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
 end
 
 # "Tensor Network" interface
@@ -276,51 +236,6 @@ end
 Base.:(==)(a::TensorNetwork, b::TensorNetwork) = all(splat(==), zip(tensors(a), tensors(b)))
 function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
     return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
-end
-
-# TODO move it to interface?
-"""
-    slice!(tn::AbstractTensorNetwork, index::Symbol, i)
-
-In-place projection of `index` on dimension `i`.
-
-See also: [`selectdim`](@ref), [`view`](@ref).
-"""
-function slice!(tn::TensorNetwork, label::Symbol, i)
-    for tensor in pop!(TensorNetwork(tn), label)
-        push!(TensorNetwork(tn), selectdim(tensor, label, i))
-    end
-
-    return tn
-end
-
-# TODO move it to interface?
-"""
-    selectdim(tn::AbstractTensorNetwork, index::Symbol, i)
-
-Return a copy of the [`AbstractTensorNetwork`](@ref) where `index` has been projected to dimension `i`.
-
-See also: [`view`](@ref), [`slice!`](@ref).
-"""
-Base.selectdim(tn::TensorNetwork, index::Symbol, i) = @view tn[index => i]
-
-# TODO move it to interface?
-"""
-    view(tn::AbstractTensorNetwork, index => i...)
-
-Return a copy of the [`AbstractTensorNetwork`](@ref) where each `index` has been projected to dimension `i`.
-It is equivalent to a recursive call of [`selectdim`](@ref).
-
-See also: [`selectdim`](@ref), [`slice!`](@ref).
-"""
-function Base.view(tn::TensorNetwork, slices::Pair{Symbol}...)
-    tn = copy(tn)
-
-    for (label, i) in slices
-        slice!(tn, label, i)
-    end
-
-    return tn
 end
 
 # TODO move it to interface?
