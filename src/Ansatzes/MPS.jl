@@ -662,4 +662,3 @@ function LinearAlgebra.normalize!(::Canonical, ψ::AbstractMPO; bond=nothing)
 end
 
 # TODO improve over `evolve!` methods?
-# TODO improve over `truncate!` methods?

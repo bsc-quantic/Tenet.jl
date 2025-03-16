@@ -72,6 +72,9 @@ export Product, ProductState, ProductOperator
 include("Ansatzes/MPS.jl")
 export MatrixProductState, MPS, MatrixProductOperator, MPO
 
+include("Algorithms/Truncate.jl")
+export truncate!
+
 # include("Pluggable.jl")
 # export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
 # @compat public AbstractQuantum, Socket, Scalar, State, Operator, align!, nsites, nlanes, hassite
