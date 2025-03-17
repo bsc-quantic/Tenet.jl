@@ -76,6 +76,7 @@ function truncate!(::MixedCanonical, tn, bond; kwargs...)
     return truncate!(NonCanonical(), tn, bond; compute_local_svd=true, kwargs...)
 end
 
+# TODO propagate loss of canonicalization?
 """
     truncate!(::Canonical, tn, bond; kwargs...)
 

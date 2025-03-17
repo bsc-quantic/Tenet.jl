@@ -217,14 +217,7 @@ function isisometry(tn, lane, bond; atol::Real=1e-12)
         return isapprox(parent(contract(tensor, conj(tensor))), fill(true); atol)
     end
 
-    inda, indb = gensym(:a), gensym(:b)
-    a = replace(tensor, bondind => inda)
-    b = replace(conj(tensor), bondind => indb)
-
-    n = size(tensor, bondind)
-    contracted = contract(a, b; out=[inda, indb])
-
-    return isapprox(contracted, I(n); atol)
+    return isisometry(tensor, bondind; atol)
 end
 
 # TODO make an effect for this?
@@ -250,12 +243,12 @@ function canonize_site!(tn, lane, bond; method=:qr, absorb=:dst)
 
         # absorb singular values if specified
         if absorb ∈ (:src, :source, :left)
-            U = contract(U, s; dims=[])
+            U = contract(U, s; dims=())
         elseif absorb ∈ (:dst, :destination, :right)
-            V = contract(s, V; dims=[])
+            V = contract(s, V; dims=())
         elseif absorb ∈ (:equal, :equally, :both)
-            U = contract(U, sqrt.(s); dims=[])
-            V = contract(sqrt.(s), V; dims=[])
+            U = contract(U, sqrt.(s); dims=())
+            V = contract(sqrt.(s), V; dims=())
         end
 
         # contract V against next lane tensor

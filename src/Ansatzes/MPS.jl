@@ -226,13 +226,34 @@ function MPS(::Canonical, Γ, λ; order=defaultorder(MPS), check=true)
 end
 
 function checkform(::Canonical, tn::AbstractMPO; atol=1e-11)
-    for i in 1:nlanes(tn)
-        if i > 1 && !isisometry(absorb(tn; bond=(Lane(i - 1), Lane(i)), dir=:right), Lane(i); dir=:right, atol)
-            throw(ArgumentError("Can not form a left-canonical tensor in lane $i from Γ and λ contraction"))
+    # boundary conditions
+    if !isisometry(tn, lane"1", Bond(lane"1", lane"2"); atol)
+        throw(AssertionError("Tensor at lane 1 is not an isommetry"))
+    end
+
+    if !isisometry(tn, Lane(nlanes(tn)), Bond(Lane(nlanes(tn) - 1), Lane(nlanes(tn))); atol)
+        throw(AssertionError("Tensor at lane $(nlanes(tn)) is not an isommetry"))
+    end
+
+    # check canonical form by contracting Γ and λ tensors and checking their orthogonality
+    for i in 2:(nlanes(tn) - 1)
+        Λleft = tensors(tn; bond=Bond(Lane(i - 1), Lane(i)))
+        leftind = inds(tn; bond=Bond(Lane(i - 1), Lane(i)))
+
+        Λright = tensors(tn; bond=Bond(Lane(i), Lane(i + 1)))
+        rightind = inds(tn; bond=Bond(Lane(i), Lane(i + 1)))
+        tensor = tensors(tn; at=Lane(i))
+
+        # absorbing left Λ tensor forms a isometry to the right (left-canonical tensor)
+        isoright = contract(Λleft, tensor; dims=())
+        if !isisometry(isoright, rightind; atol)
+            throw(AssertionError("Can not form a left-canonical tensor in lane $i from Γ and λ contraction"))
         end
 
-        if i < nlanes(tn) && !isisometry(absorb(tn; bond=(Lane(i), Lane(i + 1)), dir=:left), Lane(i); dir=:left, atol)
-            throw(ArgumentError("Can not form a right-canonical tensor in lane $i from Γ and λ contraction"))
+        # absorbing right Λ tensor forms a isometry to the left (right-canonical tensor)
+        isoleft = contract(Λright, tensor; dims=())
+        if !isisometry(isoleft, leftind; atol)
+            throw(AssertionError("Can not form a right-canonical tensor in lane $i from Γ and λ contraction"))
         end
     end
 
@@ -447,9 +468,11 @@ function canonize_site(ψ::AbstractMPO, lane::Lane; dir::Symbol, kwargs...)
 end
 
 # TODO mixed_canonize! at bond
-canonize!(tn::AbstractMPO, targetform::Form) = canonize!(form(tn), tn, targetform)
-canonize!(tn::AbstractMPO, lane::Union{L,Vector{L}}) where {L<:Lane} = canonize!(form(tn), tn, MixedCanonical(lane))
-canonize!(tn::AbstractMPO) = canonize!(form(tn), tn, Canonical())
+canonize!(tn::AbstractMPO, targetform::Form; kwargs...) = canonize!(form(tn), tn, targetform; kwargs...)
+function canonize!(tn::AbstractMPO, lane::Union{L,Vector{L}}; kwargs...) where {L<:Lane}
+    canonize!(form(tn), tn, MixedCanonical(lane); kwargs...)
+end
+canonize!(tn::AbstractMPO; kwargs...) = canonize!(form(tn), tn, Canonical(); kwargs...)
 
 function canonize!(::Form, tn::AbstractMPO, ::NonCanonical)
     tn.form = NonCanonical()
@@ -460,9 +483,32 @@ function canonize!(::NonCanonical, tn::AbstractMPO, targetform::MixedCanonical)
     canonize!(MixedCanonical(Lane.(1:nlanes(tn))), tn, targetform)
 end
 
-# TODO this probably can be optimized...
-function canonize!(::Canonical, tn::AbstractMPO, targetform::MixedCanonical)
-    canonize!(MixedCanonical(Lane.(1:nlanes(tn))), tn, targetform)
+function canonize!(::Canonical, tn::AbstractMPO, targetform::MixedCanonical; sweep=true)
+    min_orthog_center, max_orthog_center = if targetform.orthog_center isa Lane
+        targetform.orthog_center, targetform.orthog_center
+    elseif targetform.orthog_center isa Vector{<:Lane}
+        extrema(id.(targetform.orthog_center))
+    else
+        throw(ArgumentError("`orthog_center` must be a `Lane` or a `Vector{Lane}`"))
+    end
+
+    for i in 1:(id(min_orthog_center) - 1)
+        bond = Bond(Lane(i), Lane(i + 1))
+        absorb!(tn, bond, :right)
+    end
+
+    for i in nlanes(tn):-1:(id(max_orthog_center) + 1)
+        bond = Bond(Lane(i - 1), Lane(i))
+        absorb!(tn, bond, :left)
+    end
+
+    # a sweep is need to fully propagate the effects of truncation
+    # TODO probably there is a better way to propagate these effects
+    sweep && canonize!(NonCanonical(), tn, targetform)
+
+    tn.form = targetform
+
+    return tn
 end
 
 function canonize!(srcform::MixedCanonical, tn, dstform::MixedCanonical)
@@ -500,14 +546,10 @@ function canonize!(srcform::MixedCanonical, tn, dstform::MixedCanonical)
 end
 
 # TODO optimize conversion from `MixedCanonical` to `Canonical`
-canonize!(::Form, tn::AbstractMPO, ::Canonical) = canonize!(NonCanonical(), tn, Canonical())
-
-# TODO what to do on `Canonical` to `Canonical`? recanonize or do nothing?
-function canonize!(::NonCanonical, ψ::AbstractMPO, ::Canonical)
-    Λ = Tensor[]
-
+# TODO `canonize!(::MixedCanonical, tn, ::Canonical)` should be optimized to start from any orthogonality center
+function canonize!(::Form, ψ::AbstractMPO, ::Canonical)
     # right-to-left QR sweep, get right-canonical tensors
-    canonize!(NonCanonical(), ψ, MixedCanonical(lane"1"))
+    canonize!(ψ, MixedCanonical(lane"1"))
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
     for i in 1:(nlanes(ψ) - 1)
@@ -537,6 +579,11 @@ function canonize!(::NonCanonical, ψ::AbstractMPO, ::Canonical)
     return ψ
 end
 
+function canonize!(::Canonical, ψ::AbstractMPO, ::Canonical; sweep=true)
+    canonize!(ψ, MixedCanonical(lane"1"); sweep)
+    canonize!(ψ, Canonical())
+end
+
 function absorb!(ψ::AbstractMPO, bond::Bond, dir::Symbol)
     targetlane = if dir === :left
         min(lanes(bond)...)
@@ -558,6 +605,7 @@ function LinearAlgebra.norm(::NonCanonical, ψ::AbstractMPO)
 end
 
 function LinearAlgebra.norm(config::MixedCanonical, tn::AbstractMPO)
+    @assert config.orthog_center isa Lane "Orthogonality center must be a `Lane`"
     orthog_center = tensors(tn; at=config.orthog_center)
     return norm(orthog_center)
 end
@@ -574,7 +622,7 @@ end
 
 LinearAlgebra.normalize!(ψ::AbstractMPO; kwargs...) = normalize!(form(ψ), ψ; kwargs...)
 LinearAlgebra.normalize!(ψ::AbstractMPO, at::Lane) = normalize!(form(ψ), ψ; at)
-LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Bond) = normalize!(form(ψ), ψ, bond)
+LinearAlgebra.normalize!(ψ::AbstractMPO, bond::Bond) = normalize!(form(ψ), ψ; bond)
 
 # NOTE in-place normalization of the arrays should be faster, but currently leads to problems for `copy` TensorNetworks
 function LinearAlgebra.normalize!(::NonCanonical, ψ::AbstractMPO; at=nothing)

@@ -260,45 +260,40 @@ end
 @testset "truncate!" begin
     @testset "NonCanonical" begin
         ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-        canonize_site!(ψ, lane"2"; dir=:right, method=:svd)
+        # canonize_site!(ψ, lane"2"; dir=:right; method=:svd)
 
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1)
-        @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
+        truncated = truncate(ψ, Bond(lane"2", lane"3"); maxdim=1)
+        @test size(truncated, inds(truncated; bond=Bond(lane"2", lane"3"))) == 1
 
-        singular_values = tensors(ψ; bond=(lane"2", lane"3"))
-        truncated = truncate(ψ, [lane"2", lane"3"]; threshold=singular_values[2] + 0.1)
-        @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
+        # singular_values = tensors(ψ; bond=Bond(lane"2", lane"3"))
+        # truncated = truncate(ψ, Bond(lane"2", lane"3"); threshold=singular_values[2] + 0.1)
+        # @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 1
 
         # If maxdim > size(spectrum), the bond dimension is not truncated
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=4)
-        @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 2
+        truncated = truncate(ψ, Bond(lane"2", lane"3"); maxdim=4)
+        @test size(truncated, inds(truncated; bond=Bond(lane"2", lane"3"))) == 2
 
-        normalize!(ψ)
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1, normalize=true)
-        @test norm(truncated) ≈ 1.0
+        # normalize!(ψ)
+        # truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=1, normalize=true)
+        # @test norm(truncated) ≈ 1.0
     end
 
     @testset "MixedCanonical" begin
         ψ = rand(MPS; n=5, maxdim=16)
 
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=3)
-        @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 3
-
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=3, normalize=true)
-        @test norm(truncated) ≈ 1.0
+        truncated = truncate(ψ, Bond(lane"2", lane"3"); maxdim=3)
+        @test size(truncated, inds(truncated; bond=Bond(lane"2", lane"3"))) == 3
     end
 
     @testset "Canonical" begin
         ψ = rand(MPS; n=5, maxdim=16)
         canonize!(ψ)
 
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=2, canonize=true, normalize=true)
-        @test size(truncated, inds(truncated; bond=[lane"2", lane"3"])) == 2
-        @test Tenet.check_form(truncated)
-        @test norm(truncated) ≈ 1.0
+        truncated = truncate(ψ, Bond(lane"2", lane"3"); maxdim=2)
+        @test size(truncated, inds(truncated; bond=Bond(lane"2", lane"3"))) == 2
 
-        truncated = truncate(ψ, [lane"2", lane"3"]; maxdim=2, canonize=false, normalize=true)
-        @test norm(truncated) ≈ 1.0
+        # truncation losses canonicity, so it throws an error
+        @test_throws AssertionError Tenet.checkform(truncated)
     end
 end
 

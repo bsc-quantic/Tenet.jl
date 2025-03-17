@@ -76,11 +76,6 @@ end
 Base.similar(tn::TensorNetwork) = TensorNetwork(similar.(tensors(tn)))
 Base.zero(tn::TensorNetwork) = TensorNetwork(zero.(tensors(tn)))
 
-Base.:(==)(a::TensorNetwork, b::TensorNetwork) = all(splat(==), zip(tensors(a), tensors(b)))
-function Base.isapprox(a::TensorNetwork, b::TensorNetwork; kwargs...)
-    return all(((x, y),) -> isapprox(x, y; kwargs...), zip(tensors(a), tensors(b)))
-end
-
 # "Tensor Network" interface
 trait(::TensorNetworkInterface, ::TensorNetwork) = IsTensorNetwork()
 

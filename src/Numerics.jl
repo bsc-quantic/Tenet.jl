@@ -310,3 +310,14 @@ function LinearAlgebra.lu(
 
     return L, U, P
 end
+
+function isisometry(tensor::Tensor, dir::Symbol; kwargs...)
+    inda, indb = gensym(:a), gensym(:b)
+    a = replace(tensor, dir => inda)
+    b = replace(conj(tensor), dir => indb)
+
+    contracted = contract(a, b; out=[inda, indb])
+
+    n = size(tensor, dir)
+    return isapprox(contracted, I(n); kwargs...)
+end
