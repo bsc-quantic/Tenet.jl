@@ -113,10 +113,6 @@ function rmbond! end
 rmbond!(tn, bond::Bond) = rmbond!(tn, bond, trait(AnsatzInterface(), tn))
 rmbond!(tn, bond::Bond, ::WrapsAnsatz) = rmbond!(unwrap(AnsatzInterface(), tn), bond)
 
-# derived methods
-Base.in(lane::Lane, tn::AbstractTensorNetwork) = haslane(tn, lane)
-Base.in(bond::Bond, tn::AbstractTensorNetwork) = hasbond(tn, bond)
-
 # optional methods
 """
     nlanes(tn)
@@ -174,6 +170,10 @@ end
 
 hasbond(tn, bond, ::WrapsAnsatz) = hasbond(unwrap(AnsatzInterface(), tn), bond)
 
+# derived methods
+Base.in(lane::Lane, tn::AbstractTensorNetwork) = haslane(tn, lane)
+Base.in(bond::Bond, tn::AbstractTensorNetwork) = hasbond(tn, bond)
+
 """
     neighbors(tn, lane)
 
@@ -198,6 +198,18 @@ Return the neighbors of a bond.
 function Graphs.neighbors(tn::AbstractTensorNetwork, bond::Bond)
     a, b = Graphs.src(bond), Graphs.dst(bond)
     return filter!(x -> x != a && x != b, neighbors(tn, a) ∩ neighbors(tn, b))
+end
+
+bonds(tn, lane; kwargs...) = bonds(sort_nt(values(kwargs)), tn, lane)
+
+"""
+    bonds(tn, lane)
+
+Return the [`Bond`](@ref)s connected to a [`Lane`](@ref).
+"""
+function bonds(::@NamedTuple{}, tn, lane)
+    neigh_lanes = Graphs.neighbors(tn, lane)
+    return Bond[Bond(lane, neigh) for neigh in neigh_lanes]
 end
 
 """

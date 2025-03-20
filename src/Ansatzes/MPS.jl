@@ -407,6 +407,11 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
 
+"""
+    lanes(ψ::T, lane::Lane; dir)
+
+Return the [`Lane`](@ref) next to `lane` in the specified direction.
+"""
 function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
     if dir === :left
         return lane <= lane"1" ? nothing : Lane(id(lane) - 1)
@@ -417,13 +422,18 @@ function lanes(ψ::T, lane::Lane; dir) where {T<:AbstractMPO}
     end
 end
 
-function bonds(ψ::AbstractMPO, lane::Lane; dir)
-    if dir === :left
+"""
+    bonds(ψ::AbstractMPO, lane::Lane; dir)
+
+Keyword-dispatch variant of `bonds(tn, lane)` where only the [`Bond`](@ref) in the specified direction is returned.
+"""
+function bonds(kwargs::@NamedTuple{dir::Symbol}, ψ::AbstractMPO, lane::Lane)
+    if kwargs.dir === :left
         return lane <= lane"1" ? nothing : Bond(Lane(id(lane) - 1), lane)
-    elseif dir === :right
+    elseif kwargs.dir === :right
         return lane >= Lane(nlanes(ψ)) ? nothing : Bond(lane, Lane(id(lane) + 1))
     else
-        throw(ArgumentError("Unknown direction for $T = :$dir"))
+        throw(ArgumentError("Unknown direction for $T = :$(kwargs.dir)"))
     end
 end
 

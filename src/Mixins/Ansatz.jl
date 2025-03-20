@@ -39,7 +39,7 @@ haslane(mixin::AnsatzMixin, lane) = haskey(mixin.lanemap, lane)
 nbonds(mixin::AnsatzMixin) = length(mixin.bondmap)
 hasbond(mixin::AnsatzMixin, bond) = haskey(mixin.bondmap, bond)
 
-Graphs.neighbors(mixin::AnsatzMixin, lane::Lane) = neighbors(mixin.lattice, lane)
+Graphs.neighbors(mixin::AnsatzMixin, lane::Lane) = Graphs.neighbors(mixin.lattice, lane)
 # TODO better way for `neighbors` method on `Bond`?
 
 # mutating methods
