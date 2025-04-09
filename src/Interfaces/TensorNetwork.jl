@@ -279,6 +279,17 @@ function inds(kwargs::NamedTuple{(:parallelto,)}, tn)
     end
 end
 
+checksizes(tn) = checksizes(tn, trait(TensorNetworkInterface(), tn))
+checksizes(tn, ::WrapsTensorNetwork) = checksizes(unwrap(TensorNetworkInterface(), tn))
+function checksizes(tn, ::IsTensorNetwork)
+    sizedict = size(tn)
+    return all(tensors(tn)) do tensor
+        return all(enumerate(inds(tensor))) do (i, ind)
+            size(tensor, ind) == sizedict[ind] == size(tensor, i)
+        end
+    end
+end
+
 # required mutating methods
 """
     push_inner!(tn, tensor)
@@ -433,7 +444,9 @@ function Base.replace!(tn::AbstractTensorNetwork, old_new::Pair{<:Tensor,<:Tenso
     old_tensor === new_tensor && return tn
     hastensor(tn, old_tensor) || throw(ArgumentError("old tensor not found in Tensor Network"))
 
-    @argcheck issetequal(inds(new_tensor), inds(old_tensor)) "replacing tensor indices don't match"
+    if !isscoped(tn)
+        @argcheck issetequal(inds(new_tensor), inds(old_tensor)) "replacing tensor indices don't match"
+    end
 
     push_inner!(tn, new_tensor)
     delete_inner!(tn, old_tensor)
@@ -552,8 +565,6 @@ Base.summary(io::IO, tn::AbstractTensorNetwork) = print(io, "$(ntensors(tn))-ten
 function Base.show(io::IO, tn::T) where {T<:AbstractTensorNetwork}
     return print(io, "$T (#tensors=$(ntensors(tn)), #inds=$(ninds(tn)))")
 end
-
-Base.in(tn::AbstractTensorNetwork, uc::UnsafeScope) = tn ∈ values(uc)
 
 Base.replace(tn::AbstractTensorNetwork, old_new::Pair...) = replace(tn, old_new)
 Base.replace(tn::AbstractTensorNetwork, old_new) = replace!(copy(tn), old_new)

@@ -53,10 +53,7 @@ TensorNetwork(tn::TensorNetwork) = tn
 get_unsafe_scope(tn::TensorNetwork) = tn.unsafe[]
 set_unsafe_scope!(tn::TensorNetwork, uc::Union{Nothing,UnsafeScope}) = tn.unsafe[] = uc
 
-function checksizes(tn)
-    # TODO better interface this: dispatch on Interface?
-    tn = unwrap(TensorNetworkInterface(), tn)
-
+function checksizes(tn::TensorNetwork)
     # Iterate through each index in the indexmap
     for (index, tensors) in tn.indexmap
         # Get the size of the first tensor for this index
