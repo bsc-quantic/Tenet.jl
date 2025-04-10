@@ -147,8 +147,8 @@ end
         @test issetequal(sites(stn_dual), [site"1'", site"2'", site"3'", site"4'", site"5'"])
 
         # check that layers are reversed
-        @test layer(stn_dual, 1) == adjoint(layer(stn, 2))
-        @test layer(stn_dual, 2) == adjoint(layer(stn, 1))
+        @test layer(stn_dual, 1) == conj(adjoint(layer(stn, 2)))
+        @test layer(stn_dual, 2) == conj(adjoint(layer(stn, 1)))
     end
 
     @testset let
@@ -160,8 +160,8 @@ end
         @test issetequal(sites(stn_dual), [site"1", site"2", site"3", site"4", site"5"])
 
         # check that layers are reversed
-        @test layer(stn_dual, 1) == adjoint(layer(stn, 2))
-        @test layer(stn_dual, 2) == adjoint(layer(stn, 1))
+        @test layer(stn_dual, 1) == conj(adjoint(layer(stn, 2)))
+        @test layer(stn_dual, 2) == conj(adjoint(layer(stn, 1)))
     end
 
     @testset let
@@ -173,8 +173,8 @@ end
         @test isempty(sites(stn_dual))
 
         # check that layers are reversed
-        @test layer(stn_dual, 1) == adjoint(layer(stn, 3))
-        @test layer(stn_dual, 2) == adjoint(layer(stn, 2))
-        @test layer(stn_dual, 3) == adjoint(layer(stn, 1))
+        @test layer(stn_dual, 1) == conj(adjoint(layer(stn, 3)))
+        @test layer(stn_dual, 2) == conj(adjoint(layer(stn, 2)))
+        @test layer(stn_dual, 3) == conj(adjoint(layer(stn, 1)))
     end
 end

@@ -878,3 +878,10 @@ function Base.view(tn, slices::Pair{Symbol}...)
 
     return tn
 end
+
+"""
+    a == b
+
+Return `true` if the tensors in `a` and `b` are the same.
+"""
+Base.:(==)(a::AbstractTensorNetwork, b::AbstractTensorNetwork) = issetequal(tensors(a), tensors(b))
