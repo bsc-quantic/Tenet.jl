@@ -26,6 +26,7 @@ if TENET_TEST_GROUP == "all" || TENET_TEST_GROUP == "unit"
         @testset "Product" include("unit/Product_test.jl")
         # @testset "MPS" include("unit/MPS_test.jl")
         # @testset "MPO" include("unit/MPO_test.jl")
+        @testset "Stack" include("unit/Stack_test.jl")
     end
 end
 

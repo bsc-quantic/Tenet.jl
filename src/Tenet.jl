@@ -66,7 +66,7 @@ include("Gate.jl")
 export Gate
 
 include("Stack.jl")
-export Stack, component
+export Stack, layer, nlayers
 
 include("Ansatzes/Product.jl")
 export Product, ProductState, ProductOperator
