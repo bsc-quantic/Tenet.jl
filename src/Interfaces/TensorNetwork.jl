@@ -191,11 +191,11 @@ function tensors(kwargs::NamedTuple{(:contains,)}, tn, ::WrapsTensorNetwork)
     tensors(kwargs, unwrap(TensorNetworkInterface(), tn))
 end
 
-function tensors(kwargs::NamedTuple{(:contains,)}, tn, _)
-    tensors((; contains=kwargs.contains), tn, No())
+function tensors(kwargs::@NamedTuple{contains::Symbol}, tn, ::IsTensorNetwork)
+    tensors((; contains=[kwargs.contains]), tn, IsTensorNetwork())
 end
 
-function tensors(kwargs::@NamedTuple{contains::AbstractVecOrTuple{Symbol}}, tn, _)
+function tensors(kwargs::@NamedTuple{contains::T}, tn, _) where {T<:AbstractVecOrTuple{Symbol}}
     return filter(⊇(kwargs.contains) ∘ vinds, tensors(tn))
 end
 
