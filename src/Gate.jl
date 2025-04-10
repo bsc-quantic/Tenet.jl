@@ -6,9 +6,9 @@ using ValSplit
 A `Gate` is a [`Tensor`](@ref) together with a set of [`Site`](@ref)s that represent the input/output indices; i.e.
 fulfills the Pluggable interface.
 """
-struct Gate
+mutable struct Gate <: AbstractTensorNetwork
     tensor::Tensor
-    sites::Vector{Site}
+    const sites::Vector{Site}
 
     function Gate(tensor::Tensor, sites)
         @assert ndims(tensor) == length(sites)
@@ -32,6 +32,7 @@ Base.:(==)(a::Gate, b::Gate) = sites(a) == sites(b) && Tensor(a) == Tensor(b)
 # Tensor Network methods
 inds(gate::Gate; kwargs...) = inds(sort_nt(values(kwargs)), gate)
 inds(::@NamedTuple{}, gate::Gate) = inds(Tensor(gate))
+ninds(gate::Gate; kwargs...) = length(inds(gate; kwargs...))
 
 function extract_kwarg_set(::Val{kwargs}) where {kwargs}
     @assert kwargs isa @NamedTuple{set::Symbol}
@@ -73,6 +74,12 @@ tensors(::@NamedTuple{}, gate::Gate) = Tensor[Tensor(gate)]
 
 Base.replace(gate::Gate) = gate
 Base.replace(gate::Gate, old_new::Pair{Symbol,Symbol}...) = Gate(replace(Tensor(gate), old_new...), sites(gate))
+
+function Base.replace!(gate::Gate, old_new::Pair{Symbol,Symbol}...)
+    new_tensor = replace(Tensor(gate), old_new...)
+    gate.tensor = new_tensor
+    return gate
+end
 
 # Pluggable methods
 sites(gate::Gate; kwargs...) = sites(sort_nt(values(kwargs)), gate)
