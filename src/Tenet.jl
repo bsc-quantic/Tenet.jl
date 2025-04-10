@@ -77,6 +77,9 @@ export MatrixProductState, MPS, MatrixProductOperator, MPO
 include("Algorithms/Truncate.jl")
 export truncate!
 
+include("Algorithms/Expect.jl")
+export expect
+
 # include("Circuit.jl")
 # export Gate, Circuit, moments
 
