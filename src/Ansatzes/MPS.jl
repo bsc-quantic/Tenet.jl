@@ -281,7 +281,7 @@ function MPO(arrays::Vector{<:AbstractArray}; order=defaultorder(MPO))
     lattice = Lattice(Val(:chain), n)
 
     sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
-    append!(sitemap, [Site(i; dual=true) => nextindex!(gen) for i in 1:n])
+    merge!(sitemap, Dict([Site(i; dual=true) => nextindex!(gen) for i in 1:n]))
     bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in Graphs.edges(lattice))
 
     lanemap = Dict{Lane,Tensor}(
