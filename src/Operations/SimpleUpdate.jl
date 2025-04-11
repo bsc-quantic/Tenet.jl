@@ -36,8 +36,10 @@ function simple_update(
     ind_physical_g_b::Symbol;
     normalize::Bool=false,
     absorb::AbsorbBehavior=DontAbsorb(),
-    atol::Float64=0.0,
-    rtol::Float64=0.0,
+    maxdim=nothing,
+    threshold=0.0,
+    # atol::Float64=threshold,
+    # rtol::Float64=0.0,
 )
     Θ = contract(contract(A, B; dims=[ind_bond_ab]), G; dims=[ind_physical_a, ind_physical_b])
     Θ = replace(Θ, ind_physical_g_a => ind_physical_a, ind_physical_g_b => ind_physical_b)
@@ -45,21 +47,22 @@ function simple_update(
     # TODO use low-rank approximations
     u_inds = setdiff(vinds(A), [ind_bond_ab])
     v_inds = setdiff(vinds(B), [ind_bond_ab])
-    U, S, V = svd(Θ; u_inds, v_inds, s_ind=ind_bond_ab)
+    U, S, V = svd(Θ; u_inds, v_inds, s_ind=ind_bond_ab, maxdim)
 
     normalize && LinearAlgebra.normalize!(S)
 
     if absorb isa DontAbsorb
         return U, S, V
     elseif absorb isa AbsorbU
-        U = contract(U, S; dims=[])
+        U = contract(U, S; dims=Symbol[])
     elseif absorb isa AbsorbV
-        V = contract(V, S; dims=[])
+        V = contract(V, S; dims=Symbol[])
     elseif absorb isa AbsorbEqually
         S_sqrt = sqrt.(S)
-        U = contract(U, S_sqrt; dims=[])
-        V = contract(V, S_sqrt; dims=[])
+        U = contract(U, S_sqrt; dims=Symbol[])
+        V = contract(V, S_sqrt; dims=Symbol[])
     end
+
     return U, V
 end
 
@@ -79,7 +82,9 @@ function simple_update(
     ind_physical_g_b::Symbol;
     normalize::Bool=false,
     absorb::AbsorbBehavior=DontAbsorb(),
-    atol::Float64=0.0,
+    maxdim=nothing,
+    threshold=0.0,
+    atol::Float64=threshold,
     rtol::Float64=0.0,
 )
     all_inds = unique(∪(vinds(A), vinds(B), vinds(G)))
@@ -87,8 +92,24 @@ function simple_update(
     modes_b = Int[findfirst(==(i), all_inds) for i in vinds(B)]
     modes_g = Int[findfirst(==(i), all_inds) for i in vinds(G)]
 
-    U = similar(A)
-    V = similar(B)
+    cur_bond_dim = size(A, ind_bond_ab)
+    new_bond_dim = min(length(A), length(B)) ÷ cur_bond_dim
+
+    size_u = collect(size(A))
+    size_v = collect(size(B))
+    size_s = [cur_bond_dim]
+
+    if !isnothing(maxdim) && maxdim < new_bond_dim
+        size_u[Tenet.dim(A, ind_bond_ab)] = maxdim
+        size_v[Tenet.dim(B, ind_bond_ab)] = maxdim
+        size_s[1] = maxdim
+    end
+
+    U = similar(A, size_u...)
+    V = similar(B, size_v...)
+
+    S_data = similar(parent(A), real(eltype(A)), size_s)
+    S = Tensor(S_data, [ind_bond_ab])
 
     # cuTensorNet doesn't like to reuse the physical indices of a and b, so we rename them here
     U = replace(U, ind_physical_a => ind_physical_g_a)
@@ -118,8 +139,6 @@ function simple_update(
         end,
     )
 
-    S_data = similar(parent(A), real(eltype(A)), (size(A, ind_bond_ab),))
-
     # TODO use svd_info
     _, _, _, svd_info = cuTensorNet.gateSplit!(
         parent(A),
@@ -130,13 +149,11 @@ function simple_update(
         modes_g,
         parent(U),
         modes_u,
-        S_data,
+        parent(S),
         parent(V),
         modes_v;
         svd_config,
     )
-
-    S = Tensor(S_data, [ind_bond_ab])
 
     # undo the index rename to keep cuTensorNet happy
     U = replace(U, ind_physical_g_a => ind_physical_a)

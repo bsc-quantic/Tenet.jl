@@ -27,6 +27,7 @@ struct MixedCanonical <: Form
 end
 
 Base.copy(x::MixedCanonical) = MixedCanonical(copy(x.orthog_center))
+Base.:(==)(a::MixedCanonical, b::MixedCanonical) = a.orthog_center == b.orthog_center
 
 """
     Canonical

@@ -306,7 +306,7 @@ end
     @test expect(ψ, gate) ≈ norm(ψ)^2
 end
 
-@testset "evolve!" begin
+@testset "simple_update!" begin
     @testset "one site" begin
         i = 2
         mat = reshape(LinearAlgebra.I(2), 2, 2)
@@ -315,7 +315,7 @@ end
 
         @testset "NonCanonical" begin
             ϕ = deepcopy(ψ)
-            evolve!(ϕ, gate; threshold=1e-14)
+            simple_update!(ϕ, gate; threshold=1e-14)
             @test length(tensors(ϕ)) == 5
             @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2)])
             @test isapprox(contract(ϕ), contract(ψ))
@@ -324,7 +324,7 @@ end
         @testset "Canonical" begin
             ϕ = deepcopy(ψ)
             canonize!(ϕ)
-            evolve!(ϕ, gate; threshold=1e-14)
+            simple_update!(ϕ, gate; threshold=1e-14)
             @test issetequal(size.(tensors(ϕ)), [(2, 2), (2,), (2, 2, 2), (2,), (2, 2, 2), (2,), (2, 2)])
             @test isapprox(contract(ϕ), contract(ψ))
         end
@@ -337,36 +337,36 @@ end
         @testset "NonCanonical" begin
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
             ϕ = deepcopy(ψ)
-            evolve!(ϕ, gate; threshold=1e-14)
-            @test length(tensors(ϕ)) == 5
-            @test issetequal(size.(tensors(ϕ)), [(2, 2), (2, 2, 2), (2,), (2, 2, 2), (2, 2, 2), (2, 2)])
+            simple_update!(ϕ, gate)
+
+            @test length(tensors(ϕ)) == 4
+            @test size(ϕ, inds(ϕ; bond=Bond(lane"2", lane"3"))) == 4
+            @test isapprox(contract(ϕ), contract(ψ))
+        end
+
+        @testset "MixedCanonical" begin
+            ϕ = simple_update!(canonize(ψ, lane"1"), gate)
+            @test Tenet.checkform(ϕ)
             @test isapprox(contract(ϕ), contract(ψ))
 
-            evolved = evolve!(normalize(ψ), gate; maxdim=1, normalize=true)
-            @test norm(evolved) ≈ 1.0
+            # `simple_update!` moves the orthogonality center where the gate is applied
+            @test form(ϕ) == MixedCanonical([lane"2", lane"3"])
         end
 
         @testset "Canonical" begin
             ψ = MPS([rand(2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2, 2), rand(2, 2)])
             normalize!(ψ)
-            ϕ = deepcopy(ψ)
-
             canonize!(ψ)
 
-            evolved = evolve!(deepcopy(ψ), gate)
-            @test Tenet.check_form(evolved)
-            @test isapprox(contract(evolved), contract(ϕ)) # Identity gate should not change the state
+            let ϕ = simple_update!(deepcopy(ψ), gate)
+                @test Tenet.checkform(ϕ)
+                @test isapprox(contract(ϕ), contract(ψ))
+            end
 
-            # Ensure that the original MixedCanonical state evolves into the same state as the canonicalized one
-            @test contract(ψ) ≈ contract(evolve!(ϕ, gate; threshold=1e-14))
-
-            evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=true)
-            @test norm(evolved) ≈ 1.0
-            @test Tenet.check_form(evolved)
-
-            evolved = evolve!(deepcopy(ψ), gate; maxdim=1, normalize=true, canonize=false)
-            @test norm(evolved) ≈ 1.0
-            @test_throws ArgumentError Tenet.check_form(evolved)
+            let ϕ = simple_update!(deepcopy(ψ), gate; maxdim=1, normalize=true)
+                @test norm(ϕ) ≈ 1.0
+                @test Tenet.checkform(ϕ)
+            end
         end
     end
 
@@ -394,12 +394,12 @@ end
             evolve!(ϕ_2, mpo)
             @test length(tensors(ϕ_2)) == 5 + 4
             @test form(ϕ_2) == Canonical()
-            @test Tenet.check_form(ϕ_2)
+            @test Tenet.checkform(ϕ_2)
 
             evolved = evolve!(deepcopy(canonize!(ψ)), mpo; maxdim=3)
             @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
             @test form(evolved) == Canonical()
-            @test Tenet.check_form(evolved)
+            @test Tenet.checkform(evolved)
         end
 
         @testset "MixedCanonical" begin
@@ -408,13 +408,13 @@ end
             @test length(tensors(ϕ_3)) == 5
             @test form(ϕ_3) == MixedCanonical(lane"3")
             @test norm(ϕ_3) ≈ 1.0
-            @test Tenet.check_form(ϕ_3)
+            @test Tenet.checkform(ϕ_3)
 
             evolved = evolve!(deepcopy(mixed_canonize!(ψ, lane"3")), mpo; maxdim=3)
             @test all(x -> x ≤ 3, vcat([collect(t) for t in vec(size.(tensors(evolved)))]...))
             @test form(evolved) == MixedCanonical(lane"3")
             @test norm(evolved) ≈ 1.0
-            @test Tenet.check_form(evolved)
+            @test Tenet.checkform(evolved)
         end
 
         t1 = contract(ϕ_1)
@@ -423,30 +423,5 @@ end
 
         @test t1 ≈ t2 ≈ t3
         @test only(overlap(ϕ_1, ϕ_2)) ≈ only(overlap(ϕ_1, ϕ_3)) ≈ only(overlap(ϕ_2, ϕ_3)) ≈ 1.0
-    end
-end
-
-# TODO rename when method is renamed
-@testset "contract bond" begin
-    ψ = rand(MPS; n=5, maxdim=20)
-    let canonized = canonize(ψ)
-        @test_throws ArgumentError absorb!(canonized; bond=(lane"1", lane"2"), dir=:dummy)
-    end
-
-    canonized = canonize(ψ)
-
-    for i in 1:4
-        contract_some = absorb(canonized; bond=(Lane(i), Lane(i + 1)))
-        Bᵢ = tensors(contract_some; at=Lane(i))
-
-        @test isapprox(contract(contract_some), contract(ψ))
-        @test_throws Tenet.MissingSchmidtCoefficientsException tensors(contract_some; bond=(Lane(i), Lane(i + 1)))
-
-        @test isisometry(contract_some, Lane(i); dir=:left)
-        @test isisometry(absorb(canonized; bond=(Lane(i), Lane(i + 1)), dir=:right), Lane(i + 1); dir=:right)
-
-        Γᵢ = tensors(canonized; at=Lane(i))
-        Λᵢ₊₁ = tensors(canonized; bond=(Lane(i), Lane(i + 1)))
-        @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims=())
     end
 end

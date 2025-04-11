@@ -9,9 +9,8 @@ include("Helpers.jl")
 include("Tensor.jl")
 export Tensor, contract, dim, expand, fuse
 
-include("Operations/Operations.jl")
-
 include("Numerics.jl")
+include("Operations/Operations.jl")
 
 include("Site.jl")
 export Lane, @lane_str
