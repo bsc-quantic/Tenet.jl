@@ -109,7 +109,7 @@ Return the number of tensors in the `TensorNetwork`. It accepts the same keyword
 
 See also: [`ninds`](@ref)
 """
-ntensors(tn; kwargs...) = ntensors(values(kwargs), tn)
+ntensors(tn; kwargs...) = ntensors(sort_nt(values(kwargs)), tn)
 ntensors(kwargs::NamedTuple, tn) = length(tensors(kwargs, tn))
 
 # dispatch due to performance reasons: see implementation in src/TensorNetwork.jl
@@ -149,7 +149,7 @@ function Base.size(tn::AbstractTensorNetwork, ::IsTensorNetwork)
     sizes = Dict{Symbol,Int}()
     for tensor in tensors(tn)
         for ind in inds(tensor)
-            sizes[ind] = get(sizes, ind, 0) + 1
+            sizes[ind] = size(tensor, ind)
         end
     end
     return sizes

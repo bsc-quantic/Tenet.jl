@@ -4,14 +4,15 @@ struct Stack <: AbstractTensorNetwork
     layers::Vector{AbstractTensorNetwork}
 end
 
-function Stack(tn)
+# TODO the `reset` keyword is experimental
+function Stack(tn; reset::Bool=true)
     # always retain copies of the TNs:
     # - Tensors are not copies, so no memory overhead
     # - but mutating changes can destroy higher-level mappings as in here
     tn = copy(tn)
 
     # reset indices to avoid conflicts between indices of any two TNs
-    resetinds!(tn)
+    reset && resetinds!(tn)
 
     pluggable = PluggableMixin()
     for site in sites(tn)
