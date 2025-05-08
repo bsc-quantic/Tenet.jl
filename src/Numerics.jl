@@ -69,7 +69,7 @@ function allocate_result(
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a), parent(b)), Int[size(i in ia ? a : b, i) for i in ic]; fillzero)
+    data = OMEinsum.get_output_array((parent(a), parent(b)), Int[size(i in ia ? a : b, i) for i in ic], fillzero)
     return Tensor(data, ic)
 end
 
@@ -98,7 +98,7 @@ function allocate_result(::typeof(contract), a::Tensor; fillzero=false, dims=non
         out
     end
 
-    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic]; fillzero)
+    data = OMEinsum.get_output_array((parent(a),), [size(a, i) for i in ic], fillzero)
     return Tensor(data, ic)
 end
 
