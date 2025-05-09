@@ -201,13 +201,13 @@ end
     data = rand(2, 2, 2)
     tensor = Tensor(data, (:i, :j, :k))
 
-    @test parent(view(tensor, 2, :, :)) == view(data, 2, :, :)
-    @test parent(view(tensor, :i => 1)) == view(data, 1, :, :)
-    @test parent(view(tensor, :j => 2)) == view(data, :, 2, :)
+    @test parent(view(tensor,2,:,:)) == view(data,2,:,:)
+    @test parent(view(tensor, :i => 1)) == view(data,1,:,:)
+    @test parent(view(tensor, :j => 2)) == view(data,:,2,:)
     @test parent(view(tensor, :i => 2, :k => 1)) == view(data, 2, :, 1)
     @test :i ∉ inds(view(tensor, :i => 1))
 
-    @test parent(view(tensor, :i => 1:1)) == view(data, 1:1, :, :)
+    @test parent(view(tensor, :i => 1:1)) == view(data,(1:1),:,:)
     @test :i ∈ inds(view(tensor, :i => 1:1))
 end
 
@@ -237,7 +237,7 @@ end
     @test first(tensor) == first(data)
     @test last(tensor) == last(data)
     @test tensor[1, :, 2] == data[1, :, 2]
-    @test tensor[i=1, k=2] == data[1, :, 2]
+    @test tensor[i = 1, k = 2] == data[1, :, 2]
 
     tensor[1] = 0
     @test tensor[1] == data[1]

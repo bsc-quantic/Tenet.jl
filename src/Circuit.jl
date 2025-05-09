@@ -42,13 +42,13 @@ function inds(kwargs::@NamedTuple{set::Symbol}, gate::Gate)
         return last.(
             Iterators.filter(zip(sites(gate), inds(gate))) do (site, ind)
                 isdual(site)
-            end
+            end,
         )
     elseif kwargs.set === :outputs
         return last.(
             Iterators.filter(zip(sites(gate), inds(gate))) do (site, ind)
                 !isdual(site)
-            end
+            end,
         )
     else
         error(

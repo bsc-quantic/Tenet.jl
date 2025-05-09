@@ -79,7 +79,7 @@ Base.show(io::IO, site::Site) = print(io, "$(id(site))$(site.dual ? "'" : "")")
 
 Returns the adjoint of `site`, i.e. a new `Site` object with the same coordinates as `site` but with the `dual` flag flipped (so an _input_ site becomes an _output_ site and vice versa).
 """
-Base.adjoint(site::Site) = Site(id(site); dual=!site.dual)
+Base.adjoint(site::Site) = Site(id(site); dual=(!site.dual))
 
 """
     lane"i,j,..."
@@ -116,7 +116,7 @@ macro site_str(str)
 
     dual = endswith(str, "'")
 
-    return :(Site($id; dual=$dual))
+    return :(Site($id; dual=($dual)))
 end
 
 Base.zero(x::Dict{Site,Symbol}) = x

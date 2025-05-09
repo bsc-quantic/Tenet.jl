@@ -15,7 +15,7 @@ Return a new [`TensorNetwork`](@ref) where some `Transformation` has been perfor
 
 See also: [`transform!`](@ref).
 """
-transform(tn::TensorNetwork, transformations) = (tn = deepcopy(tn); transform!(tn, transformations); return tn)
+transform(tn::TensorNetwork, transformations) = (tn=deepcopy(tn); transform!(tn, transformations); return tn)
 
 """
     transform!(tn::TensorNetwork, config::Transformation)
