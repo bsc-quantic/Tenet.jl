@@ -300,43 +300,41 @@ end
 Base.in(tn::TensorNetwork, uc::UnsafeScope) = tn ∈ values(uc)
 
 macro unsafe_region(tn_sym, block)
-    return esc(
-        quote
-            local old = copy($tn_sym)
+    return esc(quote
+        local old = copy($tn_sym)
 
-            # Create a new UnsafeScope and set it to the current tn
-            local _uc = Tenet.UnsafeScope()
-            Tenet.set_unsafe_scope!($tn_sym, _uc)
+        # Create a new UnsafeScope and set it to the current tn
+        local _uc = Tenet.UnsafeScope()
+        Tenet.set_unsafe_scope!($tn_sym, _uc)
 
-            # Register the tensor network in the UnsafeScope
-            push!(Tenet.get_unsafe_scope($tn_sym).refs, WeakRef($tn_sym))
+        # Register the tensor network in the UnsafeScope
+        push!(Tenet.get_unsafe_scope($tn_sym).refs, WeakRef($tn_sym))
 
-            e = nothing
-            try
-                $(block) # Execute the user-provided block
-            catch e
-                $(tn_sym) = old # Restore the original tensor network in case of an exception
-                rethrow(e)
-            finally
-                if isnothing(e)
-                    # Perform checks of registered tensor networks
-                    for ref in Tenet.get_unsafe_scope($tn_sym).refs
-                        tn = ref.value
-                        if !isnothing(tn) && tn ∈ values(Tenet.get_unsafe_scope($tn_sym))
-                            if !Tenet.__check_index_sizes(tn)
-                                $(tn_sym) = old
+        e = nothing
+        try
+            $(block) # Execute the user-provided block
+        catch e
+            $(tn_sym) = old # Restore the original tensor network in case of an exception
+            rethrow(e)
+        finally
+            if isnothing(e)
+                # Perform checks of registered tensor networks
+                for ref in Tenet.get_unsafe_scope($tn_sym).refs
+                    tn = ref.value
+                    if !isnothing(tn) && tn ∈ values(Tenet.get_unsafe_scope($tn_sym))
+                        if !Tenet.__check_index_sizes(tn)
+                            $(tn_sym) = old
 
-                                # Set `unsafe` field to `nothing`
-                                Tenet.set_unsafe_scope!($tn_sym, nothing)
+                            # Set `unsafe` field to `nothing`
+                            Tenet.set_unsafe_scope!($tn_sym, nothing)
 
-                                throw(DimensionMismatch("Inconsistent size of indices"))
-                            end
+                            throw(DimensionMismatch("Inconsistent size of indices"))
                         end
                     end
                 end
             end
-        end,
-    )
+        end
+    end)
 end
 
 """
@@ -404,7 +402,7 @@ end
 
 Like [`pop!`](@ref) but return the [`TensorNetwork`](@ref) instead.
 """
-Base.delete!(tn::AbstractTensorNetwork, x) = (_ = pop!(tn, x); tn)
+Base.delete!(tn::AbstractTensorNetwork, x) = (_=pop!(tn, x); tn)
 
 function tryprune!(tn::AbstractTensorNetwork, i::Symbol)
     if i ∈ tn
