@@ -1,79 +1,65 @@
 module Tenet
 
-import EinExprs: inds
-using Compat
+using Reexport
 
-include("Helpers.jl")
-@compat public letter, nonunique, IndexCounter, currindex, nextindex!
+using DelegatorTraits
+import DelegatorTraits: ImplementorTrait, DelegatorTrait, Implements, NotImplements
+using DelegatorTraits: Interface, fallback
 
-include("Tensor.jl")
-export Tensor, contract, dim, expand
+@reexport using QuantumTags
+@reexport using Muscle
+using Networks
+@reexport using TenetCore
 
-include("Numerics.jl")
+abstract type AbstractTangle <: TenetCore.AbstractTensorNetwork end
+struct Tangle <: Interface end
 
-include("TensorNetwork.jl")
-export TensorNetwork, tensors, arrays, neighbors, slice!, contract, contract!, fuse!
-@compat public AbstractTensorNetwork, ninds, ntensors, @unsafe_region, tryprune!, resetinds!, fuse
+# traits
+include("CanonicalForm.jl")
+export CanonicalForm, form, NonCanonical, MixedCanonical, BondCanonical, VidalGauge
 
-include("Transformations.jl")
-export transform, transform!
-#! format: off
-@compat public Transformation,
-    HyperFlatten,
-    HyperGroup,
-    ContractSimplification,
-    Truncate,
-    DiagonalReduction,
-    AntiDiagonalGauging,
-    SplitSimplification
-#! format: on
+# components
+include("Components/ProductState.jl")
+export ProductState, ProductOperator
 
-include("Site.jl")
-export Lane, @lane_str
-export Site, @site_str, isdual
-@compat public id, Moment
+include("Components/MPO.jl")
+export MatrixProductOperator, MPO
 
-include("Quantum.jl")
-export Quantum, ninputs, noutputs, inputs, outputs, sites, lanes, socket
-@compat public AbstractQuantum, Socket, Scalar, State, Operator, reindex!, @reindex!, nsites, nlanes, hassite
+include("Components/MPS.jl")
+export MatrixProductState, MPS
 
-include("Circuit.jl")
-export Gate, Circuit, moments
+include("Components/MixedCanonicalMPS.jl")
+export MixedCanonicalMatrixProductState, MixedCanonicalMPS
 
-include("Lattice.jl")
-export Lattice
+include("Components/VidalMPS.jl")
+export VidalMatrixProductState, VidalMPS
 
-include("Ansatz.jl")
-#! format: off
-export Ansatz,
-    boundary,
-    Open,
-    Periodic,
-    form,
-    NonCanonical,
-    MixedCanonical,
-    Canonical,
-    canonize,
-    canonize!,
-    mixed_canonize,
-    mixed_canonize!,
-    truncate!,
-    isisometry,
-    expect,
-    evolve!,
-    simple_update!,
-    overlap
-#! format: on
-@compat public AbstractAnsatz, Boundary, Form
+include("Components/PEPS.jl")
+export ProjectedEntangledPairState, PEPS
 
-include("Product.jl")
-export Product
+# operations
+include("Operations/canonize.jl")
+export canonize, canonize!
 
-include("MPS.jl")
-export MPS, MPO, absorb, absorb!
-@compat public AbstractMPS, AbstractMPO, defaultorder, check_form
+include("Operations/absorb.jl")
+export absorb, absorb!
 
-# reexports from EinExprs
-export einexpr, inds
+include("Operations/evolve.jl")
+export evolve, evolve!
+
+include("Operations/simple_update.jl")
+export simple_update, simple_update!
+
+include("Operations/overlap.jl")
+export overlap
+
+include("Operations/norm.jl")
+export norm
+
+include("Operations/normalize.jl")
+export normalize!
+
+include("Operations/compress.jl")
+export compress!
 
 end

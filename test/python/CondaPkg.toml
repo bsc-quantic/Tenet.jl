@@ -1,6 +1,0 @@
-
-[pip.deps]
-qibo = ">0.2,<0.3"
-cirq = ">1,<2"
-quimb = ">1,<2"
-qiskit = ">1,<2"
