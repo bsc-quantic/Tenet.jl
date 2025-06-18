@@ -1,7 +1,7 @@
 name = "Tenet"
 uuid = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
 authors = ["Sergio Sánchez Ramírez <sergio.sanchez.ramirez@bsc.es>"]
-version = "0.9.0"
+version = "0.9.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -13,7 +13,7 @@ Networks = "634dcf3f-6aa7-47ba-9e85-1fb329c9ebfe"
 QuantumTags = "2406e0f5-9e5e-4424-966e-8bc9c78b228f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-TenetCore = "2cc23cfe-e55e-4940-9d06-ab16fa76dba6"
+Tangles = "d2150e0e-da4c-4196-bcf0-8e0aeaf6db16"
 
 [compat]
 ArgCheck = "2.5.0"
@@ -25,5 +25,5 @@ Networks = "0.2.3"
 QuantumTags = "0.1.5"
 Random = "1.10.0"
 Reexport = "1.2.2"
-TenetCore = "0.4.5"
+Tangles = "0.2.0"
 julia = "1.10"

@@ -1,7 +1,7 @@
 using DelegatorTraits
 using QuantumTags
 using Networks
-using TenetCore
+using Tangles
 
 struct ProjectedEntangledPairState <: AbstractTangle
     tn::GenericTensorNetwork
@@ -64,7 +64,7 @@ function PEPS(arrays::AbstractMatrix{<:AbstractArray}; order=defaultorder(PEPS))
                 end
             end
 
-            TenetCore.setplug!(tn, Index(plug"i,j"), plug"i,j")
+            Tangles.setplug!(tn, Index(plug"i,j"), plug"i,j")
         end
     end
 
@@ -85,24 +85,24 @@ Networks.replace_vertex_tag!(::PEPS, args...) = error("PEPS doesn't allow `repla
 Networks.replace_edge_tag!(::PEPS, args...) = error("PEPS doesn't allow `replace_edge_tag!`")
 
 # UnsafeScopeable interface
-DelegatorTraits.DelegatorTrait(::TenetCore.UnsafeScopeable, ::PEPS) = DelegateToField{:tn}()
+DelegatorTraits.DelegatorTrait(::Tangles.UnsafeScopeable, ::PEPS) = DelegateToField{:tn}()
 
 # TensorNetwork interface
 DelegatorTraits.DelegatorTrait(::TensorNetwork, ::PEPS) = DelegateToField{:tn}()
 
-TenetCore.addtensor!(::PEPS, args...) = error("PEPS doesn't allow `addtensor!`")
-TenetCore.rmtensor!(::PEPS, args...) = error("PEPS doesn't allow `rmtensor!`")
+Tangles.addtensor!(::PEPS, args...) = error("PEPS doesn't allow `addtensor!`")
+Tangles.rmtensor!(::PEPS, args...) = error("PEPS doesn't allow `rmtensor!`")
 
 # Lattice interface
-DelegatorTraits.DelegatorTrait(::TenetCore.Lattice, ::PEPS) = DelegateToField{:tn}()
+DelegatorTraits.DelegatorTrait(::Tangles.Lattice, ::PEPS) = DelegateToField{:tn}()
 
-TenetCore.setsite!(::PEPS, args...) = error("PEPS doesn't allow `setsite!`")
-TenetCore.setbond!(::PEPS, args...) = error("PEPS doesn't allow `setbond!`")
-TenetCore.unsetsite!(::PEPS, args...) = error("PEPS doesn't allow `unsetsite!`")
-TenetCore.unsetbond!(::PEPS, args...) = error("PEPS doesn't allow `unsetbond!`")
+Tangles.setsite!(::PEPS, args...) = error("PEPS doesn't allow `setsite!`")
+Tangles.setbond!(::PEPS, args...) = error("PEPS doesn't allow `setbond!`")
+Tangles.unsetsite!(::PEPS, args...) = error("PEPS doesn't allow `unsetsite!`")
+Tangles.unsetbond!(::PEPS, args...) = error("PEPS doesn't allow `unsetbond!`")
 
 # Pluggable interface
-DelegatorTraits.DelegatorTrait(::TenetCore.Pluggable, ::PEPS) = DelegateToField{:tn}()
+DelegatorTraits.DelegatorTrait(::Tangles.Pluggable, ::PEPS) = DelegateToField{:tn}()
 
-TenetCore.setplug!(::PEPS, args...) = error("PEPS doesn't allow `setplug!`")
-TenetCore.unsetplug!(::PEPS, args...) = error("PEPS doesn't allow `unsetplug!`")
+Tangles.setplug!(::PEPS, args...) = error("PEPS doesn't allow `setplug!`")
+Tangles.unsetplug!(::PEPS, args...) = error("PEPS doesn't allow `unsetplug!`")

@@ -9,9 +9,9 @@ using DelegatorTraits: Interface, fallback
 @reexport using QuantumTags
 @reexport using Muscle
 using Networks
-@reexport using TenetCore
+@reexport using Tangles
 
-abstract type AbstractTangle <: TenetCore.AbstractTensorNetwork end
+abstract type AbstractTangle <: Tangles.AbstractTensorNetwork end
 struct Tangle <: Interface end
 
 # traits

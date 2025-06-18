@@ -3,7 +3,7 @@ using QuantumTags
 using LinearAlgebra
 using ArgCheck
 using Bijections
-using TenetCore
+using Tangles
 
 struct LambdaSite{B} <: Site
     bond::B
@@ -76,13 +76,13 @@ function VidalMPS(Γ::AbstractVector{<:AbstractArray}, Λ::AbstractVector{<:Abst
 end
 
 # TensorNetwork interface
-ImplementorTrait(::TenetCore.TensorNetwork, ::VidalMPS) = Implements()
+ImplementorTrait(::Tangles.TensorNetwork, ::VidalMPS) = Implements()
 
-TenetCore.all_tensors(tn::VidalMPS) = [tn.Γ; tn.Λ]
-TenetCore.all_tensors_iter(tn::VidalMPS) = Iterators.flatten((tn.Γ, tn.Λ))
+Tangles.all_tensors(tn::VidalMPS) = [tn.Γ; tn.Λ]
+Tangles.all_tensors_iter(tn::VidalMPS) = Iterators.flatten((tn.Γ, tn.Λ))
 
-TenetCore.tensor_at(tn::VidalMPS, site::CartesianSite{1}) = tn.Γ[site.id[1]]
-function TenetCore.tensor_at(tn::VidalMPS, s::LambdaSite{Bond{CartesianSite{1},CartesianSite{1}}})
+Tangles.tensor_at(tn::VidalMPS, site::CartesianSite{1}) = tn.Γ[site.id[1]]
+function Tangles.tensor_at(tn::VidalMPS, s::LambdaSite{Bond{CartesianSite{1},CartesianSite{1}}})
     a, b = sites(s)
     # TODO do this check better
     i = a.id[1]
@@ -90,12 +90,12 @@ function TenetCore.tensor_at(tn::VidalMPS, s::LambdaSite{Bond{CartesianSite{1},C
     return tn.Λ[i]
 end
 
-TenetCore.ind_at(tn::VidalMPS, p::Plug) = tn.plugs[p]
+Tangles.ind_at(tn::VidalMPS, p::Plug) = tn.plugs[p]
 
-TenetCore.addtensor!(tn::VidalMPS, args...) = error("VidalMPS doesn't allow `addtensor!`")
-TenetCore.rmtensor!(tn::VidalMPS, args...) = error("VidalMPS doesn't allow `rmtensor!`")
+Tangles.addtensor!(tn::VidalMPS, args...) = error("VidalMPS doesn't allow `addtensor!`")
+Tangles.rmtensor!(tn::VidalMPS, args...) = error("VidalMPS doesn't allow `rmtensor!`")
 
-function TenetCore.replace_tensor!(tn::VidalMPS, old, new)
+function Tangles.replace_tensor!(tn::VidalMPS, old, new)
     old === new && return tn
 
     i = findfirst(Base.Fix1(===, old), tn.Γ)
@@ -116,7 +116,7 @@ function TenetCore.replace_tensor!(tn::VidalMPS, old, new)
     throw(ArgumentError("Tensor not found in VidalMPS"))
 end
 
-function TenetCore.replace_ind!(tn::VidalMPS, old, new)
+function Tangles.replace_ind!(tn::VidalMPS, old, new)
     # replace tensors
     for (i, tensor) in enumerate(tn.Γ)
         if old ∈ inds(tensor)
@@ -140,16 +140,16 @@ function TenetCore.replace_ind!(tn::VidalMPS, old, new)
 end
 
 # Lattice interface
-ImplementorTrait(::TenetCore.Lattice, ::VidalMPS) = Implements()
+ImplementorTrait(::Tangles.Lattice, ::VidalMPS) = Implements()
 
-function TenetCore.all_sites(tn::VidalMPS)
+function Tangles.all_sites(tn::VidalMPS)
     [
         CartesianSite.(1:length(tn.Γ))
         LambdaSite.(Bond.(CartesianSite.(1:(length(tn.Γ) - 1)), CartesianSite.(2:length(tn.Γ))))
     ]
 end
 
-function TenetCore.all_bonds(tn::VidalMPS)
+function Tangles.all_bonds(tn::VidalMPS)
     _bonds = Bond[]
     for i in 1:(length(tn.Γ) - 1)
         real_bond = Bond(CartesianSite(i), CartesianSite(i + 1))
@@ -160,7 +160,7 @@ function TenetCore.all_bonds(tn::VidalMPS)
     return _bonds
 end
 
-TenetCore.site_at(tn::VidalMPS, tensor::Tensor) = begin
+Tangles.site_at(tn::VidalMPS, tensor::Tensor) = begin
     i = findfirst(Base.Fix1(===, tensor), tn.Γ)
     if !isnothing(i)
         return site"i"
@@ -175,30 +175,30 @@ TenetCore.site_at(tn::VidalMPS, tensor::Tensor) = begin
     throw(ArgumentError("Tensor not found in VidalMPS"))
 end
 
-function TenetCore.bond_at(tn::VidalMPS, ind::Index)
+function Tangles.bond_at(tn::VidalMPS, ind::Index)
     _tensors = tensors_with_inds(tn, ind)
     length(_tensors) != 2 || throw(ArgumentError("Bond must be between two tensors"))
     _sites = site_at.(Ref(tn), _tensors)
     return Bond(_sites...)
 end
 
-TenetCore.setsite!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setsite!`")
-TenetCore.setbond!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setbond!`")
-TenetCore.unsetsite!(::VidalMPS, site) = error("VidalMPS doesn't allow `unsetsite!`")
-TenetCore.unsetbond!(::VidalMPS, bond) = error("VidalMPS doesn't allow `unsetbond!`")
+Tangles.setsite!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setsite!`")
+Tangles.setbond!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setbond!`")
+Tangles.unsetsite!(::VidalMPS, site) = error("VidalMPS doesn't allow `unsetsite!`")
+Tangles.unsetbond!(::VidalMPS, bond) = error("VidalMPS doesn't allow `unsetbond!`")
 
 # Pluggable interface
-ImplementorTrait(::TenetCore.Pluggable, ::VidalMPS) = Implements()
+ImplementorTrait(::Tangles.Pluggable, ::VidalMPS) = Implements()
 
-TenetCore.all_plugs(tn::VidalMPS) = collect(keys(tn.plugs))
-TenetCore.all_plugs_iter(tn::VidalMPS) = keys(tn.plugs)
-TenetCore.hasplug(tn::VidalMPS, plug) = haskey(tn.plugs, plug)
-TenetCore.nplugs(tn::VidalMPS) = length(tn.plugs)
+Tangles.all_plugs(tn::VidalMPS) = collect(keys(tn.plugs))
+Tangles.all_plugs_iter(tn::VidalMPS) = keys(tn.plugs)
+Tangles.hasplug(tn::VidalMPS, plug) = haskey(tn.plugs, plug)
+Tangles.nplugs(tn::VidalMPS) = length(tn.plugs)
 
-TenetCore.plug_at(tn::VidalMPS, ind::Index) = tn.plugs(ind)
+Tangles.plug_at(tn::VidalMPS, ind::Index) = tn.plugs(ind)
 
-TenetCore.setplug!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setplug!`")
-TenetCore.unsetplug!(::VidalMPS, args...) = error("VidalMPS doesn't allow `unsetplug!`")
+Tangles.setplug!(::VidalMPS, args...) = error("VidalMPS doesn't allow `setplug!`")
+Tangles.unsetplug!(::VidalMPS, args...) = error("VidalMPS doesn't allow `unsetplug!`")
 
 # CanonicalForm trait
 CanonicalForm(::VidalMPS) = VidalGauge()

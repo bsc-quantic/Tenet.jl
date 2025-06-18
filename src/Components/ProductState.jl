@@ -1,6 +1,6 @@
 using DelegatorTraits
 using Networks
-using TenetCore
+using Tangles
 using QuantumTags
 using LinearAlgebra
 

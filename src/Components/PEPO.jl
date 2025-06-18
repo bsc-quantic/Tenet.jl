@@ -1,7 +1,7 @@
 using DelegatorTraits
 using QuantumTags
 using Networks
-using TenetCore
+using Tangles
 
 struct ProjectedEntangledPairOperator <: AbstractTangle
     tn::GenericTensorNetwork
@@ -65,8 +65,8 @@ function PEPO(arrays::AbstractMatrix{<:AbstractArray}; order=defaultorder(PEPO))
                 end
             end
 
-            TenetCore.setplug!(tn, Index(plug"i,j"), plug"i,j")
-            TenetCore.setplug!(tn, Index(plug"i,j'"), plug"i,j'")
+            Tangles.setplug!(tn, Index(plug"i,j"), plug"i,j")
+            Tangles.setplug!(tn, Index(plug"i,j'"), plug"i,j'")
         end
     end
 
@@ -92,19 +92,19 @@ DelegatorTraits.DelegatorTrait(::UnsafeScopeable, ::PEPO) = DelegateToField{:tn}
 # TensorNetwork interface
 DelegatorTraits.DelegatorTrait(::TensorNetwork, ::PEPO) = DelegateToField{:tn}()
 
-TenetCore.addtensor!(::PEPO, args...) = error("PEPO doesn't allow `addtensor!`")
-TenetCore.rmtensor!(::PEPO, args...) = error("PEPO doesn't allow `rmtensor!`")
+Tangles.addtensor!(::PEPO, args...) = error("PEPO doesn't allow `addtensor!`")
+Tangles.rmtensor!(::PEPO, args...) = error("PEPO doesn't allow `rmtensor!`")
 
 # Lattice interface
 DelegatorTraits.DelegatorTrait(::Lattice, ::PEPO) = DelegateToField{:tn}()
 
-TenetCore.setsite!(::PEPO, args...) = error("PEPO doesn't allow `setsite!`")
-TenetCore.setbond!(::PEPO, args...) = error("PEPO doesn't allow `setbond!`")
-TenetCore.unsetsite!(::PEPO, args...) = error("PEPO doesn't allow `unsetsite!`")
-TenetCore.unsetbond!(::PEPO, args...) = error("PEPO doesn't allow `unsetbond!`")
+Tangles.setsite!(::PEPO, args...) = error("PEPO doesn't allow `setsite!`")
+Tangles.setbond!(::PEPO, args...) = error("PEPO doesn't allow `setbond!`")
+Tangles.unsetsite!(::PEPO, args...) = error("PEPO doesn't allow `unsetsite!`")
+Tangles.unsetbond!(::PEPO, args...) = error("PEPO doesn't allow `unsetbond!`")
 
 # Pluggable interface
 DelegatorTraits.DelegatorTrait(::Pluggable, ::PEPO) = DelegateToField{:tn}()
 
-TenetCore.setplug!(::PEPO, args...) = error("PEPO doesn't allow `setplug!`")
-TenetCore.unsetplug!(::PEPO, args...) = error("PEPO doesn't allow `unsetplug!`")
+Tangles.setplug!(::PEPO, args...) = error("PEPO doesn't allow `setplug!`")
+Tangles.unsetplug!(::PEPO, args...) = error("PEPO doesn't allow `unsetplug!`")

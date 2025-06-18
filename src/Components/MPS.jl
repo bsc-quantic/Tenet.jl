@@ -1,4 +1,4 @@
-using TenetCore
+using Tangles
 using Random
 
 abstract type AbstractMPS <: AbstractMPO end
@@ -72,7 +72,7 @@ function MPS(arrays::AbstractVector{<:AbstractArray}; order=defaultorder(MPS)) #
         _tensor = Tensor(array, inds)
         addtensor!(tn, _tensor)
         setsite!(tn, _tensor, site"i")
-        TenetCore.setplug!(tn, Index(plug"i"), plug"i")
+        Tangles.setplug!(tn, Index(plug"i"), plug"i")
         hasbond(tn, bond"i-isup") || hasind(tn, Index(bond"i-isup")) && setbond!(tn, Index(bond"i-isup"), bond"i-isup")
         hasbond(tn, bond"isub-i") || hasind(tn, Index(bond"isub-i")) && setbond!(tn, Index(bond"isub-i"), bond"isub-i")
     end
