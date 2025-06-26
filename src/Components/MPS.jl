@@ -133,3 +133,13 @@ Base.getindex(x::AbstractMPS, i::Site) = tensor_at(x, CartesianSite(i))
 
 Base.length(x::AbstractMPS) = ntensors(x)
 
+function Base.setindex!(x::AbstractMPS, tt::Tensor, i::Integer) 
+  @argcheck i > 0 
+  @argcheck i < length(x) + 2
+
+  if i <= length(x) 
+    replace_tensor!(x, x[i], tt)
+  else
+    addtensor!(x, tt)
+  end
+end
