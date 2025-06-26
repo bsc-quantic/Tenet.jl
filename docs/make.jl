@@ -18,30 +18,17 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "📖 Manual" => [
-            "The Design of Tenet" => [
+            "Design" => [
                 "Introduction" => "manual/design/introduction.md",
-                "Tensors" => "manual/design/tensors.md",
-                "The TensorNetwork class" => "manual/design/tensor-network.md",
-                "The Quantum class" => "manual/design/quantum.md",
-                "The Ansatz class" => "manual/design/ansatz.md",
                 "The Product ansatz" => "manual/design/product.md",
                 "The MPS/MPO ansatz" => "manual/design/mps.md",
             ],
             "🤝 Interoperation" => "manual/interop.md",
             "Acceleration with Reactant.jl" => "manual/reactant.md",
         ],
-        "🧭 API" => [
-            "Tensor" => "api/tensor.md",
-            "TensorNetwork" => "api/tensornetwork.md",
-            "Transformations" => "api/transformations.md",
-            "Quantum" => "api/quantum.md",
-            "Ansatz" => "api/ansatz.md",
-            "Product" => "api/product.md",
-            "MPS" => "api/mps.md",
-        ],
+        "🧭 API" => [],
         "⚒️ Internals" => [
             "Hypergraph representation" => "developer/hypergraph.md",
-            "Type Hierarchy" => "developer/type-hierarchy.md",
             "Unsafe region" => "developer/unsafe-region.md",
             "Cached field" => "developer/cached-field.md",
             "Keyword Dispatch" => "developer/keyword-dispatch.md",
