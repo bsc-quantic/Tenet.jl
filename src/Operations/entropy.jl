@@ -1,4 +1,9 @@
 function vn_entanglement_entropy(psi)
+    psi = copy(psi) #deepcopy ? 
+    vn_entanglement_entropy!(psi)
+end
+
+function vn_entanglement_entropy!(psi)
 
     N = length(psi)
 
