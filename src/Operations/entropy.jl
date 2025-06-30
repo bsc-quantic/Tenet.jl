@@ -33,14 +33,15 @@ function vn_entanglement_entropy!(psi)
         # rename back bond index
         U = replace(U, ind_virtual => ind_iso_dir)
         V = replace(V, ind_virtual => ind_iso_dir)
-        s = replace(s, ind_virtual => ind_iso_dir)
 
         # replace old tensors with new gauged ones
         psi[_site] = U
         psi[_site + 1] = V
 
+        psi.orthog_center = MixedCanonical(CartesianSite(_site + 1))
+
         s2 = parent(s) .^ 2
-        @info s2
+        #@info s2
 
         s_vn[_site] = -sum(s2 .* log.(s2))
     end
