@@ -62,4 +62,7 @@ export normalize!
 include("Operations/compress.jl")
 export compress!
 
+include("Operations/entropy.jl")
+export vn_entanglement_entropy
+
 end
