@@ -105,12 +105,42 @@ In order to avoid norm explosion issues, the tensors are orthogonalized by QR fa
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, eltype=Float64, physdim=2)
     T = eltype
     ip = op = physdim
-    χ = isnothing(maxdim) ? (ip * op)^(n ÷ 2) : maxdim
+    χ = isnothing(maxdim) ? Base.Checked.checked_pow(Base.Checked.checked_mul(ip * op), n ÷ 2) : maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(χ, ip^(i - 1) * op^(i - 1))
             χr = min(χ, ip^i * op^i)
+
+            χl = min(
+                χ,
+                try
+                    a = Base.Checked.checked_pow(ip, i - 1)
+                    b = Base.Checked.checked_pow(op, i - 1)
+                    Base.Checked.checked_mul(a, b)
+                catch e
+                    if e isa OverflowError
+                        typemax(Int)
+                    else
+                        rethrow(e)
+                    end
+                end,
+            )
+
+            χr = min(
+                χ,
+                try
+                    a = Base.Checked.checked_pow(ip, i)
+                    b = Base.Checked.checked_pow(op, i)
+                    Base.Checked.checked_mul(a, b)
+                catch e
+                    if e isa OverflowError
+                        typemax(Int)
+                    else
+                        rethrow(e)
+                    end
+                end,
+            )
 
             # swap bond dims after mid and handle midpoint for odd-length MPO
             (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
