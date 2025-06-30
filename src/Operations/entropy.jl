@@ -5,6 +5,9 @@ end
 
 function vn_entanglement_entropy!(psi)
 
+    normalize!(psi)
+    @info norm(psi)
+
     N = length(psi)
 
     canonize!(psi, MixedCanonical(site"1"))
@@ -37,7 +40,10 @@ function vn_entanglement_entropy!(psi)
         psi[_site] = U 
         psi[_site+1] = V
 
-        s_vn[_site] = -sum(s.*log.(s))
+        s2 = parent(s).^2 
+        @info s2
+
+        s_vn[_site] =  -sum(s2 .*log.(s2))
 
     end
 
