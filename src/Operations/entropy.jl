@@ -52,14 +52,14 @@ end
 function sergio_values!(psi, cut)
     canonize!(psi, MixedCanonical(CartesianSite(cut)))
 
-        A = psi[cut]
-        B = psi[cut+1]
+    A = psi[cut]
+    B = psi[cut + 1]
 
-        ind_iso_dir = only(intersect(inds(A), inds(B)))
-        inds_a_only = filter(!=(ind_iso_dir), inds(A))
+    ind_iso_dir = only(intersect(inds(A), inds(B)))
+    inds_a_only = filter(!=(ind_iso_dir), inds(A))
 
-        _, s, _ = tensor_svd_thin(A; inds_u=inds_a_only)
- 
+    _, s, _ = tensor_svd_thin(A; inds_u=inds_a_only)
+
     return parent(s) .^ 2
 end
 
@@ -68,7 +68,7 @@ function sergio_entropy(lambdas::AbstractVector)
 end
 
 function sergio_entropy!(psi, cut)
-    sergio_entropy(sergio_values!(psi,cut))
+    sergio_entropy(sergio_values!(psi, cut))
 end
 
 function sergio_entropy!(psi::AbstractMPS)
@@ -76,7 +76,7 @@ function sergio_entropy!(psi::AbstractMPS)
     vn_ent = zeros(Float64, N-1)
 
     for cut in eachindex(vn_ent)
-        vn_ent[cut] = sergio_entropy!(psi,cut)
+        vn_ent[cut] = sergio_entropy!(psi, cut)
     end
     return vn_ent
 end
