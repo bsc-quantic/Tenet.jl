@@ -13,9 +13,9 @@ end
 #     end
 # end
 
-# `MixedCanonicalMPS`
+# `MPS`
 # TODO what if `orthog_center` is not a single site?
-function norm(tn::MixedCanonicalMPS, p::Real=2)
+function norm(tn::MPS, p::Real=2)
     _min_orthog_center = min_orthog_center(form(tn))
     canonize!(tn, MixedCanonical(_min_orthog_center))
     norm(tensor_at(tn, _min_orthog_center), p)

@@ -130,9 +130,7 @@ function generic_evolve_mps_mpo_zipup!(mps, op; maxdim=nothing, threhold=nothing
     return mps
 end
 
-evolve!(mps::MPS, op::AbstractMPO) = generic_evolve_mps_mpo_direct!(mps, op)
-
-function evolve!(mps::MixedCanonicalMPS, op::AbstractMPO)
+function evolve!(mps::MPS, op::AbstractMPO)
     generic_evolve_mps_mpo_direct!(mps, op)
 
     # direct method loses canonicity

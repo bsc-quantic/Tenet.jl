@@ -2,7 +2,7 @@ using Muscle
 
 function compress! end
 
-function compress!(ψ::MixedCanonicalMPS; maxdim=nothing, threshold=nothing, kwargs...)
+function compress!(ψ::MPS; maxdim=nothing, threshold=nothing, kwargs...)
     @argcheck !isnothing(maxdim) || !isnothing(threshold) "Either `maxdim` or `threshold` must be specified."
     @argcheck isnothing(maxdim) || maxdim > 0 "maxdim must be a positive integer."
     @argcheck isnothing(threshold) || threshold > 0 "Threshold must be positive."
@@ -31,7 +31,7 @@ function compress!(ψ::MixedCanonicalMPS; maxdim=nothing, threshold=nothing, kwa
         end
 
         # absorb the singular values into V to shift right the orthogonality center
-        V = binary_einsum(V, S; dims=Index[])
+        V = hadamard!(V, V, S)
 
         # contract against tensor in next site
         V = binary_einsum(V, b; dims=[ind_at(ψ, _bond)])
@@ -45,7 +45,7 @@ function compress!(ψ::MixedCanonicalMPS; maxdim=nothing, threshold=nothing, kwa
             replace_tensor!(ψ, a, U)
             replace_tensor!(ψ, b, V)
         end
-        ψ.orthog_center = MixedCanonical(CartesianSite(i + 1))
+        ψ.form = MixedCanonical(CartesianSite(i + 1))
     end
 
     return ψ

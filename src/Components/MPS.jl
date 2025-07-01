@@ -11,9 +11,12 @@ defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
 
 A Matrix Product State Tensor Network.
 """
-struct MatrixProductState <: AbstractMPS
-    tn::GenericTensorNetwork
+mutable struct MatrixProductState <: AbstractMPS
+    const tn::GenericTensorNetwork
+    form::MixedCanonical
 end
+
+MatrixProductState(tn::GenericTensorNetwork) = MatrixProductState(tn, MixedCanonical(sites(tn)))
 
 const MPS = MatrixProductState
 
@@ -26,7 +29,8 @@ function DelegatorTrait(interface, tn::MPS)
     end
 end
 
-Base.copy(tn::MPS) = MPS(copy(tn.tn))
+Base.copy(tn::MPS) = MPS(copy(tn.tn), copy(tn.form))
+CanonicalForm(tn::MPS) = tn.form
 
 """
     MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))
@@ -80,9 +84,6 @@ function MPS(arrays::AbstractVector{<:AbstractArray}; order=defaultorder(MPS)) #
 
     return MPS(tn)
 end
-
-# CanonicalForm trait
-CanonicalForm(tn::MPS) = NonCanonical()
 
 # TODO normalize as we canonize for numerical stability
 # TODO different input/output physical dims

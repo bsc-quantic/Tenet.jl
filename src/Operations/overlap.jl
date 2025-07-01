@@ -33,7 +33,7 @@ end
 
 overlap(a::AbstractMPS, b::ProductState) = overlap(b, a)
 
-function overlap(a::Union{MPS,MixedCanonicalMPS}, b::Union{MPS,MixedCanonicalMPS})
+function overlap(a::MPS, b::MPS)
     @argcheck nsites(a) == nsites(b)
 
     b = resetinds!(conj(b))
