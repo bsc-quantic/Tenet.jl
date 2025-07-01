@@ -5,7 +5,7 @@ end
 
 function vn_entanglement_entropy!(psi)
     normalize!(psi)
-    @info norm(psi)
+    #@info norm(psi)
 
     N = length(psi)
 
@@ -38,7 +38,7 @@ function vn_entanglement_entropy!(psi)
         psi[_site] = U
         psi[_site + 1] = V
 
-        psi.orthog_center = MixedCanonical(CartesianSite(_site + 1))
+        psi.form = MixedCanonical(CartesianSite(_site + 1))
 
         s2 = parent(s) .^ 2
         #@info s2
@@ -47,4 +47,40 @@ function vn_entanglement_entropy!(psi)
     end
 
     return s_vn
+end
+
+function sergio_values!(psi, cut)
+    canonize!(psi, MixedCanonical(CartesianSite(cut)))
+
+        A = psi[cut]
+        B = psi[cut+1]
+
+        ind_iso_dir = only(intersect(inds(A), inds(B)))
+        inds_a_only = filter(!=(ind_iso_dir), inds(A))
+
+        _, s, _ = tensor_svd_thin(A; inds_u=inds_a_only)
+ 
+    return parent(s) .^ 2
+end
+
+function sergio_entropy(lambdas::AbstractVector)
+    return -sum(lambdas .* log.(lambdas))
+end
+
+function sergio_entropy!(psi, cut)
+    sergio_entropy(sergio_values!(psi,cut))
+end
+
+function sergio_entropy!(psi::AbstractMPS)
+    N = length(psi)
+    vn_ent = zeros(Float64, N-1)
+
+    for cut in eachindex(vn_ent)
+        vn_ent[cut] = sergio_entropy!(psi,cut)
+    end
+    return vn_ent
+end
+
+function sergio_entropy(psi::AbstractMPS)
+    sergio_entropy!(copy(psi))
 end
