@@ -11,8 +11,8 @@ function normalize!(tn::AbstractProduct, p::Real=2)
     return tn
 end
 
-# `MixedCanonicalMPS`
-function normalize!(tn::MixedCanonicalMPS, p::Real=2)
+# `MPS`
+function normalize!(tn::MPS, p::Real=2)
     _min_orthog_center = min_orthog_center(form(tn))
     canonize!(tn, MixedCanonical(_min_orthog_center))
     normalize!(tensor_at(tn, _min_orthog_center), p)

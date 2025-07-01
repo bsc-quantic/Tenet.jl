@@ -71,8 +71,8 @@ end
 
 canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(CartesianSite(i)))
 
-## `MixedCanonicalMPS`
-function canonize!(tn::MixedCanonicalMPS, new_form::MixedCanonical)
+## `MPS`
+function canonize!(tn::MPS, new_form::MixedCanonical)
     old_form = form(tn)
     old_form == new_form && return tn
 
@@ -92,7 +92,7 @@ function canonize!(tn::MixedCanonicalMPS, new_form::MixedCanonical)
         generic_canonize_site!(tn, site"i", bond; method=:qr)
     end
 
-    tn.orthog_center = copy(new_form)
+    tn.form = copy(new_form)
     return tn
 end
 

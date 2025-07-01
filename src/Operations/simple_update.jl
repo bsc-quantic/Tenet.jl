@@ -63,10 +63,7 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
 end
 
 ## `MPS`
-simple_update!(tn::MPS, operator::Tensor; kwargs...) = generic_simple_update!(tn, operator; kwargs...)
-
-## `MixedCanonicalMPS`
-function simple_update!(tn::MixedCanonicalMPS, operator::Tensor; kwargs...)
+function simple_update!(tn::MPS, operator::Tensor; kwargs...)
     op_sites = acting_sites(operator)
 
     # move orthogonality center to operator sites

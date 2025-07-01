@@ -28,7 +28,10 @@ export MatrixProductOperator, MPO
 include("Components/MPS.jl")
 export MatrixProductState, MPS
 
-include("Components/MixedCanonicalMPS.jl")
+# legacy aliases
+# TODO remove in future version
+const MixedCanonicalMatrixProductState = MatrixProductState
+const MixedCanonicalMPS = MixedCanonicalMatrixProductState
 export MixedCanonicalMatrixProductState, MixedCanonicalMPS
 
 include("Components/VidalMPS.jl")
