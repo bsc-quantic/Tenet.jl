@@ -65,4 +65,6 @@ export normalize!
 include("Operations/compress.jl")
 export compress!
 
+include("Operations/entropy.jl")
+
 end

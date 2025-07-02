@@ -29,6 +29,7 @@ function DelegatorTrait(interface, tn::MPS)
 end
 
 Base.copy(tn::MPS) = MPS(copy(tn.tn), copy(tn.form))
+Base.length(tn::MPS) = nsites(tn)
 CanonicalForm(tn::MPS) = tn.form
 
 """
