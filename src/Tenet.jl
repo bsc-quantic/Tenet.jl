@@ -66,6 +66,6 @@ include("Operations/compress.jl")
 export compress!
 
 include("Operations/entropy.jl")
-export vn_entanglement_entropy
+export entropy_vonneumann, entropy_vonneumann!
 
 end

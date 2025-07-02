@@ -1,31 +1,47 @@
-function vn_entanglement_entropy(psi)
-    psi = copy(psi) #deepcopy ? 
-    vn_entanglement_entropy!(psi)
-end
+"""
+    entropy_vonneumann(psi)
 
-function vn_entanglement_entropy!(psi)
-    normalize!(psi)
-    #@info norm(psi)
+Calculate the Von Neumann entropy of an MPS `psi`.
 
-    N = length(psi)
+See also: [`entropy_vonneumann!`](@ref).
+"""
+entropy_vonneumann(psi) = entropy_vonneumann!(copy(psi))
+
+"""
+    entropy_vonneumann!(psi)
+
+Calculate the Von Neumann entropy of an MPS `psi` by performing a singular value decomposition (SVD) on the tensors of the MPS.
+
+!!! note
+
+    This function is marked as `!` (in-place) because it modifies the gauge of the MPS during the calculation.
+
+!!! warning
+
+    The MPS should be normalized before calling this function. The function does not normalize the MPS internally.
+
+See also: [`entropy_vonneumann`](@ref).
+"""
+function entropy_vonneumann!(psi::MPS)
+    N = nsites(psi)
+
+    entropies = zeros(Float64, nbonds(psi))
 
     canonize!(psi, MixedCanonical(site"1"))
-
-    s_vn = zeros(Float64, N-1)
-    for _site in 1:(N - 1)
-
+    for i in 1:(nsites(psi) - 1)
         # A it the tensor where we perform the factorization, but B is also affected by the gauge transformation
-        A = psi[_site]
-        B = psi[_site + 1]
+        A = psi[i]
+        B = psi[i + 1]
 
+        # alternatively, we can just use `psi[Bond(CartesianSite(i), CartesianSite(i + 1))]`
         ind_iso_dir = only(intersect(inds(A), inds(B)))
         inds_a_only = filter(!=(ind_iso_dir), inds(A))
-        ind_virtual = Index(gensym(:tmp))
+        ind_virtual = Index(gensym(:svd))
 
         U, s, V = tensor_svd_thin(A; inds_u=inds_a_only, ind_s=ind_virtual)
 
         # absorb singular values
-        V = Muscle.hadamard(V, s)
+        V = Muscle.hadamard!(V, V, s)
 
         # contract V against next lane tensor
         V = binary_einsum(B, V)
@@ -35,52 +51,61 @@ function vn_entanglement_entropy!(psi)
         V = replace(V, ind_virtual => ind_iso_dir)
 
         # replace old tensors with new gauged ones
-        psi[_site] = U
-        psi[_site + 1] = V
+        psi[i] = U
+        psi[i + 1] = V
 
-        psi.form = MixedCanonical(CartesianSite(_site + 1))
+        # unsafe set of canonical form
+        psi.form = MixedCanonical(CartesianSite(i + 1))
 
-        s2 = parent(s) .^ 2
-        #@info s2
-
-        s_vn[_site] = -sum(s2 .* log.(s2))
+        entropies[i] = -sum(x -> x^2 * 2log(x), parent(s))
     end
 
-    return s_vn
+    return entropies
 end
 
-function sergio_values!(psi, cut)
-    canonize!(psi, MixedCanonical(CartesianSite(cut)))
+"""
+    schmidt_values(psi, bond)
 
-    A = psi[cut]
-    B = psi[cut + 1]
+Calculate the Schmidt values of an MPS `psi` at the specified `bond`.
+
+See also: [`schmidt_values!`](@ref).
+"""
+schmidt_values(psi, bond) = schmidt_values!(copy(psi), bond)
+
+"""
+    schmidt_values!(psi, bond)
+
+Calculate the Schmidt values of an MPS `psi` at the specified `bond`.
+
+!!! note
+
+    This function is marked as `!` (in-place) because it modifies the gauge of the MPS during the calculation.
+
+!!! warning
+
+    The MPS should be normalized before calling this function. The function does not normalize the MPS internally.
+
+See also: [`schmidt_values`](@ref).
+"""
+function schmidt_values!(psi::MPS, bond)
+    # TODO use `max` if `bond` is past the middle of the MPS
+    _site = min(bond...)
+    canonize!(psi, MixedCanonical(CartesianSite(_site)))
+
+    A = psi[_site]
+    B = psi[_site + 1]
 
     ind_iso_dir = only(intersect(inds(A), inds(B)))
     inds_a_only = filter(!=(ind_iso_dir), inds(A))
 
+    # TODO call eigvals (implement it in Muscle.jl)
     _, s, _ = tensor_svd_thin(A; inds_u=inds_a_only)
-
-    return parent(s) .^ 2
+    return parent(s)
 end
 
-function sergio_entropy(lambdas::AbstractVector)
-    return -sum(lambdas .* log.(lambdas))
-end
+"""
+    entropy_vonneumann!(psi, bond)
 
-function sergio_entropy!(psi, cut)
-    sergio_entropy(sergio_values!(psi, cut))
-end
-
-function sergio_entropy!(psi::AbstractMPS)
-    N = length(psi)
-    vn_ent = zeros(Float64, N-1)
-
-    for cut in eachindex(vn_ent)
-        vn_ent[cut] = sergio_entropy!(psi, cut)
-    end
-    return vn_ent
-end
-
-function sergio_entropy(psi::AbstractMPS)
-    sergio_entropy!(copy(psi))
-end
+Calculate the Von Neumann entropy of an MPS `psi` at the specified `bond`.
+"""
+entropy_vonneumann!(psi, _bond) = -sum(x -> x^2 * 2log(x), schmidt_values!(psi, _bond))
