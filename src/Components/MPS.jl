@@ -1,6 +1,5 @@
 using Tangles
 using Random
-using ArgCheck
 
 abstract type AbstractMPS <: AbstractMPO end
 
