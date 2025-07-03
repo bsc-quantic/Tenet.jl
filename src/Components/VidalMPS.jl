@@ -38,15 +38,15 @@ function VidalMPS(Γ::AbstractVector{<:AbstractArray}, Λ::AbstractVector{<:Abst
     _plugs = Bijection{Plug,Index}()
 
     Λ = map(enumerate(Λ)) do (i, λ)
-        a = CartesianSite(i)
-        b = CartesianSite(i + 1)
-        _site = LambdaSite(bond"a-b")
-        return Tensor(Diagonal(λ), Index.([Bond(a, _site), Bond(_site, b)]))
+        a = site"$i"
+        b = site"$(i + 1)"
+        _site = LambdaSite(bond"$i-$(i+1)")
+        return Tensor(Diagonal(λ), Index.([bond"$a - $_site", bond"$_site - $b"]))
     end
 
     Γ = map(enumerate(Γ)) do (i, g)
-        isub = LambdaSite(Bond(i - 1, i))
-        isup = LambdaSite(Bond(i, i + 1))
+        isub = LambdaSite(bond"$(i - 1) - $i")
+        isup = LambdaSite(bond"$i - $(i + 1)")
 
         local_order = if i == 1
             filter(x -> x != :l, order)
@@ -58,17 +58,17 @@ function VidalMPS(Γ::AbstractVector{<:AbstractArray}, Λ::AbstractVector{<:Abst
 
         inds = map(local_order) do dir
             if dir == :o
-                Index(plug"i")
+                Index(plug"$i")
             elseif dir == :r
-                Index(Bond(i, isup))
+                Index(bond"$i - $isup")
             elseif dir == :l
-                Index(Bond(isub, i))
+                Index(bond"$isub - $i")
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
         end |> collect
 
-        _plugs[plug"i"] = Index(plug"i")
+        _plugs[plug"$i"] = Index(plug"$i")
         return Tensor(g, inds)
     end
 
@@ -152,10 +152,10 @@ end
 function Tangles.all_bonds(tn::VidalMPS)
     _bonds = Bond[]
     for i in 1:(length(tn.Γ) - 1)
-        real_bond = Bond(CartesianSite(i), CartesianSite(i + 1))
-        lamba_site = LambdaSite(real_bond)
-        push!(_bonds, Bond(CartesianSite(i), lamba_site))
-        push!(_bonds, Bond(lamba_site, CartesianSite(i + 1)))
+        real_bond = bond"$i - $(i + 1)"
+        lambda_site = LambdaSite(real_bond)
+        push!(_bonds, bond"$i - $lambda_site")
+        push!(_bonds, bond"$lambda_site - $(i + 1)")
     end
     return _bonds
 end
@@ -163,7 +163,7 @@ end
 Tangles.site_at(tn::VidalMPS, tensor::Tensor) = begin
     i = findfirst(Base.Fix1(===, tensor), tn.Γ)
     if !isnothing(i)
-        return site"i"
+        return site"$i"
     end
 
     i = findfirst(Base.Fix1(===, tensor), tn.Λ)

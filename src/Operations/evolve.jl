@@ -24,10 +24,10 @@ function generic_evolve_mps_mpo_direct!(mps, op)
     align!(mps, :outputs, op, :inputs)
 
     @unsafe_region mps for i in 1:nsites(mps)
-        tensor_mps = tensor_at(mps, site"i")
-        tensor_op = tensor_at(op, site"i")
+        tensor_mps = tensor_at(mps, site"$i")
+        tensor_op = tensor_at(op, site"$i")
         c = binary_einsum(tensor_mps, tensor_op)
-        c = replace(c, ind_at(op, plug"i") => ind_at(mps, plug"i"))
+        c = replace(c, ind_at(op, plug"$i") => ind_at(mps, plug"$i"))
 
         # fuse virtual indices
         if i > 1
@@ -82,16 +82,14 @@ function generic_evolve_mps_mpo_zipup!(mps, op; maxdim=nothing, threhold=nothing
         replace_tensor!(mps, tensor_at(mps, site"1"), U)
 
         for i in 2:(nsites(mps) - 1)
-            _site = site"i"
+            _site = site"$i"
             R = binary_einsum(binary_einsum(R, tensor_at(mps, _site)), tensor_at(op, _site))
-            R = replace(R, ind_at(op, plug"i") => ind_at(mps, plug"i"))
+            R = replace(R, ind_at(op, plug"$i") => ind_at(mps, plug"$i"))
 
             # rename left temporal index to the bond index
-            R = replace(R, ind_s => ind_at(mps, Bond(CartesianSite(i - 1), CartesianSite(i))))
+            R = replace(R, ind_s => ind_at(mps, bond"$(i - 1) - $i"))
 
-            U, S, V = tensor_svd_thin(
-                R; inds_u=[ind_at(mps, plug"i"), ind_at(mps, Bond(CartesianSite(i - 1), CartesianSite(i)))], ind_s
-            )
+            U, S, V = tensor_svd_thin(R; inds_u=[ind_at(mps, plug"$i"), ind_at(mps, bond"$(i - 1) - $i")], ind_s)
 
             if !isnothing(maxdim)
                 U = view(U, ind_s => 1:min(maxdim, length(S)))
@@ -110,21 +108,21 @@ function generic_evolve_mps_mpo_zipup!(mps, op; maxdim=nothing, threhold=nothing
             R = binary_einsum(V, S; dims=Index[])
 
             # rename temporal index to the bond index
-            U = replace(U, ind_s => ind_at(mps, Bond(CartesianSite(i), CartesianSite(i + 1))))
+            U = replace(U, ind_s => ind_at(mps, bond"$i - $(i + 1)"))
 
             replace_tensor!(mps, tensor_at(mps, _site), U)
         end
 
         # last site
         i = nsites(mps)
-        R = binary_einsum(R, tensor_at(mps, site"i"))
-        R = binary_einsum(R, tensor_at(op, site"i"))
-        R = replace(R, ind_at(op, plug"i") => ind_at(mps, plug"i"))
+        R = binary_einsum(R, tensor_at(mps, site"$i"))
+        R = binary_einsum(R, tensor_at(op, site"$i"))
+        R = replace(R, ind_at(op, plug"$i") => ind_at(mps, plug"$i"))
 
         # rename left temporal index to the bond index
-        R = replace(R, ind_s => ind_at(mps, Bond(CartesianSite(i - 1), CartesianSite(i))))
+        R = replace(R, ind_s => ind_at(mps, bond"$(i - 1) - $i"))
 
-        replace_tensor!(mps, tensor_at(mps, site"i"), R)
+        replace_tensor!(mps, tensor_at(mps, site"$i"), R)
     end
 
     return mps

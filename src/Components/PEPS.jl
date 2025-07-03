@@ -28,15 +28,15 @@ function PEPS(arrays::AbstractMatrix{<:AbstractArray}; order=defaultorder(PEPS))
 
             _inds = map(dirs) do dir
                 if dir === :l
-                    Index(Bond(CartesianSite(i, j), CartesianSite(i, j - 1)))
+                    Index(bond"$(i, j) - $(i, j - 1)")
                 elseif dir === :r
-                    Index(Bond(CartesianSite(i, j), CartesianSite(i, j + 1)))
+                    Index(bond"$(i, j) - $(i, j + 1)")
                 elseif dir === :u
-                    Index(Bond(CartesianSite(i, j), CartesianSite(i - 1, j)))
+                    Index(bond"$(i, j) - $(i - 1, j)")
                 elseif dir === :d
-                    Index(Bond(CartesianSite(i, j), CartesianSite(i + 1, j)))
+                    Index(bond"$(i, j) - $(i + 1, j)")
                 elseif dir === :o
-                    Index(plug"i,j")
+                    Index(plug"$i,$j")
                 else
                     throw(ArgumentError("Invalid direction: $dir"))
                 end
@@ -44,17 +44,17 @@ function PEPS(arrays::AbstractMatrix{<:AbstractArray}; order=defaultorder(PEPS))
 
             _tensor = Tensor(arrays[i, j], _inds)
             addtensor!(tn, _tensor)
-            setsite!(tn, _tensor, CartesianSite(i, j))
+            setsite!(tn, _tensor, site"$i, $j")
 
             _bonds = map(filter(x -> x !== :o, dirs)) do dir
                 if dir === :l
-                    Bond(CartesianSite(i, j), CartesianSite(i, j - 1))
+                    bond"$(i, j) - $(i, j - 1)"
                 elseif dir === :r
-                    Bond(CartesianSite(i, j), CartesianSite(i, j + 1))
+                    bond"$(i, j) - $(i, j + 1)"
                 elseif dir === :u
-                    Bond(CartesianSite(i, j), CartesianSite(i - 1, j))
+                    bond"$(i, j) - $(i - 1, j)"
                 elseif dir === :d
-                    Bond(CartesianSite(i, j), CartesianSite(i + 1, j))
+                    bond"$(i, j) - $(i + 1, j)"
                 end
             end
 
@@ -64,7 +64,7 @@ function PEPS(arrays::AbstractMatrix{<:AbstractArray}; order=defaultorder(PEPS))
                 end
             end
 
-            Tangles.setplug!(tn, Index(plug"i,j"), plug"i,j")
+            Tangles.setplug!(tn, Index(plug"$i,$j"), plug"$i,$j")
         end
     end
 

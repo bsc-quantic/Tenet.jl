@@ -59,13 +59,13 @@ function MPO(arrays::Vector; order=defaultorder(MPO))
 
         inds = map(local_order) do dir
             if dir == :o
-                Index(plug"i")
+                Index(plug"$i")
             elseif dir == :i
-                Index(plug"i'")
+                Index(plug"$i'")
             elseif dir == :r
-                Index(bond"i-isup")
+                Index(bond"$i-$isup")
             elseif dir == :l
-                Index(bond"isub-i")
+                Index(bond"$isub-$i")
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
@@ -73,11 +73,13 @@ function MPO(arrays::Vector; order=defaultorder(MPO))
 
         _tensor = Tensor(array, inds)
         addtensor!(tn, _tensor)
-        setsite!(tn, _tensor, site"i")
-        Tangles.setplug!(tn, Index(plug"i"), plug"i")
-        Tangles.setplug!(tn, Index(plug"i'"), plug"i'")
-        hasbond(tn, bond"i-isup") || hasind(tn, Index(bond"i-isup")) && setbond!(tn, Index(bond"i-isup"), bond"i-isup")
-        hasbond(tn, bond"isub-i") || hasind(tn, Index(bond"isub-i")) && setbond!(tn, Index(bond"isub-i"), bond"isub-i")
+        setsite!(tn, _tensor, site"$i")
+        Tangles.setplug!(tn, Index(plug"$i"), plug"$i")
+        Tangles.setplug!(tn, Index(plug"$i'"), plug"$i'")
+        hasbond(tn, bond"$i-$isup") ||
+            hasind(tn, Index(bond"$i-$isup")) && setbond!(tn, Index(bond"$i-$isup"), bond"$i-$isup")
+        hasbond(tn, bond"$isub-$i") ||
+            hasind(tn, Index(bond"$isub-$i")) && setbond!(tn, Index(bond"$isub-$i"), bond"$isub-$i")
     end
 
     return MPO(tn)

@@ -44,10 +44,10 @@ Base.zero(tn::P) where {P<:AbstractProduct} = P(zero(tn.tn))
 function ProductState(arrays::AbstractArray{<:AbstractVector})
     tn = GenericTensorNetwork()
     for coord in eachindex(IndexCartesian(), arrays)
-        _tensor = Tensor(arrays[coord], [Index(plug"coord")])
+        _tensor = Tensor(arrays[coord], [Index(plug"$coord")])
         addtensor!(tn, _tensor)
-        tag_vertex!(tn, _tensor, CartesianSite(coord))
-        tag_edge!(tn, Index(plug"coord"), plug"coord")
+        tag_vertex!(tn, _tensor, site"$coord")
+        tag_edge!(tn, Index(plug"$coord"), plug"$coord")
     end
 
     return ProductState(tn)
@@ -61,8 +61,8 @@ function ProductState(tensors::AbstractArray{<:Tensor})
         _tensor = tensors[coord]
         addtensor!(tn, _tensor)
         index = only(inds(_tensor))
-        tag_vertex!(tn, _tensor, CartesianSite(coord))
-        tag_edge!(tn, index, plug"coord")
+        tag_vertex!(tn, _tensor, site"$coord")
+        tag_edge!(tn, index, plug"$coord")
     end
 
     return tn
@@ -94,11 +94,11 @@ function ProductOperator(arrays::AbstractArray{<:AbstractMatrix})
     tn = GenericTensorNetwork()
 
     for coord in eachindex(IndexCartesian(), arrays)
-        _tensor = Tensor(arrays[coord], [Index(plug"coord"), Index(plug"coord'")])
+        _tensor = Tensor(arrays[coord], [Index(plug"$coord"), Index(plug"$coord'")])
         addtensor!(tn, _tensor)
         tag_vertex!(tn, _tensor, site"coord")
-        tag_edge!(tn, Index(plug"coord"), plug"coord")
-        tag_edge!(tn, Index(plug"coord'"), plug"coord'")
+        tag_edge!(tn, Index(plug"$coord"), plug"$coord")
+        tag_edge!(tn, Index(plug"$coord'"), plug"$coord'")
     end
 
     return ProductOperator(tn)
@@ -113,8 +113,8 @@ function ProductOperator(tensors::AbstractArray{<:Tensor})
         addtensor!(tn, _tensor)
         tag_vertex!(tn, _tensor, site"coord")
         ind_out, ind_in = inds(_tensor)
-        tag_edge!(tn, ind_out, plug"coord")
-        tag_edge!(tn, ind_in, plug"coord'")
+        tag_edge!(tn, ind_out, plug"$coord")
+        tag_edge!(tn, ind_in, plug"$coord'")
     end
 
     return tn

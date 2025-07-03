@@ -69,7 +69,7 @@ function generic_canonize_site!(tn, _site::Site, _bond::Bond; method=:qr)
     return tn
 end
 
-canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(CartesianSite(i)))
+canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
 
 ## `MPS`
 function canonize!(tn::MPS, new_form::MixedCanonical)
@@ -82,14 +82,14 @@ function canonize!(tn::MPS, new_form::MixedCanonical)
 
     # left-to-right QR sweep (left-canonical tensors)
     for i in src_left:dst_left
-        bond = Bond(CartesianSite(i), CartesianSite(i + 1))
-        generic_canonize_site!(tn, site"i", bond; method=:qr)
+        bond = bond"$i - $(i + 1)"
+        generic_canonize_site!(tn, site"$i", bond; method=:qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
     for i in src_right:-1:dst_right
-        bond = Bond(CartesianSite(i - 1), CartesianSite(i))
-        generic_canonize_site!(tn, site"i", bond; method=:qr)
+        bond = bond"$(i - 1) - $i"
+        generic_canonize_site!(tn, site"$i", bond; method=:qr)
     end
 
     tn.form = copy(new_form)
@@ -119,14 +119,14 @@ function canonize!(tn::AbstractMPO, old_form::MixedCanonical, new_form::MixedCan
 
     # left-to-right QR sweep (left-canonical tensors)
     for i in src_left:dst_left
-        bond = Bond(CartesianSite(i), CartesianSite(i + 1))
-        generic_canonize_site!(tn, site"i", bond; method=:qr)
+        bond = bond"$i - $(i + 1)"
+        generic_canonize_site!(tn, site"$i", bond; method=:qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
     for i in src_right:-1:dst_right
-        bond = Bond(CartesianSite(i - 1), CartesianSite(i))
-        generic_canonize_site!(tn, site"i", bond; method=:qr)
+        bond = bond"$(i - 1) - $i"
+        generic_canonize_site!(tn, site"$i", bond; method=:qr)
     end
 
     tn.form = copy(new_form)
@@ -136,12 +136,12 @@ end
 # TODO
 function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::MixedCanonical; kwargs...)
     for i in 1:(min_orthog_center(new_form) - 1)
-        bond = Bond(CartesianSite(i), CartesianSite(i + 1))
+        bond = bond"$i - $(i + 1)"
         # TODO absorb!(tn, bond, :right)
     end
 
     for i in nsites(tn):-1:(max_orthog_center(new_form) + 1)
-        bond = Bond(CartesianSite(i - 1), CartesianSite(i))
+        bond = bond"$(i - 1) - $i"
         # TODO absorb!(tn, bond, :left)
     end
 
@@ -163,22 +163,22 @@ function canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::VidalGauge
 
     # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
     for i in 1:(nsites(tn) - 1)
-        bond = Bond(CartesianSite(i), CartesianSite(i + 1))
-        generic_canonize_site!(tn, site"i", bond; method=:svd)
+        bond = bond"$i - $(i + 1)"
+        generic_canonize_site!(tn, site"$i", bond; method=:svd)
 
         # extract the singular values and contract them with the next tensor
         # NOTE do not remove them, since they will be needed but TN can in be in a inconsistent state while processing
         Λᵢ = tensor(tn; at=bond)
 
-        Aᵢ₊₁ = tensor(tn; at=CartesianSite(i + 1))
+        Aᵢ₊₁ = tensor(tn; at=site"$(i + 1)")
         replace!(tn, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=Index[]))
     end
 
     # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
     for i in 2:nsites(tn)
-        bond = Bond(CartesianSite(i - 1), CartesianSite(i))
+        bond = bond"$(i - 1) - $i"
         Λᵢ = tensor(tn; at=bond)
-        Aᵢ = tensor(tn; at=CartesianSite(i))
+        Aᵢ = tensor(tn; at=site"i")
         Λᵢ⁻¹ = Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ))
         Γᵢ = contract(Aᵢ, Λᵢ⁻¹; dims=Index[])
         replace!(tn, Aᵢ => Γᵢ)

@@ -10,9 +10,9 @@ function compress!(ψ::MPS; maxdim=nothing, threshold=nothing, kwargs...)
     canonize!(ψ, MixedCanonical(site"1"))
 
     for i in 1:(nsites(ψ) - 1)
-        _bond = Bond(CartesianSite(i), CartesianSite(i + 1))
-        a = tensor_at(ψ, site"i")
-        b = tensor_at(ψ, CartesianSite(i + 1))
+        _bond = bond"$i-$(i+1)"
+        a = tensor_at(ψ, site"$i")
+        b = tensor_at(ψ, site"$(i + 1)")
 
         ind_tmp = Index(gensym(:tmp))
         U, S, V = Muscle.tensor_svd_thin(a; inds_v=[ind_at(ψ, _bond)], ind_s=ind_tmp)
@@ -45,7 +45,7 @@ function compress!(ψ::MPS; maxdim=nothing, threshold=nothing, kwargs...)
             replace_tensor!(ψ, a, U)
             replace_tensor!(ψ, b, V)
         end
-        ψ.form = MixedCanonical(CartesianSite(i + 1))
+        ψ.form = MixedCanonical(site"$(i + 1)")
     end
 
     return ψ

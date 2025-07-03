@@ -25,7 +25,7 @@ function overlap(a::ProductState, b::AbstractMPS)
 
     _tensor = binary_einsum(tensor_at(a, site"1"), tensor_at(b, site"1"))
     for i in 2:nsites(a)
-        _tensor = binary_einsum(_tensor, binary_einsum(tensor_at(a, site"i"), tensor_at(b, site"i")))
+        _tensor = binary_einsum(_tensor, binary_einsum(tensor_at(a, site"$i"), tensor_at(b, site"$i")))
     end
 
     return _tensor
@@ -43,7 +43,7 @@ function overlap(a::MPS, b::MPS)
 
     # left-to-right contraction sweep
     for i in 2:nsites(a)
-        left_env = binary_einsum(binary_einsum(left_env, tensor_at(a, site"i")), tensor_at(b, site"i"))
+        left_env = binary_einsum(binary_einsum(left_env, tensor_at(a, site"$i")), tensor_at(b, site"$i"))
     end
 
     return left_env

@@ -33,7 +33,7 @@ function entropy_vonneumann!(psi::MPS)
         A = psi[i]
         B = psi[i + 1]
 
-        # alternatively, we can just use `psi[Bond(CartesianSite(i), CartesianSite(i + 1))]`
+        # alternatively, we can just use `psi[bond"$i - $(i+1)"`
         ind_iso_dir = only(intersect(inds(A), inds(B)))
         inds_a_only = filter(!=(ind_iso_dir), inds(A))
         ind_virtual = Index(gensym(:svd))
@@ -55,7 +55,7 @@ function entropy_vonneumann!(psi::MPS)
         psi[i + 1] = V
 
         # unsafe set of canonical form
-        psi.form = MixedCanonical(CartesianSite(i + 1))
+        psi.form = MixedCanonical(site"$(i + 1)")
 
         entropies[i] = -sum(x -> x^2 * 2log(x), parent(s))
     end
@@ -90,7 +90,7 @@ See also: [`schmidt_values`](@ref).
 function schmidt_values!(psi::MPS, bond)
     # TODO use `max` if `bond` is past the middle of the MPS
     _site = min(bond...)
-    canonize!(psi, MixedCanonical(CartesianSite(_site)))
+    canonize!(psi, MixedCanonical(site"_site"))
 
     A = psi[_site]
     B = psi[_site + 1]
