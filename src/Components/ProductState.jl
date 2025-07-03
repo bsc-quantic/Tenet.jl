@@ -96,7 +96,7 @@ function ProductOperator(arrays::AbstractArray{<:AbstractMatrix})
     for coord in eachindex(IndexCartesian(), arrays)
         _tensor = Tensor(arrays[coord], [Index(plug"$coord"), Index(plug"$coord'")])
         addtensor!(tn, _tensor)
-        tag_vertex!(tn, _tensor, site"coord")
+        tag_vertex!(tn, _tensor, site"$coord")
         tag_edge!(tn, Index(plug"$coord"), plug"$coord")
         tag_edge!(tn, Index(plug"$coord'"), plug"$coord'")
     end
