@@ -1,5 +1,6 @@
 using DelegatorTraits
 using QuantumTags
+using QuantumTags: Link
 
 """
     CanonicalForm
