@@ -3,7 +3,7 @@ using Random
 
 abstract type AbstractMPS <: AbstractMPO end
 
-defaultorder(::Type{<:AbstractMPS}) = (:o, :l, :r)
+defaultorder(::Type{<:AbstractMPS}) = (:l, :r, :o)
 
 """
     MatrixProductState
@@ -39,7 +39,7 @@ Create a [`NonCanonical`](@ref) or [`MixedCanonical`](@ref) [`MPS`](@ref) from a
 
 # Keyword Arguments
 
-  - `order` The order of the indices in the arrays. Defaults to `(:o, :l, :r)`.
+  - `order` The order of the indices in the arrays. Defaults to `(:l, :r, :o)`.
 """
 function MPS(arrays::AbstractVector{<:AbstractArray}; order=defaultorder(MPS)) # , check=true)
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"

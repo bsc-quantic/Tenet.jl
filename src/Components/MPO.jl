@@ -4,7 +4,7 @@ using Random
 
 abstract type AbstractMPO <: AbstractTangle end
 
-defaultorder(::Type{<:AbstractMPO}) = (:o, :i, :l, :r)
+defaultorder(::Type{<:AbstractMPO}) = (:l, :r, :o, :i)
 
 """
     MatrixProductOperator
