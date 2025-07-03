@@ -6,26 +6,37 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
-  Documenter:
+  build:
+    # These permissions are needed to:
+    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
+    # - Delete old caches: https://github.com/julia-actions/cache#usage
+    permissions:
+      actions: write
+      contents: write # Required when authenticating with `GITHUB_TOKEN`, not needed when authenticating with SSH deploy keys
+      pull-requests: read # Required when using `push_preview=true`
+      statuses: write # Optional, used to report documentation build statuses
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
       - name: Add Julia registries
         run: |
           using Pkg
           pkg"registry add https://github.com/bsc-quantic/Registry.git"
           pkg"registry add General"
         shell: julia {0}
-      - uses: julia-actions/julia-docdeploy@v1
+      - name: Install dependencies
+        run: julia --color=yes --project -e 'using Pkg; Pkg.instantiate()'
+      - name: Build and deploy
+        run: julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
