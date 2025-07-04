@@ -166,7 +166,7 @@ end
 
 Builds a translationally invariant MPO of length ``L`` for Hamiltonians of the form:
 
-``H = \sum_i \alpha_i * O_i + \sum_{i<j} \beta_{ij} * O_i ⊗ O_j``
+H = sum_i alpha_i * O_i + sum_{i<j} beta_{ij} * O_i ⊗ O_j
 
 where ``O_i`` and ``O_j`` are local operators acting on sites ``i`` and ``j``, respectively.
 
@@ -176,6 +176,7 @@ where ``O_i`` and ``O_j`` are local operators acting on sites ``i`` and ``j``, r
   - `one_body` : list of single‐site terms of the form `(i, Oi, alpha)`
   - `two_body` : list of two‐site terms `(i, j, Oi, Oj, beta)`
 """
+
 function autompo_periodic(L, one_body, two_body; type = ComplexF64)
     loc_dim = size(one_body[1][2])[1]  # Local physical dimension
     Id = I(loc_dim)
