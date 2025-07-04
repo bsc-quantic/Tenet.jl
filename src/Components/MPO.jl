@@ -162,15 +162,19 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
 end
 
 """
-Builds a translationally invariant MPO of length L for
-    H = sum_i    c1_i * O_i
-    + sum_{i<j} c2 * O_i ⊗ O_j
-where O_i and O_j are local operators acting on sites i and j, respectively.
+    autompo_periodic(L, one_body, two_body; eltype=ComplexF64)
 
-#Arguments
+Builds a translationally invariant MPO of length ``L`` for Hamiltonians of the form:
+
+``H = \sum_i \alpha_i * O_i + \sum_{i<j} \beta_{ij} * O_i ⊗ O_j``
+
+where ``O_i`` and ``O_j`` are local operators acting on sites ``i`` and ``j``, respectively.
+
+# Arguments
+
   - `L` : length of the MPO
-  - `one_body` : list of (i, O, c1)            single‐site terms
-  - `two_body` : list of (i, j, O_i, O_j, c2)  two‐site terms
+  - `one_body` : list of single‐site terms of the form `(i, Oi, alpha)`
+  - `two_body` : list of two‐site terms `(i, j, Oi, Oj, beta)`
 """
 function autoMPO_periodic(L, one_body, two_body; type = ComplexF64)
     loc_dim = size(one_body[1][2])[1]  # Local physical dimension
