@@ -104,7 +104,7 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
   - `eltype` The element type of the tensors. Defaults to `Float64`.
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=nothing, eltype=Float64, physdim=2)
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=Float64, physdim=2)
     p = physdim
     T = eltype
     χ = isnothing(maxdim) ? Base.Checked.checked_pow(p, n ÷ 2) : maxdim
