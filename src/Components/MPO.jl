@@ -160,3 +160,53 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     # TODO order might not be the best for performance
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
+
+"""
+Builds a translationally invariant MPO of length L for
+    H = sum_i    c1_i * O_i
+    + sum_{i<j} c2 * O_i ⊗ O_j
+where O_i and O_j are local operators acting on sites i and j, respectively.
+
+#Arguments
+  - `L` : length of the MPO
+  - `one_body` : list of (i, O, c1)            single‐site terms
+  - `two_body` : list of (i, j, O_i, O_j, c2)  two‐site terms
+"""
+function autoMPO_periodic(L, one_body, two_body; type = ComplexF64)
+    loc_dim = size(one_body[1][2])[1]  # Local physical dimension
+    Id = I(loc_dim)
+
+    D = 2 + sum([abs(j - i) for (i,j,_,_,_) in two_body]) # Total bond dimension
+
+    W = zeros(type, D, D, loc_dim, loc_dim)
+
+    @views W[1,1,:,:] .= Id #Starting state
+    @views W[D,D,:,:] .= Id
+
+    for (i, O, c1) in one_body
+        @views W[1,D,:,:] .+= c1 .* O  #local operator sector
+    end         
+
+    next_chan = 2
+    for (i,j, Oi, Oj, c2) in two_body
+        @assert i < j "Two‐site terms must be ordered: i < j"
+
+        d = j - i
+
+        start = next_chan
+        finish = next_chan + d - 1
+        next_chan = finish + 1
+
+        @views W[1,start,:,:] .+= Oi #Insertion of first operator
+
+        for k in i+1:j-1
+            @views W[start + (k-(i+1)),start + (k-(i+1)) + 1,:,:] .+= Id #Propagation of identities through unaffected sites
+        end
+        @views W[finish,D,:,:] .+= c2 .* Oj #Insertion of second operator
+    end
+
+    W_1 = W[:,end,:,:] #Vector for the first and last site
+    W_L = W[1,:,:,:]
+
+    return MPO([W_1, [W for _ in 2:L-1]..., W_L])
+end
