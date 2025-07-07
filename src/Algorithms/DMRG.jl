@@ -7,6 +7,8 @@ abstract type Algorithm end
 
 # 1-site DMRG algorithm
 struct Dmrg1 <: Algorithm end
+
+# 2-site DMRG algorithm
 struct Dmrg2 <: Algorithm end
 
 """
