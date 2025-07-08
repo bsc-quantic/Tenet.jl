@@ -21,6 +21,7 @@ Perform the DMRG algorithm on the given `ket` state and Hamiltonian `ham`.
     This function is still under development, so its API may change in the future as we add more features.
 """
 function dmrg! end
+export dmrg!
 
 struct EffectiveHamiltonian
     le::Tensor
