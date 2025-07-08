@@ -36,15 +36,15 @@ function (ham::EffectiveHamiltonian)(ψ::Tensor)
     return binary_einsum(binary_einsum(binary_einsum(ham.le, ψ), ham.op), ham.re)
 end
 
-struct DmrgState{Ket,Operator}
+struct Dmrg1Engine{Ket,Operator}
     ket::Ket
     op::Operator
     envs::Dict{Bond,Tensor}
 end
 
-function DmrgState(ket::Ket, op::Operator) where {Ket,Operator} end
+function Dmrg1Engine(ket::Ket, op::Operator) where {Ket,Operator} end
 
-function sweep(f, config::DmrgState; dir=:rightleft)
+function sweep(f, config::Dmrg1Engine; dir=:rightleft)
     if dir == :rightleft
         for site in reverse(1:length(config.ket))
             f(config, site)
@@ -58,15 +58,15 @@ function sweep(f, config::DmrgState; dir=:rightleft)
     end
 end
 
-hasenv(config::DmrgState, bond::Bond) = haskey(config.envs, bond)
-env(config::DmrgState, bond::Bond) = config.envs[bond]
-function setenv!(config::DmrgState, bond::Bond, tensor::Tensor)
+hasenv(config::Dmrg1Engine, bond::Bond) = haskey(config.envs, bond)
+env(config::Dmrg1Engine, bond::Bond) = config.envs[bond]
+function setenv!(config::Dmrg1Engine, bond::Bond, tensor::Tensor)
     config.envs[bond] = tensor
 end
 
-getenv(config::DMRGState, site::Site, dir) = get(config.envs, (site, dir), Tensor(fill(1.0)))
+getenv(config::Dmrg1Engine, site::Site, dir) = get(config.envs, (site, dir), Tensor(fill(1.0)))
 
-function effective_hamiltonian(config::DMRGState, site)
+function effective_hamiltonian(config::Dmrg1Engine, site)
     left_env = getenv(config, CartesianSite(only(site.id) - 1), :left)
     right_env = getenv(config, CartesianSite(only(site.id) + 1), :right)
     op = tensor_at(config.op, site)
@@ -75,12 +75,12 @@ end
 
 function dmrg!(ket, ham)
     # initialize the DMRG state
-    config = DmrgState(ket, ham.op)
+    config = Dmrg1Engine(ket, ham.op)
 
     # TODO
 end
 
-function dmrg_1site!(config::DmrgState)
+function dmrg_1site!(config::Dmrg1Engine)
     # TODO
 
     energy = ComplexF64(0.0)
