@@ -136,3 +136,8 @@ function evolve!(mps::MPS, op::AbstractMPO)
 
     return mps
 end
+
+function evolve!(tn::AbstractTangle, op::Tensor)
+    simple_update!(tn, op)
+    return tn
+end
