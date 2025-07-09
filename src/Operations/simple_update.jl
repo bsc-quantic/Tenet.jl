@@ -29,11 +29,11 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
     tmp_contracting_ind_a = Index(gensym(:tmp))
     tmp_contracting_ind_b = Index(gensym(:tmp))
 
-    tensor_a = replace(old_tensor_a, ind_at(tn, plug"site_a") => tmp_contracting_ind_a)
-    tensor_b = replace(old_tensor_b, ind_at(tn, plug"site_b") => tmp_contracting_ind_b)
+    tensor_a = replace(old_tensor_a, ind_at(tn, plug"$site_a") => tmp_contracting_ind_a)
+    tensor_b = replace(old_tensor_b, ind_at(tn, plug"$site_b") => tmp_contracting_ind_b)
 
     operator = replace(
-        operator, Index(plug"site_a'") => tmp_contracting_ind_a, Index(plug"site_b'") => tmp_contracting_ind_b
+        operator, Index(plug"$site_a'") => tmp_contracting_ind_a, Index(plug"$site_b'") => tmp_contracting_ind_b
     )
 
     new_tensor_a, new_tensor_b = Muscle.simple_update(
@@ -41,18 +41,18 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
         tmp_contracting_ind_a, # ind_physical_a,
         tensor_b,
         tmp_contracting_ind_b, # ind_physical_b,
-        ind_at(tn, bond"site_a-site_b"), # ind_bond_ab,
+        ind_at(tn, bond"$site_a-$site_b"), # ind_bond_ab,
         operator,
-        Index(plug"site_a"), # ind_physical_op_a,
-        Index(plug"site_b"); # ind_physical_op_b;
+        Index(plug"$site_a"), # ind_physical_op_a,
+        Index(plug"$site_b"); # ind_physical_op_b;
         maxdim,
         absorb=Muscle.AbsorbEqually(),
     )
 
     # fix the index renaming of `Muscle.simple_update`
     # TODO fix it better in Muscle?
-    new_tensor_a = replace(new_tensor_a, tmp_contracting_ind_a => ind_at(tn, plug"site_a"))
-    new_tensor_b = replace(new_tensor_b, tmp_contracting_ind_b => ind_at(tn, plug"site_b"))
+    new_tensor_a = replace(new_tensor_a, tmp_contracting_ind_a => ind_at(tn, plug"$site_a"))
+    new_tensor_b = replace(new_tensor_b, tmp_contracting_ind_b => ind_at(tn, plug"$site_b"))
 
     @unsafe_region tn begin
         replace_tensor!(tn, old_tensor_a, new_tensor_a)

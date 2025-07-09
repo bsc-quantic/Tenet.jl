@@ -111,7 +111,7 @@ function ProductOperator(tensors::AbstractArray{<:Tensor})
     for coord in eachindex(IndexCartesian(), tensors)
         _tensor = tensors[coord]
         addtensor!(tn, _tensor)
-        tag_vertex!(tn, _tensor, site"coord")
+        tag_vertex!(tn, _tensor, site"$coord")
         ind_out, ind_in = inds(_tensor)
         tag_edge!(tn, ind_out, plug"$coord")
         tag_edge!(tn, ind_in, plug"$coord'")

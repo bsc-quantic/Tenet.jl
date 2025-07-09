@@ -32,11 +32,11 @@ function generic_evolve_mps_mpo_direct!(mps, op)
         # fuse virtual indices
         if i > 1
             j = i - 1
-            c = Muscle.fuse(c, [ind_at(mps, bond"j-i"), ind_at(op, bond"j-i")]; ind=ind_at(mps, bond"j-i"))
+            c = Muscle.fuse(c, [ind_at(mps, bond"$j - $i"), ind_at(op, bond"$j - $i")]; ind=ind_at(mps, bond"$j - $i"))
         end
         if i < nsites(mps)
             j = i + 1
-            c = Muscle.fuse(c, [ind_at(mps, bond"i-j"), ind_at(op, bond"i-j")]; ind=ind_at(mps, bond"i-j"))
+            c = Muscle.fuse(c, [ind_at(mps, bond"$i - $j"), ind_at(op, bond"$i - $j")]; ind=ind_at(mps, bond"$i - $j"))
         end
 
         replace_tensor!(mps, tensor_mps, c)

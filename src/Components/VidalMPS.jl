@@ -169,7 +169,7 @@ Tangles.site_at(tn::VidalMPS, tensor::Tensor) = begin
     i = findfirst(Base.Fix1(===, tensor), tn.Λ)
     if !isnothing(i)
         j = i + 1
-        return LambdaSite(bond"i-j")
+        return LambdaSite(bond"$i - $j")
     end
 
     throw(ArgumentError("Tensor not found in VidalMPS"))
