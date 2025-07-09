@@ -166,9 +166,20 @@ end
 
 Builds a translationally invariant MPO of length ``L`` for Hamiltonians of the form:
 
-H = sum_i alpha_i * O_i + sum_{i<j} beta_{ij} * O_i ⊗ O_j
+ ``H = sum_i c1 * O_i + sum_{i,j} c2 * O_i ⊗ O_j``
 
 where ``O_i`` and ``O_j`` are local operators acting on sites ``i`` and ``j``, respectively.
+Several pairs (i,j) can be passed with different coefficients c2 for terms that insert operators at different distances. For example adding a (1,2) term insert nearest-neighbor interactions, while a (1,3) term inserts next-nearest-neighbor interactions.
+
+#Example usage
+
+one_body = [(1, X, 1.0), (1, Y, 0.5)]
+two_body = [(1, 2, X, X, 0.1), (1, 3, Z, Z, 0.05)]
+
+H = autompo_periodic(4, one_body, two_body)
+
+Returns the Hamiltonian 
+H = ``sum_{i=1}^4 (1.0 * X_i + 0.5 * Y_i) + sum_{i=1}^3  0.1 * X_i ⊗ X_{i+1} + sum_{i=1}^2 0.05 * Z_i ⊗ Z_{i+2})``
 
 # Arguments
 
