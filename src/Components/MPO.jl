@@ -160,3 +160,69 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
     # TODO order might not be the best for performance
     return MPO(arrays; order=(:l, :i, :o, :r))
 end
+
+"""
+    autompo_periodic(L, one_body, two_body; eltype=ComplexF64)
+
+Builds a translationally invariant MPO of length ``L`` for Hamiltonians of the form:
+
+ ``H = sum_i c1 * O_i + sum_{i,j} c2 * O_i ⊗ O_j``
+
+where ``O_i`` and ``O_j`` are local operators acting on sites ``i`` and ``j``, respectively.
+Several pairs (i,j) can be passed with different coefficients c2 for terms that insert operators at different distances. For example adding a (1,2) term insert nearest-neighbor interactions, while a (1,3) term inserts next-nearest-neighbor interactions.
+
+#Example usage
+
+one_body = [(1, X, 1.0), (1, Y, 0.5)]
+two_body = [(1, 2, X, X, 0.1), (1, 3, Z, Z, 0.05)]
+
+H = autompo_periodic(4, one_body, two_body)
+
+Returns the Hamiltonian 
+H = ``sum_{i=1}^4 (1.0 * X_i + 0.5 * Y_i) + sum_{i=1}^3  0.1 * X_i ⊗ X_{i+1} + sum_{i=1}^2 0.05 * Z_i ⊗ Z_{i+2})``
+
+# Arguments
+
+  - `L` : length of the MPO
+  - `one_body` : list of single‐site terms of the form `(i, Oi, alpha)`
+  - `two_body` : list of two‐site terms `(i, j, Oi, Oj, beta)`
+"""
+
+function autompo_periodic(L, one_body, two_body; type = ComplexF64)
+    loc_dim = size(one_body[1][2])[1]  # Local physical dimension
+    Id = I(loc_dim)
+
+    D = 2 + sum([abs(j - i) for (i,j,_,_,_) in two_body]) # Total bond dimension
+
+    W = zeros(type, D, D, loc_dim, loc_dim)
+
+    @views W[1,1,:,:] .= Id #Starting state
+    @views W[D,D,:,:] .= Id
+
+    for (i, O, c1) in one_body
+        @views W[1,D,:,:] .+= c1 .* O  #local operator sector
+    end         
+
+    next_chan = 2
+    for (i,j, Oi, Oj, c2) in two_body
+        @assert i < j "Two‐site terms must be ordered: i < j"
+
+        d = j - i
+
+        start = next_chan
+        finish = next_chan + d - 1
+        next_chan = finish + 1
+
+        @views W[1,start,:,:] .+= Oi #Insertion of first operator
+
+        for k in i+1:j-1
+            @views W[start + (k-(i+1)),start + (k-(i+1)) + 1,:,:] .+= Id #Propagation of identities through unaffected sites
+        end
+        @views W[finish,D,:,:] .+= c2 .* Oj #Insertion of second operator
+    end
+
+    W_1 = W[:,end,:,:] #Vector for the first and last site
+    W_L = W[1,:,:,:]
+
+    return MPO([W_1, [W for _ in 2:L-1]..., W_L])
+end
