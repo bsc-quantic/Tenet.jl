@@ -179,10 +179,10 @@ function Base.convert(::Type{MPS}, old_tn::ProductState)
         addtensor!(tn, new_tensor)
         setsite!(tn, new_tensor, site"$i")
         setplug!(tn, Index(plug"$i"), plug"$i")
-        if i != 1 && hasbond(tn, bond"$(i - 1)-$i")
+        if i != 1 && !hasbond(tn, bond"$(i - 1)-$i")
             setbond!(tn, Index(bond"$(i - 1)-$i"), bond"$(i - 1)-$i")
         end
-        if i != n && hasbond(tn, bond"$i-$(i + 1)")
+        if i != n && !hasbond(tn, bond"$i-$(i + 1)")
             setbond!(tn, Index(bond"$i-$(i + 1)"), bond"$i-$(i + 1)")
         end
     end
