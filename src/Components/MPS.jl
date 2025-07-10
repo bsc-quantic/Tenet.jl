@@ -153,3 +153,35 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=F
 
     return MPS(arrays; order=(:l, :o, :r))
 end
+
+function Base.convert(::Type{MPS}, old_tn::ProductState)
+    n = nsites(old_tn)
+    tn = GenericTensorNetwork()
+    for i in 1:n
+        _tensor = tensor_at(old_tn, site"$i")
+
+        _array = if i == 1 || i == n
+            reshape(parent(_tensor), 1, length(_tensor))
+        else
+            reshape(parent(_tensor), 1, 1, length(_tensor))
+        end
+
+        _inds = if i == 1
+            [Index(bond"$i-$(i + 1)"), Index(plug"$i")]
+        elseif i == n
+            [Index(bond"$(i - 1)-$i"), Index(plug"$i")]
+        else
+            [Index(bond"$(i - 1)-$i"), Index(bond"$i-$(i + 1)"), Index(plug"$i")]
+        end
+
+        new_tensor = Tensor(_array, _inds)
+
+        addtensor!(tn, new_tensor)
+        setsite!(tn, new_tensor, site"$i")
+        setplug!(tn, Index(plug"$site"), plug"$site")
+        hasbond(tn, bond"$(i - 1)-$i") || setbond!(tn, Index(bond"$(i - 1)-$i"), bond"$(i - 1)-$i")
+        hasbond(tn, bond"$i-$(i + 1)") || setbond!(tn, Index(bond"$i-$(i + 1)"), bond"$i-$(i + 1)")
+    end
+
+    return MPS(tn, MixedCanonical(sites(tn)))
+end
