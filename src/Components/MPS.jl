@@ -178,7 +178,7 @@ function Base.convert(::Type{MPS}, old_tn::ProductState)
 
         addtensor!(tn, new_tensor)
         setsite!(tn, new_tensor, site"$i")
-        setplug!(tn, Index(plug"$site"), plug"$site")
+        setplug!(tn, Index(plug"$i"), plug"$i")
         hasbond(tn, bond"$(i - 1)-$i") || setbond!(tn, Index(bond"$(i - 1)-$i"), bond"$(i - 1)-$i")
         hasbond(tn, bond"$i-$(i + 1)") || setbond!(tn, Index(bond"$i-$(i + 1)"), bond"$i-$(i + 1)")
     end
