@@ -104,7 +104,7 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
   - `eltype` The element type of the tensors. Defaults to `Float64`.
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
-function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=nothing, eltype=Float64, physdim=2)
+function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=Float64, physdim=2)
     p = physdim
     T = eltype
     χ = isnothing(maxdim) ? Base.Checked.checked_pow(p, n ÷ 2) : maxdim
@@ -152,4 +152,40 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=nothing, elty
     arrays[n] = reshape(arrays[n], p, p)
 
     return MPS(arrays; order=(:l, :o, :r))
+end
+
+function Base.convert(::Type{MPS}, old_tn::ProductState)
+    n = nsites(old_tn)
+    tn = GenericTensorNetwork()
+    for i in 1:n
+        _tensor = tensor_at(old_tn, site"$i")
+
+        _array = if i == 1 || i == n
+            reshape(parent(_tensor), 1, length(_tensor))
+        else
+            reshape(parent(_tensor), 1, 1, length(_tensor))
+        end
+
+        _inds = if i == 1
+            [Index(bond"$i-$(i + 1)"), Index(plug"$i")]
+        elseif i == n
+            [Index(bond"$(i - 1)-$i"), Index(plug"$i")]
+        else
+            [Index(bond"$(i - 1)-$i"), Index(bond"$i-$(i + 1)"), Index(plug"$i")]
+        end
+
+        new_tensor = Tensor(_array, _inds)
+
+        addtensor!(tn, new_tensor)
+        setsite!(tn, new_tensor, site"$i")
+        setplug!(tn, Index(plug"$i"), plug"$i")
+        if i != 1 && !hasbond(tn, bond"$(i - 1)-$i")
+            setbond!(tn, Index(bond"$(i - 1)-$i"), bond"$(i - 1)-$i")
+        end
+        if i != n && !hasbond(tn, bond"$i-$(i + 1)")
+            setbond!(tn, Index(bond"$i-$(i + 1)"), bond"$i-$(i + 1)")
+        end
+    end
+
+    return MPS(tn, MixedCanonical(sites(tn)))
 end

@@ -178,7 +178,7 @@ function canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::VidalGauge
     for i in 2:nsites(tn)
         bond = bond"$(i - 1) - $i"
         Λᵢ = tensor(tn; at=bond)
-        Aᵢ = tensor(tn; at=site"i")
+        Aᵢ = tensor(tn; at=site"$i")
         Λᵢ⁻¹ = Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ))
         Γᵢ = contract(Aᵢ, Λᵢ⁻¹; dims=Index[])
         replace!(tn, Aᵢ => Γᵢ)
