@@ -67,4 +67,7 @@ export compress!
 
 include("Operations/entropy.jl")
 
+include("Algorithms/DMRG.jl")
+import DMRG: dmrg!
+
 end
