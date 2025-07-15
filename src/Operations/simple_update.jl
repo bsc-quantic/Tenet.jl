@@ -19,8 +19,22 @@ end
 
 function generic_simple_update!(tn, operator; maxdim=nothing)
     op_sites = acting_sites(operator)
-    @assert length(op_sites) == 2 "Operator must have exactly two sites"
+    @assert 1 <= length(op_sites) <= 2 "Operator must act on one or two sites"
     @argcheck all(Base.Fix1(hasplug, tn), Plug.(op_sites; isdual=false)) "Operator plugs must be present in the MPS"
+
+    # TODO move to function?
+    # TODO do not move orthogonality center if 1-site... and unitary?
+    # shortcut for 1-site operator
+    if length(op_sites) == 1
+        _site = only(op_sites)
+        _tensor = tensor_at(tn, _site)
+        tmp_contracting_ind = Index(gensym(:tmp))
+        tensor = replace(_tensor, ind_at(tn, plug"$_site") => tmp_contracting_ind)
+        operator = replace(operator, Index(plug"$_site'") => tmp_contracting_ind)
+        new_tensor = Muscle.binary_einsum(tensor, operator)
+        replace_tensor!(tn, _tensor, new_tensor)
+        return tn
+    end
 
     site_a, site_b = minmax(op_sites...)
     old_tensor_a = tensor_at(tn, site_a)
@@ -61,6 +75,8 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
 
     return tn
 end
+
+simple_update!(tn::AbstractTangle, operator::Tensor; kwargs...) = generic_simple_update!(tn, operator; kwargs...)
 
 ## `MPS`
 function simple_update!(tn::MPS, operator::Tensor; kwargs...)
