@@ -76,6 +76,8 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
     return tn
 end
 
+simple_update!(tn::AbstractTangle, operator::Tensor; kwargs...) = generic_simple_update!(tn, operator; kwargs...)
+
 ## `MPS`
 function simple_update!(tn::MPS, operator::Tensor; kwargs...)
     op_sites = acting_sites(operator)
