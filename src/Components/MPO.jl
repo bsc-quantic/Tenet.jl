@@ -188,23 +188,23 @@ H = ``sum_{i=1}^4 (1.0 * X_i + 0.5 * Y_i) + sum_{i=1}^3  0.1 * X_i ⊗ X_{i+1} +
   - `two_body` : list of two‐site terms `(i, j, Oi, Oj, beta)`
 """
 
-function autompo_periodic(L, one_body, two_body; type = ComplexF64)
+function autompo_periodic(L, one_body, two_body; type=ComplexF64)
     loc_dim = size(one_body[1][2])[1]  # Local physical dimension
     Id = I(loc_dim)
 
-    D = 2 + sum([abs(j - i) for (i,j,_,_,_) in two_body]) # Total bond dimension
+    D = 2 + sum([abs(j - i) for (i, j, _, _, _) in two_body]) # Total bond dimension
 
     W = zeros(type, D, D, loc_dim, loc_dim)
 
-    @views W[1,1,:,:] .= Id #Starting state
-    @views W[D,D,:,:] .= Id
+    @views W[1, 1, :, :] .= Id #Starting state
+    @views W[D, D, :, :] .= Id
 
     for (i, O, c1) in one_body
-        @views W[1,D,:,:] .+= c1 .* O  #local operator sector
-    end         
+        @views W[1, D, :, :] .+= c1 .* O  #local operator sector
+    end
 
     next_chan = 2
-    for (i,j, Oi, Oj, c2) in two_body
+    for (i, j, Oi, Oj, c2) in two_body
         @assert i < j "Two‐site terms must be ordered: i < j"
 
         d = j - i
@@ -213,16 +213,16 @@ function autompo_periodic(L, one_body, two_body; type = ComplexF64)
         finish = next_chan + d - 1
         next_chan = finish + 1
 
-        @views W[1,start,:,:] .+= Oi #Insertion of first operator
+        @views W[1, start, :, :] .+= Oi #Insertion of first operator
 
-        for k in i+1:j-1
-            @views W[start + (k-(i+1)),start + (k-(i+1)) + 1,:,:] .+= Id #Propagation of identities through unaffected sites
+        for k in (i + 1):(j - 1)
+            @views W[start + (k - (i + 1)), start + (k - (i + 1)) + 1, :, :] .+= Id #Propagation of identities through unaffected sites
         end
-        @views W[finish,D,:,:] .+= c2 .* Oj #Insertion of second operator
+        @views W[finish, D, :, :] .+= c2 .* Oj #Insertion of second operator
     end
 
-    W_1 = W[:,end,:,:] #Vector for the first and last site
-    W_L = W[1,:,:,:]
+    W_1 = W[:, end, :, :] #Vector for the first and last site
+    W_L = W[1, :, :, :]
 
-    return MPO([W_1, [W for _ in 2:L-1]..., W_L])
+    return MPO([W_1, [W for _ in 2:(L - 1)]..., W_L])
 end
