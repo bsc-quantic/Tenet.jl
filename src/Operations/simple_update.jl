@@ -17,7 +17,7 @@ function acting_sites(operator::Tensor)
     return unique(site.(target_plugs_dual))
 end
 
-function generic_simple_update!(tn, operator; maxdim=nothing)
+function generic_simple_update!(tn, operator; maxdim=nothing, absorb=Muscle.AbsorbEqually())
     op_sites = acting_sites(operator)
     @assert 1 <= length(op_sites) <= 2 "Operator must act on one or two sites"
     @argcheck all(Base.Fix1(hasplug, tn), Plug.(op_sites; isdual=false)) "Operator plugs must be present in the MPS"
@@ -50,7 +50,7 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
         operator, Index(plug"$site_a'") => tmp_contracting_ind_a, Index(plug"$site_b'") => tmp_contracting_ind_b
     )
 
-    new_tensor_a, new_tensor_b = Muscle.simple_update(
+    results = Muscle.simple_update(
         tensor_a,
         tmp_contracting_ind_a, # ind_physical_a,
         tensor_b,
@@ -60,17 +60,35 @@ function generic_simple_update!(tn, operator; maxdim=nothing)
         Index(plug"$site_a"), # ind_physical_op_a,
         Index(plug"$site_b"); # ind_physical_op_b;
         maxdim,
-        absorb=Muscle.AbsorbEqually(),
+        absorb,
     )
 
-    # fix the index renaming of `Muscle.simple_update`
-    # TODO fix it better in Muscle?
-    new_tensor_a = replace(new_tensor_a, tmp_contracting_ind_a => ind_at(tn, plug"$site_a"))
-    new_tensor_b = replace(new_tensor_b, tmp_contracting_ind_b => ind_at(tn, plug"$site_b"))
+    if absorb isa Muscle.DontAbsorb
+        new_tensor_a, new_tensor_s, new_tensor_b = results
+        new_tensor_a = replace(new_tensor_a, tmp_contracting_ind_a => ind_at(tn, plug"$site_a"))
+        new_tensor_b = replace(new_tensor_b, tmp_contracting_ind_b => ind_at(tn, plug"$site_b"))
 
-    @unsafe_region tn begin
-        replace_tensor!(tn, old_tensor_a, new_tensor_a)
-        replace_tensor!(tn, old_tensor_b, new_tensor_b)
+        @unsafe_region tn begin
+            replace_tensor!(tn, old_tensor_a, new_tensor_a)
+            replace_tensor!(tn, old_tensor_b, new_tensor_b)
+            if hassite(tn, LambdaSite(bond"$site_a-$site_b"))
+                replace_tensor!(tn, tn[LambdaSite(bond"$site_a-$site_b")], new_tensor_s)
+            else
+                addtensor!(tn, new_tensor_s)
+                setsite!(tn, new_tensor_s, LambdaSite(bond"$site_a-$site_b"))
+            end
+        end
+    else
+        new_tensor_a, new_tensor_b = results
+        # fix the index renaming of `Muscle.simple_update`
+        # TODO fix it better in Muscle?
+        new_tensor_a = replace(new_tensor_a, tmp_contracting_ind_a => ind_at(tn, plug"$site_a"))
+        new_tensor_b = replace(new_tensor_b, tmp_contracting_ind_b => ind_at(tn, plug"$site_b"))
+
+        @unsafe_region tn begin
+            replace_tensor!(tn, old_tensor_a, new_tensor_a)
+            replace_tensor!(tn, old_tensor_b, new_tensor_b)
+        end
     end
 
     return tn
