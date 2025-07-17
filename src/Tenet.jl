@@ -67,4 +67,6 @@ export compress!
 
 include("Operations/entropy.jl")
 
+include("Operations/sample.jl")
+
 end
