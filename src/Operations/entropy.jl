@@ -55,7 +55,7 @@ function entropy_vonneumann!(psi::MPS)
         psi[i + 1] = V
 
         # unsafe set of canonical form
-        psi.form = MixedCanonical(site"$(i + 1)")
+        unsafe_setform!(psi, MixedCanonical(site"$(i + 1)"))
 
         entropies[i] = -sum(x -> x^2 * 2log(x), parent(s))
     end

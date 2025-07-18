@@ -45,7 +45,7 @@ function compress!(ψ::MPS; maxdim=nothing, threshold=nothing, kwargs...)
             replace_tensor!(ψ, a, U)
             replace_tensor!(ψ, b, V)
         end
-        ψ.form = MixedCanonical(site"$(i + 1)")
+        unsafe_setform!(ψ, MixedCanonical(site"$(i + 1)"))
     end
 
     return ψ

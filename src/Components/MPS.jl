@@ -29,8 +29,14 @@ function DelegatorTrait(interface, tn::MPS)
 end
 
 Base.copy(tn::MPS) = MPS(copy(tn.tn), copy(tn.form))
-Base.length(tn::MPS) = nsites(tn)
+Base.length(tn::MPS) = nsites(tn) # as required by Stefano but do not use, as it may be removed
+
 CanonicalForm(tn::MPS) = tn.form
+function unsafe_setform!(tn::MPS, form)
+    @assert form isa NonCanonical || form isa MixedCanonical
+    tn.form = form
+    return tn
+end
 
 """
     MPS(arrays::Vector{<:AbstractArray}; order=defaultorder(MPS))

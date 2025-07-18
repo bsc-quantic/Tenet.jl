@@ -11,13 +11,14 @@ defaultorder(::Type{<:AbstractMPO}) = (:l, :r, :o, :i)
 
 A Matrix Product Operator (MPO) Tensor Network.
 """
-struct MatrixProductOperator <: AbstractMPO
-    tn::GenericTensorNetwork
+mutable struct MatrixProductOperator <: AbstractMPO
+    const tn::GenericTensorNetwork
+    form::CanonicalForm
 end
 
-const MPO = MatrixProductOperator
+MatrixProductOperator(tn::GenericTensorNetwork) = MatrixProductOperator(tn, NonCanonical())
 
-Base.copy(tn::MPO) = MPO(copy(tn.tn))
+const MPO = MatrixProductOperator
 
 ImplementorTrait(interface, tn::MPO) = ImplementorTrait(interface, tn.tn)
 function DelegatorTrait(interface, tn::MPO)
@@ -28,20 +29,21 @@ function DelegatorTrait(interface, tn::MPO)
     end
 end
 
+Base.copy(tn::MPO) = MPO(copy(tn.tn))
+
+CanonicalForm(::MPO) = tn.form
+function unsafe_setform!(tn::MPO, form)
+    @assert form isa NonCanonical || form isa MixedCanonical
+    tn.form = form
+    return tn
+end
+
 function MPO(arrays::Vector; order=defaultorder(MPO))
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 4 dimensions"
     @assert ndims(arrays[end]) == 3 "Last array must have 3 dimensions"
     issetequal(order, defaultorder(MPO)) ||
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPO)))"))
-
-    # n = length(arrays)
-    # gen = IndexCounter()
-    # lattice = Lattice(Val(:chain), n)
-
-    # sitemap = Dict{Site,Symbol}(Site(i) => nextindex!(gen) for i in 1:n)
-    # merge!(sitemap, Dict([Site(i; dual=true) => nextindex!(gen) for i in 1:n]))
-    # bondmap = Dict{Bond,Symbol}(bond => nextindex!(gen) for bond in Graphs.edges(lattice))
 
     tn = GenericTensorNetwork()
 
@@ -85,12 +87,10 @@ function MPO(arrays::Vector; order=defaultorder(MPO))
     return MPO(tn)
 end
 
-# CanonicalForm trait
-CanonicalForm(::MPO) = NonCanonical()
-
 # TODO normalize as we canonize for numerical stability
 # TODO different input/output physical dims
 # TODO let choose the orthogonality center
+# TODO add form information?
 """
     Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim, eltype=Float64, physdim=2)
 
