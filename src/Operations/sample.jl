@@ -5,7 +5,10 @@ function sample end
 # TODO multisampling by using a batch dimension
 # TODO acceleration by grouping sites in blocks?
 # based on https://tensornetwork.org/mps/algorithms/sampling/
-function sample(ψ::MPS, nsamples=1; batchdim=1)
+function sample(ψ::MPS, nsamples=1; batchdim=4)
+    # if nsamples is less than batchdim, it doesn't make much sense to use a bigger batch dimension
+    batchdim = min(batchdim, nsamples)
+
     nsamples = batchdim * ceil(Int, nsamples / batchdim)
     samples = [zeros(Int, nsites(ψ)) for _ in 1:nsamples]
     batchind = Index(gensym(:batch))
