@@ -1,5 +1,17 @@
 using Distributions: Distributions
 
+"""
+    sample(tn, nsamples=1; kwargs...)
+
+Sample `nsamples` samples from a Tensor Network `tn`.
+
+The samples are returned as a `Vector{Vector{Int}}` (i.e. a list of "bitstrings"), where each number corresponds to the index of the sampled local physical state.
+For example, if working on a 2-dim physical space, the sampled values will be `1` or `2`, corresponding to the ``\\ket{0}`` and ``\\ket{1}`` states, respectively.
+
+!!! warning
+
+    The interface is still experimental and may change in the future.
+"""
 function sample end
 
 # TODO multisampling by using a batch dimension
