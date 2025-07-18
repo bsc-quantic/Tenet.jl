@@ -63,7 +63,7 @@ end
     # which represents state `|0010> + |1101>`
     tn = MPS([zeros(2, 2), zeros(2, 2, 2), zeros(2, 2, 2), zeros(2, 2)])
 
-    tn[site"1"] .= LinearAlgebra.I(2)
+    tn[site"1"] .= [1 0; 0 1]
 
     view(tn[site"2"], [Index(bond"1-2") => 1, Index(plug"2") => 1, Index(bond"2-3") => 1]...) .= 1
     view(tn[site"2"], [Index(bond"1-2") => 2, Index(plug"2") => 2, Index(bond"2-3") => 2]...) .= 1
