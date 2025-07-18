@@ -14,6 +14,7 @@ canonize(tn, args...; kwargs...) = canonize!(copy(tn), args...; kwargs...)
 
 # shortcuts
 canonize!(tn, orthog_center::Site; kwargs...) = canonize!(tn, MixedCanonical(orthog_center); kwargs...)
+canonize!(tn, orthog_center::Vector{<:Site}; kwargs...) = canonize!(tn, MixedCanonical(orthog_center); kwargs...)
 canonize!(tn, ::NonCanonical; kwargs...) = unsafe_setform!(tn, NonCanonical())
 canonize!(tn, old_form, ::NonCanonical; kwargs...) = unsafe_setform!(tn, NonCanonical())
 
@@ -106,8 +107,8 @@ function generic_mps_canonize!(tn, old_form::MixedCanonical, new_form::MixedCano
     return tn
 end
 
-canonize!(tn::MPS, new_form; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
-canonize!(tn::MPO, new_form; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
+canonize!(tn::MPS, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
+canonize!(tn::MPO, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
 
 # TODO
 function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::MixedCanonical; kwargs...)
