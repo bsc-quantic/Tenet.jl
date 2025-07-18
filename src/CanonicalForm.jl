@@ -22,6 +22,11 @@ const form = CanonicalForm
 
 Base.copy(x::CanonicalForm) = x
 
+function checkform(tn, form)
+    @warn "No check for $(typeof(tn)) and $(typeof(form)) combination"
+    return true
+end
+
 """
     NonCanonical
 
