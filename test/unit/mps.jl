@@ -56,3 +56,23 @@ end
     @test vec(parent(b[site"2"])) == [0.0, 1.0]
     @test vec(parent(b[site"3"])) == [1.0, 1.0] / sqrt(2)
 end
+
+@testset "sample" begin
+    # uses a boolean MPS for testing:
+    # encodes boolean formula `(a₁ ∧ a₂ ∧ ¬a₃ ∧ a₄) ∨ (¬a₁ ∧ ¬a₂ ∧ a₃ ∧ ¬a₄)`
+    # which represents state `|0010> + |1101>`
+    tn = MPS([zeros(2, 2), zeros(2, 2, 2), zeros(2, 2, 2), zeros(2, 2)])
+
+    tn[site"1"] .= [1 0; 0 1]
+
+    view(tn[site"2"], [Index(bond"1-2") => 1, Index(plug"2") => 1, Index(bond"2-3") => 1]...) .= 1
+    view(tn[site"2"], [Index(bond"1-2") => 2, Index(plug"2") => 2, Index(bond"2-3") => 2]...) .= 1
+
+    view(tn[site"3"], [Index(bond"2-3") => 1, Index(plug"3") => 2, Index(bond"3-4") => 2]...) .= 1
+    view(tn[site"3"], [Index(bond"2-3") => 2, Index(plug"3") => 1, Index(bond"3-4") => 1]...) .= 1
+
+    tn[site"4"] .= [0 1; 1 0] / sqrt(2)
+
+    samples = Tenet.sample(tn, 128; batchdim=4)
+    @test all(∈(([1, 1, 2, 1], [2, 2, 1, 2])), samples)
+end
