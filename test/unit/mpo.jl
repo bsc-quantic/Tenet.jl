@@ -1,8 +1,7 @@
 using Test
 using Tenet
-
-using Test
-using Tenet
+using Tenet: checkform, min_orthog_center, max_orthog_center
+using Muscle: isisometry
 
 @testset "case 1" begin
     a = ones(2, 3, 4)
@@ -77,4 +76,55 @@ end
     @test size(H, H[plug"3'"]) == 2
     @test size(H, H[bond"1-2"]) == 4
     @test size(H, H[bond"2-3"]) == 5
+end
+
+@testset "canonize! > MPO > MixedCanonical > multiple Sites" begin
+    ψ = MPO([
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+    ])
+    ψc = canonize(ψ, [site"2", site"3"])
+
+    # TODO implement `checkform` for MPO on `MixedCanonical`
+    @test checkform(ψc) skip = true
+    @test form(ψc) == MixedCanonical([site"2", site"3"])
+    @test min_orthog_center(form(ψc)) == site"2"
+    @test max_orthog_center(form(ψc)) == site"3"
+
+    @test isisometry(ψc[site"1"], Index(bond"1-2"))
+    @test !isisometry(ψc[site"2"], Index(bond"1-2"))
+    @test !isisometry(ψc[site"3"], Index(bond"3-4"))
+    @test isisometry(ψc[site"4"], Index(bond"3-4"))
+    @test isisometry(ψc[site"5"], Index(bond"4-5"))
+
+    @test contract(ψc) ≈ contract(ψ)
+end
+
+@testset "canonize! > MPO > MixedCanonical > single site" begin
+    ψ = MPO([
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:256, 4, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+    ])
+    ψc = canonize(ψ, site"3")
+
+    # TODO implement `checkform` for MPO on `MixedCanonical`
+    @test checkform(ψc) skip = true
+    @test form(ψc) == MixedCanonical(site"3")
+    @test min_orthog_center(form(ψc)) == site"3"
+    @test max_orthog_center(form(ψc)) == site"3"
+
+    @test isisometry(ψc[site"1"], Index(bond"1-2"))
+    @test isisometry(ψc[site"2"], Index(bond"2-3"))
+    @test !isisometry(ψc[site"3"], Index(bond"2-3"))
+    @test !isisometry(ψc[site"3"], Index(bond"3-4"))
+    @test isisometry(ψc[site"4"], Index(bond"3-4"))
+    @test isisometry(ψc[site"5"], Index(bond"4-5"))
+
+    @test contract(ψc) ≈ contract(ψ)
 end
