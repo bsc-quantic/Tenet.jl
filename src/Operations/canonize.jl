@@ -12,6 +12,12 @@ function canonize! end
 
 canonize(tn, args...; kwargs...) = canonize!(copy(tn), args...; kwargs...)
 
+# shortcuts
+canonize!(tn, orthog_center::Site; kwargs...) = canonize!(tn, MixedCanonical(orthog_center); kwargs...)
+canonize!(tn, orthog_center::Vector{<:Site}; kwargs...) = canonize!(tn, MixedCanonical(orthog_center); kwargs...)
+canonize!(tn, ::NonCanonical; kwargs...) = unsafe_setform!(tn, NonCanonical())
+canonize!(tn, old_form, ::NonCanonical; kwargs...) = unsafe_setform!(tn, NonCanonical())
+
 # auxiliar functions
 function generic_canonize_site!(tn, _site::Site, _bond::Bond; method=:qr)
     @assert hassite(_bond, _site)
@@ -71,9 +77,14 @@ end
 
 canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
 
-## `MPS`
-function canonize!(tn::MPS, new_form::MixedCanonical)
-    old_form = form(tn)
+## `MatrixProductState` / `MatrixProductOperator`
+generic_mps_canonize!(tn, new_form::MixedCanonical) = generic_mps_canonize!(tn, CanonicalForm(tn), new_form)
+
+function generic_mps_canonize!(tn, ::NonCanonical, new_form::MixedCanonical)
+    generic_mps_canonize!(tn, MixedCanonical(sites(tn)), new_form)
+end
+
+function generic_mps_canonize!(tn, old_form::MixedCanonical, new_form::MixedCanonical)
     old_form == new_form && return tn
 
     # TODO maybe use sth different to `.id`?
@@ -92,46 +103,12 @@ function canonize!(tn::MPS, new_form::MixedCanonical)
         generic_canonize_site!(tn, site"$i", bond; method=:qr)
     end
 
-    tn.form = copy(new_form)
+    unsafe_setform!(tn, copy(new_form))
     return tn
 end
 
-# `MatrixProductState` / `MatrixProductOperator`
-function canonize!(tn::AbstractMPO, new_form; kwargs...)
-    canonize!(tn, form(tn), new_form; kwargs...)
-end
-
-# do nothing
-# canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::NonCanonical; kwargs...) = tn
-
-# just overwrite form
-canonize!(tn::MPS, old_form, new_form::NonCanonical; kwargs...) = tn.form = NonCanonical()
-canonize!(tn::MPO, old_form, new_form::NonCanonical; kwargs...) = tn.form = NonCanonical()
-
-function canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::MixedCanonical; kwargs...)
-    canonize!(tn, MixedCanonical(sites(tn)), new_form; kwargs...)
-end
-
-function canonize!(tn::AbstractMPO, old_form::MixedCanonical, new_form::MixedCanonical; kwargs...)
-    # TODO maybe use sth different to `.id`?
-    src_left, src_right = site(min_orthog_center(old_form)).id[1], site(max_orthog_center(old_form)).id[1]
-    dst_left, dst_right = site(min_orthog_center(new_form)).id[1] - 1, site(max_orthog_center(new_form)).id[1] + 1
-
-    # left-to-right QR sweep (left-canonical tensors)
-    for i in src_left:dst_left
-        bond = bond"$i - $(i + 1)"
-        generic_canonize_site!(tn, site"$i", bond; method=:qr)
-    end
-
-    # right-to-left QR sweep (right-canonical tensors)
-    for i in src_right:-1:dst_right
-        bond = bond"$(i - 1) - $i"
-        generic_canonize_site!(tn, site"$i", bond; method=:qr)
-    end
-
-    tn.form = copy(new_form)
-    return tn
-end
+canonize!(tn::MPS, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
+canonize!(tn::MPO, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
 
 # TODO
 function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::MixedCanonical; kwargs...)
@@ -149,7 +126,7 @@ function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::MixedCanonic
     # TODO probably there is a better way to propagate these effects
     # sweep && canonize!(NonCanonical(), tn, targetform)
 
-    tn.form = copy(targetform)
+    unsafe_setform!(tn, copy(targetform))
     return tn
 end
 
@@ -184,6 +161,6 @@ function canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::VidalGauge
         replace!(tn, Aᵢ => Γᵢ)
     end
 
-    tn.form = Canonical()
+    unsafe_setform!(tn, Canonical())
     return tn
 end

@@ -22,12 +22,21 @@ const form = CanonicalForm
 
 Base.copy(x::CanonicalForm) = x
 
+checkform(tn; kwargs...) = checkform(tn, CanonicalForm(tn); kwargs...)
+function checkform(tn, form; kwargs...)
+    @warn "No check for $(typeof(tn)) and $(typeof(form)) combination"
+    return true
+end
+
 """
     NonCanonical
 
 [`CanonicalForm`](@ref) trait representing a Tensor Network in a non-canonical form.
 """
 struct NonCanonical <: CanonicalForm end
+
+# shortcut
+checkform(tn, ::NonCanonical; kwargs...) = true
 
 """
     MixedCanonical
