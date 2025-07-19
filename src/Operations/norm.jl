@@ -15,8 +15,23 @@ end
 
 # `MPS`
 # TODO what if `orthog_center` is not a single site?
-function norm(tn::MPS, p::Real=2)
+generic_mps_norm(tn, p::Real=2) = generic_mps_norm(tn, form(tn), p)
+
+function generic_mps_norm(tn, ::NonCanonical, p::Real=2)
+    canonize!(tn, MixedCanonical(sites(tn)))
+    return generic_mps_norm(tn, p)
+end
+
+function generic_mps_norm(tn, ::MixedCanonical, p::Real=2)
     _min_orthog_center = min_orthog_center(form(tn))
     canonize!(tn, MixedCanonical(_min_orthog_center))
-    norm(tensor_at(tn, _min_orthog_center), p)
+    return norm(tensor_at(tn, _min_orthog_center), p)
 end
+
+function generic_mps_norm(tn, ::BondCanonical, p::Real=2)
+    _bond = orthog_center(form(tn))
+    return norm(tensor_at(tn, LambdaSite(_bond)), p)
+end
+
+norm(tn::MPS, p::Real=2) = generic_mps_norm(tn, p)
+norm(tn::MPO, p::Real=2) = generic_mps_norm(tn, p)
