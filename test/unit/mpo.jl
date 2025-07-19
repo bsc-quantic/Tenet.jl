@@ -88,8 +88,7 @@ end
     ])
     ψc = canonize(ψ, [site"2", site"3"])
 
-    # TODO implement `checkform` for MPO on `MixedCanonical`
-    @test checkform(ψc) skip = true
+    @test checkform(ψc)
     @test form(ψc) == MixedCanonical([site"2", site"3"])
     @test min_orthog_center(form(ψc)) == site"2"
     @test max_orthog_center(form(ψc)) == site"3"
@@ -113,8 +112,7 @@ end
     ])
     ψc = canonize(ψ, site"3")
 
-    # TODO implement `checkform` for MPO on `MixedCanonical`
-    @test checkform(ψc) skip = true
+    @test checkform(ψc)
     @test form(ψc) == MixedCanonical(site"3")
     @test min_orthog_center(form(ψc)) == site"3"
     @test max_orthog_center(form(ψc)) == site"3"

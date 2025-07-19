@@ -12,7 +12,7 @@ A Matrix Product State Tensor Network.
 """
 mutable struct MatrixProductState <: AbstractMPS
     const tn::GenericTensorNetwork
-    form::MixedCanonical
+    form::CanonicalForm
 end
 
 MatrixProductState(tn::GenericTensorNetwork) = MatrixProductState(tn, MixedCanonical(sites(tn)))

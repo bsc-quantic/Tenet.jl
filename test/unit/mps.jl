@@ -3,7 +3,7 @@ using Tenet
 using Tenet: checkform, min_orthog_center, max_orthog_center
 using Muscle: isisometry
 
-@testset "case 1" begin
+@testset "constructor: case 1" begin
     a = ones(1, 2)
     b = 2ones(1, 3, 4)
     c = 3ones(3, 5)
@@ -25,7 +25,7 @@ using Muscle: isisometry
     @test size(tn, tn[bond"2-3"]) == 3
 end
 
-@testset "case 2: order = [:r, :o, :l]" begin
+@testset "constructor: case 2: order = [:r, :o, :l]" begin
     a = ones(1, 2)
     b = 2ones(3, 2, 1)
     c = 3ones(2, 3)
@@ -69,8 +69,7 @@ end
     ])
     ψc = canonize(ψ, site"3")
 
-    # TODO implement `checkform` for MPS on `MixedCanonical`
-    @test checkform(ψc) skip = true
+    @test checkform(ψc)
     @test form(ψc) == MixedCanonical(site"3")
     @test min_orthog_center(form(ψc)) == site"3"
     @test max_orthog_center(form(ψc)) == site"3"
@@ -95,8 +94,7 @@ end
     ])
     ψc = canonize(ψ, [site"2", site"3"])
 
-    # TODO implement `checkform` for MPS on `MixedCanonical`
-    @test checkform(ψc) skip = true
+    @test checkform(ψc)
     @test form(ψc) == MixedCanonical([site"2", site"3"])
     @test min_orthog_center(form(ψc)) == site"2"
     @test max_orthog_center(form(ψc)) == site"3"
