@@ -13,10 +13,10 @@ end
 #     end
 # end
 
-# `MPS`
-# TODO what if `orthog_center` is not a single site?
+# `MPS` / `MPO`
 generic_mps_norm(tn, p::Real=2) = generic_mps_norm(tn, form(tn), p)
 
+# TODO compute by contracting against its dual?
 function generic_mps_norm(tn, ::NonCanonical, p::Real=2)
     canonize!(tn, MixedCanonical(sites(tn)))
     return generic_mps_norm(tn, p)
