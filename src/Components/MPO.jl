@@ -33,7 +33,7 @@ Base.copy(tn::MPO) = MPO(copy(tn.tn))
 
 CanonicalForm(tn::MPO) = tn.form
 function unsafe_setform!(tn::MPO, form)
-    @assert form isa NonCanonical || form isa MixedCanonical
+    @assert form isa NonCanonical || form isa MixedCanonical || form isa BondCanonical
     tn.form = form
     return tn
 end

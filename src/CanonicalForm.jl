@@ -50,29 +50,33 @@ struct MixedCanonical{OrthogCenter} <: CanonicalForm
     orthog_center::OrthogCenter
 end
 
-Base.copy(x::MixedCanonical) = MixedCanonical(copy(x.orthog_center))
-Base.:(==)(a::MixedCanonical, b::MixedCanonical) = a.orthog_center == b.orthog_center
+Base.copy(x::MixedCanonical) = MixedCanonical(copy(orthog_center(x)))
+Base.:(==)(a::MixedCanonical, b::MixedCanonical) = orthog_center(a) == orthog_center(b)
 
-min_orthog_center(x::MixedCanonical) = minimum(x.orthog_center)
-min_orthog_center(x::MixedCanonical{<:Site}) = x.orthog_center
+orthog_center(x::MixedCanonical) = x.orthog_center
 
-max_orthog_center(x::MixedCanonical) = maximum(x.orthog_center)
-max_orthog_center(x::MixedCanonical{<:Site}) = x.orthog_center
+min_orthog_center(x::MixedCanonical) = minimum(orthog_center(x))
+min_orthog_center(x::MixedCanonical{<:Site}) = orthog_center(x)
+
+max_orthog_center(x::MixedCanonical) = maximum(orthog_center(x))
+max_orthog_center(x::MixedCanonical{<:Site}) = orthog_center(x)
 
 """
     BondCanonical
 
 [`CanonicalForm`](@ref) trait representing a Tensor Network in the bond-canonical form.
 
-  - The orthogonality center is a [`Link`](@ref) or a vector of [`Link`](@ref)s.
+  - The orthogonality center is a [`Bond`](@ref).
   - The tensors to the left and right of the orthogonality center are isommetries pointing towards the orthogonality center.
 """
 struct BondCanonical <: CanonicalForm
-    orthog_center::Link
+    orthog_center::Bond
 end
 
 Base.copy(x::BondCanonical) = BondCanonical(copy(x.orthog_center))
 Base.:(==)(a::BondCanonical, b::BondCanonical) = a.orthog_center == b.orthog_center
+
+orthog_center(x::BondCanonical) = x.orthog_center
 
 """
     VidalGauge

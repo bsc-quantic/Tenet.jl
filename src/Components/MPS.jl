@@ -33,7 +33,7 @@ Base.length(tn::MPS) = nsites(tn) # as required by Stefano but do not use, as it
 
 CanonicalForm(tn::MPS) = tn.form
 function unsafe_setform!(tn::MPS, form)
-    @assert form isa NonCanonical || form isa MixedCanonical
+    @assert form isa NonCanonical || form isa MixedCanonical || form isa BondCanonical
     tn.form = form
     return tn
 end
