@@ -121,7 +121,8 @@ canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical
 generic_mps_canonize!(tn, new_form) = generic_mps_canonize!(tn, CanonicalForm(tn), new_form)
 
 function generic_mps_canonize!(tn, ::NonCanonical, new_form::MixedCanonical)
-    generic_mps_canonize!(tn, MixedCanonical(sites(tn)), new_form)
+    unsafe_setform!(tn, MixedCanonical(sites(tn)))
+    generic_mps_canonize!(tn, new_form)
 end
 
 function generic_mps_canonize!(tn, old_form::MixedCanonical, new_form::MixedCanonical)
