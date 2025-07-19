@@ -22,46 +22,15 @@ Calculate the Von Neumann entropy of an MPS `psi` by performing a singular value
 
 See also: [`entropy_vonneumann`](@ref).
 """
-function entropy_vonneumann!(psi::MPS)
-    N = nsites(psi)
-
+function entropy_vonneumann!(psi)
     entropies = zeros(Float64, nbonds(psi))
-
-    canonize!(psi, MixedCanonical(site"1"))
     for i in 1:(nsites(psi) - 1)
-        # A it the tensor where we perform the factorization, but B is also affected by the gauge transformation
-        A = psi[i]
-        B = psi[i + 1]
-
-        # alternatively, we can just use `psi[bond"$i - $(i+1)"`
-        ind_iso_dir = only(intersect(inds(A), inds(B)))
-        inds_a_only = filter(!=(ind_iso_dir), inds(A))
-        ind_virtual = Index(gensym(:svd))
-
-        U, s, V = tensor_svd_thin(A; inds_u=inds_a_only, ind_s=ind_virtual)
-
-        # absorb singular values
-        V = Muscle.hadamard!(V, V, s)
-
-        # contract V against next lane tensor
-        V = binary_einsum(B, V)
-
-        # rename back bond index
-        U = replace(U, ind_virtual => ind_iso_dir)
-        V = replace(V, ind_virtual => ind_iso_dir)
-
-        # replace old tensors with new gauged ones
-        psi[i] = U
-        psi[i + 1] = V
-
-        # unsafe set of canonical form
-        unsafe_setform!(psi, MixedCanonical(site"$(i + 1)"))
-
-        entropies[i] = -sum(x -> x^2 * 2log(x), parent(s))
+        entropies[i] = entropy_vonneumann!(psi, bond"$i-$(i + 1)")
     end
-
     return entropies
 end
+
+entropy_vonneumann!(psi, _bond) = -sum(x -> x^2 * 2log(x), schmidt_values!(psi, _bond))
 
 """
     schmidt_values(psi, bond)
@@ -88,19 +57,8 @@ Calculate the Schmidt values of an MPS `psi` at the specified `bond`.
 See also: [`schmidt_values`](@ref).
 """
 function schmidt_values!(psi::MPS, bond)
-    # TODO use `max` if `bond` is past the middle of the MPS
-    _site = min(bond...)
-    canonize!(psi, MixedCanonical(site"_site"))
-
-    A = psi[_site]
-    B = psi[_site + 1]
-
-    ind_iso_dir = only(intersect(inds(A), inds(B)))
-    inds_a_only = filter(!=(ind_iso_dir), inds(A))
-
-    # TODO call eigvals (implement it in Muscle.jl)
-    _, s, _ = tensor_svd_thin(A; inds_u=inds_a_only)
-    return parent(s)
+    canonize!(psi, bond)
+    return parent(tensor_at(psi, LambdaSite(bond)))
 end
 
 """
