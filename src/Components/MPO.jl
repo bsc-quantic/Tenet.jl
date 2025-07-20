@@ -60,6 +60,28 @@ function checkform(ψ::AbstractMPO, config::MixedCanonical; atol=1e-12)
     return true
 end
 
+function checkform(ψ::AbstractMPO, config::BondCanonical; atol=1e-12)
+    left, right = minmax(sites(orthog_center(config))...)
+
+    n = count(s -> s isa CartesianSite, Tangles.all_sites_iter(ψ))
+    for i in 1:n
+        if site"$i" < left
+            # check left-canonical tensors
+            if !isisometry(ψ[site"$i"], ψ[bond"$i-$(i+1)"]; atol)
+                throw(ArgumentError("Tensor on $(site"$i") is not left-canonical"))
+            end
+
+        elseif site"$i" > right
+            # check right-canonical tensors
+            if !isisometry(ψ[site"$i"], ψ[bond"$(i-1)-$i"]; atol)
+                throw(ArgumentError("Tensors on $(site"$i") is not right-canonical"))
+            end
+        end
+    end
+
+    return true
+end
+
 function MPO(arrays::Vector; order=defaultorder(MPO))
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:(end - 1)]) "All arrays must have 4 dimensions"
