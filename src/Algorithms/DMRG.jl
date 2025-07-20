@@ -41,9 +41,10 @@ struct Dmrg1Engine{Ket,Operator}
     ket::Ket
     op::Operator
     envs::Dict{Bond,Tensor}
+    dir::Dict{Bond,Symbol}
 end
 
-function Dmrg1Engine(ket::Ket, op::Operator) where {Ket,Operator} end
+Dmrg1Engine(ket, op) = Dmrg1Engine(ket, op, Dict{Bond,Tensor}(), Dict{Bond,Symbol}())
 
 function sweep(f, config::Dmrg1Engine; dir=:rightleft)
     if dir == :rightleft
