@@ -11,9 +11,9 @@ function generic_mps_compress!(tn; maxdim=nothing, threshold=nothing, kwargs...)
 end
 
 function generic_mps_compress!(tn, _bond; maxdim=nothing, threshold=nothing, kwargs...)
-    @argcheck !isnothing(maxdim) || !isnothing(threshold) "Either `maxdim` or `threshold` must be specified."
-    @argcheck isnothing(maxdim) || maxdim > 0 "maxdim must be a positive integer."
-    @argcheck isnothing(threshold) || threshold > 0 "Threshold must be positive."
+    @argcheck !isnothing(maxdim) || !isnothing(threshold) "Either `maxdim` or `threshold` must be specified"
+    @argcheck isnothing(maxdim) || maxdim > 0 "maxdim must be a positive integer"
+    @argcheck isnothing(threshold) || threshold > 0 "Threshold must be positive"
 
     bondind = ind_at(tn, _bond)
     canonize!(tn, BondCanonical(_bond))
