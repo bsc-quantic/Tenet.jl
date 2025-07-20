@@ -29,11 +29,11 @@ function DelegatorTrait(interface, tn::MPO)
     end
 end
 
-Base.copy(tn::MPO) = MPO(copy(tn.tn))
+Base.copy(tn::MPO) = MPO(copy(tn.tn), copy(tn.form))
 
 CanonicalForm(tn::MPO) = tn.form
 function unsafe_setform!(tn::MPO, form)
-    @assert form isa NonCanonical || form isa MixedCanonical
+    @assert form isa NonCanonical || form isa MixedCanonical || form isa BondCanonical
     tn.form = form
     return tn
 end
@@ -43,6 +43,28 @@ function checkform(ψ::AbstractMPO, config::MixedCanonical; atol=1e-12)
     right = max_orthog_center(config)
 
     for i in 1:nsites(ψ)
+        if site"$i" < left
+            # check left-canonical tensors
+            if !isisometry(ψ[site"$i"], ψ[bond"$i-$(i+1)"]; atol)
+                throw(ArgumentError("Tensor on $(site"$i") is not left-canonical"))
+            end
+
+        elseif site"$i" > right
+            # check right-canonical tensors
+            if !isisometry(ψ[site"$i"], ψ[bond"$(i-1)-$i"]; atol)
+                throw(ArgumentError("Tensors on $(site"$i") is not right-canonical"))
+            end
+        end
+    end
+
+    return true
+end
+
+function checkform(ψ::AbstractMPO, config::BondCanonical; atol=1e-12)
+    left, right = minmax(sites(orthog_center(config))...)
+
+    n = count(s -> s isa CartesianSite, Tangles.all_sites_iter(ψ))
+    for i in 1:n
         if site"$i" < left
             # check left-canonical tensors
             if !isisometry(ψ[site"$i"], ψ[bond"$i-$(i+1)"]; atol)
