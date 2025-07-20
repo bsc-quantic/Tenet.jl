@@ -30,6 +30,11 @@ function entropy_vonneumann!(psi)
     return entropies
 end
 
+"""
+    entropy_vonneumann!(psi, bond)
+
+Calculate the Von Neumann entropy of an MPS `psi` at the specified `bond`.
+"""
 entropy_vonneumann!(psi, _bond) = -sum(x -> x^2 * 2log(x), schmidt_values!(psi, _bond))
 
 """
@@ -60,10 +65,3 @@ function schmidt_values!(psi::MPS, bond)
     canonize!(psi, bond)
     return parent(tensor_at(psi, LambdaSite(bond)))
 end
-
-"""
-    entropy_vonneumann!(psi, bond)
-
-Calculate the Von Neumann entropy of an MPS `psi` at the specified `bond`.
-"""
-entropy_vonneumann!(psi, _bond) = -sum(x -> x^2 * 2log(x), schmidt_values!(psi, _bond))
