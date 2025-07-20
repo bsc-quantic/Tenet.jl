@@ -461,3 +461,62 @@ end
     samples = Tenet.sample(tn, 128; batchdim=4)
     @test all(∈(([1, 1, 2, 1], [2, 2, 1, 2])), samples)
 end
+
+@testset "compress!: single bond" begin
+    ψ = MPS([
+        ones(Int, 4, 4), # the rank is 1 so compress up to size 1 should not change it
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:16, 4, 4)),
+    ])
+
+    @testset let ψc = compress(ψ, bond"1-2"; maxdim=1)
+        @test size(ψc, ψc[bond"1-2"]) == 1
+
+        # TODO fix easy Hadamard products on `contract`
+        s = ψc[LambdaSite(bond"1-2")]
+        ψc[site"1"] = hadamard(ψc[site"1"], s)
+        rmtensor!(ψc, s)
+
+        @test contract(ψc) ≈ contract(ψ)
+    end
+
+    @testset let ψc = compress(ψ, bond"1-2"; threshold=0.1)
+        @test size(ψc, ψc[bond"1-2"]) == 1
+
+        # TODO fix easy Hadamard products on `contract`
+        s = ψc[LambdaSite(bond"1-2")]
+        ψc[site"1"] = hadamard(ψc[site"1"], s)
+        rmtensor!(ψc, s)
+
+        @test contract(ψc) ≈ contract(ψ)
+    end
+end
+
+@testset "compress!: all bonds" begin
+    ψ = MPS([
+        ones(Int, 4, 4), # the rank is 1 so compress up to size 1 should not change it
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:64, 4, 4, 4)),
+        collect(reshape(1:16, 4, 4)),
+    ])
+
+    @testset let ψc = compress(ψ; maxdim=1)
+        @test all(b -> size(ψc, ψc[b]) == 1, all_bonds(ψc))
+    end
+
+    # use 2nd Schmidt value increased by 10% as threshold
+    threshold = Tenet.schmidt_values(ψ, bond"1-2")[2] * 1.1
+    @testset let ψc = compress(ψ; threshold)
+        @test size(ψc, ψc[bond"1-2"]) == 1
+
+        # TODO fix easy Hadamard products on `contract`
+        s = ψc[LambdaSite(bond"4-5")]
+        ψc[site"5"] = hadamard(ψc[site"5"], s)
+        rmtensor!(ψc, s)
+
+        @test contract(ψc) ≈ contract(ψ)
+    end
+end
