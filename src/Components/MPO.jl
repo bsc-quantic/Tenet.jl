@@ -29,7 +29,7 @@ function DelegatorTrait(interface, tn::MPO)
     end
 end
 
-Base.copy(tn::MPO) = MPO(copy(tn.tn))
+Base.copy(tn::MPO) = MPO(copy(tn.tn), copy(tn.form))
 
 CanonicalForm(tn::MPO) = tn.form
 function unsafe_setform!(tn::MPO, form)

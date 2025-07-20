@@ -24,7 +24,7 @@ Base.copy(x::CanonicalForm) = x
 
 checkform(tn; kwargs...) = checkform(tn, CanonicalForm(tn); kwargs...)
 function checkform(tn, form; kwargs...)
-    @warn "No check for $(typeof(tn)) and $(typeof(form)) combination"
+    @warn "No check for $(typeof(tn)) with $(typeof(form)) form"
     return true
 end
 
