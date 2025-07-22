@@ -2,6 +2,7 @@ using DelegatorTraits
 using QuantumTags
 using Networks
 using Tangles
+using ArgCheck
 
 struct ProjectedEntangledPairState <: AbstractTangle
     tn::GenericTensorNetwork
