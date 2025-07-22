@@ -82,7 +82,7 @@ Tangles.all_tensors(tn::VidalMPS) = [tn.Γ; tn.Λ]
 Tangles.all_tensors_iter(tn::VidalMPS) = Iterators.flatten((tn.Γ, tn.Λ))
 
 Tangles.tensor_at(tn::VidalMPS, site::CartesianSite{1}) = tn.Γ[site.id[1]]
-function Tangles.tensor_at(tn::VidalMPS, s::LambdaSite{Bond{CartesianSite{1},CartesianSite{1}}})
+function Tangles.tensor_at(tn::VidalMPS, s::LambdaSite)
     a, b = sites(s)
     # TODO do this check better
     i = a.id[1]
