@@ -28,15 +28,6 @@ export MatrixProductOperator, MPO
 include("Components/MPS.jl")
 export MatrixProductState, MPS
 
-# legacy aliases
-# TODO remove in future version
-const MixedCanonicalMatrixProductState = MatrixProductState
-const MixedCanonicalMPS = MixedCanonicalMatrixProductState
-export MixedCanonicalMatrixProductState, MixedCanonicalMPS
-
-include("Components/VidalMPS.jl")
-export VidalMatrixProductState, VidalMPS
-
 include("Components/PEPS.jl")
 export ProjectedEntangledPairState, PEPS
 
@@ -68,5 +59,15 @@ export compress!, compress
 include("Operations/entropy.jl")
 
 include("Operations/sample.jl")
+
+# legacy aliases
+# TODO remove in future version
+const MixedCanonicalMatrixProductState = MatrixProductState
+const MixedCanonicalMPS = MixedCanonicalMatrixProductState
+export MixedCanonicalMatrixProductState, MixedCanonicalMPS
+
+@deprecate VidalMatrixProductState(args...; kwargs...) MPS(VidalGauge(), args...; kwargs...)
+const VidalMPS = VidalMatrixProductState
+export VidalMatrixProductState, VidalMPS
 
 end
