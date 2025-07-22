@@ -1,10 +1,11 @@
 module TenetITensorMPSExt
 
 using Tenet
-using Tenet: Tenet, MPS, tensors, form, inds, lanes, Site, Lane
+using Tenet: Tenet, MPS, tensors, form, inds, Site # lanes, Site, Lane
 using ITensors: ITensors, ITensor, Index, dim, siteinds
 using ITensorMPS: ITensorMPS, linkinds
 
+#= 
 # Convert an AbstractMPS to an ITensor MPS
 function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
     @assert form(mps) isa MixedCanonical "Currently only MixedCanonical MPS conversion is supported"
@@ -64,6 +65,7 @@ function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
 
     return itensors_mps
 end
+=# 
 
 # Convert an ITensor MPS to an MPS
 function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
@@ -73,33 +75,40 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
     # Extract site and link indices
     sites = siteinds(itensors_mps)
     links = linkinds(itensors_mps)
+    mpslen = length(itensors_mps)
 
-    tensors_vec = []
+    elt = eltype(itensors_mps[1])
+
+    arrays_vec = Vector{Array{elt}}(undef, mpslen)
+
+ 
     first_ten = ITensors.array(itensors_mps[1], sites[1], links[1])
-    push!(tensors_vec, first_ten)
+    arrays_vec[1] = first_ten
 
     # Extract the bulk tensors
-    for j in 2:(length(itensors_mps) - 1)
+    for j in 2:mpslen-1
         ten = ITensors.array(itensors_mps[j], sites[j], links[j - 1], links[j]) # Indices are ordered as (site index, left link, right link)
-        push!(tensors_vec, ten)
+        arrays_vec[j] = ten
     end
     last_ten = ITensors.array(itensors_mps[end], sites[end], links[end])
-    push!(tensors_vec, last_ten)
+    arrays_vec[end] = last_ten
 
-    mps = Tenet.MPS(tensors_vec)
+    mps = Tenet.MPS(arrays_vec)
 
+    
     # Map llim and rlim to your MPS's orthogonality center(s)
     mps_form = if llim + 1 == rlim - 1
-        Tenet.MixedCanonical(Lane(llim + 1))
+        Tenet.MixedCanonical(site"$(llim + 1)")
     elseif llim + 1 < rlim - 1
-        Tenet.MixedCanonical([Lane(j) for j in (llim + 1):(rlim - 1)])
+        Tenet.MixedCanonical([site"$j" for j in (llim + 1):(rlim - 1)])
     else
         Tenet.NonCanonical()
     end
 
-    mps.form = mps_form
-
+    Tenet.unsafe_setform!(mps, mps_form)
+   
     return mps
 end
+
 
 end
