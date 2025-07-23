@@ -1,10 +1,10 @@
 module TenetITensorMPSExt
 
 using Tenet
-using Tenet: Tenet, MPS, tensors, form, inds, Site # lanes, Site, Lane
-using ITensors: ITensors, ITensor, Index, dim, siteinds
-using ITensorMPS: ITensorMPS, linkinds
+using ITensors: ITensors, ITensor, dim, siteinds, prime
+using ITensorMPS: ITensorMPS, linkinds, firstsiteinds
 
+# TODO update code
 #= 
 # Convert an AbstractMPS to an ITensor MPS
 function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
@@ -65,9 +65,8 @@ function Base.convert(::Type{ITensorMPS.MPS}, mps::Tenet.AbstractMPS)
 
     return itensors_mps
 end
-=# 
+=#
 
-# Convert an ITensor MPS to an MPS
 function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
     llim = itensors_mps.llim
     rlim = itensors_mps.rlim
@@ -75,27 +74,18 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
     # Extract site and link indices
     sites = siteinds(itensors_mps)
     links = linkinds(itensors_mps)
-    mpslen = length(itensors_mps)
-
-    elt = eltype(itensors_mps[1])
-
-    arrays_vec = Vector{Array{elt}}(undef, mpslen)
-
- 
-    first_ten = ITensors.array(itensors_mps[1], sites[1], links[1])
-    arrays_vec[1] = first_ten
 
     # Extract the bulk tensors
-    for j in 2:mpslen-1
-        ten = ITensors.array(itensors_mps[j], sites[j], links[j - 1], links[j]) # Indices are ordered as (site index, left link, right link)
-        arrays_vec[j] = ten
+    arrays_vec = AbstractArray[]
+    push!(arrays_vec, ITensors.array(itensors_mps[1], links[1], sites[1]))
+    for j in 2:(length(itensors_mps) - 1)
+        # Indices are ordered as (left link, right link, site index)
+        push!(arrays_vec, ITensors.array(itensors_mps[j], links[j - 1], links[j], sites[j]))
     end
-    last_ten = ITensors.array(itensors_mps[end], sites[end], links[end])
-    arrays_vec[end] = last_ten
+    push!(arrays_vec, ITensors.array(itensors_mps[end], links[end], sites[end]))
 
-    mps = Tenet.MPS(arrays_vec)
+    mps = Tenet.MPS(arrays_vec; order=(:l, :r, :o))
 
-    
     # Map llim and rlim to your MPS's orthogonality center(s)
     mps_form = if llim + 1 == rlim - 1
         Tenet.MixedCanonical(site"$(llim + 1)")
@@ -106,9 +96,41 @@ function Base.convert(::Type{MPS}, itensors_mps::ITensorMPS.MPS)
     end
 
     Tenet.unsafe_setform!(mps, mps_form)
-   
+
     return mps
 end
 
+function Base.convert(::Type{MPO}, itensors_mps::ITensorMPS.MPO)
+    llim = itensors_mps.llim
+    rlim = itensors_mps.rlim
+
+    # Extract site and link indices
+    sites = firstsiteinds(itensors_mps)
+    links = linkinds(itensors_mps)
+
+    # Extract the bulk tensors
+    arrays_vec = AbstractArray[]
+    push!(arrays_vec, ITensors.array(itensors_mps[1], links[1], prime(sites[1]), sites[1]))
+    for j in 2:(length(itensors_mps) - 1)
+        # Indices are ordered as (site index, left link, right link)
+        push!(arrays_vec, ITensors.array(itensors_mps[j], links[j - 1], links[j], prime(sites[j]), sites[j]))
+    end
+    push!(arrays_vec, ITensors.array(itensors_mps[end], links[end], prime(sites[end]), sites[end]))
+
+    mpo = Tenet.MPO(arrays_vec; order=(:l, :r, :o, :i))
+
+    # Map llim and rlim to your MPS's orthogonality center(s)
+    mpo_form = if llim + 1 == rlim - 1
+        Tenet.MixedCanonical(site"$(llim + 1)")
+    elseif llim + 1 < rlim - 1
+        Tenet.MixedCanonical([site"$j" for j in (llim + 1):(rlim - 1)])
+    else
+        Tenet.NonCanonical()
+    end
+
+    Tenet.unsafe_setform!(mpo, mpo_form)
+
+    return mpo
+end
 
 end
