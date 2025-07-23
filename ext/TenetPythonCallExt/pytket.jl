@@ -1,5 +1,6 @@
 using Tenet
 using PythonCall
+using PythonCall.Convert: pyconvert_add_rule, pyconvert_return, pyconvert_unconverted
 using QuantumTags
 
 # WARN type-piracy
@@ -15,28 +16,33 @@ end
 
 function pyconvert_rule_pytket_qubitpaulistring(T, pyobj)
     tn = GenericTensorNetwork()
-    for (qubit, pauli) in pyobj.map
+    for (qubit, pauli) in pyobj.map.items()
         _site = pyconvert(CartesianSite, qubit)
+        pauli = pyconvert(String, pauli.name)
 
-        _array = if pauli.name == "I"
+        _array = if pauli == "I"
             [1 0; 0 1]
-        elseif pauli.name == "X"
+        elseif pauli == "X"
             [0 1; 1 0]
-        elseif pauli.name == "Y"
+        elseif pauli == "Y"
             [0 -im; im 0]
-        elseif pauli.name == "Z"
+        elseif pauli == "Z"
             [1 0; 0 -1]
         else
             return pyconvert_unconverted()
         end
 
-        tn[_site] = Tensor(_array, [Index(plug"$_site"), Index(plug"$_site'")])
+        _tensor = Tensor(_array, [Index(plug"$_site"), Index(plug"$_site'")])
+        addtensor!(tn, _tensor)
+        setsite!(tn, _tensor, _site)
+        setplug!(tn, Index(plug"$_site"), plug"$_site")
+        setplug!(tn, Index(plug"$_site'"), plug"$_site'")
     end
 
     pyconvert_return(ProductOperator(tn))
 end
 
 function init_pytket()
-    pyconvert_add_rule("pytket:Qubit", CartesianSite, pyconvert_rule_pytket_qubit)
-    pyconvert_add_rule("pytket.pauli:QubitPauliString", ProductOperator, pyconvert_rule_pytket_qubitpaulistring)
+    pyconvert_add_rule("pytket._tket.unit_id:Qubit", CartesianSite, pyconvert_rule_pytket_qubit)
+    pyconvert_add_rule("pytket._tket.pauli:QubitPauliString", ProductOperator, pyconvert_rule_pytket_qubitpaulistring)
 end
