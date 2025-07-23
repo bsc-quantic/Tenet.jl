@@ -29,12 +29,12 @@ tenet_mps = convert(Tenet.MPS, itensor_mps)
 @test length(ITensorMPS.tensors(itensor_mps)) == Tenet.ntensors(tenet_mps)
 
 for (i, _siteind) in enumerate(siteinds(itensor_mps))
-    plugind = ind_at(tenet_mps, plug"$i")
+    plugind = Tenet.ind_at(tenet_mps, plug"$i")
     @test size(tenet_mps, plugind) == dim(_siteind)
 end
 
 for (i, _linkind) in enumerate(linkinds(itensor_mps))
-    bondind = ind_at(tenet_mps, bond"$i-$(i+1)")
+    bondind = Tenet.ind_at(tenet_mps, bond"$i-$(i+1)")
     @test size(tenet_mps, bondind) == dim(_linkind)
 end
 
