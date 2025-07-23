@@ -1,5 +1,5 @@
 using Test
-using Tenet: Tenet
+using Tenet: Tenet, @site_str, @plug_str, @bond_str
 using ITensors
 using ITensors: ITensor, Index, dim, dims
 using ITensorMPS
