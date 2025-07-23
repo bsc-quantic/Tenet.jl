@@ -16,6 +16,12 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Tangles = "d2150e0e-da4c-4196-bcf0-8e0aeaf6db16"
 
+[weakdeps]
+PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
+
+[extensions]
+TenetPythonCallExt = "PythonCall"
+
 [compat]
 ArgCheck = "2.5.0"
 Bijections = "0.2.1"
@@ -24,6 +30,7 @@ Distributions = "0.25.120"
 LinearAlgebra = "1.10.0"
 Muscle = "0.3.9"
 Networks = "0.2.3, 0.3.0"
+PythonCall = "0.9"
 QuantumTags = "0.4.0"
 Random = "1.10.0"
 Reexport = "1.2.2"
