@@ -2,7 +2,6 @@ module TenetPythonCallExt
 
 using Tenet
 using PythonCall
-using PythonCall: pyconvert_add_rule
 
 include("pytket.jl")
 
