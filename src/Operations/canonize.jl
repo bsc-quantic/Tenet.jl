@@ -115,9 +115,8 @@ function generic_bond_canonize_site!(tn, _site::Site, _bond::Bond)
     return tn
 end
 
-canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
-
 ## `MatrixProductState` / `MatrixProductOperator`
+canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
 generic_mps_canonize!(tn, new_form) = generic_mps_canonize!(tn, CanonicalForm(tn), new_form)
 
 function generic_mps_canonize!(tn, ::NonCanonical, new_form::MixedCanonical)
