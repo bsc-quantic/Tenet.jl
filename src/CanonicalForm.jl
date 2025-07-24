@@ -77,6 +77,8 @@ Base.copy(x::BondCanonical) = BondCanonical(copy(x.orthog_center))
 Base.:(==)(a::BondCanonical, b::BondCanonical) = a.orthog_center == b.orthog_center
 
 orthog_center(x::BondCanonical) = x.orthog_center
+min_orthog_center(x::BondCanonical) = min(orthog_center(x)...)
+max_orthog_center(x::BondCanonical) = max(orthog_center(x)...)
 
 """
     VidalGauge
