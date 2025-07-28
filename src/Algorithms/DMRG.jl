@@ -1,5 +1,6 @@
 module DMRG
 
+using ..Tenet
 using ..Tenet: ncart_sites, sweep
 using QuantumTags
 using Muscle
@@ -14,10 +15,6 @@ end
 
 function (ham::EffectiveHamiltonian)(ψ::Tensor)
     return binary_einsum(binary_einsum(binary_einsum(ham.le, ψ), ham.op), ham.re)
-end
-
-struct AdjointTensorNetwork <: Tangles.AbstractTensorNetwork
-    tn::GenericTensorNetwork
 end
 
 abstract type Algorithm end
@@ -42,7 +39,7 @@ export dmrg!
 
 function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim=3, maxiter=2, kwargs...)
     energy = ComplexF64(0.0)
-    n = ncart_sites(ket)
+    n = ncart_sites(ψ)
 
     # construct expectation tensor network
     # NOTE ψbra is only required for the indices: it's not updated
@@ -60,21 +57,22 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
     envs[bond"$n - $(n + 1)"] = Tensor(fill(1.0), Index[])
 
     # construct right environments
-    sweep(engine, :left) do i
+    for _site in Iterators.drop(sweep(ψ, :left), 1)
+        i = only(Tuple(_site))
+        (i >= n || i < 1) && continue
+
         canonize!(ψ, site"$i")
 
-        i >= n && return nothing
-
         #! format: off
-        return binary_einsum(
+        envs[bond"$i - $(i+1)"] = binary_einsum(
             binary_einsum(
-                op[site"$i"],
+                op[site"$i+1"],
                 binary_einsum(
-                    ψ[site"$i"],
-                    envs[bond"$i - $(i + 1)"]
+                    ψ[site"$i+1"],
+                    envs[bond"$(i+1) - $(i+2)"]
                 )
             ),
-            ψbra[site"$i"]
+            conj(ψbra[site"$i+1"])
         )
         #! format: on
     end
@@ -82,7 +80,7 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
     for sweep_it in 1:nsweeps
         # left-to-right sweep
         # NOTE skip first iteration as it will be computed by the right-to-left sweep
-        for _site in Iterators.drop(sweep(engine, :right), 1)
+        for _site in Iterators.drop(sweep(ψ, :right), 1)
             i = only(Tuple(_site))
 
             # move orthogonality center to the site
@@ -96,14 +94,14 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
             )
             if _site != site"2"
                 ψbra_oldsite_tensor = replace(
-                    ψbra_tensor, ind_at(ψ, bond"$(i-2) - $(i-1)") => ind_at(ψbra, bond"$(i-2) - $(i-1)")
+                    ψbra_oldsite_tensor, ind_at(ψ, bond"$(i-2) - $(i-1)") => ind_at(ψbra, bond"$(i-2) - $(i-1)")
                 )
             end
             #! format: off
-            envs[bond"$(i - 1) - $i"] = binary_einsum(
+            envs[bond"$(i-1) - $i"] = binary_einsum(
                 binary_einsum(
                     binary_einsum(
-                        envs[bond"$(i - 2) - $(i - 1)"],
+                        envs[bond"$(i-2) - $(i-1)"],
                         ψ[site"$(i-1)"]
                     ),
                     op[site"$(i-1)"]
@@ -113,22 +111,26 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
             #! format: on
 
             # construct effective hamiltonian and solve for the ground state
-            Heff = EffectiveHamiltonian(envs[bond"$(i - 1) - $i"], envs[bond"$i - $(i + 1)"], op[site"$i"])
+            Heff = EffectiveHamiltonian(envs[bond"$(i-1) - $i"], envs[bond"$i - $(i+1)"], op[site"$i"])
             xθ = ψ[site"$i"]
+
+            # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
+            replacements = [ind_at(ψbra, plug"$i'") => ind_at(ψ, plug"$i")]
+            if _site != site"1"
+                push!(replacements, ind_at(ψbra, bond"$(i-1) - $i") => ind_at(ψ, bond"$(i-1) - $i"))
+            end
+            if _site != site"$n"
+                push!(replacements, ind_at(ψbra, bond"$i - $(i+1)") => ind_at(ψ, bond"$i - $(i+1)"))
+            end
 
             eigvals, eigvecs, info = eigsolve(xθ, 1; ishermitian, krylovdim, maxiter, kwargs...) do x
                 # efficiently contract application of x ket vector with effective hamiltonian
                 y = Heff(x)
 
                 # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
-                y = replace(y, ind_at(ψbra, plug"$i") => ind_at(ψ, plug"$i"))
-                if _site != site"1"
-                    y = replace(y, ind_at(ψbra, bond"$(i - 1) - $i") => ind_at(ψ, bond"$(i - 1) - $i"))
-                elseif _site != site"$n"
-                    y = replace(y, ind_at(ψbra, bond"$i - $(i + 1)") => ind_at(ψ, bond"$i - $(i + 1)"))
-                end
+                y = replace(y, replacements...)
 
-                permutedims(y, inds(xθ))
+                permutedims(y, replace(inds(xθ), replacements...))
             end
 
             # update tensor and info
@@ -140,7 +142,7 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
 
         # right-to-left sweep
         # NOTE skip first iteration as it will be computed by the left-to-right sweep
-        for _site in Iterators.drop(sweep(engine, :left), 1)
+        for _site in Iterators.drop(sweep(ψ, :left), 1)
             i = only(Tuple(_site))
 
             # move orthogonality center to the site
@@ -152,9 +154,9 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
                 ind_at(ψ, plug"$(i+1)") => ind_at(ψbra, plug"$(i+1)'"),
                 ind_at(ψ, bond"$i - $(i+1)") => ind_at(ψbra, bond"$i - $(i+1)"),
             )
-            if _site != site"2"
+            if _site != site"$n-1"
                 ψbra_oldsite_tensor = replace(
-                    ψbra_tensor, ind_at(ψ, bond"$(i+1) - $(i+2)") => ind_at(ψbra, bond"$(i+1) - $(i+2)")
+                    ψbra_oldsite_tensor, ind_at(ψ, bond"$(i+1) - $(i+2)") => ind_at(ψbra, bond"$(i+1) - $(i+2)")
                 )
             end
             #! format: off
@@ -171,22 +173,26 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
             #! format: on
 
             # construct effective hamiltonian and solve for the ground state
-            Heff = EffectiveHamiltonian(envs[bond"$(i - 1) - $i"], envs[bond"$i - $(i + 1)"], op[site"$i"])
+            Heff = EffectiveHamiltonian(envs[bond"$(i-1) - $i"], envs[bond"$i - $(i+1)"], op[site"$i"])
             xθ = ψ[site"$i"]
+
+            # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
+            replacements = [ind_at(ψbra, plug"$i'") => ind_at(ψ, plug"$i")]
+            if _site != site"1"
+                push!(replacements, ind_at(ψbra, bond"$(i-1) - $i") => ind_at(ψ, bond"$(i-1) - $i"))
+            end
+            if _site != site"$n"
+                push!(replacements, ind_at(ψbra, bond"$i - $(i+1)") => ind_at(ψ, bond"$i - $(i+1)"))
+            end
 
             eigvals, eigvecs, info = eigsolve(xθ, 1; ishermitian, krylovdim, maxiter, kwargs...) do x
                 # efficiently contract application of x ket vector with effective hamiltonian
                 y = Heff(x)
 
                 # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
-                y = replace(y, ind_at(ψbra, plug"$i") => ind_at(ψ, plug"$i"))
-                if _site != site"1"
-                    y = replace(y, ind_at(ψbra, bond"$(i - 1) - $i") => ind_at(ψ, bond"$(i - 1) - $i"))
-                elseif _site != site"$n"
-                    y = replace(y, ind_at(ψbra, bond"$i - $(i + 1)") => ind_at(ψ, bond"$i - $(i + 1)"))
-                end
+                y = replace(y, replacements...)
 
-                permutedims(y, inds(xθ))
+                permutedims(y, replace(inds(xθ), replacements...))
             end
 
             # update tensor and info

@@ -272,13 +272,13 @@ function autompo_periodic(L, one_body, two_body; type=ComplexF64)
 end
 
 cart_sites(tn::AbstractMPO) = sort!(filter!(Base.Fix2(isa, CartesianSite{1}), all_sites(tn)))
-ncart_sites(tn::AbstractMPO) = count(Base.Fix2(isa, CartesianSite{2}), all_sites_iter(tn))
+ncart_sites(tn::AbstractMPO) = count(Base.Fix2(isa, CartesianSite{1}), Tangles.all_sites_iter(tn))
 
-function sweep(ket::AbstractMPO, dir)
+function sweep(tn::AbstractMPO, dir)
     if dir == :rightleft || dir == :rl
-        Iterators.flatten([sweep(ket, :right), sweep(ket, :left)])
+        Iterators.flatten([sweep(tn, :right), sweep(tn, :left)])
     elseif dir == :leftright || dir == :lr
-        Iterators.flatten([sweep(ket, :right), sweep(ket, :left)])
+        Iterators.flatten([sweep(tn, :right), sweep(tn, :left)])
     elseif dir == :right || dir == :r
         cart_sites(tn)
     elseif dir == :left || dir == :l
