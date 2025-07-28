@@ -1,7 +1,7 @@
 module DMRG
 
 using ..Tenet
-using ..Tenet: ncart_sites, sweep
+using ..Tenet: ncart_sites, sweep, unsafe_setform!
 using QuantumTags
 using Muscle
 using KrylovKit
@@ -62,6 +62,7 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
         (i >= n || i < 1) && continue
 
         canonize!(ψ, site"$i")
+        canonize!(ψbra, site"$i")
 
         #! format: off
         envs[bond"$i - $(i+1)"] = binary_einsum(
@@ -92,7 +93,7 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
                 ind_at(ψ, plug"$(i-1)") => ind_at(ψbra, plug"$(i-1)'"),
                 ind_at(ψ, bond"$(i-1) - $i") => ind_at(ψbra, bond"$(i-1) - $i"),
             )
-            if _site != site"2"
+            if _site > site"2"
                 ψbra_oldsite_tensor = replace(
                     ψbra_oldsite_tensor, ind_at(ψ, bond"$(i-2) - $(i-1)") => ind_at(ψbra, bond"$(i-2) - $(i-1)")
                 )
@@ -154,7 +155,7 @@ function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim
                 ind_at(ψ, plug"$(i+1)") => ind_at(ψbra, plug"$(i+1)'"),
                 ind_at(ψ, bond"$i - $(i+1)") => ind_at(ψbra, bond"$i - $(i+1)"),
             )
-            if _site != site"$n-1"
+            if _site < site"$n-1"
                 ψbra_oldsite_tensor = replace(
                     ψbra_oldsite_tensor, ind_at(ψ, bond"$(i+1) - $(i+2)") => ind_at(ψbra, bond"$(i+1) - $(i+2)")
                 )
