@@ -1,7 +1,24 @@
 module DMRG
 
+using ..Tenet: ncart_sites, sweep
 using QuantumTags
 using Muscle
+using KrylovKit
+
+# helper types
+struct EffectiveHamiltonian
+    le::Tensor
+    re::Tensor
+    op::Tensor
+end
+
+function (ham::EffectiveHamiltonian)(ψ::Tensor)
+    return binary_einsum(binary_einsum(binary_einsum(ham.le, ψ), ham.op), ham.re)
+end
+
+struct AdjointTensorNetwork <: Tangles.AbstractTensorNetwork
+    tn::GenericTensorNetwork
+end
 
 abstract type Algorithm end
 
@@ -23,120 +40,164 @@ Perform the DMRG algorithm on the given `ket` state and Hamiltonian `ham`.
 function dmrg! end
 export dmrg!
 
-struct EffectiveHamiltonian
-    le::Tensor
-    re::Tensor
-    op::Tensor
-end
-
-env_left(ham::EffectiveHamiltonian) = ham.le
-env_right(ham::EffectiveHamiltonian) = ham.re
-op(ham::EffectiveHamiltonian) = ham.op
-
-function (ham::EffectiveHamiltonian)(ψ::Tensor)
-    return binary_einsum(binary_einsum(binary_einsum(ham.le, ψ), ham.op), ham.re)
-end
-
-struct Dmrg1Engine{Ket,Operator}
-    ket::Ket
-    op::Operator
-    envs::Dict{Bond,Tensor}
-    dir::Dict{Bond,Symbol}
-end
-
-Dmrg1Engine(ket, op) = Dmrg1Engine(ket, op, Dict{Bond,Tensor}(), Dict{Bond,Symbol}())
-
-function sweep(f, config::Dmrg1Engine; dir=:rightleft)
-    if dir == :rightleft
-        for site in reverse(1:length(config.ket))
-            f(config, site)
-        end
-    elseif dir == :leftright
-        for site in 1:length(config.ket)
-            f(config, site)
-        end
-    else
-        error("Direction must be either :rightleft or :leftright")
-    end
-end
-
-hasenv(config::Dmrg1Engine, bond::Bond) = haskey(config.envs, bond)
-env(config::Dmrg1Engine, bond::Bond) = config.envs[bond]
-function setenv!(config::Dmrg1Engine, bond::Bond, tensor::Tensor)
-    config.envs[bond] = tensor
-end
-
-getenv(config::Dmrg1Engine, site::Site, dir) = get(config.envs, (site, dir), Tensor(fill(1.0)))
-
-function effective_hamiltonian(config::Dmrg1Engine, site)
-    left_env = getenv(config, CartesianSite(only(site.id) - 1), :left)
-    right_env = getenv(config, CartesianSite(only(site.id) + 1), :right)
-    op = tensor_at(config.op, site)
-    return EffectiveHamiltonian(left_env, right_env, op)
-end
-
-function dmrg!(ket, ham)
-    # initialize the DMRG state
-    config = Dmrg1Engine(ket, ham.op)
-
-    # TODO
-end
-
-function dmrg_1site!(config::Dmrg1Engine)
-    # TODO
-
+function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim=3, maxiter=2, kwargs...)
     energy = ComplexF64(0.0)
-    for sweep_it in 1:2
-        for i in Iterators.flatten([1:N, N:-1:1])
-            left_env = if i == 1
-                Tensor(fill(1.0), Index[])
-            else
-                left_envs[CartesianSite(i - 1)]
+    n = ncart_sites(ket)
+
+    # construct expectation tensor network
+    # NOTE ψbra is only required for the indices: it's not updated
+    # TODO we should try a better method as it will store old ψ on memory
+    ψbra = adjoint_plugs!(copy(ψ))
+    resetinds!(ψ)
+    resetinds!(op)
+    resetinds!(ψbra)
+    @align! outputs(ψ) => inputs(op)
+    @align! outputs(op) => inputs(ψbra)
+
+    # construct environment on the boundaries as scalar 1 to avoid problems
+    envs = Dict{Bond,Tensor}()
+    envs[bond"0 - 1"] = Tensor(fill(1.0), Index[])
+    envs[bond"$n - $(n + 1)"] = Tensor(fill(1.0), Index[])
+
+    # construct right environments
+    sweep(engine, :left) do i
+        canonize!(ψ, site"$i")
+
+        i >= n && return nothing
+
+        #! format: off
+        return binary_einsum(
+            binary_einsum(
+                op[site"$i"],
+                binary_einsum(
+                    ψ[site"$i"],
+                    envs[bond"$i - $(i + 1)"]
+                )
+            ),
+            ψbra[site"$i"]
+        )
+        #! format: on
+    end
+
+    for sweep_it in 1:nsweeps
+        # left-to-right sweep
+        # NOTE skip first iteration as it will be computed by the right-to-left sweep
+        for _site in Iterators.drop(sweep(engine, :right), 1)
+            i = only(Tuple(_site))
+
+            # move orthogonality center to the site
+            canonize!(ψ, _site)
+
+            # update left environments on the go
+            ψbra_oldsite_tensor = replace(
+                conj(ψ[site"$(i-1)"]),
+                ind_at(ψ, plug"$(i-1)") => ind_at(ψbra, plug"$(i-1)'"),
+                ind_at(ψ, bond"$(i-1) - $i") => ind_at(ψbra, bond"$(i-1) - $i"),
+            )
+            if _site != site"2"
+                ψbra_oldsite_tensor = replace(
+                    ψbra_tensor, ind_at(ψ, bond"$(i-2) - $(i-1)") => ind_at(ψbra, bond"$(i-2) - $(i-1)")
+                )
             end
+            #! format: off
+            envs[bond"$(i - 1) - $i"] = binary_einsum(
+                binary_einsum(
+                    binary_einsum(
+                        envs[bond"$(i - 2) - $(i - 1)"],
+                        ψ[site"$(i-1)"]
+                    ),
+                    op[site"$(i-1)"]
+                ),
+                ψbra_oldsite_tensor
+            )
+            #! format: on
 
-            right_env = if i == N
-                Tensor(fill(1.0), Index[])
-            else
-                right_envs[CartesianSite(i + 1)]
-            end
+            # construct effective hamiltonian and solve for the ground state
+            Heff = EffectiveHamiltonian(envs[bond"$(i - 1) - $i"], envs[bond"$i - $(i + 1)"], op[site"$i"])
+            xθ = ψ[site"$i"]
 
-            Uold = tensor_at(ψ, CartesianSite(i))
-            Vold = tensor_at(ψbra, CartesianSite(i))
-            Htensor = tensor_at(H, CartesianSite(i))
+            eigvals, eigvecs, info = eigsolve(xθ, 1; ishermitian, krylovdim, maxiter, kwargs...) do x
+                # efficiently contract application of x ket vector with effective hamiltonian
+                y = Heff(x)
 
-            O = binary_einsum(binary_einsum(left_env, Htensor), right_env)
-
-            # @show inds(O) i inds(Uold) inds(Vold)
-
-            U, S, V = tensor_svd_thin(O; inds_u=inds(Uold), inds_v=inds(Vold), ind_s=Index(:tmp))
-            Uproj = selectdim(U, Index(:tmp), 1)
-            Vproj = selectdim(V, Index(:tmp), 1)
-
-            energy = binary_einsum(binary_einsum(Uproj, O), Vproj)
-            @info "$i" energy
-
-            replace_tensor!(ψ, Uold, Uproj)
-            replace_tensor!(ψbra, Vold, Vproj)
-
-            left_envs[site"i"] = let
-                tmp = binary_einsum(binary_einsum(Uproj, Htensor), Vproj)
-                if i != 1
-                    tmp = binary_einsum(left_envs[CartesianSite(i - 1)], tmp)
+                # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
+                y = replace(y, ind_at(ψbra, plug"$i") => ind_at(ψ, plug"$i"))
+                if _site != site"1"
+                    y = replace(y, ind_at(ψbra, bond"$(i - 1) - $i") => ind_at(ψ, bond"$(i - 1) - $i"))
+                elseif _site != site"$n"
+                    y = replace(y, ind_at(ψbra, bond"$i - $(i + 1)") => ind_at(ψ, bond"$i - $(i + 1)"))
                 end
-                tmp
+
+                permutedims(y, inds(xθ))
             end
 
-            right_envs[site"i"] = let
-                tmp = binary_einsum(binary_einsum(Uproj, Htensor), Vproj)
-                if i != N
-                    tmp = binary_einsum(right_envs[CartesianSite(i + 1)], tmp)
-                end
-                tmp
+            # update tensor and info
+            energy = eigvals[1]
+            y = eigvecs[1]
+
+            ψ[_site] = y
+        end
+
+        # right-to-left sweep
+        # NOTE skip first iteration as it will be computed by the left-to-right sweep
+        for _site in Iterators.drop(sweep(engine, :left), 1)
+            i = only(Tuple(_site))
+
+            # move orthogonality center to the site
+            canonize!(ψ, _site)
+
+            # update right environments on the go
+            ψbra_oldsite_tensor = replace(
+                conj(ψ[site"$(i+1)"]),
+                ind_at(ψ, plug"$(i+1)") => ind_at(ψbra, plug"$(i+1)'"),
+                ind_at(ψ, bond"$i - $(i+1)") => ind_at(ψbra, bond"$i - $(i+1)"),
+            )
+            if _site != site"2"
+                ψbra_oldsite_tensor = replace(
+                    ψbra_tensor, ind_at(ψ, bond"$(i+1) - $(i+2)") => ind_at(ψbra, bond"$(i+1) - $(i+2)")
+                )
             end
+            #! format: off
+            envs[bond"$i - $(i+1)"] = binary_einsum(
+                binary_einsum(
+                    binary_einsum(
+                        envs[bond"$(i+1) - $(i+2)"],
+                        ψ[site"$(i+1)"]
+                    ),
+                    op[site"$(i+1)"]
+                ),
+                ψbra_oldsite_tensor
+            )
+            #! format: on
+
+            # construct effective hamiltonian and solve for the ground state
+            Heff = EffectiveHamiltonian(envs[bond"$(i - 1) - $i"], envs[bond"$i - $(i + 1)"], op[site"$i"])
+            xθ = ψ[site"$i"]
+
+            eigvals, eigvecs, info = eigsolve(xθ, 1; ishermitian, krylovdim, maxiter, kwargs...) do x
+                # efficiently contract application of x ket vector with effective hamiltonian
+                y = Heff(x)
+
+                # replace indices (`Heff(x)` returns bra indices, but we want ket indices)
+                y = replace(y, ind_at(ψbra, plug"$i") => ind_at(ψ, plug"$i"))
+                if _site != site"1"
+                    y = replace(y, ind_at(ψbra, bond"$(i - 1) - $i") => ind_at(ψ, bond"$(i - 1) - $i"))
+                elseif _site != site"$n"
+                    y = replace(y, ind_at(ψbra, bond"$i - $(i + 1)") => ind_at(ψ, bond"$i - $(i + 1)"))
+                end
+
+                permutedims(y, inds(xθ))
+            end
+
+            # update tensor and info
+            energy = eigvals[1]
+            y = eigvecs[1]
+
+            ψ[_site] = y
         end
     end
 
-    # TODO
+    return canonicalize_inds!(ψ), energy
 end
 
 end
