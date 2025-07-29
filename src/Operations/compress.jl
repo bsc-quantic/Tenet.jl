@@ -26,7 +26,9 @@ function generic_mps_compress!(tn; kwargs...)
     return tn
 end
 
-function generic_mps_compress!(tn, _bond; maxdim=nothing, threshold=nothing, kwargs...)
+generic_mps_compress!(tn, _bond; kwargs...) = generic_mps_compress!(form(tn), tn, _bond; kwargs...)
+
+function generic_mps_compress!(::CanonicalForm, tn, _bond; maxdim=nothing, threshold=nothing, kwargs...)
     @argcheck !isnothing(maxdim) || !isnothing(threshold) "Either `maxdim` or `threshold` must be specified"
     @argcheck isnothing(maxdim) || maxdim > 0 "maxdim must be a positive integer"
     @argcheck isnothing(threshold) || threshold > 0 "Threshold must be positive"
@@ -64,6 +66,28 @@ function generic_mps_compress!(tn, _bond; maxdim=nothing, threshold=nothing, kwa
         replace_tensor!(tn, old_v, new_v)
         replace_tensor!(tn, old_s, new_s)
     end
+
+    return tn
+end
+
+function generic_mps_compress!(::VidalGauge, tn, _bond; maxdim=nothing, threshold=nothing, kwargs...)
+    @argcheck !isnothing(maxdim) || !isnothing(threshold) "Either `maxdim` or `threshold` must be specified"
+    @argcheck isnothing(maxdim) || maxdim > 0 "maxdim must be a positive integer"
+    @argcheck isnothing(threshold) || threshold > 0 "Threshold must be positive"
+
+    sitel, siter = minmax(sites(_bond)...)
+    Λ = tensor_at(tn, LambdaSite(_bond))
+
+    if !isnothing(maxdim)
+        keep = 1:min(maxdim, length(Λ))
+        Λ = @view Λ[only(inds(Λ)) => keep]
+    end
+
+    if !isnothing(threshold)
+        keep = findall(x -> abs(x) > threshold, Λ)
+    end
+
+    Tangles.slice!(tn, ind_at(tn, _bond), keep)
 
     return tn
 end

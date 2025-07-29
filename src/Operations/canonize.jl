@@ -115,9 +115,8 @@ function generic_bond_canonize_site!(tn, _site::Site, _bond::Bond)
     return tn
 end
 
-canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
-
 ## `MatrixProductState` / `MatrixProductOperator`
+canonize!(tn::AbstractMPS, i::Integer; kwargs...) = canonize!(tn, MixedCanonical(site"$i"))
 generic_mps_canonize!(tn, new_form) = generic_mps_canonize!(tn, CanonicalForm(tn), new_form)
 
 function generic_mps_canonize!(tn, ::NonCanonical, new_form::MixedCanonical)
@@ -251,60 +250,180 @@ function generic_mps_canonize!(tn, ::NonCanonical, new_form::BondCanonical)
     return tn
 end
 
-canonize!(tn::MPS, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
-canonize!(tn::MPO, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
+function generic_mps_canonize!(tn, ::NonCanonical, ::VidalGauge)
+    # first mixed-canonize to the first site (or any other site really)
+    canonize!(tn, MixedCanonical(site"1"))
 
-# TODO
-function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::MixedCanonical; kwargs...)
-    for i in 1:(min_orthog_center(new_form) - 1)
-        bond = bond"$i - $(i + 1)"
-        # TODO absorb!(tn, bond, :right)
-    end
+    # and retrigger Vidal canonization
+    canonize!(tn, VidalGauge())
+end
 
-    for i in nsites(tn):-1:(max_orthog_center(new_form) + 1)
-        bond = bond"$(i - 1) - $i"
-        # TODO absorb!(tn, bond, :left)
-    end
+function generic_mps_canonize!(tn, old_form::BondCanonical, ::VidalGauge)
+    # absorb lambda to one of the sites
+    canonize!(tn, MixedCanonical(min_orthog_center(tn)))
 
-    # a sweep is need to fully propagate the effects of truncation
-    # TODO probably there is a better way to propagate these effects
-    # sweep && canonize!(NonCanonical(), tn, targetform)
-
-    unsafe_setform!(tn, copy(targetform))
+    # retrigger canonization
+    canonize!(tn, VidalGauge())
     return tn
 end
 
-# TODO
-function canonize!(tn::AbstractMPO, old_form::VidalGauge, new_form::VidalGauge; kwargs...) end
+function generic_mps_canonize!(tn, old_form::MixedCanonical, ::VidalGauge)
+    if min_orthog_center(old_form) != max_orthog_center(old_form)
+        canonize!(tn, MixedCanonical(min_orthog_center(old_form)))
+        old_form = CanonicalForm(tn)
+    end
 
-# TODO
-function canonize!(tn::AbstractMPO, old_form::NonCanonical, new_form::VidalGauge; kwargs...)
-    # right-to-left QR sweep, get right-canonical tensors
-    canonize!(tn, MixedCanonical(site"1"))
+    # orthogonality center is a single site, so we propagate the lambdas from there
+    oc = only(Tuple(orthog_center(old_form)))
+    ncartsites = count(s -> s isa CartesianSite, all_sites(tn))
 
-    # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
-    for i in 1:(nsites(tn) - 1)
-        bond = bond"$i - $(i + 1)"
-        generic_canonize_site!(tn, site"$i", bond; method=:svd)
+    # right-to-left SVD sweep, get right-canonical tensors and singular values without reversing
+    for i in oc:-1:2
+        # bond-canonize locally
+        generic_bond_canonize_site!(tn, site"$i", bond"$(i-1)-$i")
 
         # extract the singular values and contract them with the next tensor
         # NOTE do not remove them, since they will be needed but TN can in be in a inconsistent state while processing
-        Λᵢ = tensor(tn; at=bond)
+        Λ = tensor_at(tn, lambda"$(i-1)-$i")
+        A = tensor_at(tn, site"$i - 1")
 
-        Aᵢ₊₁ = tensor(tn; at=site"$(i + 1)")
-        replace!(tn, Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ; dims=Index[]))
+        Anew = hadamard(A, Λ)
+        replace_tensor!(tn, A, Anew)
     end
 
-    # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
-    for i in 2:nsites(tn)
-        bond = bond"$(i - 1) - $i"
-        Λᵢ = tensor(tn; at=bond)
-        Aᵢ = tensor(tn; at=site"$i")
-        Λᵢ⁻¹ = Tensor(diag(pinv(Diagonal(parent(Λᵢ)); atol=1e-64)), inds(Λᵢ))
-        Γᵢ = contract(Aᵢ, Λᵢ⁻¹; dims=Index[])
-        replace!(tn, Aᵢ => Γᵢ)
+    # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
+    for i in oc:(ncartsites - 1)
+        # bond-canonize locally
+        generic_bond_canonize_site!(tn, site"$i", bond"$i-$(i+1)")
+
+        # extract the singular values and contract them with the next tensor
+        # NOTE do not remove them, since they will be needed but TN can in be in a inconsistent state while processing
+        Λ = tensor_at(tn, lambda"$i-$(i+1)")
+        A = tensor_at(tn, site"$i + 1")
+        Anew = hadamard(A, Λ)
+        replace_tensor!(tn, A, Anew)
     end
 
-    unsafe_setform!(tn, Canonical())
+    # tensors are in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
+    for lambda_site in Iterators.filter(s -> s isa LambdaSite, all_sites(tn))
+        left_site, right_site = minmax(sites(bond(lambda_site))...)
+        Λ = tensor_at(tn, lambda_site)
+        Al = tensor_at(tn, left_site)
+        Ar = tensor_at(tn, right_site)
+
+        Λ⁻¹ = Tensor(diag(pinv(Diagonal(parent(Λ)); atol=1e-64)), inds(Λ))
+
+        Γl = hadamard(Al, Λ⁻¹)
+        replace_tensor!(tn, Al, Γl)
+
+        Γr = hadamard(Ar, Λ⁻¹)
+        replace_tensor!(tn, Ar, Γr)
+    end
+
+    unsafe_setform!(tn, VidalGauge())
     return tn
 end
+
+function generic_mps_canonize!(tn, ::VidalGauge, ::VidalGauge)
+    @warn "Ignoring canonization from `VidalGauge` to `VidalGauge` form for $(typeof(tn)). If you want to force \
+    canonization, please call `canonize!(tn, NonCanonical())` first and then run again this function."
+    return tn
+end
+
+function generic_mps_canonize!(tn, ::VidalGauge, new_form::BondCanonical)
+    left_boundary, right_boundary = minmax(sites(orthog_center(new_form))...)
+
+    for lambda_site in Iterators.filter(s -> s isa LambdaSite, all_sites(tn))
+        left_lambda_site, right_lambda_site = minmax(sites(bond(lambda_site))...)
+        if left_lambda_site == left_boundary && right_lambda_site == right_boundary
+            # do not absorb orthogonality center
+            continue
+
+        elseif right_lambda_site <= left_boundary
+            # absorb lambda do the right to form the left canonical tensor
+            Λ = tensor_at(tn, lambda_site)
+            Γ = tensor_at(tn, right_lambda_site)
+            Γnew = Muscle.hadamard(Γ, Λ)
+            replace_tensor!(tn, Γ, Γnew)
+
+        elseif right_boundary <= left_lambda_site
+            # absorb lambda do the left to form the right canonical tensor
+            Λ = tensor_at(tn, lambda_site)
+            Γ = tensor_at(tn, left_lambda_site)
+            Γnew = Muscle.hadamard(Γ, Λ)
+            replace_tensor!(tn, Γ, Γnew)
+
+        else
+            error("Lambda sites are in a incoherent state")
+        end
+    end
+
+    unsafe_setform!(tn, new_form)
+    return tn
+end
+
+function generic_mps_canonize!(tn, ::VidalGauge, new_form::MixedCanonical)
+    left_boundary, right_boundary = min_orthog_center(new_form), max_orthog_center(new_form)
+
+    for lambda_site in Iterators.filter(s -> s isa LambdaSite, all_sites(tn))
+        left_lambda_site, right_lambda_site = minmax(sites(lambda_site)...)
+
+        if left_boundary <= left_lambda_site < right_lambda_site <= right_boundary
+            # absorb lambda equally
+            Λ = tensor_at(tn, lambda_site)
+            Λsqrt = sqrt.(Λ)
+
+            Γl = tensor_at(tn, left_lambda_site)
+            Γlnew = Muscle.hadamard(Γl, Λsqrt)
+            replace_tensor!(tn, Γlnew, Γl)
+
+            Γr = tensor_at(tn, right_lambda_site)
+            Γrnew = Muscle.hadamard(Γr, Λsqrt)
+            replace_tensor!(tn, Γrnew, Γr)
+
+        elseif right_lambda_site <= left_boundary
+            # absorb lambda to the right to form the left canonical tensor
+            Λ = tensor_at(tn, lambda_site)
+            Γ = tensor_at(tn, right_lambda_site)
+            Γnew = Muscle.hadamard(Γ, Λ)
+            replace_tensor!(tn, Γnew, Γ)
+
+        elseif right_boundary <= left_lambda_site
+            # absorb lambda to the left to form the right canonical tensor
+            Λ = tensor_at(tn, lambda_site)
+            Γ = tensor_at(tn, left_lambda_site)
+            Γnew = Muscle.hadamard(Γ, Λ)
+            replace_tensor!(tn, Γnew, Γ)
+
+        else
+            error("Lambda sites are in a incoherent state")
+        end
+    end
+
+    unsafe_setform!(tn, new_form)
+    return tn
+end
+
+function generic_mps_canonize!(tn, ::VidalGauge, ::NonCanonical)
+    for lambda_site in Iterators.filter(s -> s isa LambdaSite, all_sites(tn))
+        left_lambda_site, right_lambda_site = minmax(sites(orthog_center(new_form))...)
+
+        # absorb lambda equally
+        Λ = tensor_at(tn, lambda_site)
+        Λsqrt = sqrt.(Λ)
+
+        Γl = tensor_at(tn, left_lambda_site)
+        Γlnew = Muscle.hadamard(Γl, Λsqrt)
+        replace_tensor!(tn, Γlnew, Γl)
+
+        Γr = tensor_at(tn, right_lambda_site)
+        Γrnew = Muscle.hadamard(Γr, Λsqrt)
+        replace_tensor!(tn, Γrnew, Γr)
+    end
+
+    unsafe_setform!(tn, new_form)
+    return tn
+end
+
+canonize!(tn::MPS, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)
+canonize!(tn::MPO, new_form::CanonicalForm; kwargs...) = generic_mps_canonize!(tn, new_form; kwargs...)

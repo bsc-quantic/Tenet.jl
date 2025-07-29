@@ -33,7 +33,7 @@ Base.length(tn::MPS) = nsites(tn) # as required by Stefano but do not use, as it
 
 CanonicalForm(tn::MPS) = tn.form
 function unsafe_setform!(tn::MPS, form)
-    @assert form isa NonCanonical || form isa MixedCanonical || form isa BondCanonical
+    @assert form isa NonCanonical || form isa MixedCanonical || form isa BondCanonical || form isa VidalGauge
     tn.form = form
     return tn
 end
@@ -91,6 +91,56 @@ function MPS(arrays::AbstractVector{<:AbstractArray}; order=defaultorder(MPS)) #
     end
 
     return MPS(tn)
+end
+
+function MPS(::VidalGauge, Γ, Λ; order=defaultorder(MPS))
+    @assert ndims(Γ[1]) == 2 "First Γ array must have 2 dimensions"
+    @assert all(==(3) ∘ ndims, Γ[2:(end - 1)]) "Inner Γ arrays must have 3 dimensions"
+    @assert ndims(Γ[end]) == 2 "Last Γ array must have 2 dimensions"
+    @assert all(==(1) ∘ ndims, Λ) "Λ arrays must have 1 dimension"
+    if !issetequal(order, defaultorder(MPS))
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(MPS)))"))
+    end
+
+    tn = GenericTensorNetwork()
+
+    for (i, λ) in enumerate(Λ)
+        _bond = bond"$i - $(i+1)"
+        _site = lambda"$i - $(i+1)"
+        _tensor = Tensor(λ, [Index(_bond)])
+        addtensor!(tn, _tensor)
+        setsite!(tn, _tensor, _site)
+        setbond!(tn, Index(_bond), _bond)
+    end
+
+    for (i, γ) in enumerate(Γ)
+        local_order = if i == 1
+            filter(x -> x != :l, order)
+        elseif i == length(Γ)
+            filter(x -> x != :r, order)
+        else
+            order
+        end
+
+        _inds = map(local_order) do dir
+            if dir == :o
+                Index(plug"$i")
+            elseif dir == :r
+                Index(bond"$i - $(i+1)")
+            elseif dir == :l
+                Index(bond"$(i-1) - $i")
+            else
+                throw(ArgumentError("Invalid direction: $dir"))
+            end
+        end |> collect
+        _tensor = Tensor(γ, _inds)
+        addtensor!(tn, _tensor)
+        setsite!(tn, _tensor, site"$i")
+        setplug!(tn, Index(plug"$i"), plug"$i")
+        # bonds already set by the Λ tensors
+    end
+
+    return MPS(tn, VidalGauge())
 end
 
 # TODO normalize as we canonize for numerical stability
