@@ -56,6 +56,11 @@ function sample(::CanonicalForm, ψ::MPS, nsamples=1; batchdim=4)
                     t_inner = view(t, batchind => k_inner)
                     vec(Base._mapreduce_dim(abs2, +, zero(eltype(t)), t_inner, filter(!=(physind), inds(t_inner))))
                 end
+
+                # ensure it's real for Categorical distribution
+                @assert isreal(marg_prob_dist)
+                marg_prob_dist = real(marg_prob_dist)
+
                 chosen_value = rand(Distributions.Categorical(marg_prob_dist))
                 samples[k_total][i] = chosen_value
 
