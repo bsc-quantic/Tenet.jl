@@ -6,6 +6,7 @@ Calculate the Von Neumann entropy of an MPS `psi`.
 See also: [`entropy_vonneumann!`](@ref).
 """
 entropy_vonneumann(psi) = entropy_vonneumann!(copy(psi))
+entropy_vonneumann(psi, bond) = entropy_vonneumann!(copy(psi), bond)
 
 """
     entropy_vonneumann!(psi)
@@ -59,9 +60,19 @@ Calculate the Schmidt values of an MPS `psi` at the specified `bond`.
 
     The MPS should be normalized before calling this function. The function does not normalize the MPS internally.
 
+!!! warning
+
+    If `form(psi) === VidalGauge()`, the function assumes the MPS is correctly in the Vidal gauge and just returns the target ``\\Lambda``.
+
 See also: [`schmidt_values`](@ref).
 """
-function schmidt_values!(psi::MPS, bond)
+schmidt_values!(psi::MPS, bond) = schmidt_values!(psi, bond, CanonicalForm(psi))
+
+function schmidt_values!(psi::MPS, bond, ::CanonicalForm)
     canonize!(psi, bond)
+    return parent(tensor_at(psi, LambdaSite(bond)))
+end
+
+function schmidt_values!(psi::MPS, bond, ::VidalGauge)
     return parent(tensor_at(psi, LambdaSite(bond)))
 end
