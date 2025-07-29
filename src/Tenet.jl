@@ -69,4 +69,9 @@ include("Operations/entropy.jl")
 
 include("Operations/sample.jl")
 
+include("Algorithms/DMRG.jl")
+import .DMRG: dmrg!
+
+include("Models/Models.jl")
+
 end

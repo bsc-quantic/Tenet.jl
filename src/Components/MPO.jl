@@ -270,3 +270,22 @@ function autompo_periodic(L, one_body, two_body; type=ComplexF64)
 
     return MPO([W_1, [W for _ in 2:(L - 1)]..., W_L])
 end
+
+cart_sites(tn::AbstractMPO) = sort!(filter!(Base.Fix2(isa, CartesianSite{1}), all_sites(tn)))
+ncart_sites(tn::AbstractMPO) = count(Base.Fix2(isa, CartesianSite{1}), Tangles.all_sites_iter(tn))
+
+function sweep(tn::AbstractMPO, dir)
+    if dir == :rightleft || dir == :rl
+        Iterators.flatten([sweep(tn, :right), sweep(tn, :left)])
+    elseif dir == :leftright || dir == :lr
+        Iterators.flatten([sweep(tn, :right), sweep(tn, :left)])
+    elseif dir == :right || dir == :r
+        cart_sites(tn)
+    elseif dir == :left || dir == :l
+        reverse(cart_sites(tn))
+    else
+        error("Invalid direction: $dir")
+    end
+end
+
+sweep(f, tn::AbstractMPO, dir) = foreach(f, sweep(tn, dir))

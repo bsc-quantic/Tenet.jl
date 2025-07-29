@@ -10,6 +10,7 @@ if TEST_GROUP == "all" || TEST_GROUP == "unit"
         @safetestset "ProductOperator" include("unit/product_operator.jl")
         @safetestset "MatrixProductState" include("unit/mps.jl")
         @safetestset "MatrixProductOperator" include("unit/mpo.jl")
+        @safetestset "DMRG" include("unit/dmrg.jl")
     end
 end
 
