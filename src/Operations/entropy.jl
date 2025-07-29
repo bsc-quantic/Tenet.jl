@@ -25,7 +25,8 @@ See also: [`entropy_vonneumann`](@ref).
 """
 function entropy_vonneumann!(psi)
     entropies = zeros(Float64, nbonds(psi))
-    for i in 1:(nsites(psi) - 1)
+    ncart_sites = count(s -> s isa CartesianSite, Tangles.all_sites_iter(psi))
+    for i in 1:(ncart_sites - 1)
         entropies[i] = entropy_vonneumann!(psi, bond"$i-$(i + 1)")
     end
     return entropies
