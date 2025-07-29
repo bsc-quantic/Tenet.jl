@@ -35,7 +35,11 @@ Perform the DMRG algorithm on the given `ket` state and Hamiltonian `ham`.
     This function is still under development, so its API may change in the future as we add more features.
 """
 function dmrg! end
-export dmrg!
+
+dmrg(ψ, H, args...; kwargs...) = dmrg!(copy(ψ), copy(H), args...; kwargs...)
+export dmrg!, dmrg
+
+dmrg!(ψ, H, args...; method=Dmrg1(), kwargs...) = dmrg!(method, ψ, H, args...; kwargs...)
 
 function dmrg!(::Dmrg1, ψ::MPS, op::MPO, nsweeps=4; ishermitian=true, krylovdim=3, maxiter=2, kwargs...)
     energy = ComplexF64(0.0)
