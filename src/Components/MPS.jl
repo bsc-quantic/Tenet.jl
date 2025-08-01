@@ -200,3 +200,16 @@ function Base.convert(::Type{MPS}, old_tn::ProductState)
 
     return MPS(tn, MixedCanonical(sites(tn)))
 end
+
+
+function bondsizes(psi::MPS; sorted::Bool=true)
+    bs = bonds(psi)
+    sorted_bonds = sorted ? sort(bs, by = b -> minmax(sites(b)...)) : bs
+    return [size(psi, ind_at(psi, b)) for b in sorted_bonds]
+end
+    
+maxbondsize(psi::MPS) = maximum(bondsizes(psi, sorted=false))
+
+function Base.show(io::IO, psi::MPS)
+    print(io, "MPS (#tensors=$(ntensors(psi)), #inds=$(ninds(psi)) #maxbondsize=$(maxbondsize(psi)))")
+end
