@@ -520,3 +520,12 @@ end
         @test contract(ψc) ≈ contract(ψ)
     end
 end
+
+@testset "bondsizes" begin
+    psi = rand(MPS; n=8)
+    @test Tenet.bondsizes(psi; sorted=true) == [2, 4, 8, 16, 8, 4, 2]
+    @test Tenet.maxbondsize(psi) == 16
+
+    Tenet.truncate!(psi, maxdim=10)
+    @test Tenet.maxbondsize(psi) == 10
+end
