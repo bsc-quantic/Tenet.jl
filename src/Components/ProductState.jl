@@ -3,6 +3,7 @@ using Networks
 using Tangles
 using QuantumTags
 using LinearAlgebra
+using Random
 
 abstract type AbstractProduct <: AbstractTangle end
 
