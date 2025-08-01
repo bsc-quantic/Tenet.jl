@@ -111,6 +111,11 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=Float64, physdim=2)
+
+    if maxdim == 1
+        return convert(MPS, rand(rng, ProductState; n, eltype, physdim))
+    end
+
     p = physdim
     T = eltype
     χ = isnothing(maxdim) ? Base.Checked.checked_pow(p, n ÷ 2) : maxdim

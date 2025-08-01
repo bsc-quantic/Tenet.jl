@@ -3,6 +3,7 @@ using Networks
 using Tangles
 using QuantumTags
 using LinearAlgebra
+using Random
 
 abstract type AbstractProduct <: AbstractTangle end
 
@@ -118,4 +119,14 @@ function ProductOperator(tensors::AbstractArray{<:Tensor})
     end
 
     return tn
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{ProductState}; n, eltype=Float64, physdim=2)
+    tn = GenericTensorNetwork()
+    for i in 1:n
+        site_vec = normalize!(rand(rng, eltype, physdim))
+        tn[site"$i"] = Tensor(site_vec, [Index(plug"$i")])
+        tn[plug"$i"] = Index(plug"$i")
+    end
+    return ProductState(tn)
 end
