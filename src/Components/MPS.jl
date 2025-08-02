@@ -111,7 +111,6 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=Float64, physdim=2)
-
     if maxdim == 1
         return convert(MPS, rand(rng, ProductState; n, eltype, physdim))
     end
@@ -201,13 +200,12 @@ function Base.convert(::Type{MPS}, old_tn::ProductState)
     return MPS(tn, MixedCanonical(sites(tn)))
 end
 
-
 function bondsizes(psi::MPS; sorted::Bool=true)
     bs = bonds(psi)
-    sorted_bonds = sorted ? sort(bs, by = b -> minmax(sites(b)...)) : bs
+    sorted_bonds = sorted ? sort(bs; by=b -> minmax(sites(b)...)) : bs
     return [size(psi, ind_at(psi, b)) for b in sorted_bonds]
 end
-    
+
 maxbondsize(psi::MPS) = maximum(bondsizes(psi, sorted=false))
 
 function Base.show(io::IO, psi::MPS)
