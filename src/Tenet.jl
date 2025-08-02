@@ -14,6 +14,14 @@ using Networks
 abstract type AbstractTangle <: Tangles.AbstractTensorNetwork end
 struct Tangle <: Interface end
 
+# utils
+## `Base.Checked.checked_pow` introduced in Julia 1.11
+if hasproperty(Base.Checked, :checked_pow)
+    const checked_pow = Base.Checked.checked_pow
+else
+    const checked_pow = ^
+end
+
 # traits
 include("CanonicalForm.jl")
 export CanonicalForm, form, NonCanonical, MixedCanonical, BondCanonical, VidalGauge
