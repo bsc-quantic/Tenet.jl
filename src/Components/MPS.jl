@@ -111,21 +111,20 @@ center at the first site). In order to avoid norm explosion issues, the tensors 
   - `physdim` The physical or output dimension of each site. Defaults to 2.
 """
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=Float64, physdim=2)
-
     if maxdim == 1
         return convert(MPS, rand(rng, ProductState; n, eltype, physdim))
     end
 
     p = physdim
     T = eltype
-    χ = isnothing(maxdim) ? Base.Checked.checked_pow(p, n ÷ 2) : maxdim
+    χ = isnothing(maxdim) ? checked_pow(p, n ÷ 2) : maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
             χl = min(
                 χ,
                 try
-                    Base.Checked.checked_pow(p, i - 1)
+                    checked_pow(p, i - 1)
                 catch e
                     if e isa OverflowError
                         typemax(Int)
@@ -138,7 +137,7 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPS}; n, maxdim=128, eltype=F
             χr = min(
                 χ,
                 try
-                    Base.Checked.checked_pow(p, i)
+                    checked_pow(p, i)
                 catch e
                     if e isa OverflowError
                         typemax(Int)
@@ -201,14 +200,13 @@ function Base.convert(::Type{MPS}, old_tn::ProductState)
     return MPS(tn, MixedCanonical(sites(tn)))
 end
 
-
 function bondsizes(psi::MPS; sorted::Bool=true)
     bs = bonds(psi)
-    sorted_bonds = sorted ? sort(bs, by = b -> minmax(sites(b)...)) : bs
+    sorted_bonds = sorted ? sort(bs; by=b -> minmax(sites(b)...)) : bs
     return [size(psi, ind_at(psi, b)) for b in sorted_bonds]
 end
-    
-maxbondsize(psi::MPS) = maximum(bondsizes(psi, sorted=false))
+
+maxbondsize(psi::MPS) = maximum(bondsizes(psi; sorted=false))
 
 function Base.show(io::IO, psi::MPS)
     print(io, "MPS (#tensors=$(ntensors(psi)), #inds=$(ninds(psi)) #maxbondsize=$(maxbondsize(psi)))")

@@ -151,7 +151,7 @@ In order to avoid norm explosion issues, the tensors are orthogonalized by QR fa
 function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, eltype=Float64, physdim=2)
     T = eltype
     ip = op = physdim
-    χ = isnothing(maxdim) ? Base.Checked.checked_pow(Base.Checked.checked_mul(ip * op), n ÷ 2) : maxdim
+    χ = isnothing(maxdim) ? checked_pow(Base.Checked.checked_mul(ip * op), n ÷ 2) : maxdim
 
     arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
         χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
@@ -161,8 +161,8 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
             χl = min(
                 χ,
                 try
-                    a = Base.Checked.checked_pow(ip, i - 1)
-                    b = Base.Checked.checked_pow(op, i - 1)
+                    a = checked_pow(ip, i - 1)
+                    b = checked_pow(op, i - 1)
                     Base.Checked.checked_mul(a, b)
                 catch e
                     if e isa OverflowError
@@ -176,8 +176,8 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{MPO}; n, maxdim=nothing, elty
             χr = min(
                 χ,
                 try
-                    a = Base.Checked.checked_pow(ip, i)
-                    b = Base.Checked.checked_pow(op, i)
+                    a = checked_pow(ip, i)
+                    b = checked_pow(op, i)
                     Base.Checked.checked_mul(a, b)
                 catch e
                     if e isa OverflowError
