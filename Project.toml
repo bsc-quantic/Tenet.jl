@@ -18,8 +18,8 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Tangles = "d2150e0e-da4c-4196-bcf0-8e0aeaf6db16"
 
 [weakdeps]
-ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"
 ITensorMPS = "0d1a4710-d33b-49a5-8f18-73bdf49b47e2"
+ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"
 PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 
 [extensions]
@@ -33,7 +33,7 @@ DelegatorTraits = "0.1.2"
 Distributions = "0.25.120"
 ITensorMPS = "0.3"
 ITensors = "0.9"
-KrylovKit = "0.9.5"
+KrylovKit = "0.9.5, 0.10"
 LinearAlgebra = "1.10.0"
 Muscle = "0.3.9"
 Networks = "0.2.3, 0.3.0"
