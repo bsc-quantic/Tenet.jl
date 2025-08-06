@@ -212,9 +212,7 @@ function Base.show(io::IO, psi::MPS)
     print(io, "MPS (#tensors=$(ntensors(psi)), #inds=$(ninds(psi)), maxbondsize=$(maxbondsize(psi)))")
 end
 
-
-""" Expectation value for a one-site operator `op` on site `op_site` of mps `psi`, brings to canonical form. 
-This makes a copy of the MPS """
+""" Expectation value for a one-site operator `op` on site `op_site` of mps `psi`, brings `psi` to canonical form. """
 function expect_1site!(psi::MPS, op::AbstractArray, op_site::Int)
         canonize!(psi, MixedCanonical(site"$(op_site)"))
         plug_ind = ind_at(psi, plug"$(op_site)")
@@ -225,8 +223,9 @@ function expect_1site!(psi::MPS, op::AbstractArray, op_site::Int)
         return ev
 end
 
+""" Expectation value for a one-site operator `op` on site `op_site` of mps `psi`.
+This makes a copy of the MPS """
 function expect_1site(psi::MPS, op::AbstractArray, op_site::Int)
         psi = copy(psi)
         expect_1site!(psi, op, op_site)
 end
-      
