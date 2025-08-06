@@ -11,6 +11,11 @@ struct ZipUpAlgorithm <: EvolveAlgorithm end
 
 function evolve! end
 
+function evolve(tn, op; kwargs...)
+    tn = copy(tn)
+    evolve!(tn, op; kwargs...)
+end
+
 evolve!(tn, op; kwargs...) = evolve!(tn, op, DelegatorTrait(Evolvable(), tn); kwargs...)
 evolve!(tn, op, ::DelegateToField; kwargs...) = evolve!(delegator(Evolvable(), tn), op; kwargs...)
 evolve!(tn, op, ::DontDelegate; algorithm=UnknownAlgorithm(), kwargs...) = evolve!(algorithm, tn, op; kwargs...)
