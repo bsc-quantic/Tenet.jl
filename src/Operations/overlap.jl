@@ -2,6 +2,7 @@ using DelegatorTraits: fallback
 
 function overlap end
 
+""" Computes overlap between two states, **conjugates the second one** """
 function overlap(ψ, ϕ; kwargs...)
     fallback(overlap)
     ϕ = resetinds!(conj(ϕ))
