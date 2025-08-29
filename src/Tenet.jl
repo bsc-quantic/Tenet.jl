@@ -77,6 +77,8 @@ include("Operations/entropy.jl")
 
 include("Operations/sample.jl")
 
+include("Operations/expect.jl")
+
 include("Algorithms/DMRG.jl")
 import .DMRG: dmrg!
 

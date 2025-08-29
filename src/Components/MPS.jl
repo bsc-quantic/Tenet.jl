@@ -209,5 +209,5 @@ end
 maxbondsize(psi::MPS) = maximum(bondsizes(psi; sorted=false))
 
 function Base.show(io::IO, psi::MPS)
-    print(io, "MPS (#tensors=$(ntensors(psi)), #inds=$(ninds(psi)) #maxbondsize=$(maxbondsize(psi)))")
+    print(io, "MPS (#tensors=$(ntensors(psi)), #inds=$(ninds(psi)), maxbondsize=$(maxbondsize(psi)))")
 end
